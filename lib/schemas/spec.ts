@@ -2,9 +2,9 @@ import { z } from 'zod';
 
 export const ElementSchema = z.object({
   type: z.enum([
-    'vizContainer', 'stepSequence', 'plot2d', 'plot3d', 'matrix', 'probability', 'latex',
+    'vizContainer', 'stepSequence', 'plot2d', 'plot3d', 'matrix', 'probability', 'latex', 'textBlock',
   ]),
-  props: z.record(z.unknown()).transform((val) => val as Record<string, any>),
+  props: z.record(z.string(), z.unknown()).transform((val) => val as Record<string, any>),
   children: z.array(z.string()).optional(),
 });
 

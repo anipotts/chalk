@@ -10,7 +10,13 @@ math.import({
 }, { override: true });
 
 export function compileMathExpr(expr: string): (scope: Record<string, number>) => number {
-  const compiled = math.compile(expr);
+  // Normalize common mistakes from LLM output
+  let normalized = expr
+    .replace(/\\cdot/g, '*')
+    .replace(/\\times/g, '*')
+    .replace(/\\div/g, '/')
+    .replace(/\*\*/g, '^');
+  const compiled = math.compile(normalized);
   return (scope) => compiled.evaluate(scope);
 }
 
