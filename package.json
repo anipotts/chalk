@@ -10,8 +10,12 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.41",
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
     "@supabase/supabase-js": "^2.95.3",
+    "@types/three": "^0.182.0",
     "ai": "^6.0.78",
+    "framer-motion": "^12.34.0",
     "katex": "^0.16.28",
     "mafs": "^0.21.0",
     "mathjs": "^15.1.1",
@@ -20,6 +24,7 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-error-boundary": "^6.1.0",
+    "three": "^0.182.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
