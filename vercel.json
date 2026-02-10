@@ -1,0 +1,9 @@
+{
+  "framework": "nextjs",
+  "regions": ["sfo1"],
+  "functions": {
+    "app/api/generate/route.ts": {
+      "maxDuration": 300
+    }
+  }
+}
