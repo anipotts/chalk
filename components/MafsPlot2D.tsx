@@ -61,30 +61,38 @@ export function MafsPlot2D({
       {showGrid && <Coordinates.Cartesian />}
 
       {functions.map((fn, i) => {
-        const plotFn = exprToPlotFn(fn.expr);
-        return (
-          <Plot.OfX
-            key={`fn-${i}`}
-            y={plotFn}
-            color={fn.color || '#3b82f6'}
-            weight={fn.weight || 2}
-            style={fn.style === 'dashed' ? 'dashed' : undefined}
-          />
-        );
+        try {
+          const plotFn = exprToPlotFn(fn.expr);
+          return (
+            <Plot.OfX
+              key={`fn-${i}`}
+              y={plotFn}
+              color={fn.color || '#3b82f6'}
+              weight={fn.weight || 2}
+              style={fn.style === 'dashed' ? 'dashed' : undefined}
+            />
+          );
+        } catch {
+          return null;
+        }
       })}
 
       {parametric.map((p, i) => {
-        const xFn = compileMathExpr(p.xExpr);
-        const yFn = compileMathExpr(p.yExpr);
-        return (
-          <Plot.Parametric
-            key={`param-${i}`}
-            xy={(t) => [xFn({ t }), yFn({ t })]}
-            t={p.tDomain}
-            color={p.color || '#8b5cf6'}
-            weight={p.weight || 2}
-          />
-        );
+        try {
+          const xFn = compileMathExpr(p.xExpr);
+          const yFn = compileMathExpr(p.yExpr);
+          return (
+            <Plot.Parametric
+              key={`param-${i}`}
+              xy={(t) => [xFn({ t }), yFn({ t })]}
+              t={p.tDomain}
+              color={p.color || '#8b5cf6'}
+              weight={p.weight || 2}
+            />
+          );
+        } catch {
+          return null;
+        }
       })}
 
       {annotations.map((ann, i) => {

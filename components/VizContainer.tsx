@@ -20,14 +20,14 @@ export function VizContainer({
     : 'flex flex-col gap-4';
 
   return (
-    <div className="w-full">
+    <div className="w-full min-w-0 overflow-hidden">
       <div className="mb-3">
-        <h2 className="text-lg font-semibold text-chalk-text">{title}</h2>
+        <h2 className="text-lg font-semibold text-chalk-text break-words">{title}</h2>
         {description && (
-          <p className="text-sm text-slate-400 mt-1">{description}</p>
+          <p className="text-sm text-slate-400 mt-1 break-words">{description}</p>
         )}
       </div>
-      <div className={layoutClass}>{children}</div>
+      <div className={`${layoutClass} min-w-0 overflow-hidden`}>{children}</div>
     </div>
   );
 }
