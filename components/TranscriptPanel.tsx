@@ -1643,6 +1643,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(if you|assuming|in case|provided that|supposing|what if|hypothetically|were to|would have)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-purple-400/30" title="Contains conditional or hypothetical language">if</span>
                   )}
+                  {!compactMode && /\b(first of all|secondly|thirdly|finally|in the beginning|at the end|initially|eventually|subsequently|after that)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-orange-400/30" title="Contains temporal or sequential language">seq</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

@@ -1335,6 +1335,18 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const prog = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-progress-${video.id}`) || '0') : 0;
+                          const dur = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-duration-${video.id}`) || '0') : 0;
+                          const visits = typeof window !== 'undefined' ? parseInt(localStorage.getItem(`chalk-video-visits-${video.id}`) || '0', 10) : 0;
+                          if (visits >= 2 && prog > 0 && dur > 60) {
+                            const pctPerVisit = Math.round((prog / dur) * 100 / visits);
+                            if (pctPerVisit >= 1) return <span className="text-[8px] text-cyan-400/40 tabular-nums" title={`${Math.round((prog / dur) * 100)}% progress over ${visits} visits`}>{pctPerVisit}%/visit</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

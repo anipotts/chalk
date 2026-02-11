@@ -964,6 +964,12 @@ Status: RUNNING
 - [x] Home Page Video Card Starred Segments Ratio — "N% starred" badge showing percentage of transcript segments that are starred
 - [x] Build verification PASSED
 
+### Wave 142 — Temporal sequence detection, simplification badge, progress speed
+- [x] Transcript Segment Temporal Sequence Detection — "seq" indicator when segment contains sequential language (first of all, secondly, finally, subsequently)
+- [x] Chat Message Simplification Badge — "simplified" badge on AI messages that simplify content (simply put, in a nutshell, bottom line)
+- [x] Home Page Video Card Progress Speed — "N%/visit" badge showing average progress per visit
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
