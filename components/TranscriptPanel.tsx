@@ -1666,6 +1666,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(to summarize|in summary|to recap|let's review|the takeaway|key points|wrapping up|in conclusion|overall)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-slate-400/30" title="Contains summary or recap language">&Sigma;</span>
                   )}
+                  {!compactMode && /\b(be careful|watch out|warning|caution|don't forget|common mistake|pitfall|be aware|danger|risk)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains warning or cautionary language">&#9888;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

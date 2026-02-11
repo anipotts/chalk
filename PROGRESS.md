@@ -1000,6 +1000,12 @@ Status: RUNNING
 - [x] Home Page Video Card Timestamp Citation Density — "N cite/resp" badge showing average timestamp citations per AI response
 - [x] Build verification PASSED
 
+### Wave 148 — Warning/caution detection, context badge, longest question
+- [x] Transcript Segment Warning/Caution Detection — "⚠" indicator when segment contains cautionary language (be careful, warning, common mistake, pitfall)
+- [x] Chat Message Context Badge — "context" badge on AI messages providing background (for context, historically, the background is)
+- [x] Home Page Video Card Longest Question — "max Nw" badge showing the longest user question word count
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
