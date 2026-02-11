@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 118 (Completed)
+- [x] Transcript Segment Vocabulary Diversity Score — "div" label on segments with >80% unique words
+- [x] Chat Message Corrective Badge — "corrective" badge on AI responses containing corrections/clarifications
+- [x] Home Page Video Card Engagement Score — star rating (1-5) based on questions, bookmarks, flashcards, notes
+- [x] Build verification PASSED
+
 ## Wave 117 (Completed)
 - [x] Transcript Segment Time Gap Warning — amber warning style + icon on gaps ≥10 seconds (possible cuts/long pauses)
 - [x] Chat Conversation Topic Drift Indicator — "topic shifted" label when user questions diverge from original topic

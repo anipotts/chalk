@@ -1485,6 +1485,13 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                             </span>
                           );
                         })()}
+                        {msg.role === 'assistant' && msg.content.length > 80 && (() => {
+                          const lc2 = msg.content.toLowerCase();
+                          if (/\b(however|but actually|correction|not quite|actually,|to clarify|that's not|incorrect)\b/.test(lc2)) return (
+                            <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[7px] font-medium bg-rose-500/10 text-rose-400/50 border border-rose-500/10" title="This response contains a correction or clarification">corrective</span>
+                          );
+                          return null;
+                        })()}
                         {msg.role === 'assistant' && msg.content.split(/\s+/).filter(Boolean).length > 100 && (() => {
                           const wc = msg.content.split(/\s+/).filter(Boolean).length;
                           const maxWc = Math.max(...messages.filter(m => m.role === 'assistant' && m.content).map(m => m.content.split(/\s+/).filter(Boolean).length));

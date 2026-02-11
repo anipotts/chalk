@@ -1567,6 +1567,14 @@ export function TranscriptPanel({
                       {complexityLabel === 'complex' ? '!' : '~'}
                     </span>
                   )}
+                  {!compactMode && (() => {
+                    const ws = seg.text.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+                    if (ws.length < 8) return null;
+                    const uniq = new Set(ws).size;
+                    const ratio = uniq / ws.length;
+                    if (ratio < 0.8) return null;
+                    return <span className="shrink-0 text-[6px] text-violet-400/40 font-medium" title={`High vocabulary diversity: ${Math.round(ratio * 100)}% unique words`}>div</span>;
+                  })()}
                   <button
                     onClick={() => onSeek(seg.offset)}
                     onDoubleClick={(e) => { e.preventDefault(); if (onAskAbout) onAskAbout(seg.offset, seg.text); }}

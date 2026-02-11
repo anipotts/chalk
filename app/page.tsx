@@ -987,6 +987,24 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          let score = 0;
+                          const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chat) score += JSON.parse(chat).filter((m: { role: string }) => m.role === 'user').length;
+                          const bm = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-bookmarks-${video.id}`) : null;
+                          if (bm) score += JSON.parse(bm).length * 2;
+                          const fc = typeof window !== 'undefined' ? localStorage.getItem(`chalk-flashcards-${video.id}`) : null;
+                          if (fc) score += JSON.parse(fc).length * 3;
+                          const note = typeof window !== 'undefined' ? localStorage.getItem(`chalk-note-${video.id}`) : null;
+                          if (note) score += 2;
+                          if (score > 3) {
+                            const stars = Math.min(5, Math.ceil(score / 4));
+                            return <span className="text-[8px] text-yellow-500/40" title={`Engagement score: ${score} (${stars}/5 stars)`}>{'★'.repeat(stars)}{'☆'.repeat(5 - stars)}</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const qCount = JSON.parse(chat).filter((m: { role: string }) => m.role === 'user').length;
