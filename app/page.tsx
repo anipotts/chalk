@@ -1250,6 +1250,19 @@ export default function Home() {
                         try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
+                            const userMsgs2: { role: string; content: string }[] = JSON.parse(chat).filter((m: { role: string; content: string }) => m.role === 'user' && m.content);
+                            if (userMsgs2.length >= 3) {
+                              const avgWc = Math.round(userMsgs2.reduce((s, m) => s + m.content.split(/\s+/).filter(Boolean).length, 0) / userMsgs2.length);
+                              if (avgWc >= 8) return <span className="text-[8px] text-orange-400/40 tabular-nums" title={`Average question length: ${avgWc} words across ${userMsgs2.length} questions`}>avg {avgWc}w/q</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
+                          const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chat) {
                             const msgs = JSON.parse(chat);
                             const lastQ = [...msgs].reverse().find((m: { role: string }) => m.role === 'user');
                             if (lastQ) {

@@ -922,6 +922,12 @@ Status: RUNNING
 - [x] Home Page Video Card Timed Questions Count — "N timed Qs" badge showing user questions that reference specific timestamps [M:SS]
 - [x] Build verification PASSED
 
+### Wave 135 — Comparison detection, correction badge, avg question length
+- [x] Transcript Segment Comparison Detection — "vs" indicator when segment contains comparison language (compared to, versus, in contrast, unlike, etc.)
+- [x] Chat Message Correction Badge — "correction" badge on AI messages with self-correction language (actually, let me rephrase, more accurately, etc.)
+- [x] Home Page Video Card Average Question Length — "avg Nw/q" badge showing average user question word count per video
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

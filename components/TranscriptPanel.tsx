@@ -1622,6 +1622,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(for example|for instance|such as|like when|consider this|take for example|case in point|to illustrate)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-teal-400/30" title="Contains an example">eg</span>
                   )}
+                  {!compactMode && /\b(compared to|versus|on the other hand|whereas|in contrast|unlike|different from|better than|worse than|rather than)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-indigo-400/30" title="Contains comparison language">vs</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
