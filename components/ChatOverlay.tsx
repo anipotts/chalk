@@ -2090,6 +2090,12 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           );
                           return null;
                         })()}
+                        {msg.role === 'assistant' && msg.content.length > 30 && (() => {
+                          if (/\b(you should|you must|you need to|it is essential|it is important|make sure|be sure to|always remember|never forget|the key is)\b/i.test(msg.content)) return (
+                            <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[7px] font-medium bg-violet-500/10 text-violet-400/50 border border-violet-500/10" title="Contains prescriptive language">prescriptive</span>
+                          );
+                          return null;
+                        })()}
                         {msg.role === 'assistant' && msg.content.split(/\s+/).filter(Boolean).length > 100 && (() => {
                           const wc = msg.content.split(/\s+/).filter(Boolean).length;
                           const maxWc = Math.max(...messages.filter(m => m.role === 'assistant' && m.content).map(m => m.content.split(/\s+/).filter(Boolean).length));

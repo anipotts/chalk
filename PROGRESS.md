@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 217 — Predictive language detection, prescriptive badge, avg words per exchange
+- [x] TranscriptPanel: predictive language detection — "→" in violet-400/30, regex for predicts/will likely/expected to/bound to/poised to/destined to/forecasted/projected to/anticipated to/on track to
+- [x] ChatOverlay: prescriptive badge — "prescriptive" in violet-500/10, detects you should/you must/you need to/it is essential/it is important/make sure/be sure to/always remember/never forget/the key is
+- [x] HomePage: avg words per exchange badge — "X w avg" in violet-400/40, variable chatAVE, shows average words across user+assistant exchanges
+- [x] Build verification PASSED
+
 ### Wave 216 — Evaluative language detection, definitive badge, min words exchange
 - [x] TranscriptPanel: evaluative language detection — "★" in sky-400/30, regex for better than/worse than/superior/inferior/the best/the worst/outstanding/mediocre/excellent/terrible
 - [x] ChatOverlay: definitive badge — "definitive" in sky-500/10, detects the answer is/the solution is/definitively/conclusively/without exception/invariably/in every case/across the board/universally/categorically

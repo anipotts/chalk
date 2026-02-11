@@ -1600,6 +1600,29 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatAVE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatAVE) {
+                            const allAVE: { role: string; content?: string }[] = JSON.parse(chatAVE);
+                            let exCount = 0;
+                            let exWords = 0;
+                            for (let i = 0; i < allAVE.length - 1; i++) {
+                              if (allAVE[i].role === 'user' && allAVE[i + 1]?.role === 'assistant') {
+                                const uw = (allAVE[i].content || '').split(/\s+/).filter(Boolean).length;
+                                const aw = (allAVE[i + 1].content || '').split(/\s+/).filter(Boolean).length;
+                                exWords += uw + aw;
+                                exCount++;
+                              }
+                            }
+                            if (exCount >= 2) {
+                              const avg = Math.round(exWords / exCount);
+                              if (avg >= 5) return <span className="text-[8px] text-violet-400/40 tabular-nums" title={`Average exchange: ${avg} words across ${exCount} exchanges`}>{avg} w avg</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatMNE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatMNE) {
                             const allMNE: { role: string; content?: string }[] = JSON.parse(chatMNE);

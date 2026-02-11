@@ -1873,6 +1873,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(better than|worse than|superior|inferior|the best|the worst|outstanding|mediocre|excellent|terrible)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains evaluative language">&#9733;</span>
                   )}
+                  {!compactMode && /\b(predicts|will likely|expected to|bound to|poised to|destined to|forecasted|projected to|anticipated to|on track to)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-violet-400/30" title="Contains predictive language">&#8594;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
