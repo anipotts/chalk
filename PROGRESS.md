@@ -472,6 +472,12 @@ Status: RUNNING
 - [x] Video Card Delete — hover X button removes video from recent history
 - [x] Build verification PASSED
 
+## Wave 60 (Completed)
+- [x] Transcript Sentence Count — sentence count in panel header stats
+- [x] Chat Message Word Count — word count label on hover for AI responses
+- [x] Home Page Video Sorting — sort recent videos by date, title, or view count
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

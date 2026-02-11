@@ -351,6 +351,12 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
                 {responseDuration < 1000 ? `${responseDuration}ms` : `${(responseDuration / 1000).toFixed(1)}s`}
               </span>
             )}
+            {/* Word count */}
+            {hasContent && !isStreaming && (
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] text-slate-700 ml-1">
+                {content.split(/\s+/).filter(Boolean).length}w
+              </span>
+            )}
             {/* Message relative time */}
             {messageId && (() => {
               const ts = parseInt(messageId, 10);

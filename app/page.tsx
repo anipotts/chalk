@@ -194,6 +194,7 @@ export default function Home() {
   const [preview, setPreview] = useState<VideoPreview | null>(null);
   const [activity, setActivity] = useState<Record<string, number>>({});
   const [videoFilter, setVideoFilter] = useState('');
+  const [videoSort, setVideoSort] = useState<'date' | 'title' | 'views'>('date');
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [dailyGoal] = useState(() => getDailyGoal());
   const previewAbort = useRef<AbortController | null>(null);
@@ -489,13 +490,22 @@ export default function Home() {
                 Recent Videos
               </h3>
               {recentVideos.length > 3 && (
-                <input
-                  type="text"
-                  value={videoFilter}
-                  onChange={(e) => setVideoFilter(e.target.value)}
-                  placeholder="Filter..."
-                  className="w-24 px-2 py-0.5 rounded-md text-[10px] bg-chalk-surface/50 border border-chalk-border/30 text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-chalk-accent/40"
-                />
+                <>
+                  <input
+                    type="text"
+                    value={videoFilter}
+                    onChange={(e) => setVideoFilter(e.target.value)}
+                    placeholder="Filter..."
+                    className="w-24 px-2 py-0.5 rounded-md text-[10px] bg-chalk-surface/50 border border-chalk-border/30 text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-chalk-accent/40"
+                  />
+                  <div className="flex items-center gap-0.5">
+                    {(['date', 'title', 'views'] as const).map((s) => (
+                      <button key={s} onClick={() => setVideoSort(s)} className={`px-1.5 py-0.5 rounded text-[9px] transition-colors ${videoSort === s ? 'text-chalk-accent bg-chalk-accent/10' : 'text-slate-600 hover:text-slate-400'}`}>
+                        {s === 'date' ? 'Recent' : s === 'title' ? 'A-Z' : 'Views'}
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
             {/* Time spent breakdown bar */}
@@ -537,7 +547,15 @@ export default function Home() {
               );
             })()}
             <div className="space-y-1.5">
-              {recentVideos.slice(0, 5).filter((v) => !videoFilter.trim() || (v.title || v.url).toLowerCase().includes(videoFilter.toLowerCase())).map((video) => {
+              {[...recentVideos].sort((a, b) => {
+                if (videoSort === 'title') return (a.title || a.url).localeCompare(b.title || b.url);
+                if (videoSort === 'views') {
+                  const va = typeof window !== 'undefined' ? parseInt(localStorage.getItem(`chalk-visits-${a.id}`) || '0', 10) : 0;
+                  const vb = typeof window !== 'undefined' ? parseInt(localStorage.getItem(`chalk-visits-${b.id}`) || '0', 10) : 0;
+                  return vb - va;
+                }
+                return b.timestamp - a.timestamp;
+              }).slice(0, 5).filter((v) => !videoFilter.trim() || (v.title || v.url).toLowerCase().includes(videoFilter.toLowerCase())).map((video) => {
                 // Watch progress bar data
                 let watchPct = 0;
                 try {

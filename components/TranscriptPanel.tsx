@@ -791,7 +791,10 @@ export function TranscriptPanel({
         {stats && isComplete && (
           <div className="flex items-center gap-2">
             <p className="text-[10px] text-slate-500 flex-1">
-              ~{stats.totalWords.toLocaleString()} words · ~{stats.readMinutes} min read
+              ~{stats.totalWords.toLocaleString()} words · {(() => {
+                const sentences = segments.reduce((count, s) => count + (s.text.match(/[.!?]+/g) || []).length, 0);
+                return sentences > 0 ? `${sentences} sentences · ` : '';
+              })()}~{stats.readMinutes} min read
               {stats.speakingWPM > 0 && (
                 <span className="hidden sm:inline" title={`Average segment: ${stats.avgSegDuration.toFixed(1)}s`}> · {stats.speakingWPM} wpm</span>
               )}
