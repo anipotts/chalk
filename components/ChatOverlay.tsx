@@ -1509,6 +1509,22 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           <path fillRule="evenodd" d="M11.986 3H12a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h.014A2.25 2.25 0 0 1 6.25 1h3.5a2.25 2.25 0 0 1 2.236 2ZM6.25 2.5a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clipRule="evenodd" />
                         </svg>
                       </button>
+                      <button
+                        onClick={(e) => {
+                          const snippet = msg.content.length > 280 ? msg.content.slice(0, 277) + '...' : msg.content;
+                          const attribution = videoTitle ? `\n\n— Chalk AI on "${videoTitle}"` : '\n\n— Chalk AI';
+                          navigator.clipboard.writeText(snippet + attribution);
+                          const btn = e.currentTarget;
+                          btn.dataset.shared = 'true';
+                          setTimeout(() => { btn.dataset.shared = ''; }, 1200);
+                        }}
+                        className="p-0.5 rounded opacity-0 group-hover/msg:opacity-100 transition-opacity text-slate-600 hover:text-sky-400 data-[shared=true]:text-sky-400"
+                        title="Share snippet"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                          <path d="M12 6a2 2 0 1 0-1.994-1.842L5.724 6.29a2 2 0 1 0 0 3.42l4.282 2.132a2 2 0 1 0 .666-1.342L6.39 8.368a2.037 2.037 0 0 0 0-.736l4.282-2.132A1.993 1.993 0 0 0 12 6Z" />
+                        </svg>
+                      </button>
                     </div>
                   )}
                   {/* Context menu for assistant messages */}

@@ -776,6 +776,7 @@ export default function Home() {
                       <span className="text-[11px] text-chalk-text truncate flex-1">{video.title || video.url}</span>
                       {durLabel && <span className="text-[9px] text-slate-600 font-mono tabular-nums shrink-0">{durLabel}</span>}
                       {watchPct > 0.9 && <span className="text-[9px] text-emerald-500 shrink-0">done</span>}
+                      {watchPct > 0 && watchPct <= 0.9 && <span className="text-[9px] text-chalk-accent/60 tabular-nums shrink-0">{Math.round(watchPct * 100)}%</span>}
                       <span className="text-[9px] text-slate-700 tabular-nums shrink-0">{agoLabel}</span>
                       <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); const updated = recentVideos.filter((v) => v.id !== video.id); setRecentVideos(updated); localStorage.setItem(RECENT_VIDEOS_KEY, JSON.stringify(updated)); }} onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); const updated = recentVideos.filter((v) => v.id !== video.id); setRecentVideos(updated); localStorage.setItem(RECENT_VIDEOS_KEY, JSON.stringify(updated)); } }} className="opacity-0 group-hover/card:opacity-100 p-0.5 rounded text-slate-600 hover:text-red-400 transition-all" title="Remove"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg></span>
                     </button>
@@ -908,7 +909,7 @@ export default function Home() {
                         return null;
                       })()}
                       {watchPct > 0 && watchPct <= 0.9 && (
-                        <span className="text-[9px] text-chalk-accent/70 tabular-nums">{Math.round(watchPct * 100)}%</span>
+                        <span className="text-[9px] text-chalk-accent/70 tabular-nums">{Math.round(watchPct * 100)}% watched</span>
                       )}
                       {(() => {
                         try {

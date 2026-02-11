@@ -137,6 +137,7 @@ export function TranscriptPanel({
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; offset: number; text: string } | null>(null);
   const [selectRange, setSelectRange] = useState<{ start: number; end: number } | null>(null);
   const lastClickedIdx = useRef<number>(-1);
+  const recentActiveOffsets = useRef<Map<number, number>>(new Map()); // offset -> timestamp
   const [speakerNames, setSpeakerNames] = useState<Record<string, string>>(() => {
     if (typeof window === 'undefined' || !videoId) return {};
     try { return JSON.parse(localStorage.getItem(`chalk-speakers-${videoId}`) || '{}'); } catch { return {}; }
@@ -1342,6 +1343,10 @@ export function TranscriptPanel({
             {!paragraphMode && filtered.map((seg, i) => {
               const segIndex = segments.indexOf(seg);
               const isActive = segIndex === activeIndex;
+              if (isActive) recentActiveOffsets.current.set(seg.offset, Date.now());
+              const recentTs = recentActiveOffsets.current.get(seg.offset);
+              const wasRecentlyActive = !isActive && recentTs && (Date.now() - recentTs) < 10000;
+              const recentFade = wasRecentlyActive ? Math.max(0, 1 - (Date.now() - recentTs!) / 10000) : 0;
               const isCurrentMatch = search.trim() && i === searchMatchIndex;
               const highlightedText = search.trim() ? highlightMatch(seg.text, search) : highlightKeyTerms(seg.text, keyTerms, termMeta);
               const showSpeakerDivider = !search.trim() && speakerChanges.has(segIndex) && i > 0;
@@ -1429,7 +1434,7 @@ export function TranscriptPanel({
                             ? 'border-l-2 border-l-yellow-500/60'
                             : 'border-l-2 border-l-transparent'
                   }`}
-                  style={isActive ? { animation: 'activeBorderPulse 2s ease-in-out infinite' } : undefined}
+                  style={isActive ? { animation: 'activeBorderPulse 2s ease-in-out infinite' } : recentFade > 0 ? { backgroundColor: `rgba(59, 130, 246, ${recentFade * 0.05})` } : undefined}
                   onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, offset: seg.offset, text: seg.text }); }}
                   onClick={(e) => {
                     if (e.shiftKey && lastClickedIdx.current >= 0) {

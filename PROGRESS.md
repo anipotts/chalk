@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 103 (Completed)
+- [x] Transcript Segment Highlight Fade History — recently-active segments get a subtle blue fade trail (10s decay)
+- [x] Chat Message Quick Share to Clipboard — share icon copies formatted snippet with video title attribution
+- [x] Home Page Video Card Progress Percentage Text — show "X% watched" label on mid-range videos in both views
+- [x] Build verification PASSED
+
 ## Wave 102 (Completed)
 - [x] Transcript Speaker Label Edit — click speaker names in breakdown to rename and persist per video
 - [x] Chat Message Reaction Emoji Picker — 4 quick reactions (bulb, check, fire, confused) on AI messages
