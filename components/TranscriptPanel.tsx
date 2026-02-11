@@ -891,26 +891,58 @@ export function TranscriptPanel({
             />
           </div>
         ) : viewMode === 'chapters' && chapters.length > 0 ? (
-          /* Chapters view */
+          /* Chapters outline view */
           <div className="py-1">
             {chapters.map((ch, i) => {
               const nextOffset = chapters[i + 1]?.offset ?? Infinity;
               const isActive = currentTime >= ch.offset && currentTime < nextOffset;
+              // Extract subtopics: key terms from this chapter's segments
+              const chapterSegs = segments.filter((s) => s.offset >= ch.offset && s.offset < nextOffset);
+              const chapterText = chapterSegs.map((s) => s.text.toLowerCase()).join(' ');
+              const chapterWords = chapterText.replace(/[^a-z\s]/g, '').split(/\s+/).filter((w) => w.length > 5);
+              const wordFreq = new Map<string, number>();
+              for (const w of chapterWords) {
+                if (!['really', 'actually', 'basically', 'something', 'things', 'people', 'because', 'through', 'should', 'would', 'could'].includes(w)) {
+                  wordFreq.set(w, (wordFreq.get(w) || 0) + 1);
+                }
+              }
+              const subtopics = [...wordFreq.entries()]
+                .filter(([, c]) => c >= 2)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 3)
+                .map(([w]) => w);
+              const segCount = chapterSegs.length;
+              const durSec = nextOffset === Infinity
+                ? (segments.length > 0 ? segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0) : 0) - ch.offset
+                : nextOffset - ch.offset;
               return (
-                <button
-                  key={ch.offset}
-                  onClick={() => onSeek(ch.offset)}
-                  className={`w-full text-left px-3 py-2.5 flex gap-3 items-center transition-all hover:bg-chalk-surface/60 ${
-                    isActive ? 'bg-chalk-accent/10 border-l-2 border-l-chalk-accent' : 'border-l-2 border-l-transparent'
-                  }`}
-                >
-                  <span className={`text-[10px] font-mono shrink-0 ${isActive ? 'text-chalk-accent' : 'text-slate-500'}`}>
-                    {formatTimestamp(ch.offset)}
-                  </span>
-                  <span className={`text-xs leading-relaxed ${isActive ? 'text-chalk-text' : 'text-slate-400'}`}>
-                    {ch.label}
-                  </span>
-                </button>
+                <div key={ch.offset} className={`border-l-2 transition-all ${isActive ? 'border-l-chalk-accent bg-chalk-accent/5' : 'border-l-transparent'}`}>
+                  <button
+                    onClick={() => onSeek(ch.offset)}
+                    className="w-full text-left px-3 py-2.5 flex gap-3 items-start hover:bg-chalk-surface/60 transition-colors"
+                  >
+                    <span className={`text-[10px] font-mono shrink-0 pt-0.5 ${isActive ? 'text-chalk-accent' : 'text-slate-500'}`}>
+                      {formatTimestamp(ch.offset)}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <span className={`text-xs leading-relaxed block ${isActive ? 'text-chalk-text font-medium' : 'text-slate-400'}`}>
+                        {ch.label}
+                      </span>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[9px] text-slate-600">{Math.round(durSec / 60)}m · {segCount} segments</span>
+                      </div>
+                      {subtopics.length > 0 && (
+                        <div className="flex gap-1 mt-1 flex-wrap">
+                          {subtopics.map((t) => (
+                            <span key={t} className="text-[8px] px-1 py-0 rounded bg-white/[0.04] text-slate-500 border border-white/[0.06]">
+                              {t}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                </div>
               );
             })}
           </div>

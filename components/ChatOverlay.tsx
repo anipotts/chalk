@@ -663,6 +663,27 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                     {pinnedIds.size}
                   </span>
                 )}
+                {/* Reaction tally */}
+                {messages.length > 0 && (() => {
+                  let upCount = 0;
+                  try {
+                    for (const m of messages) {
+                      if (m.role === 'assistant') {
+                        const r = typeof window !== 'undefined' ? localStorage.getItem(`chalk-reaction-${m.id}`) : null;
+                        if (r === 'up') upCount++;
+                      }
+                    }
+                  } catch { /* ignore */ }
+                  if (upCount === 0) return null;
+                  return (
+                    <span className="hidden sm:inline-flex items-center gap-0.5 text-[8px] px-1 py-0.5 rounded bg-emerald-500/10 text-emerald-500/70">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2 h-2">
+                        <path d="M2.09 15a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h1.382a1 1 0 0 0 .894-.553l2.236-4.472A.5.5 0 0 1 7.059 1.5h.382a1.5 1.5 0 0 1 1.5 1.5v2.5h3.559a1.5 1.5 0 0 1 1.487 1.704l-.971 6.5A1.5 1.5 0 0 1 11.53 15H2.09Z" />
+                      </svg>
+                      {upCount}
+                    </span>
+                  );
+                })()}
               </div>
               <div className="flex items-center gap-1">
                 {messages.length > 0 && (
@@ -1331,7 +1352,18 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                       handleSubmit();
                     }
                   }}
-                  placeholder={isStreaming ? 'Generating response...' : teachBackMode ? 'Explain what you learned...' : 'Ask about the video...'}
+                  placeholder={isStreaming ? 'Generating response...' : teachBackMode ? 'Explain what you learned...' : (() => {
+                    if (segments.length === 0) return 'Ask about the video...';
+                    const totalDur = segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0);
+                    if (currentTime < 15) return 'Ask about the intro...';
+                    if (totalDur > 0 && currentTime > totalDur * 0.9) return 'Summarize the conclusion...';
+                    const nearSeg = segments.find((s) => Math.abs(s.offset - currentTime) < 5);
+                    if (nearSeg && nearSeg.text.trim().endsWith('?')) return 'Follow up on that question...';
+                    const nearbyText = segments.filter((s) => Math.abs(s.offset - currentTime) < 30).map((s) => s.text).join(' ');
+                    const kw = nearbyText.split(/\s+/).filter((w) => w.length > 6).slice(0, 1)[0];
+                    if (kw) return `Ask about ${kw.toLowerCase().replace(/[^a-z]/g, '')}...`;
+                    return 'Ask about the video...';
+                  })()}
                   disabled={isStreaming}
                   aria-label="Video question input"
                   rows={1}

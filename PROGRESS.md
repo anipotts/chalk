@@ -263,6 +263,12 @@ Status: RUNNING
 - [x] Speaking pace stats (words per minute) in transcript panel header
 - [x] Build verification PASSED
 
+## Wave 48 (Completed)
+- [x] Video Outline — enhanced chapters view with subtopics (keyword extraction per chapter), segment count, duration
+- [x] Message Reactions Summary — reaction tally badge in chat header (counts thumbs-up from localStorage)
+- [x] Smart Input Placeholder — context-aware placeholder text: "Ask about the intro...", "Follow up on that question...", "Ask about [keyword]..."
+- [x] Build verification PASSED
+
 ## Wave 47 (Completed)
 - [x] Chat Keyboard Shortcuts — Ctrl+F opens chat search, Ctrl+P pins last AI response, Escape closes search bar
 - [x] Transcript Word Timeline — sparkline showing temporal distribution per word in cloud view (8-bucket chart on hover)
