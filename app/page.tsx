@@ -1493,6 +1493,16 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const bmTot = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-bookmarks-${video.id}`) : null;
+                          if (bmTot) {
+                            const bmArr = JSON.parse(bmTot);
+                            if (Array.isArray(bmArr) && bmArr.length >= 1) return <span className="text-[8px] text-pink-400/40 tabular-nums" title={`${bmArr.length} bookmarks saved`}>{bmArr.length} bm</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

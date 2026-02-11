@@ -1030,6 +1030,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Word Frequency — most common non-trivial word in user questions shown in quotes
 - [x] Build verification PASSED
 
+### Wave 153 — Audience address detection, nuance badge, total bookmarks
+- [x] Transcript Segment Audience Address Detection — "@" indicator when speaker directly addresses audience (you guys, everyone, folks)
+- [x] Chat Message Nuance Badge — "nuanced" badge on AI messages adding complexity (it depends, it's complicated, context matters)
+- [x] Home Page Video Card Total Bookmarks — "N bm" badge showing total bookmark count for the video
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
