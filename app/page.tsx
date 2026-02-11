@@ -1642,6 +1642,20 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatFQ = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatFQ) {
+                            const allFQ: { role: string; content?: string }[] = JSON.parse(chatFQ);
+                            const firstQ = allFQ.find(m => m.role === 'user' && m.content);
+                            if (firstQ && firstQ.content) {
+                              const preview = firstQ.content.length > 20 ? firstQ.content.slice(0, 20) + '…' : firstQ.content;
+                              return <span className="text-[8px] text-fuchsia-400/40 truncate max-w-[120px]" title={`First question: ${firstQ.content}`}>&ldquo;{preview}&rdquo;</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatSQ = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatSQ) {
                             const allSQ: { role: string; content?: string }[] = JSON.parse(chatSQ);

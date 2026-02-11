@@ -1756,6 +1756,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(but|however|although|whereas|on the other hand|in contrast|nevertheless|yet)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-pink-400/30" title="Contains contrast/contradiction">vs</span>
                   )}
+                  {!compactMode && /\([^)]{3,}\)/.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains parenthetical/aside">()</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
