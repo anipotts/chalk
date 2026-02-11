@@ -507,6 +507,15 @@ export default function Home() {
                   </div>
                 </>
               )}
+              {recentVideos.length > 1 && (
+                <button
+                  onClick={() => { if (confirm('Clear all recent videos?')) { setRecentVideos([]); localStorage.setItem(RECENT_VIDEOS_KEY, '[]'); } }}
+                  className="px-1.5 py-0.5 rounded text-[9px] text-red-500/60 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                  title="Clear all recent videos"
+                >
+                  Clear all
+                </button>
+              )}
             </div>
             {/* Time spent breakdown bar */}
             {(() => {

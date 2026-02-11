@@ -1279,6 +1279,15 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                 );
               })}
 
+              {/* Typing indicator — visible when streaming but no content yet */}
+              {isStreaming && messages.length > 0 && messages[messages.length - 1].role === 'assistant' && !messages[messages.length - 1].content && (
+                <div className="flex items-center gap-1.5 px-3 py-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-chalk-accent/60 animate-bounce [animation-delay:0ms]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-chalk-accent/60 animate-bounce [animation-delay:150ms]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-chalk-accent/60 animate-bounce [animation-delay:300ms]" />
+                </div>
+              )}
+
               {/* "What did I miss?" catch-up banner */}
               {catchUpRange && !isStreaming && (
                 <motion.div

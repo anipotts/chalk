@@ -433,10 +433,17 @@ function WatchContent() {
   const progressSaveRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const watchTimeRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
-  // Load saved progress + track visit count
+  // Load saved progress + track visit count + check URL hash anchor
   useEffect(() => {
     if (!videoId) return;
     try {
+      // URL hash anchor takes priority (e.g. #t=90)
+      const hash = window.location.hash;
+      const hashMatch = hash.match(/^#t=(\d+(?:\.\d+)?)$/);
+      if (hashMatch) {
+        const seconds = parseFloat(hashMatch[1]);
+        if (seconds > 0) { setContinueFrom(seconds); return; }
+      }
       const saved = localStorage.getItem(`chalk-progress-${videoId}`);
       if (saved) {
         const seconds = parseFloat(saved);

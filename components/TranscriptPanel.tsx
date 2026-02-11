@@ -1198,7 +1198,7 @@ export function TranscriptPanel({
                   })()}
                   <div className="shrink-0 flex flex-col items-center gap-0.5">
                     <button
-                      onClick={() => onSeek(seg.offset)}
+                      onClick={() => { onSeek(seg.offset); try { window.history.replaceState(null, '', `#t=${Math.round(seg.offset)}`); } catch {} }}
                       onDoubleClick={(e) => {
                         e.stopPropagation();
                         const ts = formatTimestamp(seg.offset);
