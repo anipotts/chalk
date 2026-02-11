@@ -910,6 +910,12 @@ Status: RUNNING
 - [x] Home Page Video Card Unique AI Citations — "N cited" badge showing unique timestamps cited by AI per video
 - [x] Build verification PASSED
 
+## Wave 133 (Completed)
+- [x] Transcript Segment Example Detection — "eg" indicator on segments with example language (for example, such as, case in point)
+- [x] Chat Message Warning Badge — "warn" badge on AI responses with warning language (be careful, common mistake, pitfall)
+- [x] Home Page Video Card Favorite Segment Count — "N starred" badge showing starred transcript segments per video
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

@@ -1227,6 +1227,16 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const stars = typeof window !== 'undefined' ? localStorage.getItem(`chalk-stars-${video.id}`) : null;
+                          if (stars) {
+                            const arr: number[] = JSON.parse(stars);
+                            if (arr.length >= 2) return <span className="text-[8px] text-yellow-400/40 tabular-nums" title={`${arr.length} starred transcript segments`}>{arr.length} starred</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

@@ -1619,6 +1619,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(in conclusion|to wrap up|finally|the bottom line|to conclude|all in all|in the end|summing up|to close)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-red-400/30" title="Contains concluding language">end</span>
                   )}
+                  {!compactMode && /\b(for example|for instance|such as|like when|consider this|take for example|case in point|to illustrate)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-teal-400/30" title="Contains an example">eg</span>
+                  )}
                   {!compactMode && complexityLabel && (
                     <span className={`shrink-0 text-[7px] font-bold uppercase tracking-wider px-1 py-0 rounded ${
                       complexityLabel === 'complex' ? 'bg-rose-500/10 text-rose-400/60' : 'bg-amber-500/10 text-amber-400/50'
