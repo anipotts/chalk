@@ -1600,6 +1600,29 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatMDE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatMDE) {
+                            const allMDE: { role: string; content?: string }[] = JSON.parse(chatMDE);
+                            const exSizes: number[] = [];
+                            for (let i = 0; i < allMDE.length - 1; i++) {
+                              if (allMDE[i].role === 'user' && allMDE[i + 1]?.role === 'assistant') {
+                                const uw = (allMDE[i].content || '').split(/\s+/).filter(Boolean).length;
+                                const aw = (allMDE[i + 1].content || '').split(/\s+/).filter(Boolean).length;
+                                exSizes.push(uw + aw);
+                              }
+                            }
+                            if (exSizes.length >= 3) {
+                              exSizes.sort((a, b) => a - b);
+                              const mid = Math.floor(exSizes.length / 2);
+                              const med = exSizes.length % 2 ? exSizes[mid] : Math.round((exSizes[mid - 1] + exSizes[mid]) / 2);
+                              if (med >= 5) return <span className="text-[8px] text-amber-400/40 tabular-nums" title={`Median exchange: ${med} words across ${exSizes.length} exchanges`}>{med} w med</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatAVE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatAVE) {
                             const allAVE: { role: string; content?: string }[] = JSON.parse(chatAVE);

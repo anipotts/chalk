@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 218 — Anecdotal language detection, enumerative badge, median words per exchange
+- [x] TranscriptPanel: anecdotal language detection — "◆" in amber-400/30, regex for I remember when/back in the day/there was a time/one time/story goes/true story/fun fact/believe it or not/interestingly enough/funny enough
+- [x] ChatOverlay: enumerative badge — "enumerative" in amber-500/10, detects first of all/secondly/thirdly/in addition/furthermore/moreover/lastly/finally/to begin with/on top of that
+- [x] Home page: median words per exchange — "X w med" in amber-400/40, variable chatMDE, requires ≥3 exchanges and med ≥5
+- [x] Build verification PASSED
+
 ### Wave 217 — Predictive language detection, prescriptive badge, avg words per exchange
 - [x] TranscriptPanel: predictive language detection — "→" in violet-400/30, regex for predicts/will likely/expected to/bound to/poised to/destined to/forecasted/projected to/anticipated to/on track to
 - [x] ChatOverlay: prescriptive badge — "prescriptive" in violet-500/10, detects you should/you must/you need to/it is essential/it is important/make sure/be sure to/always remember/never forget/the key is

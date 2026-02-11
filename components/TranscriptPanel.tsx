@@ -1876,6 +1876,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(predicts|will likely|expected to|bound to|poised to|destined to|forecasted|projected to|anticipated to|on track to)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-violet-400/30" title="Contains predictive language">&#8594;</span>
                   )}
+                  {!compactMode && /\b(I remember when|back in the day|there was a time|one time|story goes|true story|fun fact|believe it or not|interestingly enough|funny enough)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains anecdotal language">&#9670;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
