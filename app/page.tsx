@@ -1642,6 +1642,20 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatMQ = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatMQ) {
+                            const allMQ: { role: string; content?: string }[] = JSON.parse(chatMQ);
+                            const userMsgsMQ = allMQ.filter(m => m.role === 'user' && m.content);
+                            if (userMsgsMQ.length >= 1) {
+                              const maxWords = Math.max(...userMsgsMQ.map(m => m.content!.split(/\s+/).filter(Boolean).length));
+                              if (maxWords >= 5) return <span className="text-[8px] text-orange-400/40 tabular-nums" title={`Longest question: ${maxWords} words`}>{maxWords} max q-words</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatQA = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatQA) {
                             const allQA: { role: string; content?: string }[] = JSON.parse(chatQA);
