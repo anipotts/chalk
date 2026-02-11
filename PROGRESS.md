@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 121 (Completed)
+- [x] Transcript Segment Number Detection — "#" data indicator on segments with percentages, amounts, dates, or large numbers
+- [x] Chat Message List Detection Badge — "list" badge on AI responses containing numbered or bulleted lists
+- [x] Home Page Video Card Study Streak Per Video — "N-day streak" badge with per-video visit tracking via localStorage
+- [x] Build verification PASSED
+
 ## Wave 120 (Completed)
 - [x] Transcript Segment Emphasis Detection — bold "!" marker on segments with ALL CAPS emphasis words
 - [x] Chat Message Example Detection Badge — "ex" badge on AI responses containing example patterns

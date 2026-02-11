@@ -334,12 +334,14 @@ export default function Home() {
     fetchAndSaveTitle(videoId);
     recordStudyDay();
     try { const k = `chalk-video-visits-${videoId}`; localStorage.setItem(k, String((parseInt(localStorage.getItem(k) || '0', 10) || 0) + 1)); } catch {}
+    try { const sk = `chalk-video-streak-${videoId}`; const days: string[] = JSON.parse(localStorage.getItem(sk) || '[]'); const today = new Date().toISOString().split('T')[0]; if (days[days.length - 1] !== today) { days.push(today); localStorage.setItem(sk, JSON.stringify(days.slice(-30))); } } catch {}
     router.push(`/watch?v=${videoId}`);
   };
 
   const handleRecentClick = (video: RecentVideo) => {
     recordStudyDay();
     try { const k = `chalk-video-visits-${video.id}`; localStorage.setItem(k, String((parseInt(localStorage.getItem(k) || '0', 10) || 0) + 1)); } catch {}
+    try { const sk = `chalk-video-streak-${video.id}`; const days: string[] = JSON.parse(localStorage.getItem(sk) || '[]'); const today = new Date().toISOString().split('T')[0]; if (days[days.length - 1] !== today) { days.push(today); localStorage.setItem(sk, JSON.stringify(days.slice(-30))); } } catch {}
     router.push(`/watch?v=${video.id}`);
   };
 
@@ -999,6 +1001,23 @@ export default function Home() {
                           if (score > 3) {
                             const stars = Math.min(5, Math.ceil(score / 4));
                             return <span className="text-[8px] text-yellow-500/40" title={`Engagement score: ${score} (${stars}/5 stars)`}>{'★'.repeat(stars)}{'☆'.repeat(5 - stars)}</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
+                          const raw = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-streak-${video.id}`) : null;
+                          if (raw) {
+                            const days: string[] = JSON.parse(raw);
+                            if (days.length >= 2) {
+                              let streak = 1;
+                              for (let d = days.length - 1; d > 0; d--) {
+                                const diff = new Date(days[d]).getTime() - new Date(days[d - 1]).getTime();
+                                if (diff >= 72000000 && diff <= 100800000) streak++; else break;
+                              }
+                              if (streak >= 2) return <span className="text-[8px] text-amber-400/40 tabular-nums" title={`${streak}-day study streak for this video`}>{streak}-day streak</span>;
+                            }
                           }
                         } catch { /* ignore */ }
                         return null;
