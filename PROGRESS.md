@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 188 — Temporal language detection, sequential badge, shortest AI response
+- [x] TranscriptPanel: temporal language detection — "⏳" in amber-400/30, regex for before/after/during/while/meanwhile/subsequently/previously/eventually
+- [x] ChatOverlay: sequential badge — "sequential" in sky-500/10, detects first/second/third/step by step/next/then/finally/lastly/in order to
+- [x] Home page video card: shortest AI response — "min X ai words" in pink-400/40, variable chatSR, finds min word count among AI messages (>=3 msgs, min >= 3)
+- [x] Build verification PASSED
+
 ### Wave 187 — Additive language detection, emphasis badge, longest user message
 - [x] TranscriptPanel: additive language detection — "+" in green-400/30, regex for additionally/furthermore/moreover/in addition/on top of that/not only
 - [x] ChatOverlay: emphasis badge — "emphasis" in fuchsia-500/10, detects importantly/crucially/significantly/notably/especially/particularly/above all/most importantly
