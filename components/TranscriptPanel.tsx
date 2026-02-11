@@ -1789,6 +1789,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(before|after|during|while|meanwhile|subsequently|previously|eventually)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains temporal language">&#9203;</span>
                   )}
+                  {!compactMode && /\b(excellent|terrible|outstanding|poor|remarkable|mediocre|impressive|disappointing)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains evaluative language">&#9733;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

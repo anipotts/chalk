@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 189 — Evaluative language detection, analogical badge, AI response range
+- [x] TranscriptPanel: evaluative language detection — "★" in yellow-400/30, regex for excellent/terrible/outstanding/poor/remarkable/mediocre/impressive/disappointing
+- [x] ChatOverlay: analogical badge — "analogical" in teal-500/10, detects like a/similar to/just as/think of it as/analogous/resembles/akin to/comparable to
+- [x] Home page video card: AI response range — "X-Y ai word range" in orange-400/40, variable chatAR, computes min-max word count among AI messages (>=3 msgs)
+- [x] Build verification PASSED
+
 ### Wave 188 — Temporal language detection, sequential badge, shortest AI response
 - [x] TranscriptPanel: temporal language detection — "⏳" in amber-400/30, regex for before/after/during/while/meanwhile/subsequently/previously/eventually
 - [x] ChatOverlay: sequential badge — "sequential" in sky-500/10, detects first/second/third/step by step/next/then/finally/lastly/in order to
