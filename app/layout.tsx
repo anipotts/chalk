@@ -10,7 +10,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: 'cover',
-  themeColor: '#0f172a',
+  themeColor: '#000000',
+  interactiveWidget: 'resizes-content',
 };
 
 export const metadata: Metadata = {
@@ -30,7 +31,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body className={`${inter.className} bg-chalk-bg text-chalk-text h-[100dvh] overflow-hidden`}>
+      <body suppressHydrationWarning className={`${inter.className} bg-chalk-bg text-chalk-text h-[100dvh] overflow-hidden`}>
         {children}
       </body>
     </html>

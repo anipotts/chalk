@@ -1,173 +1,144 @@
-import { fetchTranscript, deduplicateSegments, downloadAudio, type TranscriptSegment } from '@/lib/transcript';
-import { transcribeWithDeepgram } from '@/lib/stt/deepgram';
-import { transcribeWithWhisper } from '@/lib/stt/whisper';
-import { getCached, setCache, type TranscriptMethod } from '@/lib/transcript-cache';
-import { unlink } from 'fs/promises';
+/**
+ * SSE streaming transcript endpoint.
+ * GET /api/transcript/stream?videoId=<id>
+ *
+ * Calls caption race and STT cascade directly (not via fetchTranscript)
+ * so it can send granular status events between phases.
+ *
+ * Events:
+ *   status   → { phase, message }
+ *   meta     → { source, cached }
+ *   segments → TranscriptSegment[]
+ *   done     → { total, source, durationSeconds }
+ *   error    → { message }
+ */
+
+import { captionRace, sttCascade, deduplicateSegments, mergeIntoSentences, type TranscriptSegment, type TranscriptSource } from '@/lib/transcript';
+import { getCachedTranscript, setCachedTranscript } from '@/lib/transcript-cache';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 300; // 5 min for STT
+export const maxDuration = 120;
 
 function sseEvent(event: string, data: unknown): string {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 }
 
+const VIDEO_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const videoId = url.searchParams.get('videoId');
 
-  if (!videoId || videoId.length > 20) {
+  if (!videoId || !VIDEO_ID_RE.test(videoId)) {
     return new Response(
-      sseEvent('transcript-error', { message: 'Invalid videoId' }),
+      sseEvent('error', { message: 'Invalid or missing videoId' }),
       { status: 400, headers: { 'Content-Type': 'text/event-stream' } },
     );
   }
 
   const encoder = new TextEncoder();
-  let closed = false;
+  const abortSignal = req.signal;
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (event: string, data: unknown) => {
-        if (closed) return;
+      // Heartbeat keeps connection alive during long operations (caption race, STT)
+      const heartbeat = setInterval(() => {
+        if (abortSignal.aborted) { clearInterval(heartbeat); return; }
         try {
-          controller.enqueue(encoder.encode(sseEvent(event, data)));
+          controller.enqueue(encoder.encode(': heartbeat\n\n'));
         } catch {
-          closed = true;
+          clearInterval(heartbeat);
         }
-      };
+      }, 10_000);
 
-      // Listen for client disconnect
-      req.signal.addEventListener('abort', () => {
-        closed = true;
-      });
-
-      try {
-        // ── Check persistent cache (memory → disk, STT results survive 30 days) ──
-        const cached = getCached(videoId);
-        if (cached) {
-          send('status', { phase: 'streaming', message: 'Loading from cache...' });
-          send('method', { method: cached.originalMethod });
-
-          // Stream cached segments in batches
-          for (let i = 0; i < cached.segments.length; i += 10) {
-            if (closed) break;
-            const batch = cached.segments.slice(i, i + 10);
-            for (const seg of batch) {
-              send('segment', seg);
-            }
-          }
-
-          send('done', { total: cached.segments.length });
-          controller.close();
-          return;
-        }
-
-        // ── Try caption extraction (tiers 1-3) ──────────────────────────
-        send('status', { phase: 'extracting', message: 'Fetching captions...' });
-
-        let segments: TranscriptSegment[] | null = null;
-        let method = 'captions';
-
-        try {
-          const raw = await fetchTranscript(videoId);
-          segments = deduplicateSegments(raw);
-        } catch {
-          // All caption tiers failed — proceed to STT
-        }
-
-        if (segments && segments.length > 0) {
-          send('method', { method: 'captions' });
-
-          // Stream segments in batches of 10
-          for (let i = 0; i < segments.length; i += 10) {
-            if (closed) break;
-            const batch = segments.slice(i, i + 10);
-            for (const seg of batch) {
-              send('segment', seg);
-            }
-          }
-
-          setCache(videoId, segments, 'captions');
-          send('done', { total: segments.length });
-          controller.close();
-          return;
-        }
-
-        // ── STT fallback ─────────────────────────────────────────────────
-        send('status', { phase: 'downloading', message: 'Downloading audio...' });
-
-        let audioPath: string;
-        try {
-          audioPath = await downloadAudio(videoId);
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : 'Audio download failed';
-          send('transcript-error', { message: `Could not download audio: ${msg}` });
-          controller.close();
-          return;
-        }
-
-        try {
-          // Try Deepgram first (if key is set)
-          if (process.env.DEEPGRAM_API_KEY) {
-            send('status', { phase: 'transcribing', message: 'Transcribing with Deepgram...' });
-            method = 'deepgram';
-
-            try {
-              const sttSegments: TranscriptSegment[] = [];
-              segments = await transcribeWithDeepgram(audioPath, (seg) => {
-                sttSegments.push(seg);
-                send('segment', seg);
-              });
-
-              send('method', { method: 'deepgram' });
-              setCache(videoId, segments, 'deepgram');
-              send('done', { total: segments.length });
-              controller.close();
-              return;
-            } catch {
-              // Fall through to Whisper
-            }
-          }
-
-          // Try Whisper
-          send('status', { phase: 'transcribing', message: 'Transcribing with Whisper...' });
-          method = 'whisper';
-
-          segments = await transcribeWithWhisper(audioPath, (percent) => {
-            send('progress', { percent });
-          });
-
-          send('method', { method: 'whisper' });
-
-          // Stream Whisper segments
-          for (let i = 0; i < segments.length; i += 10) {
-            if (closed) break;
-            const batch = segments.slice(i, i + 10);
-            for (const seg of batch) {
-              send('segment', seg);
-            }
-          }
-
-          setCache(videoId, segments, method as TranscriptMethod);
-          send('done', { total: segments.length });
-        } finally {
-          // Clean up temp audio file
-          try {
-            await unlink(audioPath);
-          } catch {
-            // Ignore cleanup errors
-          }
-        }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Transcript extraction failed';
-        send('transcript-error', { message });
+      function send(event: string, data: unknown) {
+        controller.enqueue(encoder.encode(sseEvent(event, data)));
       }
 
-      if (!closed) {
+      try {
+        // ── Check caches ──────────────────────────────────────────────────
+        send('status', { phase: 'cache', message: 'Checking cache...' });
+
+        const cached = await getCachedTranscript(videoId);
+        if (cached && cached.segments.length > 0) {
+          send('meta', { source: cached.source, cached: true });
+          send('segments', cached.segments);
+
+          const lastSeg = cached.segments[cached.segments.length - 1];
+          const duration = lastSeg.offset + (lastSeg.duration || 0);
+          send('done', {
+            total: cached.segments.length,
+            source: cached.source,
+            durationSeconds: duration,
+          });
+          clearInterval(heartbeat);
+          controller.close();
+          return;
+        }
+
+        // ── Phase 1: Caption race ────────────────────────────────────────
+        send('status', { phase: 'captions', message: 'Fetching captions...' });
+
+        let segments: TranscriptSegment[] | null = null;
+        let source: TranscriptSource | null = null;
+
         try {
+          const result = await captionRace(videoId);
+          segments = mergeIntoSentences(deduplicateSegments(result.segments));
+          source = result.source;
+          console.log(`[transcript] ${videoId}: fetched via ${source} (${segments.length} segments)`);
+        } catch (e) {
+          console.log(`[transcript] ${videoId}: caption race failed:`, e instanceof Error ? e.message : e);
+        }
+
+        // ── Phase 2: STT cascade (only if captions failed) ───────────────
+        if (!segments || segments.length === 0) {
+          send('status', { phase: 'downloading', message: 'Downloading audio for transcription...' });
+
+          try {
+            const result = await sttCascade(videoId);
+            segments = mergeIntoSentences(deduplicateSegments(result.segments));
+            source = result.source;
+          } catch (e) {
+            console.error(`[transcript] ${videoId}: STT cascade failed:`, e instanceof Error ? e.message : e);
+            send('error', { message: `Could not fetch transcript for ${videoId}` });
+            clearInterval(heartbeat);
+            controller.close();
+            return;
+          }
+        }
+
+        if (!segments || segments.length === 0 || !source) {
+          send('error', { message: 'Transcript returned 0 segments' });
+          clearInterval(heartbeat);
+          controller.close();
+          return;
+        }
+
+        send('meta', { source, cached: false });
+        send('segments', segments);
+
+        const lastSeg = segments[segments.length - 1];
+        const duration = lastSeg.offset + (lastSeg.duration || 0);
+        send('done', {
+          total: segments.length,
+          source,
+          durationSeconds: duration,
+        });
+
+        // ── Cache result (fire-and-forget) ───────────────────────────────
+        setCachedTranscript(videoId, segments, source);
+
+        clearInterval(heartbeat);
+        controller.close();
+      } catch (err) {
+        clearInterval(heartbeat);
+        const message = err instanceof Error ? err.message : 'Unexpected error';
+        try {
+          send('error', { message });
           controller.close();
         } catch {
-          // Already closed
+          // Stream already closed
         }
       }
     },
@@ -176,7 +147,7 @@ export async function GET(req: Request) {
   return new Response(stream, {
     headers: {
       'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
+      'Cache-Control': 'no-cache, no-transform',
       Connection: 'keep-alive',
     },
   });

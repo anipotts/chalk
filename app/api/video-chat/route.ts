@@ -1,7 +1,7 @@
 import { streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { buildVideoSystemPrompt } from '@/lib/prompts/video-assistant';
-import { buildVideoContext, formatTimestamp, type TranscriptSegment } from '@/lib/transcript';
+import { buildVideoContext, formatTimestamp, type TranscriptSegment } from '@/lib/video-utils';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { message, currentTimestamp, segments, history, model: modelChoice, videoTitle, personality } = body;
+  const { message, currentTimestamp, segments, history, model: modelChoice, videoTitle, personality, transcriptSource } = body;
 
   if (!message || typeof message !== 'string') {
     return Response.json({ error: 'Missing message' }, { status: 400 });
@@ -62,10 +62,12 @@ export async function POST(req: Request) {
     : buildVideoContext(typedSegments, currentTime);
 
   // Build system prompt with video context
+  const safeVideoTitle = typeof videoTitle === 'string' ? videoTitle.slice(0, 200) : undefined;
   let systemPrompt = buildVideoSystemPrompt({
     transcriptContext,
     currentTimestamp: formatTimestamp(currentTime),
-    videoTitle,
+    videoTitle: safeVideoTitle,
+    transcriptSource: typeof transcriptSource === 'string' ? transcriptSource : undefined,
   });
 
   // Apply personality modifier
@@ -78,12 +80,16 @@ export async function POST(req: Request) {
     systemPrompt += PERSONALITY_PROMPTS[personality];
   }
 
-  // Build messages array from history
+  // Build messages array from history (cap at 20 messages to limit cost)
+  const MAX_HISTORY = 20;
   const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
 
   if (history && Array.isArray(history)) {
-    for (const msg of history) {
-      messages.push({ role: msg.role, content: msg.content });
+    const trimmed = history.slice(-MAX_HISTORY);
+    for (const msg of trimmed) {
+      if (msg.role === 'user' || msg.role === 'assistant') {
+        messages.push({ role: msg.role, content: String(msg.content).slice(0, 4000) });
+      }
     }
   } else {
     messages.push({ role: 'user', content: message });

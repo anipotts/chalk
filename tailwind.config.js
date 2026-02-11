@@ -10,9 +10,9 @@ module.exports = {
     extend: {
       colors: {
         chalk: {
-          bg: '#0f172a',
-          surface: '#1e293b',
-          border: '#334155',
+          bg: '#000000',
+          surface: '#111111',
+          border: '#222222',
           text: '#f1f5f9',
           accent: '#3b82f6',
           success: '#10b981',

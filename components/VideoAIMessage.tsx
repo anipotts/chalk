@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TimestampLink } from './TimestampLink';
-import { ReasoningPanel } from './ReasoningPanel';
 import { parseTimestampLinks } from '@/lib/video-utils';
 
 interface VideoAIMessageProps {
@@ -12,21 +11,8 @@ interface VideoAIMessageProps {
   isStreaming?: boolean;
   thinking?: string;
   thinkingDuration?: number;
-  responseDuration?: number;
-  messageId?: string;
   onSeek?: (seconds: number) => void;
   videoId?: string;
-  pinned?: boolean;
-  onTogglePin?: () => void;
-  maxContentLength?: number;
-}
-
-function SparkleIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-      <path d="M8 .75a.75.75 0 0 1 .697.473l1.524 3.84 3.84 1.524a.75.75 0 0 1 0 1.396l-3.84 1.524-1.524 3.84a.75.75 0 0 1-1.394 0L5.78 9.507l-3.84-1.524a.75.75 0 0 1 0-1.396l3.84-1.524L7.303 1.223A.75.75 0 0 1 8 .75Z" />
-    </svg>
-  );
 }
 
 /**
@@ -200,57 +186,7 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function ReactionButtons({ messageId }: { messageId?: string }) {
-  const storageKey = messageId ? `chalk-reaction-${messageId}` : '';
-  const [reaction, setReaction] = useState<'up' | 'down' | null>(() => {
-    if (!storageKey || typeof window === 'undefined') return null;
-    try {
-      return localStorage.getItem(storageKey) as 'up' | 'down' | null;
-    } catch { return null; }
-  });
-
-  const handleReaction = useCallback((type: 'up' | 'down') => {
-    const newReaction = reaction === type ? null : type;
-    setReaction(newReaction);
-    if (storageKey) {
-      try {
-        if (newReaction) localStorage.setItem(storageKey, newReaction);
-        else localStorage.removeItem(storageKey);
-      } catch { /* ignore */ }
-    }
-  }, [reaction, storageKey]);
-
-  return (
-    <div className="inline-flex items-center gap-0.5 ml-1">
-      <button
-        onClick={() => handleReaction('up')}
-        className={`p-0.5 rounded transition-all ${
-          reaction === 'up' ? 'text-emerald-400' : 'opacity-0 group-hover:opacity-100 text-slate-600 hover:text-emerald-400'
-        }`}
-        aria-label="Helpful"
-        title="Helpful"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5">
-          <path d="M2.09 15a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h1.382a1 1 0 0 0 .894-.553l2.236-4.472A.5.5 0 0 1 7.059 1.5h.382a1.5 1.5 0 0 1 1.5 1.5v2.5h3.559a1.5 1.5 0 0 1 1.487 1.704l-.971 6.5A1.5 1.5 0 0 1 11.53 15H2.09Z" />
-        </svg>
-      </button>
-      <button
-        onClick={() => handleReaction('down')}
-        className={`p-0.5 rounded transition-all ${
-          reaction === 'down' ? 'text-rose-400' : 'opacity-0 group-hover:opacity-100 text-slate-600 hover:text-rose-400'
-        }`}
-        aria-label="Not helpful"
-        title="Not helpful"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5">
-          <path d="M13.91 1a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-1.382a1 1 0 0 0-.894.553l-2.236 4.472a.5.5 0 0 1-.447.275h-.382a1.5 1.5 0 0 1-1.5-1.5v-2.5H3.51a1.5 1.5 0 0 1-1.487-1.704l.971-6.5A1.5 1.5 0 0 1 4.47 1h9.44Z" />
-        </svg>
-      </button>
-    </div>
-  );
-}
-
-export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingDuration, responseDuration, messageId, onSeek, videoId, pinned, onTogglePin, maxContentLength }: VideoAIMessageProps) {
+export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingDuration, onSeek, videoId }: VideoAIMessageProps) {
   if (role === 'user') {
     return (
       <motion.div
@@ -274,14 +210,9 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className={`flex justify-start gap-2.5 group ${pinned ? 'bg-amber-500/[0.03] -mx-2 px-2 py-1 rounded-lg border-l-2 border-amber-500/30' : ''}`}
+      className="flex justify-start group"
     >
-      {/* Assistant avatar */}
-      <div className="w-6 h-6 rounded-full bg-chalk-accent/15 text-chalk-accent flex items-center justify-center shrink-0 mt-0.5">
-        <SparkleIcon />
-      </div>
-
-      <div className="max-w-[80%] min-w-0 relative">
+      <div className="min-w-0 w-full relative">
         <AnimatePresence mode="wait">
           {showTypingDots && (
             <motion.div
@@ -300,11 +231,25 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
         </AnimatePresence>
 
         {thinking && (
-          <ReasoningPanel
-            thinking={thinking}
-            thinkingDuration={thinkingDuration}
-            isStreaming={isStreaming && !hasContent}
-          />
+          <div className="mb-2">
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-[10px] uppercase tracking-wider text-slate-600 font-medium">Thinking</span>
+              {thinkingDuration != null && (
+                <span className="text-[10px] text-slate-600 tabular-nums">{(thinkingDuration / 1000).toFixed(1)}s</span>
+              )}
+              {isStreaming && !hasContent && (
+                <span className="w-1.5 h-1.5 rounded-full bg-chalk-accent/60 animate-pulse" />
+              )}
+            </div>
+            <div className="border-l-2 border-chalk-accent/20 pl-3">
+              <p className="text-[13px] text-slate-500 leading-relaxed whitespace-pre-wrap break-words">
+                {thinking}
+                {isStreaming && !hasContent && (
+                  <span className="inline-block w-0.5 h-3.5 bg-chalk-accent/50 animate-pulse ml-0.5 align-middle" />
+                )}
+              </p>
+            </div>
+          </div>
         )}
 
         {hasContent && (
@@ -320,71 +265,10 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
           <p className="text-sm text-slate-500 italic">No response generated.</p>
         )}
 
-        {/* Message length bar */}
-        {hasContent && !isStreaming && maxContentLength && maxContentLength > 0 && (
-          <div className="h-[2px] rounded-full bg-white/[0.03] mt-1 overflow-hidden">
-            <div className="h-full rounded-full bg-chalk-accent/20" style={{ width: `${Math.min(100, (content.length / maxContentLength) * 100)}%` }} />
-          </div>
-        )}
-
-        {/* Copy button + reactions + confidence — appears on hover */}
+        {/* Copy button — appears on hover */}
         {hasContent && !isStreaming && (
           <div className="mt-1 flex items-center">
             <CopyButton text={content} />
-            {onTogglePin && (
-              <button
-                onClick={onTogglePin}
-                className={`opacity-0 group-hover:opacity-100 transition-all p-1 rounded-md ${pinned ? 'text-amber-400 opacity-100' : 'text-slate-600 hover:text-amber-400'}`}
-                title={pinned ? 'Unpin message' : 'Pin message'}
-                aria-label={pinned ? 'Unpin' : 'Pin'}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-                  <path d="M10.97 2.22a.75.75 0 0 1 1.06 0l1.75 1.75a.75.75 0 0 1-.177 1.2l-2.032.904-.71.71 1.428 1.428a.75.75 0 0 1-1.06 1.06L9.8 7.844l-3.09 3.091a.75.75 0 0 1-1.06-1.06l3.09-3.091-1.428-1.428a.75.75 0 0 1 1.06-1.06l1.427 1.427.711-.71.904-2.032a.75.75 0 0 1 .177-.511l.398-.45Z" />
-                  <path d="M3.28 12.72a.75.75 0 0 1 0-1.06l2-2a.75.75 0 1 1 1.06 1.06l-2 2a.75.75 0 0 1-1.06 0Z" />
-                </svg>
-              </button>
-            )}
-            <ReactionButtons messageId={videoId ? `${videoId}-${content.slice(0, 20).replace(/\s/g, '')}` : undefined} />
-            {/* Response time */}
-            {responseDuration && responseDuration > 0 && (
-              <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] text-slate-600 tabular-nums ml-1" title={`Response took ${(responseDuration / 1000).toFixed(1)}s`}>
-                {responseDuration < 1000 ? `${responseDuration}ms` : `${(responseDuration / 1000).toFixed(1)}s`}
-              </span>
-            )}
-            {/* Word count */}
-            {hasContent && !isStreaming && (
-              <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] text-slate-700 ml-1">
-                {content.split(/\s+/).filter(Boolean).length}w
-              </span>
-            )}
-            {/* Message relative time */}
-            {messageId && (() => {
-              const ts = parseInt(messageId, 10);
-              if (!ts || isNaN(ts)) return null;
-              const ago = Date.now() - ts;
-              const mins = Math.floor(ago / 60000);
-              if (mins < 1) return null;
-              const label = mins < 60 ? `${mins}m ago` : `${Math.floor(mins / 60)}h ago`;
-              const exactTime = new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              return <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] text-slate-700 ml-1 cursor-pointer hover:text-slate-500" title={`Sent at ${exactTime} — click to copy`} onClick={() => navigator.clipboard.writeText(exactTime)}>{label}</span>;
-            })()}
-            {/* AI Confidence indicator */}
-            {(() => {
-              const tsMatches = content.match(/\[(\d{1,2}:\d{2})\]/g);
-              const tsCount = tsMatches ? tsMatches.length : 0;
-              const len = content.length;
-              // High confidence: multiple timestamps cited; Medium: some content; Low: very short/no timestamps
-              const confidence = tsCount >= 3 ? 'high' : tsCount >= 1 ? 'medium' : len > 100 ? 'medium' : 'low';
-              const labels = { high: 'Grounded', medium: 'Contextual', low: 'General' };
-              const colors = { high: 'text-emerald-500', medium: 'text-amber-500', low: 'text-slate-600' };
-              const dots = { high: 'bg-emerald-500', medium: 'bg-amber-500', low: 'bg-slate-600' };
-              return (
-                <span className={`opacity-0 group-hover:opacity-100 transition-opacity ml-auto flex items-center gap-1 text-[9px] ${colors[confidence]}`} title={`${labels[confidence]}: ${tsCount} timestamp${tsCount !== 1 ? 's' : ''} cited`}>
-                  <span className={`w-1 h-1 rounded-full ${dots[confidence]}`} />
-                  {labels[confidence]}
-                </span>
-              );
-            })()}
           </div>
         )}
       </div>

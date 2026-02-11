@@ -59,15 +59,33 @@ const TEMPLATES: SuggestionTemplate[] = [
 ];
 
 /**
+ * Simple seeded PRNG for deterministic selection given the same seed.
+ */
+function seededRandom(seed: number): () => number {
+  let s = seed | 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) | 0;
+    return (s >>> 0) / 0x100000000;
+  };
+}
+
+/**
  * Pick N diverse suggestions from the template pool.
  * Guarantees at most one per category, resolves timestamp functions.
+ *
+ * Uses a quantized timestamp (30s buckets) so suggestions only change
+ * every ~30 seconds, and a seeded PRNG so the same bucket always
+ * produces the same selection.
  */
 export function pickSuggestions(
   currentTime: number,
   hasTranscript: boolean,
   count: number = 3,
 ): string[] {
-  const ts = `[${formatTimestamp(currentTime)}]`;
+  // Quantize to 30-second buckets so suggestions don't flicker every second
+  const bucket = Math.floor(currentTime / 30) * 30;
+  const ts = `[${formatTimestamp(bucket)}]`;
+  const rng = seededRandom(bucket);
 
   const eligible = TEMPLATES.filter((s) => {
     if (s.needsTranscript && !hasTranscript) return false;
@@ -75,7 +93,7 @@ export function pickSuggestions(
     return true;
   });
 
-  // Pick one from each category, shuffled
+  // Pick one from each category, deterministically shuffled
   const byCategory = new Map<string, SuggestionTemplate[]>();
   for (const s of eligible) {
     const list = byCategory.get(s.category) || [];
@@ -84,12 +102,12 @@ export function pickSuggestions(
   }
 
   const picked: string[] = [];
-  const categories = [...byCategory.keys()].sort(() => Math.random() - 0.5);
+  const categories = [...byCategory.keys()].sort(() => rng() - 0.5);
 
   for (const cat of categories) {
     if (picked.length >= count) break;
     const pool = byCategory.get(cat)!;
-    const item = pool[Math.floor(Math.random() * pool.length)];
+    const item = pool[Math.floor(rng() * pool.length)];
     const resolved = typeof item.text === 'function' ? item.text(ts) : item.text;
     picked.push(resolved);
   }

@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['youtube-dl-exec', '@deepgram/sdk'],
+  serverExternalPackages: ['youtube-dl-exec'],
 };
 
 export default nextConfig;

@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --chalk-bg: #0f172a;
-  --chalk-surface: #1e293b;
-  --chalk-border: #334155;
+  --chalk-bg: #000000;
+  --chalk-surface: #111111;
+  --chalk-border: #222222;
   --chalk-text: #f1f5f9;
   --chalk-accent: #3b82f6;
 }
@@ -38,12 +38,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #222222;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #333333;
 }
 
 /* Typing indicator animation */

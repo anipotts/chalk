@@ -1,26 +1,21 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { formatTimestamp, type TranscriptSegment } from '@/lib/video-utils';
-import { loadVideoNotes, saveVideoNotes } from '@/lib/video-sessions';
-import type { TranscriptStatus, TranscriptMethod } from '@/hooks/useTranscriptStream';
+import { formatTimestamp, type TranscriptSegment, type TranscriptSource } from '@/lib/video-utils';
+import type { TranscriptStatus } from '@/hooks/useTranscriptStream';
 
 interface Chapter {
   offset: number;
   label: string;
 }
 
-/**
- * Auto-generate chapter markers from transcript segments.
- * Groups segments into ~2-minute chunks and uses the first meaningful words as the label.
- */
 function generateChapters(segments: TranscriptSegment[]): Chapter[] {
   if (segments.length < 10) return [];
 
   const totalDuration = segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0);
-  if (totalDuration < 120) return []; // Skip for very short videos
+  if (totalDuration < 120) return [];
 
-  const chapterInterval = Math.max(120, Math.min(300, totalDuration / 8)); // 2-5 min, ~8 chapters
+  const chapterInterval = Math.max(120, Math.min(300, totalDuration / 8));
   const chapters: Chapter[] = [];
   let nextChapterTime = 0;
 
@@ -28,9 +23,7 @@ function generateChapters(segments: TranscriptSegment[]): Chapter[] {
     if (seg.offset >= nextChapterTime) {
       const text = seg.text.trim();
       if (text.length > 3) {
-        // Take first ~40 chars, break at word boundary
         let label = text.length > 40 ? text.slice(0, 40).replace(/\s\S*$/, '') + '...' : text;
-        // Capitalize first letter
         label = label.charAt(0).toUpperCase() + label.slice(1);
         chapters.push({ offset: seg.offset, label });
         nextChapterTime = seg.offset + chapterInterval;
@@ -41,55 +34,21 @@ function generateChapters(segments: TranscriptSegment[]): Chapter[] {
   return chapters;
 }
 
-/**
- * Simple language detection from transcript text.
- * Uses common word frequency to detect the top few languages.
- */
-function detectLanguage(segments: TranscriptSegment[]): string {
-  if (segments.length === 0) return '';
-  // Sample first ~20 segments
-  const sample = segments.slice(0, 20).map((s) => s.text.toLowerCase()).join(' ');
-  const words = sample.split(/\s+/);
-  if (words.length < 5) return '';
-
-  const patterns: Record<string, string[]> = {
-    EN: ['the', 'and', 'is', 'to', 'of', 'that', 'it', 'in', 'for', 'you', 'this', 'with', 'are', 'was', 'have'],
-    ES: ['de', 'que', 'en', 'es', 'el', 'la', 'los', 'por', 'con', 'una', 'del', 'las', 'como', 'para', 'pero'],
-    FR: ['de', 'le', 'la', 'les', 'et', 'en', 'un', 'une', 'est', 'que', 'des', 'pas', 'dans', 'ce', 'pour'],
-    DE: ['der', 'die', 'und', 'den', 'das', 'ist', 'ein', 'eine', 'nicht', 'ich', 'auf', 'auch', 'mit', 'sich', 'von'],
-    PT: ['de', 'que', 'em', 'um', 'uma', 'para', 'com', 'por', 'mais', 'como', 'mas', 'foi', 'tem', 'sua', 'das'],
-    JA: ['の', 'に', 'は', 'を', 'た', 'が', 'で', 'て', 'と', 'し', 'れ', 'さ', 'ある', 'いる', 'する'],
-    KO: ['의', '이', '는', '를', '에', '한', '는', '로', '과', '도', '다', '에서', '것', '합니다'],
-    ZH: ['的', '了', '在', '是', '我', '不', '人', '有', '他', '这', '中', '大', '来', '上', '个'],
-  };
-
-  let bestLang = '';
-  let bestScore = 0;
-  for (const [lang, keywords] of Object.entries(patterns)) {
-    const score = keywords.filter((kw) => sample.includes(kw)).length;
-    if (score > bestScore) { bestScore = score; bestLang = lang; }
-  }
-
-  return bestScore >= 3 ? bestLang : '';
-}
-
 interface TranscriptPanelProps {
   segments: TranscriptSegment[];
   currentTime: number;
   onSeek: (seconds: number) => void;
   status: TranscriptStatus;
   statusMessage?: string;
-  method?: TranscriptMethod;
+  source?: TranscriptSource | null;
   progress?: number;
   error?: string;
-  /** 'sidebar' = desktop sidebar (h-full, border-l), 'inline' = mobile below video */
-  variant?: 'sidebar' | 'inline';
+  variant?: 'sidebar' | 'inline' | 'mobile';
   onClose?: () => void;
   onRetry?: () => void;
   onAskAbout?: (timestamp: number, text: string) => void;
   videoId?: string;
   videoTitle?: string;
-  onSearchMatchesChange?: (offsets: number[]) => void;
 }
 
 export function TranscriptPanel({
@@ -98,2202 +57,244 @@ export function TranscriptPanel({
   onSeek,
   status,
   statusMessage,
-  method,
+  source,
   progress,
   error,
   variant = 'sidebar',
   onClose,
-  onRetry,
   onAskAbout,
-  videoId,
-  videoTitle,
-  onSearchMatchesChange,
 }: TranscriptPanelProps) {
   const [search, setSearch] = useState('');
-  const [searchMatchIndex, setSearchMatchIndex] = useState(0);
-  const [searchHistory, setSearchHistory] = useState<string[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try { return JSON.parse(localStorage.getItem('chalk-transcript-search-history') || '[]'); } catch { return []; }
-  });
-  const [showSearchHistory, setShowSearchHistory] = useState(false);
   const [userScrolled, setUserScrolled] = useState(false);
-  const [followAlong, setFollowAlong] = useState(false);
-  const [viewMode, setViewMode] = useState<'transcript' | 'chapters' | 'notes' | 'cloud'>('transcript');
-  const [starred, setStarred] = useState<Set<number>>(new Set());
-  const [showStarredOnly, setShowStarredOnly] = useState(false);
-  const [paragraphMode, setParagraphMode] = useState(false);
-  const [showLineNumbers, setShowLineNumbers] = useState(false);
-  const [fontSize, setFontSize] = useState<'sm' | 'md' | 'lg'>(() => {
-    if (typeof window === 'undefined') return 'sm';
-    return (localStorage.getItem('chalk-transcript-font') as 'sm' | 'md' | 'lg') || 'sm';
-  });
-  const fontSizeClass = fontSize === 'lg' ? 'text-sm' : fontSize === 'md' ? 'text-xs' : 'text-[11px]';
-  const [highlightColor, setHighlightColor] = useState<'blue' | 'green' | 'purple'>('blue');
-  const [questionPulse, setQuestionPulse] = useState(false);
-  const lastQuestionOffset = useRef<number>(-1);
-  const hlActive = highlightColor === 'blue' ? 'bg-blue-500/10 border-l-blue-400' : highlightColor === 'green' ? 'bg-emerald-500/10 border-l-emerald-400' : 'bg-purple-500/10 border-l-purple-400';
-  const hlMatch = highlightColor === 'blue' ? 'bg-blue-500/20 border-l-blue-400 ring-1 ring-blue-400/30' : highlightColor === 'green' ? 'bg-emerald-500/20 border-l-emerald-400 ring-1 ring-emerald-400/30' : 'bg-purple-500/20 border-l-purple-400 ring-1 ring-purple-400/30';
-  const [compactMode, setCompactMode] = useState(false);
-  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; offset: number; text: string } | null>(null);
-  const [selectRange, setSelectRange] = useState<{ start: number; end: number } | null>(null);
-  const lastClickedIdx = useRef<number>(-1);
-  const recentActiveOffsets = useRef<Map<number, number>>(new Map()); // offset -> timestamp
-  const [speakerNames, setSpeakerNames] = useState<Record<string, string>>(() => {
-    if (typeof window === 'undefined' || !videoId) return {};
-    try { return JSON.parse(localStorage.getItem(`chalk-speakers-${videoId}`) || '{}'); } catch { return {}; }
-  });
-  const [editingSpeaker, setEditingSpeaker] = useState<string | null>(null);
-
-  // Dismiss context menu on click away
-  useEffect(() => {
-    if (!ctxMenu) return;
-    const dismiss = () => setCtxMenu(null);
-    window.addEventListener('click', dismiss);
-    window.addEventListener('scroll', dismiss, true);
-    return () => { window.removeEventListener('click', dismiss); window.removeEventListener('scroll', dismiss, true); };
-  }, [ctxMenu]);
-
-  // Load starred segments from localStorage
-  useEffect(() => {
-    if (!videoId) return;
-    try {
-      const saved = JSON.parse(localStorage.getItem(`chalk-stars-${videoId}`) || '[]');
-      if (Array.isArray(saved)) setStarred(new Set(saved));
-    } catch { /* ignore */ }
-  }, [videoId]);
-
-  const toggleStar = useCallback((offset: number) => {
-    setStarred((prev) => {
-      const next = new Set(prev);
-      if (next.has(offset)) next.delete(offset);
-      else next.add(offset);
-      if (videoId) localStorage.setItem(`chalk-stars-${videoId}`, JSON.stringify([...next]));
-      return next;
-    });
-  }, [videoId]);
-  // Per-segment bookmark notes
-  const [segNotes, setSegNotes] = useState<Record<number, string>>(() => {
-    if (!videoId || typeof window === 'undefined') return {};
-    try { return JSON.parse(localStorage.getItem(`chalk-seg-notes-${videoId}`) || '{}'); } catch { return {}; }
-  });
-  const [editingSegNote, setEditingSegNote] = useState<number | null>(null);
-  const saveSegNote = useCallback((offset: number, note: string) => {
-    setSegNotes((prev) => {
-      const next = { ...prev };
-      if (note.trim()) next[offset] = note.trim().slice(0, 50);
-      else delete next[offset];
-      if (videoId) localStorage.setItem(`chalk-seg-notes-${videoId}`, JSON.stringify(next));
-      return next;
-    });
-    setEditingSegNote(null);
-  }, [videoId]);
-  const [notes, setNotes] = useState('');
-  const [notesSaving, setNotesSaving] = useState(false);
-  const notesSaveTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef<HTMLDivElement>(null);
-  const matchRefs = useRef<Map<number, HTMLDivElement>>(new Map());
-  const scrollTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const [selCopied, setSelCopied] = useState(false);
-  const playedSegments = useRef<Set<number>>(new Set());
-  const seekCounts = useRef<Map<number, number>>(new Map());
-  const sharedSegments = useRef<Set<number>>(new Set());
+  const searchRef = useRef<HTMLInputElement>(null);
 
-  // Auto-generate chapters from segments
   const chapters = useMemo(() => generateChapters(segments), [segments]);
 
-  // Language detection
-  const lang = useMemo(() => detectLanguage(segments), [segments]);
-
-  // Word cloud data
-  const wordCloud = useMemo(() => {
-    if (segments.length === 0) return [];
-    const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'it', 'that', 'this', 'was', 'are', 'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'can', 'shall', 'not', 'no', 'so', 'if', 'then', 'than', 'as', 'from', 'up', 'out', 'about', 'into', 'over', 'after', 'before', 'between', 'under', 'again', 'there', 'here', 'when', 'where', 'why', 'how', 'all', 'each', 'every', 'both', 'few', 'more', 'most', 'other', 'some', 'such', 'only', 'own', 'same', 'too', 'very', 'just', 'because', 'through', 'during', 'also', 'its', 'they', 'them', 'their', 'we', 'our', 'you', 'your', 'he', 'she', 'him', 'her', 'his', 'my', 'me', 'i', 'what', 'which', 'who', 'whom', 'these', 'those', 'am', 'been', 'being', 'were', 'going', 'get', 'got', 'like', 'know', 'think', 'see', 'say', 'said', 'one', 'two', 'well', 'way', 'use', 'make', 'go', 'come', 'take', 'thing', 'things', 'kind', 'really', 'actually', 'right', 'something', 'even', 'much', 'still']);
-    const freq = new Map<string, number>();
-    for (const seg of segments) {
-      const words = seg.text.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(Boolean);
-      for (const w of words) {
-        if (w.length < 3 || stopWords.has(w)) continue;
-        freq.set(w, (freq.get(w) || 0) + 1);
-      }
+  // Find active segment index
+  const activeIndex = useMemo(() => {
+    if (segments.length === 0) return -1;
+    for (let i = segments.length - 1; i >= 0; i--) {
+      if (currentTime >= segments[i].offset) return i;
     }
-    return [...freq.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 35)
-      .map(([word, count]) => ({ word, count }));
-  }, [segments]);
+    return 0;
+  }, [segments, currentTime]);
 
-  // Word timeline data: for each cloud word, compute an 8-bucket distribution across video
-  const wordTimelines = useMemo(() => {
-    if (wordCloud.length === 0 || segments.length === 0) return new Map<string, number[]>();
-    const totalDur = segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0);
-    if (totalDur <= 0) return new Map<string, number[]>();
-    const buckets = 8;
-    const bucketDur = totalDur / buckets;
-    const result = new Map<string, number[]>();
-    for (const { word } of wordCloud) {
-      const timeline = Array(buckets).fill(0) as number[];
-      for (const seg of segments) {
-        if (seg.text.toLowerCase().includes(word)) {
-          const b = Math.min(buckets - 1, Math.floor(seg.offset / bucketDur));
-          timeline[b]++;
-        }
-      }
-      result.set(word, timeline);
-    }
-    return result;
-  }, [wordCloud, segments]);
+  // Filter by search
+  const filteredSegments = useMemo(() => {
+    if (!search.trim()) return segments;
+    const q = search.toLowerCase();
+    return segments.filter((s) => s.text.toLowerCase().includes(q));
+  }, [segments, search]);
 
-  // Key terms for auto-highlighting (top 12 meaningful words) with metadata
-  const keyTerms = useMemo(() => {
-    if (wordCloud.length === 0) return new Set<string>();
-    return new Set(wordCloud.slice(0, 12).map((w) => w.word));
-  }, [wordCloud]);
+  // Get chapter offset set for dividers
+  const chapterOffsets = useMemo(() => new Set(chapters.map((c) => c.offset)), [chapters]);
 
-  // Word density sparkline data (10 buckets)
-  const sparklinePoints = useMemo(() => {
-    if (segments.length < 10) return '';
-    const buckets = 10;
-    const perBucket = Math.ceil(segments.length / buckets);
-    const densities: number[] = [];
-    for (let b = 0; b < buckets; b++) {
-      const slice = segments.slice(b * perBucket, (b + 1) * perBucket);
-      const words = slice.reduce((acc, s) => acc + s.text.split(/\s+/).filter(Boolean).length, 0);
-      densities.push(words / Math.max(1, slice.length));
-    }
-    const max = Math.max(...densities, 1);
-    const h = 14;
-    const w = 50;
-    return densities.map((d, i) => `${(i / (buckets - 1)) * w},${h - (d / max) * h}`).join(' ');
-  }, [segments]);
+  // Find chapter label for offset
+  const getChapterLabel = useCallback((offset: number) => {
+    return chapters.find((c) => c.offset === offset)?.label;
+  }, [chapters]);
 
-  // Term metadata: count + first appearance timestamp
-  const termMeta = useMemo(() => {
-    const meta = new Map<string, { count: number; firstAt: number }>();
-    for (const { word, count } of wordCloud.slice(0, 12)) {
-      const seg = segments.find((s) => s.text.toLowerCase().includes(word));
-      meta.set(word, { count, firstAt: seg?.offset || 0 });
-    }
-    return meta;
-  }, [wordCloud, segments]);
-
-  // Speaker change detection (heuristic: gaps > 2s or question→answer patterns)
-  const speakerChanges = useMemo(() => {
-    if (segments.length < 5) return new Set<number>();
-    const changes = new Set<number>();
-    for (let i = 1; i < segments.length; i++) {
-      const prev = segments[i - 1];
-      const curr = segments[i];
-      const gap = curr.offset - (prev.offset + (prev.duration || 0));
-      const prevEndsQuestion = prev.text.trim().endsWith('?');
-      const prevIsShort = prev.text.split(/\s+/).length < 6;
-      // Detect speaker change on significant pause or question→answer transition
-      if (gap > 2 || (prevEndsQuestion && !curr.text.trim().endsWith('?')) || (prevIsShort && gap > 1.2)) {
-        changes.add(i);
-      }
-    }
-    return changes;
-  }, [segments]);
-
-  // Transcript stats
-  const stats = useMemo(() => {
-    if (segments.length === 0) return null;
-    const totalWords = segments.reduce((acc, s) => acc + s.text.split(/\s+/).filter(Boolean).length, 0);
-    const readMinutes = Math.max(1, Math.round(totalWords / 200));
-    const lastSeg = segments[segments.length - 1];
-    const totalDuration = lastSeg.offset + (lastSeg.duration || 0);
-    const speakingWPM = totalDuration > 0 ? Math.round(totalWords / (totalDuration / 60)) : 0;
-    const avgSegDuration = segments.reduce((a, s) => a + (s.duration || 0), 0) / segments.length;
-    const allWords = segments.flatMap((s) => s.text.toLowerCase().split(/\s+/).filter((w) => w.length > 2));
-    const uniqueWords = new Set(allWords).size;
-    const totalSentences = segments.reduce((c, s) => c + (s.text.match(/[.!?]+/g) || []).length, 0);
-    const avgSentenceLength = totalSentences > 0 ? Math.round(totalWords / totalSentences) : 0;
-    return { totalWords, readMinutes, speakingWPM, avgSegDuration, uniqueWords, avgSentenceLength };
-  }, [segments]);
-
-  // Per-segment word density (normalized 0-1 relative to max)
-  const segDensities = useMemo(() => {
-    if (segments.length < 5) return new Map<number, number>();
-    const wordCounts = segments.map((s) => s.text.split(/\s+/).filter(Boolean).length);
-    const maxWords = Math.max(...wordCounts, 1);
-    const densities = new Map<number, number>();
-    for (let i = 0; i < segments.length; i++) {
-      densities.set(i, wordCounts[i] / maxWords);
-    }
-    return densities;
-  }, [segments]);
-
-  // Topic boundary detection: vocabulary overlap between windows of segments
-  const topicBoundaries = useMemo(() => {
-    if (segments.length < 20) return new Map<number, string>();
-    const windowSize = 5;
-    const boundaries = new Map<number, string>();
-    for (let i = windowSize; i < segments.length - windowSize; i++) {
-      const before = segments.slice(i - windowSize, i).map((s) => s.text.toLowerCase()).join(' ');
-      const after = segments.slice(i, i + windowSize).map((s) => s.text.toLowerCase()).join(' ');
-      const beforeWords = new Set(before.replace(/[^a-z\s]/g, '').split(/\s+/).filter((w) => w.length > 4));
-      const afterWords = new Set(after.replace(/[^a-z\s]/g, '').split(/\s+/).filter((w) => w.length > 4));
-      if (beforeWords.size < 3 || afterWords.size < 3) continue;
-      const overlap = [...beforeWords].filter((w) => afterWords.has(w)).length;
-      const similarity = overlap / Math.min(beforeWords.size, afterWords.size);
-      if (similarity < 0.15) {
-        // Low overlap = topic shift. Extract top keyword from upcoming window.
-        const freq = new Map<string, number>();
-        for (const w of afterWords) freq.set(w, (freq.get(w) || 0) + 1);
-        const topWord = [...freq.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || '';
-        boundaries.set(i, topWord);
-        // Skip ahead to avoid multiple boundaries in a row
-        i += windowSize;
-      }
-    }
-    return boundaries;
-  }, [segments]);
-
-  // Load notes from Supabase
+  // Auto-scroll to active segment
   useEffect(() => {
-    if (videoId) {
-      loadVideoNotes(videoId).then(setNotes);
-    }
-  }, [videoId]);
+    if (userScrolled || !activeRef.current || !scrollRef.current) return;
+    activeRef.current.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [activeIndex, userScrolled]);
 
-  // Auto-save notes with debounce
-  const handleNotesChange = useCallback((value: string) => {
-    setNotes(value);
-    if (notesSaveTimeout.current) clearTimeout(notesSaveTimeout.current);
-    if (!videoId) return;
-    setNotesSaving(true);
-    notesSaveTimeout.current = setTimeout(() => {
-      saveVideoNotes(videoId, value, videoTitle).then(() => setNotesSaving(false));
-    }, 1000);
-  }, [videoId, videoTitle]);
-
-  // Insert timestamp at cursor
-  const notesRef = useRef<HTMLTextAreaElement>(null);
-  const insertTimestamp = useCallback(() => {
-    if (!notesRef.current) return;
-    const ts = formatTimestamp(currentTime);
-    const { selectionStart, selectionEnd } = notesRef.current;
-    const before = notes.slice(0, selectionStart);
-    const after = notes.slice(selectionEnd);
-    const newVal = `${before}[${ts}] ${after}`;
-    handleNotesChange(newVal);
-    setTimeout(() => {
-      if (notesRef.current) {
-        const pos = selectionStart + ts.length + 3;
-        notesRef.current.selectionStart = pos;
-        notesRef.current.selectionEnd = pos;
-        notesRef.current.focus();
-      }
-    }, 0);
-  }, [currentTime, notes, handleNotesChange]);
-
-  // Text selection actions
-  const [selectionToolbar, setSelectionToolbar] = useState<{ text: string; x: number; y: number; segOffset?: number } | null>(null);
-
-  const handleMouseUp = useCallback(() => {
-    const sel = window.getSelection();
-    const text = sel?.toString().trim();
-    if (text && text.length > 5 && scrollRef.current) {
-      const range = sel!.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      const containerRect = scrollRef.current.getBoundingClientRect();
-      const segEl = range.startContainer.parentElement?.closest('[data-seg-offset]') as HTMLElement | null;
-      const segOffset = segEl ? parseFloat(segEl.dataset.segOffset || '0') : undefined;
-      setSelectionToolbar({
-        text,
-        x: rect.left + rect.width / 2 - containerRect.left,
-        y: rect.top - containerRect.top - 8,
-        segOffset,
-      });
-      setSelCopied(false);
-    } else {
-      setSelectionToolbar(null);
-    }
-  }, []);
-
-  // Clear selection toolbar when clicking elsewhere
+  // Reset user-scrolled flag after 5s of inactivity
   useEffect(() => {
-    function handleDown() {
-      setTimeout(() => {
-        const sel = window.getSelection();
-        if (!sel?.toString().trim()) setSelectionToolbar(null);
-      }, 100);
-    }
-    document.addEventListener('mousedown', handleDown);
-    return () => document.removeEventListener('mousedown', handleDown);
-  }, []);
+    if (!userScrolled) return;
+    const timeout = setTimeout(() => setUserScrolled(false), 5000);
+    return () => clearTimeout(timeout);
+  }, [userScrolled]);
 
-  const isInline = variant === 'inline';
-  const isLoading = status === 'connecting' || status === 'extracting' || status === 'downloading';
-  const isTranscribing = status === 'transcribing';
-  const isStreaming = status === 'streaming';
-  const isComplete = status === 'complete';
-  const isSTT = method === 'deepgram' || method === 'whisper';
-
-  // Wrapper class differs between sidebar and inline
-  const wrapperClass = isInline
-    ? 'flex flex-col h-full bg-chalk-surface/20 border-t border-chalk-border/30'
-    : 'flex flex-col h-full bg-chalk-surface/30 border-l border-chalk-border/30';
-
-  // Find the active segment index
-  const activeIndex = segments.findIndex((seg, i) => {
-    const next = segments[i + 1];
-    return currentTime >= seg.offset && (!next || currentTime < next.offset);
-  });
-  if (activeIndex >= 0) playedSegments.current.add(activeIndex);
-
-  // Auto-scroll to active segment (unless user has manually scrolled, or followAlong overrides)
-  useEffect(() => {
-    if ((followAlong || !userScrolled) && activeRef.current && scrollRef.current) {
-      activeRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, [activeIndex, userScrolled, followAlong]);
-
-  // Detect question segments becoming active in followAlong mode
-  useEffect(() => {
-    if (!followAlong || activeIndex < 0 || activeIndex >= segments.length) return;
-    const seg = segments[activeIndex];
-    if (seg.text.trim().endsWith('?') && lastQuestionOffset.current !== seg.offset) {
-      lastQuestionOffset.current = seg.offset;
-      setQuestionPulse(true);
-      const t = setTimeout(() => setQuestionPulse(false), 3000);
-      return () => clearTimeout(t);
-    }
-  }, [activeIndex, followAlong, segments]);
-
-  // Restore scroll position from localStorage on mount
-  useEffect(() => {
-    if (!videoId || !scrollRef.current) return;
-    try {
-      const saved = localStorage.getItem(`chalk-transcript-scroll-${videoId}`);
-      if (saved) scrollRef.current.scrollTop = parseFloat(saved);
-    } catch { /* ignore */ }
-  }, [videoId]);
-
-  // Seek to timestamp from URL hash on mount (e.g., #t=120)
-  const [hashFlash, setHashFlash] = useState<number | null>(null);
-  useEffect(() => {
-    try {
-      const hash = window.location.hash;
-      const match = hash.match(/^#t=(\d+)/);
-      if (match && segments.length > 0) {
-        const t = parseInt(match[1], 10);
-        onSeek(t);
-        setHashFlash(t);
-        const timer = setTimeout(() => setHashFlash(null), 2000);
-        return () => clearTimeout(timer);
-      }
-    } catch { /* ignore */ }
-  }, [segments.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Detect manual scroll → pause auto-scroll for 5 seconds + save position
-  const scrollSaveTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const handleScroll = useCallback(() => {
     setUserScrolled(true);
-    if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
-    scrollTimeout.current = setTimeout(() => setUserScrolled(false), 5000);
-    // Debounced save of scroll position
-    if (videoId && scrollRef.current) {
-      if (scrollSaveTimeout.current) clearTimeout(scrollSaveTimeout.current);
-      scrollSaveTimeout.current = setTimeout(() => {
-        try { localStorage.setItem(`chalk-transcript-scroll-${videoId}`, String(scrollRef.current?.scrollTop || 0)); } catch { /* ignore */ }
-      }, 500);
-    }
-  }, [videoId]);
+  }, []);
 
-  // Filter segments by search and starred filter (memoized)
-  const filtered = useMemo(() => {
-    let result = segments;
-    if (showStarredOnly) {
-      result = result.filter((s) => starred.has(s.offset));
-    }
-    if (search.trim()) {
-      result = result.filter((s) => s.text.toLowerCase().includes(search.toLowerCase()));
-    }
-    return result;
-  }, [search, segments, showStarredOnly, starred]);
-
-  const matchCount = search.trim() ? filtered.length : 0;
-
-  // Report search match offsets to parent (for timeline markers)
-  useEffect(() => {
-    if (onSearchMatchesChange) {
-      onSearchMatchesChange(search.trim() ? filtered.map((s) => s.offset) : []);
-    }
-  }, [filtered, search, onSearchMatchesChange]);
-
-  // Reset match index when search changes
-  useEffect(() => {
-    setSearchMatchIndex(0);
-    matchRefs.current.clear();
-  }, [search]);
-
-  // Scroll to current match
-  useEffect(() => {
-    if (matchCount > 0 && matchRefs.current.has(searchMatchIndex)) {
-      matchRefs.current.get(searchMatchIndex)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, [searchMatchIndex, matchCount]);
-
-  const goToNextMatch = useCallback(() => {
-    setSearchMatchIndex((prev) => (prev + 1) % matchCount);
-  }, [matchCount]);
-
-  const goToPrevMatch = useCallback(() => {
-    setSearchMatchIndex((prev) => (prev - 1 + matchCount) % matchCount);
-  }, [matchCount]);
-
-  // Keyboard shortcut: / to focus search
+  // Keyboard: / to focus search
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-      if (e.key === '/' && !e.metaKey && !e.ctrlKey) {
+      if (e.key === '/' && !(e.target as HTMLElement)?.closest('input, textarea')) {
         e.preventDefault();
-        setViewMode('transcript');
-        searchInputRef.current?.focus();
+        searchRef.current?.focus();
       }
     }
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
   }, []);
 
-  // Loading state (before any segments arrive)
-  if ((isLoading || isTranscribing) && segments.length === 0) {
-    const label = isTranscribing
-      ? (statusMessage || 'Transcribing')
-      : status === 'connecting' ? 'Connecting' : (statusMessage || 'Fetching captions');
-    return (
-      <div className={wrapperClass}>
-        <div className="p-4 border-b border-chalk-border/30">
-          <h3 className="text-sm font-medium text-chalk-text">Transcript</h3>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3 px-6 w-full max-w-[200px]">
-            <span className="text-slate-400 text-sm text-center animate-pulse">
-              {label}<span className="inline-flex w-[1.5ch]"><PulsingEllipsis /></span>
-            </span>
-            {isTranscribing && typeof progress === 'number' && progress > 0 && (
-              <div className="w-full bg-chalk-border/30 rounded-full h-1.5 overflow-hidden">
-                <div
-                  className="h-full bg-chalk-accent/60 rounded-full transition-all duration-300"
-                  style={{ width: `${Math.min(progress, 100)}%` }}
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (status === 'error' && segments.length === 0) {
-    return (
-      <div className={wrapperClass}>
-        <div className="p-4 border-b border-chalk-border/30">
-          <h3 className="text-sm font-medium text-chalk-text">Transcript</h3>
-        </div>
-        <div className="flex-1 flex items-center justify-center p-4">
-          <div className="text-center space-y-3">
-            <p className="text-sm text-slate-400">{error || 'Failed to load transcript'}</p>
-            {onRetry && (
-              <button
-                onClick={onRetry}
-                className="px-3 py-1.5 rounded-lg text-xs bg-chalk-surface/60 border border-chalk-border/30 text-slate-300 hover:bg-chalk-surface hover:text-chalk-text transition-colors"
-              >
-                Try again
-              </button>
-            )}
-            <p className="text-[10px] text-slate-500">You can still use the chat — it will work without transcript context</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Reading position (currentTime / totalDuration)
-  const readingProgress = useMemo(() => {
-    if (segments.length === 0) return 0;
-    const last = segments[segments.length - 1];
-    const total = last.offset + (last.duration || 0);
-    return total > 0 ? Math.min(currentTime / total, 1) : 0;
-  }, [segments, currentTime]);
+  const isLoading = status === 'connecting' || status === 'extracting';
+  const isSidebar = variant === 'sidebar';
+  const isMobile = variant === 'mobile';
 
   return (
-    <div className={wrapperClass}>
-      {/* Reading position indicator */}
-      {segments.length > 0 && (
-        <div className="relative">
-          <div className="h-0.5 bg-chalk-border/10 w-full">
-            <div
-              className="h-full bg-chalk-accent/40 transition-[width] duration-500 ease-linear"
-              style={{ width: `${readingProgress * 100}%` }}
-            />
+    <div className={`flex flex-col ${isSidebar || isMobile ? 'h-full' : 'max-h-[400px]'} bg-chalk-bg`}>
+      {/* Header — hidden on mobile */}
+      {!isMobile && (
+        <div className="flex-none flex items-center justify-between px-4 py-2.5 border-b border-chalk-border/30">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-chalk-text">Transcript</span>
+            {source && (
+              <span className={`text-[9px] px-1.5 py-0.5 rounded-full border uppercase tracking-wider ${
+                source === 'groq-whisper' || source === 'local-whisper'
+                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+                  : 'bg-chalk-surface/60 border-chalk-border/30 text-slate-500'
+              }`}>
+                {source}
+              </span>
+            )}
           </div>
-          {currentTime > 0 && (() => {
-            const totalDur = segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0);
-            const remaining = Math.max(0, totalDur - currentTime);
-            if (remaining < 1) return null;
-            const m = Math.floor(remaining / 60);
-            const s = Math.round(remaining % 60);
-            return <span className="absolute right-1 -top-3.5 text-[8px] text-slate-600 tabular-nums">-{m}:{s.toString().padStart(2, '0')}</span>;
-          })()}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="w-6 h-6 rounded-md flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
+              title="Close transcript"
+              aria-label="Close transcript"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+                <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
+              </svg>
+            </button>
+          )}
         </div>
       )}
-      {/* Transcript density heatmap bar */}
-      {viewMode === 'transcript' && segments.length > 10 && (() => {
-        const totalDur = segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0);
-        if (totalDur <= 0) return null;
-        const bars = 40;
-        const barDur = totalDur / bars;
-        const data = Array.from({ length: bars }, (_, i) => {
-          const t0 = i * barDur;
-          const segs = segments.filter((s) => s.offset >= t0 && s.offset < t0 + barDur);
-          return segs.reduce((a, s) => a + s.text.split(/\s+/).filter(Boolean).length, 0);
-        });
-        const max = Math.max(...data, 1);
-        const curBar = Math.min(bars - 1, Math.floor(currentTime / barDur));
-        return (
-          <div className="flex h-1.5 w-full cursor-pointer" title="Transcript density — click to seek">
-            {data.map((d, i) => (
-              <div
-                key={i}
-                className={`flex-1 transition-colors ${i === curBar ? 'ring-1 ring-chalk-accent/60' : ''}`}
-                style={{ backgroundColor: `rgba(139,92,246,${0.1 + (d / max) * 0.5})` }}
-                onClick={() => onSeek(i * barDur)}
-              />
-            ))}
-          </div>
-        );
-      })()}
-      {/* Header + search */}
-      <div className="p-3 border-b border-chalk-border/30 space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setViewMode('transcript')}
-              className={`text-sm font-medium px-1.5 py-0.5 rounded transition-colors flex items-center gap-1 ${
-                viewMode === 'transcript' ? 'text-chalk-text' : 'text-slate-500 hover:text-slate-400'
-              }`}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M2 4.5A2.5 2.5 0 0 1 4.5 2h7A2.5 2.5 0 0 1 14 4.5v7a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 2 11.5v-7ZM4.5 5a.5.5 0 0 0 0 1h7a.5.5 0 0 0 0-1h-7ZM4 8.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5ZM4.5 10a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1h-4Z"/></svg>
-              Transcript
-              {segments.length > 0 && <span className="text-[8px] text-slate-600 tabular-nums">{segments.length}</span>}
-            </button>
-            {chapters.length > 0 && (
-              <button
-                onClick={() => setViewMode('chapters')}
-                className={`text-sm font-medium px-1.5 py-0.5 rounded transition-colors flex items-center gap-1 ${
-                  viewMode === 'chapters' ? 'text-chalk-text' : 'text-slate-500 hover:text-slate-400'
-                }`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M2.5 3.5A.5.5 0 0 1 3 3h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5ZM2.5 8A.5.5 0 0 1 3 7.5h10a.5.5 0 0 1 0 1H3A.5.5 0 0 1 2.5 8Zm0 4.5A.5.5 0 0 1 3 12h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5Z" clipRule="evenodd"/></svg>
-                Chapters
-                <span className="text-[8px] text-slate-600 tabular-nums">{chapters.length}</span>
-              </button>
-            )}
-            {videoId && (
-              <button
-                onClick={() => setViewMode('notes')}
-                className={`text-sm font-medium px-1.5 py-0.5 rounded transition-colors flex items-center gap-1 ${
-                  viewMode === 'notes' ? 'text-chalk-text' : 'text-slate-500 hover:text-slate-400'
-                }`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.262a1.75 1.75 0 0 0 0-2.474Z"/><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0 1 14 9v2.25A2.75 2.75 0 0 1 11.25 14h-6.5A2.75 2.75 0 0 1 2 11.25v-6.5A2.75 2.75 0 0 1 4.75 2H7a.75.75 0 0 1 0 1.5H4.75Z"/></svg>
-                Notes
-                {notes.trim() && <span className="w-1.5 h-1.5 rounded-full bg-chalk-accent/50" />}
-              </button>
-            )}
-            {segments.length > 20 && (
-              <button
-                onClick={() => setViewMode('cloud')}
-                className={`text-sm font-medium px-1.5 py-0.5 rounded transition-colors flex items-center gap-1 ${
-                  viewMode === 'cloud' ? 'text-chalk-text' : 'text-slate-500 hover:text-slate-400'
-                }`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M4 11.5a3.5 3.5 0 0 1-.146-6.993A5.002 5.002 0 0 1 13.5 6a3 3 0 0 1-.687 5.458.75.75 0 1 1-.626-1.364A1.5 1.5 0 0 0 12.5 7.5v-.246a.75.75 0 0 1 .688-.747A3.501 3.501 0 0 0 4 11.5Z"/></svg>
-                Cloud
-              </button>
-            )}
-            {currentTime > 0 && (
-              <span className="text-[10px] font-mono text-slate-600 tabular-nums">
-                {formatTimestamp(currentTime)}
-                {viewMode === 'transcript' && activeIndex >= 0 && <span className="text-slate-700"> {activeIndex + 1}/{segments.length}</span>}
-                {viewMode === 'chapters' && chapters.length > 0 && <span className="text-slate-700"> {chapters.length} ch</span>}
-              </span>
-            )}
-            {viewMode === 'transcript' && activeIndex >= 0 && activeIndex < segments.length && (
-              <span className="hidden sm:block text-[9px] text-slate-600 truncate max-w-[180px]" title={segments[activeIndex].text}>
-                {segments[activeIndex].text.length > 40 ? segments[activeIndex].text.slice(0, 40).trim() + '\u2026' : segments[activeIndex].text}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {viewMode === 'transcript' && segments.length > 10 && (
-              <button
-                onClick={() => setParagraphMode((v) => !v)}
-                className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors ${paragraphMode ? 'text-chalk-accent bg-chalk-accent/15' : 'text-slate-500 hover:text-slate-400'}`}
-                title={paragraphMode ? 'Switch to segment view' : 'Switch to paragraph view'}
-              >
-                {paragraphMode ? 'Segments' : 'Paragraphs'}
-              </button>
-            )}
-            {viewMode === 'transcript' && !paragraphMode && segments.length > 5 && (
-              <button
-                onClick={() => setShowLineNumbers((v) => !v)}
-                className={`px-1 py-0.5 rounded text-[10px] font-mono font-medium transition-colors ${showLineNumbers ? 'text-chalk-accent bg-chalk-accent/15' : 'text-slate-500 hover:text-slate-400'}`}
-                title={showLineNumbers ? 'Hide line numbers' : 'Show line numbers'}
-              >
-                #
-              </button>
-            )}
-            {viewMode === 'transcript' && (
-              <button
-                onClick={() => {
-                  const next = fontSize === 'sm' ? 'md' : fontSize === 'md' ? 'lg' : 'sm';
-                  setFontSize(next);
-                  localStorage.setItem('chalk-transcript-font', next);
-                }}
-                className="px-1 py-0.5 rounded text-[10px] font-medium text-slate-500 hover:text-slate-400 transition-colors"
-                title={`Font size: ${fontSize === 'sm' ? 'Small' : fontSize === 'md' ? 'Medium' : 'Large'}`}
-              >
-                A{fontSize === 'sm' ? '-' : fontSize === 'md' ? '' : '+'}
-              </button>
-            )}
-            {viewMode === 'transcript' && !paragraphMode && (
-              <button
-                onClick={() => setCompactMode((v) => !v)}
-                className={`px-1 py-0.5 rounded text-[10px] font-medium transition-colors ${compactMode ? 'text-chalk-accent bg-chalk-accent/15' : 'text-slate-500 hover:text-slate-400'}`}
-                title={compactMode ? 'Normal spacing' : 'Compact mode'}
-              >
-                {compactMode ? '|||' : '| |'}
-              </button>
-            )}
-            {viewMode === 'transcript' && (
-              <button
-                onClick={() => setHighlightColor((c) => c === 'blue' ? 'green' : c === 'green' ? 'purple' : 'blue')}
-                className={`w-3 h-3 rounded-full border transition-colors ${
-                  highlightColor === 'blue' ? 'bg-blue-400/60 border-blue-400/40' : highlightColor === 'green' ? 'bg-emerald-400/60 border-emerald-400/40' : 'bg-purple-400/60 border-purple-400/40'
-                }`}
-                title={`Highlight: ${highlightColor}`}
-              />
-            )}
-            {lang && isComplete && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-500/15 text-slate-400 border border-slate-500/20">
-                {lang}
-              </span>
-            )}
-            {isSTT && isComplete && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/15 text-amber-400 border border-amber-500/20">
-                AI Transcribed
-              </span>
-            )}
-            {method === 'captions' && isComplete && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
-                Captions
-              </span>
-            )}
-            {(isStreaming || isTranscribing) && (
-              <span className="text-[10px] text-chalk-accent animate-pulse">loading</span>
-            )}
-            {isComplete && segments.length > 0 && (
-              <button
-                onClick={() => {
-                  const header = videoTitle ? `# ${videoTitle}\n\n` : '# Video Transcript\n\n';
-                  const md = segments.map((s) => `[${formatTimestamp(s.offset)}] ${s.text}`).join('\n');
-                  const blob = new Blob([header + md], { type: 'text/markdown' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `transcript${videoId ? `-${videoId}` : ''}.md`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }}
-                className="p-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
-                aria-label="Export transcript"
-                title="Download transcript"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                  <path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h2.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 1 .439 1.061V12.5A1.5 1.5 0 0 1 8.5 14h-5A1.5 1.5 0 0 1 2 12.5v-9Zm6.5 3.75a.75.75 0 0 0-1.5 0v2.69l-.72-.72a.75.75 0 0 0-1.06 1.06l2 2a.75.75 0 0 0 1.06 0l2-2a.75.75 0 1 0-1.06-1.06l-.72.72V7.25Z" />
-                </svg>
-              </button>
-            )}
-            {isComplete && segments.length > 0 && (
-              <button
-                onClick={() => {
-                  const json = JSON.stringify(segments.map((s) => ({ offset: s.offset, duration: s.duration, text: s.text })), null, 2);
-                  const blob = new Blob([json], { type: 'application/json' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `transcript${videoId ? `-${videoId}` : ''}.json`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }}
-                className="p-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
-                aria-label="Export transcript as JSON"
-                title="Download as JSON"
-              >
-                <span className="text-[8px] font-mono font-bold">{'{}'}</span>
-              </button>
-            )}
-            {isComplete && segments.length > 0 && (
-              <button
-                onClick={() => {
-                  const text = segments.map((s) => `[${formatTimestamp(s.offset)}] ${s.text}`).join('\n');
-                  navigator.clipboard.writeText(text);
-                }}
-                className="p-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
-                aria-label="Copy all timestamps"
-                title="Copy timestamps to clipboard"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                  <path d="M5.5 3.5A1.5 1.5 0 0 1 7 2h2.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 1 .439 1.061V9.5A1.5 1.5 0 0 1 12 11V3.5A1.5 1.5 0 0 0 10.5 2H7a1.5 1.5 0 0 0-1.5 1.5Z" />
-                  <path d="M3.5 6A1.5 1.5 0 0 1 5 4.5h4.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 1 .439 1.061V12.5A1.5 1.5 0 0 1 12 14H5a1.5 1.5 0 0 1-1.5-1.5V6Z" />
-                </svg>
-              </button>
-            )}
-            {isInline && onClose && (
-              <button
-                onClick={onClose}
-                className="p-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
-                aria-label="Hide transcript"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
-                  <path fillRule="evenodd" d="M14.77 12.79a.75.75 0 0 1-1.06-.02L10 8.832 6.29 12.77a.75.75 0 1 1-1.08-1.04l4.25-4.5a.75.75 0 0 1 1.08 0l4.25 4.5a.75.75 0 0 1-.02 1.06Z" clipRule="evenodd" />
-                </svg>
-              </button>
-            )}
-          </div>
-        </div>
-        {/* Current chapter label when following along */}
-        {followAlong && chapters.length > 0 && (() => {
-          const cur = [...chapters].reverse().find((c) => currentTime >= c.offset);
-          if (!cur) return null;
-          return (
-            <p className="text-[10px] text-slate-500 truncate px-1" title={cur.label}>
-              {cur.label}
-            </p>
-          );
-        })()}
-        <div className="flex items-center gap-1.5 relative">
+
+      {/* Search — hidden on mobile */}
+      {!isMobile && (
+        <div className="flex-none px-3 py-2 border-b border-chalk-border/20">
           <input
-            ref={searchInputRef}
+            ref={searchRef}
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                setSearch('');
-                setShowSearchHistory(false);
-                searchInputRef.current?.blur();
-              } else if (e.key === 'Enter') {
-                setShowSearchHistory(false);
-                if (search.trim()) {
-                  const updated = [search.trim(), ...searchHistory.filter((h) => h !== search.trim())].slice(0, 5);
-                  setSearchHistory(updated);
-                  try { localStorage.setItem('chalk-transcript-search-history', JSON.stringify(updated)); } catch {}
-                }
-                if (matchCount > 0) {
-                  if (e.shiftKey) goToPrevMatch();
-                  else goToNextMatch();
-                }
-              }
-            }}
-            onFocus={() => { if (!search.trim() && searchHistory.length > 0) setShowSearchHistory(true); }}
-            onBlur={() => setTimeout(() => setShowSearchHistory(false), 150)}
-            placeholder="Search transcript (/)..."
-            className="flex-1 px-3 py-1.5 rounded-lg bg-chalk-bg/60 border border-chalk-border/30 text-xs text-chalk-text placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-chalk-accent/50"
+            placeholder="Search transcript... (/)"
+            className="w-full px-3 py-1.5 rounded-lg bg-chalk-surface/40 border border-chalk-border/20 text-xs text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-chalk-accent/40 transition-colors"
           />
-          {showSearchHistory && searchHistory.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg bg-chalk-surface border border-chalk-border/30 shadow-xl overflow-hidden">
-              {searchHistory.map((term) => (
-                <button key={term} type="button" onMouseDown={() => { setSearch(term); setShowSearchHistory(false); }} className="w-full px-3 py-1.5 text-left text-[11px] text-slate-400 hover:bg-white/[0.06] hover:text-slate-300 transition-colors truncate">{term}</button>
-              ))}
-            </div>
-          )}
-          {matchCount > 0 && (
-            <>
-              <span className="text-[10px] text-slate-500 shrink-0 tabular-nums">
-                {searchMatchIndex + 1}/{matchCount} match{matchCount !== 1 ? 'es' : ''}
-              </span>
-              <button
-                onClick={goToPrevMatch}
-                className="p-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
-                aria-label="Previous match"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-                  <path fillRule="evenodd" d="M11.78 9.78a.75.75 0 0 1-1.06 0L8 7.06 5.28 9.78a.75.75 0 0 1-1.06-1.06l3.25-3.25a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06Z" clipRule="evenodd" />
-                </svg>
-              </button>
-              <button
-                onClick={goToNextMatch}
-                className="p-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
-                aria-label="Next match"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-                  <path fillRule="evenodd" d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
-                </svg>
-              </button>
-            </>
-          )}
-          {search && !matchCount && (
-            <span className="text-[10px] text-slate-500 shrink-0">0 of {segments.length}</span>
-          )}
-          {starred.size > 0 && (
-            <>
-            <button
-              onClick={() => { setShowStarredOnly((v) => !v); setViewMode('transcript'); }}
-              className={`shrink-0 p-1 rounded-md transition-colors ${
-                showStarredOnly
-                  ? 'text-yellow-400 bg-yellow-500/15'
-                  : 'text-slate-500 hover:text-yellow-400 hover:bg-yellow-500/10'
-              }`}
-              aria-label={showStarredOnly ? 'Show all segments' : 'Show starred only'}
-              title={showStarredOnly ? 'Show all' : `Show ${starred.size} starred`}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-                <path fillRule="evenodd" d="M8 1.75a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 13.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 7.874a.75.75 0 0 1 .416-1.28l4.21-.611L7.327 2.17A.75.75 0 0 1 8 1.75Z" clipRule="evenodd" />
-              </svg>
-              <span className="text-[8px] tabular-nums">{starred.size}</span>
-            </button>
-            {starred.size > 1 && (() => {
-              const starredArr = [...starred].sort((a, b) => a - b);
-              const prevStar = starredArr.filter((i) => i < activeIndex).pop();
-              const nextStar = starredArr.find((i) => i > activeIndex);
-              return (
-                <span className="hidden sm:inline-flex items-center gap-0.5">
-                  <button onClick={() => prevStar !== undefined && onSeek(segments[prevStar].offset)} disabled={prevStar === undefined} className="p-0.5 rounded text-slate-600 hover:text-yellow-400 disabled:opacity-30 disabled:hover:text-slate-600 transition-colors" title="Previous starred" aria-label="Previous starred segment">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5"><path fillRule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /></svg>
-                  </button>
-                  <button onClick={() => nextStar !== undefined && onSeek(segments[nextStar].offset)} disabled={nextStar === undefined} className="p-0.5 rounded text-slate-600 hover:text-yellow-400 disabled:opacity-30 disabled:hover:text-slate-600 transition-colors" title="Next starred" aria-label="Next starred segment">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5"><path fillRule="evenodd" d="M6.22 4.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 0 1-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>
-                  </button>
-                </span>
-              );
-            })()}
-            </>
-          )}
-          <button
-            onClick={() => setFollowAlong((v) => !v)}
-            className={`shrink-0 p-1 rounded-md text-[9px] font-bold transition-colors ${
-              followAlong
-                ? 'text-cyan-400 bg-cyan-500/15'
-                : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.04]'
-            }`}
-            aria-label={followAlong ? 'Disable follow along' : 'Follow along (auto-scroll)'}
-            title={followAlong ? 'Follow Along ON' : 'Follow along — auto-scroll to current'}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-              <path fillRule="evenodd" d="M8 1a.75.75 0 0 1 .75.75v6.5a.75.75 0 0 1-1.5 0v-6.5A.75.75 0 0 1 8 1ZM4.11 3.05a.75.75 0 0 1 0 1.06 5.5 5.5 0 1 0 7.78 0 .75.75 0 0 1 1.06-1.06 7 7 0 1 1-9.9 0 .75.75 0 0 1 1.06 0Z" clipRule="evenodd" />
-            </svg>
-          </button>
-          {followAlong && (
-            <span className="text-[8px] font-bold text-cyan-400 uppercase tracking-wider animate-pulse">LIVE</span>
-          )}
-        </div>
-        {stats && isComplete && (
-          <div className="flex items-center gap-2">
-            <p className="text-[10px] text-slate-500 flex-1">
-              ~{stats.totalWords.toLocaleString()} words · {(() => {
-                const sentences = segments.reduce((count, s) => count + (s.text.match(/[.!?]+/g) || []).length, 0);
-                return sentences > 0 ? `${sentences} sentences · ` : '';
-              })()}~{stats.readMinutes} min read
-              {stats.speakingWPM > 0 && (
-                <span className="hidden sm:inline" title={`Average segment: ${stats.avgSegDuration.toFixed(1)}s`}> · {stats.speakingWPM} wpm</span>
-              )}
-              {stats.uniqueWords > 0 && (
-                <span className="hidden sm:inline" title={`${stats.uniqueWords} unique words out of ${stats.totalWords}`}> · {stats.uniqueWords} unique</span>
-              )}
-              {stats.avgSentenceLength > 0 && (
-                <span className="hidden sm:inline" title={`Average ${stats.avgSentenceLength} words per sentence`}> · ~{stats.avgSentenceLength} w/s</span>
-              )}
-              {(() => {
-                const lastSeg = segments[segments.length - 1];
-                const dur = lastSeg.offset + (lastSeg.duration || 0);
-                if (dur < 10) return null;
-                return <span className="hidden sm:inline"> · {formatTimestamp(dur)}</span>;
-              })()}
-            </p>
-            {sparklinePoints && (
-              <svg width="50" height="14" viewBox="0 0 50 14" className="shrink-0 hidden sm:block" aria-label="Word density across video">
-                <polyline
-                  points={sparklinePoints}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-chalk-accent/40"
-                />
-              </svg>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* AI transcript disclaimer */}
-      {isSTT && isComplete && (
-        <div className="px-3 py-1.5 bg-amber-500/5 border-b border-amber-500/10">
-          <p className="text-[10px] text-amber-400/70">AI-generated transcript — may contain errors</p>
         </div>
       )}
 
-      {/* Content */}
-      <div className="flex-1 relative min-h-0">
-      {/* Top fade gradient */}
-      <div className="absolute top-0 inset-x-0 h-4 bg-gradient-to-b from-chalk-surface/30 to-transparent z-10 pointer-events-none" />
-      {/* Bottom fade gradient */}
-      <div className="absolute bottom-0 inset-x-0 h-6 bg-gradient-to-t from-chalk-surface/30 to-transparent z-10 pointer-events-none" />
-      {/* Selection toolbar */}
-      {selectionToolbar && onAskAbout && (
-        <div
-          className="absolute z-20 flex items-center gap-1 px-1.5 py-1 rounded-lg bg-chalk-surface border border-chalk-border/40 shadow-xl backdrop-blur-sm animate-in fade-in zoom-in-95 duration-100"
-          style={{
-            left: Math.max(8, Math.min(selectionToolbar.x - 60, 200)),
-            top: Math.max(4, selectionToolbar.y - 32),
-          }}
-        >
-          <button
-            onMouseDown={(e) => {
-              e.preventDefault();
-              onAskAbout(currentTime, `Summarize this: "${selectionToolbar.text}"`);
-              setSelectionToolbar(null);
-              window.getSelection()?.removeAllRanges();
-            }}
-            className="px-2 py-1 rounded-md text-[10px] font-medium text-slate-300 hover:text-chalk-text hover:bg-chalk-accent/15 transition-colors"
-          >
-            Summarize
-          </button>
-          <button
-            onMouseDown={(e) => {
-              e.preventDefault();
-              onAskAbout(currentTime, `Explain this in detail: "${selectionToolbar.text}"`);
-              setSelectionToolbar(null);
-              window.getSelection()?.removeAllRanges();
-            }}
-            className="px-2 py-1 rounded-md text-[10px] font-medium text-slate-300 hover:text-chalk-text hover:bg-chalk-accent/15 transition-colors"
-          >
-            Explain
-          </button>
-          <div className="w-px h-3 bg-chalk-border/30" />
-          <button
-            onMouseDown={(e) => {
-              e.preventDefault();
-              const ts = selectionToolbar.segOffset != null ? formatTimestamp(selectionToolbar.segOffset) : '';
-              const prefix = ts ? `[${ts}] ` : '';
-              navigator.clipboard.writeText(`${prefix}${selectionToolbar.text}`);
-              setSelCopied(true);
-              setTimeout(() => { setSelectionToolbar(null); setSelCopied(false); }, 800);
-              window.getSelection()?.removeAllRanges();
-            }}
-            className="px-2 py-1 rounded-md text-[10px] font-medium text-slate-300 hover:text-chalk-text hover:bg-chalk-accent/15 transition-colors"
-          >
-            {selCopied ? 'Copied!' : 'Copy'}
-          </button>
+      {/* Status / Loading */}
+      {(isLoading || status === 'error') && (
+        <div className={`flex-none ${isMobile ? 'px-3 py-2' : 'px-4 py-3'}`}>
+          {status === 'error' ? (
+            <div className="text-xs text-red-400">
+              {error || 'Failed to load transcript'}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 border border-chalk-accent/40 border-t-chalk-accent rounded-full animate-spin" />
+              <span className="text-xs text-slate-500">{statusMessage || 'Loading...'}</span>
+              {progress !== undefined && progress > 0 && progress < 100 && (
+                <span className="text-[10px] text-slate-600">{Math.round(progress)}%</span>
+              )}
+            </div>
+          )}
         </div>
       )}
-      <div className="relative h-full">
-      {/* Transcript minimap */}
-      {viewMode === 'transcript' && filtered.length > 20 && (() => {
-        const totalDur = segments.length > 0 ? segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0) : 0;
-        if (totalDur <= 0) return null;
-        const rows = 60;
-        const rowDur = totalDur / rows;
-        const miniData = Array.from({ length: rows }, (_, i) => {
-          const t0 = i * rowDur;
-          const t1 = t0 + rowDur;
-          const segs = segments.filter((s) => s.offset >= t0 && s.offset < t1);
-          const words = segs.reduce((a, s) => a + s.text.split(/\s+/).filter(Boolean).length, 0);
-          return words;
-        });
-        const maxWords = Math.max(...miniData, 1);
-        const viewportPct = totalDur > 0 ? Math.min(1, 30 / totalDur) : 0.1; // ~30s visible
-        const viewportTop = totalDur > 0 ? Math.min(1 - viewportPct, currentTime / totalDur) : 0;
-        return (
-          <div
-            className="absolute right-0 top-0 bottom-0 w-3 z-10 opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              const pct = (e.clientY - rect.top) / rect.height;
-              onSeek(pct * totalDur);
-            }}
-          >
-            <div className="w-full h-full flex flex-col bg-chalk-bg/60 backdrop-blur-sm">
-              {miniData.map((w, i) => (
-                <div
-                  key={i}
-                  className="flex-1"
-                  style={{ backgroundColor: `rgba(99,102,241,${(w / maxWords) * 0.5})` }}
-                />
-              ))}
-            </div>
-            {/* Viewport indicator */}
-            <div
-              className="absolute right-0 w-full border border-chalk-accent/50 bg-chalk-accent/10 rounded-sm pointer-events-none"
-              style={{ top: `${viewportTop * 100}%`, height: `${viewportPct * 100}%` }}
-            />
-          </div>
-        );
-      })()}
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        onMouseUp={handleMouseUp}
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (viewMode !== 'transcript' || !filtered.length) return;
-          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-            e.preventDefault();
-            const curIdx = filtered.findIndex((s) => segments.indexOf(s) === activeIndex);
-            const nextIdx = e.key === 'ArrowDown' ? Math.min(curIdx + 1, filtered.length - 1) : Math.max(curIdx - 1, 0);
-            onSeek(filtered[nextIdx].offset);
-          }
-          if (e.key === 'Enter' && activeIndex >= 0) {
-            const seg = segments[activeIndex];
-            if (seg) onSeek(seg.offset);
-          }
-        }}
-        className="h-full overflow-y-auto focus:outline-none focus-visible:ring-1 focus-visible:ring-chalk-accent/30 focus-visible:ring-inset"
-      >
-        {viewMode === 'cloud' && wordCloud.length > 0 ? (
-          /* Word cloud view with sparklines */
-          <div className="h-full flex flex-wrap items-center justify-center gap-2 p-4 content-center">
-            {wordCloud.map(({ word, count }, i) => {
-              const maxCount = wordCloud[0]?.count || 1;
-              const size = 0.6 + (count / maxCount) * 1.2; // 0.6rem to 1.8rem
-              const opacity = 0.4 + (count / maxCount) * 0.6;
-              const colors = ['text-blue-400', 'text-purple-400', 'text-emerald-400', 'text-amber-400', 'text-rose-400', 'text-cyan-400'];
-              const strokeColors = ['#60a5fa', '#a78bfa', '#34d399', '#fbbf24', '#fb7185', '#22d3ee'];
-              const timeline = wordTimelines.get(word);
-              const timelineMax = timeline ? Math.max(...timeline, 1) : 1;
-              return (
-                <button
-                  key={word}
-                  onClick={() => { setSearch(word); setViewMode('transcript'); }}
-                  className={`${colors[i % colors.length]} hover:opacity-100 transition-all cursor-pointer hover:scale-110 group/word relative`}
-                  style={{ fontSize: `${size}rem`, opacity, lineHeight: 1.2 }}
-                  title={`"${word}" appears ${count} times`}
-                >
-                  {word}
-                  {timeline && (
-                    <svg
-                      width="32" height="8"
-                      viewBox="0 0 32 8"
-                      className="absolute -bottom-2 left-1/2 -translate-x-1/2 opacity-0 group-hover/word:opacity-80 transition-opacity"
-                    >
-                      <polyline
-                        points={timeline.map((v, j) => `${(j / 7) * 32},${8 - (v / timelineMax) * 7}`).join(' ')}
-                        fill="none"
-                        stroke={strokeColors[i % strokeColors.length]}
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        opacity="0.7"
-                      />
-                    </svg>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        ) : viewMode === 'notes' && videoId ? (
-          /* Notes view */
-          <div className="h-full flex flex-col p-3 gap-2">
-            <div className="flex items-center justify-between">
-              <button
-                onClick={insertTimestamp}
-                className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-slate-500 hover:text-slate-300 bg-chalk-bg/40 border border-chalk-border/20 hover:border-chalk-border/40 transition-colors"
-                title="Insert current timestamp"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-                  <path fillRule="evenodd" d="M1 8a7 7 0 1 1 14 0A7 7 0 0 1 1 8Zm7.75-4.25a.75.75 0 0 0-1.5 0V8c0 .414.336.75.75.75h3.25a.75.75 0 0 0 0-1.5h-2.5v-3.5Z" clipRule="evenodd" />
-                </svg>
-                Timestamp
-              </button>
-              {notesSaving && (
-                <span className="text-[10px] text-slate-500 animate-pulse">Saving...</span>
-              )}
-              {!notesSaving && notes.length > 0 && (
-                <span className="text-[10px] text-slate-600">Saved</span>
-              )}
-            </div>
-            <textarea
-              ref={notesRef}
-              value={notes}
-              onChange={(e) => handleNotesChange(e.target.value)}
-              placeholder="Take notes while watching...&#10;&#10;Click 'Timestamp' to insert the current time."
-              className="flex-1 w-full resize-none bg-chalk-bg/40 border border-chalk-border/20 rounded-lg px-3 py-2 text-xs text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-chalk-accent/30 focus:border-transparent leading-relaxed"
-            />
-            {notes.trim() && (
-              <div className="flex items-center justify-end gap-2">
-                <p className="text-[9px] text-slate-700 tabular-nums">{notes.split(/\s+/).filter(Boolean).length} words · {notes.length} chars</p>
-                <button
-                  onClick={() => {
-                    const blob = new Blob([notes], { type: 'text/plain' });
-                    const u = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = u;
-                    a.download = `notes${videoTitle ? '-' + videoTitle.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30) : ''}.txt`;
-                    a.click();
-                    URL.revokeObjectURL(u);
-                  }}
-                  className="text-[9px] text-slate-600 hover:text-slate-400 transition-colors"
-                  title="Download notes as .txt"
-                >
-                  Export
-                </button>
-              </div>
-            )}
-          </div>
-        ) : viewMode === 'chapters' && chapters.length > 0 ? (
-          /* Chapters outline view */
-          <div className="py-1">
-            {chapters.map((ch, i) => {
-              const nextOffset = chapters[i + 1]?.offset ?? Infinity;
-              const isActive = currentTime >= ch.offset && currentTime < nextOffset;
-              // Extract subtopics: key terms from this chapter's segments
-              const chapterSegs = segments.filter((s) => s.offset >= ch.offset && s.offset < nextOffset);
-              const chapterText = chapterSegs.map((s) => s.text.toLowerCase()).join(' ');
-              const chapterWords = chapterText.replace(/[^a-z\s]/g, '').split(/\s+/).filter((w) => w.length > 5);
-              const wordFreq = new Map<string, number>();
-              for (const w of chapterWords) {
-                if (!['really', 'actually', 'basically', 'something', 'things', 'people', 'because', 'through', 'should', 'would', 'could'].includes(w)) {
-                  wordFreq.set(w, (wordFreq.get(w) || 0) + 1);
-                }
-              }
-              const subtopics = [...wordFreq.entries()]
-                .filter(([, c]) => c >= 2)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 3)
-                .map(([w]) => w);
-              const segCount = chapterSegs.length;
-              const durSec = nextOffset === Infinity
-                ? (segments.length > 0 ? segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0) : 0) - ch.offset
-                : nextOffset - ch.offset;
-              return (
-                <div key={ch.offset} className={`border-l-2 transition-all ${isActive ? 'border-l-chalk-accent bg-chalk-accent/5' : 'border-l-transparent'}`}>
-                  <button
-                    onClick={() => onSeek(ch.offset)}
-                    className="w-full text-left px-3 py-2.5 flex gap-3 items-start hover:bg-chalk-surface/60 transition-colors"
-                  >
-                    <span className={`text-[10px] font-mono shrink-0 pt-0.5 ${isActive ? 'text-chalk-accent' : 'text-slate-500'}`}>
-                      {formatTimestamp(ch.offset)}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <span className={`text-xs leading-relaxed block ${isActive ? 'text-chalk-text font-medium' : 'text-slate-400'}`}>
-                        {ch.label}
-                      </span>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[9px] text-slate-600">
-                          {Math.round(durSec / 60)}m · {segCount} seg
-                          {(() => {
-                            const uniqueWords = new Set(chapterText.replace(/[^a-z\s]/g, '').split(/\s+/).filter((w) => w.length > 4));
-                            return uniqueWords.size > 5 ? ` · ${uniqueWords.size} terms` : '';
-                          })()}
-                          {(() => {
-                            const questionCount = chapterSegs.filter((s) => s.text.trim().endsWith('?')).length;
-                            return questionCount > 0 ? ` · ${questionCount}?` : '';
-                          })()}
-                          {search && (() => {
-                            const q = search.toLowerCase();
-                            const hitCount = chapterSegs.filter((s) => s.text.toLowerCase().includes(q)).length;
-                            return hitCount > 0 ? <span className="text-chalk-accent"> · {hitCount} match{hitCount !== 1 ? 'es' : ''}</span> : null;
-                          })()}
-                        </span>
-                      </div>
-                      {subtopics.length > 0 && (
-                        <div className="flex gap-1 mt-1 flex-wrap">
-                          {subtopics.map((t) => (
-                            <span key={t} className="text-[8px] px-1 py-0 rounded bg-white/[0.04] text-slate-500 border border-white/[0.06]">
-                              {t}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                  {/* Chapter watch progress */}
-                  {durSec > 0 && (() => {
-                    const chEnd = ch.offset + durSec;
-                    const pct = currentTime <= ch.offset ? 0 : currentTime >= chEnd ? 1 : (currentTime - ch.offset) / durSec;
-                    if (pct <= 0) return null;
-                    return <div className="h-0.5 mx-3"><div className="h-full bg-chalk-accent/30 rounded-full transition-[width] duration-500" style={{ width: `${Math.round(pct * 100)}%` }} /></div>;
-                  })()}
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          /* Transcript view */
-          <>
-            {filtered.length === 0 && (
-              <p className="p-4 text-xs text-slate-500 text-center">
-                {search ? 'No matches found' : 'No transcript available'}
-              </p>
-            )}
-            {/* Paragraph mode */}
-            {paragraphMode && filtered.length > 0 && (() => {
-              const paragraphs: { startOffset: number; segs: TranscriptSegment[] }[] = [];
-              let current: TranscriptSegment[] = [];
-              for (let i = 0; i < filtered.length; i++) {
-                if (i > 0) {
-                  const gap = filtered[i].offset - (filtered[i - 1].offset + (filtered[i - 1].duration || 0));
-                  if (gap > 2) {
-                    if (current.length > 0) paragraphs.push({ startOffset: current[0].offset, segs: current });
-                    current = [];
-                  }
-                }
-                current.push(filtered[i]);
-              }
-              if (current.length > 0) paragraphs.push({ startOffset: current[0].offset, segs: current });
-              return (
-                <div className="px-3 py-2 space-y-3">
-                  <p className="text-[9px] text-slate-600 text-center">{paragraphs.length} paragraph{paragraphs.length !== 1 ? 's' : ''}</p>
-                  {paragraphs.map((para) => {
-                    const isParaActive = para.segs.some((s) => segments.indexOf(s) === activeIndex);
-                    return (
-                      <div
-                        key={para.startOffset}
-                        className={`text-xs leading-relaxed rounded-lg px-2 py-1.5 transition-colors ${isParaActive ? 'bg-chalk-accent/10 border-l-2 border-l-chalk-accent' : 'border-l-2 border-l-transparent hover:bg-chalk-surface/40'}`}
-                      >
-                        <button
-                          onClick={() => onSeek(para.startOffset)}
-                          className="text-[9px] text-slate-600 font-mono mr-1.5 hover:text-chalk-accent tabular-nums"
-                        >
-                          {formatTimestamp(para.startOffset)}
-                        </button>
-                        <span className={isParaActive ? 'text-chalk-text' : 'text-slate-400'}>
-                          {para.segs.map((s) => s.text).join(' ')}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              );
-            })()}
-            {!paragraphMode && filtered.map((seg, i) => {
-              const segIndex = segments.indexOf(seg);
-              const isActive = segIndex === activeIndex;
-              if (isActive) recentActiveOffsets.current.set(seg.offset, Date.now());
-              const recentTs = recentActiveOffsets.current.get(seg.offset);
-              const wasRecentlyActive = !isActive && recentTs && (Date.now() - recentTs) < 10000;
-              const recentFade = wasRecentlyActive ? Math.max(0, 1 - (Date.now() - recentTs!) / 10000) : 0;
-              const isCurrentMatch = search.trim() && i === searchMatchIndex;
-              const isSearchMatch = search.trim() && seg.text.toLowerCase().includes(search.toLowerCase());
-              const highlightedText = search.trim() ? highlightMatch(seg.text, search) : highlightKeyTerms(seg.text, keyTerms, termMeta);
-              const showSpeakerDivider = !search.trim() && speakerChanges.has(segIndex) && i > 0;
-              const topicLabel = !search.trim() && topicBoundaries.get(segIndex);
 
-              // Chapter boundary inline summary card
-              const chapterAtSeg = !search.trim() && chapters.find((ch) => ch.offset === seg.offset);
-
-              // Difficulty heat coloring + complexity label
-              const segWords = seg.text.split(/\s+/).filter(Boolean);
-              const longWordCount = segWords.filter((w) => w.length > 7).length;
-              const longWordRatio = segWords.length > 0 ? longWordCount / segWords.length : 0;
-              const difficultyHeat = longWordRatio > 0.3 ? 'bg-rose-500/[0.03]' : longWordRatio > 0.15 ? 'bg-amber-500/[0.02]' : '';
-              const complexityLabel = longWordRatio > 0.3 && segWords.length > 6 ? 'complex' : longWordRatio > 0.2 && segWords.length > 8 ? 'technical' : null;
-
-              // Karaoke-style progress within active segment
-              let segProgress = 0;
-              if (isActive && seg.duration && seg.duration > 0) {
-                segProgress = Math.min(1, Math.max(0, (currentTime - seg.offset) / seg.duration));
-              }
-
-              // Paragraph break detection — topic shift between consecutive segments
-              const showTopicBreak = !search.trim() && !showSpeakerDivider && !topicLabel && !chapterAtSeg && i > 0 && (() => {
-                const prev = filtered[i - 1];
-                const prevWords = new Set(prev.text.toLowerCase().split(/\s+/).filter(w => w.length > 4));
-                const curWords = seg.text.toLowerCase().split(/\s+/).filter(w => w.length > 4);
-                const shared = curWords.filter(w => prevWords.has(w)).length;
-                return shared < 2 && prevWords.size > 3 && curWords.length > 3;
-              })();
-
-              return (
-                <div key={`wrap-${seg.offset}-${i}`}>
-                {chapterAtSeg && i > 0 && (
-                  <div className="mx-3 my-2 px-2.5 py-1.5 rounded-lg bg-chalk-surface/30 border border-chalk-border/15">
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-1 h-1 rounded-full bg-chalk-accent/50" />
-                      <span className="text-[9px] font-medium text-chalk-accent/70 uppercase tracking-wider">Chapter</span>
-                      <span className="text-[9px] text-slate-600 font-mono">{formatTimestamp(chapterAtSeg.offset)}</span>
-                    </div>
-                    <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">{chapterAtSeg.label}</p>
-                  </div>
-                )}
-                {topicLabel && !showSpeakerDivider && i > 0 && (
-                  <div className="flex items-center gap-2 px-3 py-1 my-0.5">
-                    <div className="flex-1 h-px bg-sky-500/15" />
-                    <span className="text-[8px] font-medium text-sky-400/50 uppercase tracking-wider">{topicLabel}</span>
-                    <div className="flex-1 h-px bg-sky-500/15" />
-                  </div>
-                )}
-                {showSpeakerDivider && (() => {
-                  // Detect if it's a topic shift or just a pause
-                  const prevSeg = i > 0 ? filtered[i - 1] : null;
-                  const prevWords = new Set((prevSeg?.text || '').toLowerCase().split(/\s+/));
-                  const curWords = seg.text.toLowerCase().split(/\s+/).filter(Boolean);
-                  const overlap = curWords.filter((w) => prevWords.has(w) && w.length > 3).length;
-                  const isTopicShift = curWords.length > 3 && overlap < 2;
-                  const label = isTopicShift ? 'new topic' : 'speaker change';
-                  return (
-                    <div className="flex items-center gap-2 px-3 py-1">
-                      <div className={`flex-1 h-px ${isTopicShift ? 'bg-violet-500/20' : 'bg-chalk-border/20'}`} />
-                      <span className={`text-[9px] font-medium ${isTopicShift ? 'text-violet-400/60' : 'text-slate-600'}`}>{label}</span>
-                      <div className={`flex-1 h-px ${isTopicShift ? 'bg-violet-500/20' : 'bg-chalk-border/20'}`} />
-                    </div>
-                  );
-                })()}
-                {showTopicBreak && (
-                  <div className="mx-6 my-0.5 h-px bg-gradient-to-r from-transparent via-slate-700/20 to-transparent" />
-                )}
-                {/* Silence marker for gaps >= 3 seconds + warning for large gaps */}
-                {i > 0 && !showSpeakerDivider && !search.trim() && (() => {
-                  const prevSeg = filtered[i - 1];
-                  const gap = seg.offset - (prevSeg.offset + (prevSeg.duration || 0));
-                  if (gap < 3) return null;
-                  const isLargeGap = gap >= 10;
-                  return (
-                    <div className="flex items-center gap-2 px-3 py-0.5 my-0.5">
-                      <div className={`flex-1 border-t border-dashed ${isLargeGap ? 'border-amber-600/30' : 'border-slate-700/30'}`} />
-                      <span className={`text-[8px] tabular-nums ${isLargeGap ? 'text-amber-500/60' : 'text-slate-700'}`} title={isLargeGap ? `Large gap — possible cut or long pause (${gap.toFixed(0)}s)` : undefined}>{isLargeGap && '⚠ '}{gap.toFixed(0)}s pause</span>
-                      <div className={`flex-1 border-t border-dashed ${isLargeGap ? 'border-amber-600/30' : 'border-slate-700/30'}`} />
-                    </div>
-                  );
-                })()}
-                <div
-                  key={`${seg.offset}-${i}`}
-                  data-seg-offset={seg.offset}
-                  ref={(el) => {
-                    if (isActive) (activeRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-                    if (search.trim() && el) matchRefs.current.set(i, el);
-                  }}
-                  className={`group/seg w-full flex items-start ${compactMode ? 'gap-1 px-2 py-0.5' : 'gap-2 px-3 py-2'} transition-all ${isSearchMatch && !isCurrentMatch ? 'hover:bg-chalk-accent/10 bg-chalk-accent/[0.03]' : 'hover:bg-chalk-surface/60'} animate-in fade-in duration-300 ${difficultyHeat} ${
-                    selectRange && i >= selectRange.start && i <= selectRange.end
-                      ? 'bg-cyan-500/10 border-l-2 border-l-cyan-400'
-                      : isCurrentMatch
-                        ? `${hlMatch} border-l-2`
-                        : isActive
-                          ? `${hlActive} border-l-2`
-                          : starred.has(seg.offset)
-                            ? 'border-l-2 border-l-yellow-500/60'
-                            : speakerChanges.size >= 2
-                              ? `border-l-2 ${(() => { let sp = 0; for (let si = 0; si <= segIndex; si++) { if (speakerChanges.has(si)) sp++; } return sp % 2 === 0 ? 'border-l-indigo-500/20' : 'border-l-emerald-500/20'; })()}`
-                              : 'border-l-2 border-l-transparent'
-                  }`}
-                  style={isActive ? { animation: 'activeBorderPulse 2s ease-in-out infinite' } : hashFlash !== null && Math.abs(seg.offset - hashFlash) < 2 ? { backgroundColor: 'rgba(59, 130, 246, 0.15)', transition: 'background-color 2s ease-out' } : recentFade > 0 ? { backgroundColor: `rgba(59, 130, 246, ${recentFade * 0.05})` } : undefined}
-                  onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, offset: seg.offset, text: seg.text }); }}
-                  onClick={(e) => {
-                    if (e.shiftKey && lastClickedIdx.current >= 0) {
-                      const start = Math.min(lastClickedIdx.current, i);
-                      const end = Math.max(lastClickedIdx.current, i);
-                      setSelectRange({ start, end });
-                    } else {
-                      setSelectRange(null);
-                      lastClickedIdx.current = i;
-                    }
-                  }}
-                >
-                  {/* Reading progress dot + repeat count */}
-                  {!compactMode && (
-                    <div className="shrink-0 flex flex-col items-center gap-0.5">
-                      <div className={`w-1 h-1 rounded-full mt-2 ${playedSegments.current.has(segIndex) ? 'bg-emerald-500/50' : 'bg-slate-700/30'}`} title={playedSegments.current.has(segIndex) ? 'Played' : 'Not yet played'} />
-                      {(seekCounts.current.get(segIndex) || 0) >= 2 && <span className={`text-[6px] tabular-nums leading-none ${(seekCounts.current.get(segIndex) || 0) >= 3 ? 'text-orange-400/60' : 'text-sky-400/40'}`} title={`Seeked ${seekCounts.current.get(segIndex)} times${(seekCounts.current.get(segIndex) || 0) >= 3 ? ' — hot segment!' : ''}`}>{seekCounts.current.get(segIndex)}x</span>}
-                    </div>
-                  )}
-                  {/* Key moment indicator dot */}
-                  {!compactMode && (() => {
-                    const words = seg.text.split(/\s+/).length;
-                    const hasQuestion = seg.text.includes('?');
-                    const hasCue = /\b(important|key|remember|note|crucial|essential|main|summary|conclusion|therefore|however|but)\b/i.test(seg.text);
-                    const isKeyMoment = words > 20 || hasQuestion || hasCue;
-                    return isKeyMoment ? (
-                      <div
-                        className={`shrink-0 w-1 h-1 rounded-full mt-2 ${
-                          hasCue ? 'bg-amber-400/60' : hasQuestion ? 'bg-purple-400/50' : 'bg-blue-400/30'
-                        }`}
-                        title={hasCue ? 'Key concept' : hasQuestion ? 'Question' : 'Dense content'}
-                      />
-                    ) : <div className="shrink-0 w-1" />;
-                  })()}
-                  {!compactMode && sharedSegments.current.has(segIndex) && (
-                    <div className="shrink-0 w-1 h-1 rounded-full mt-2 bg-emerald-400/50" title="Shared" />
-                  )}
-                  {showLineNumbers && (
-                    <span className="shrink-0 w-5 text-[8px] text-slate-700 tabular-nums text-right pt-0.5 select-none">{segIndex + 1}</span>
-                  )}
-                  <div className="shrink-0 flex flex-col items-center gap-0.5">
-                    <button
-                      onClick={() => { onSeek(seg.offset); seekCounts.current.set(segIndex, (seekCounts.current.get(segIndex) || 0) + 1); try { window.history.replaceState(null, '', `#t=${Math.round(seg.offset)}`); } catch {} }}
-                      onDoubleClick={(e) => {
-                        e.stopPropagation();
-                        sharedSegments.current.add(segIndex);
-                        const ts = formatTimestamp(seg.offset);
-                        navigator.clipboard.writeText(ts).then(() => {
-                          const btn = e.currentTarget;
-                          btn.dataset.copied = 'true';
-                          setTimeout(() => { btn.dataset.copied = ''; }, 1200);
-                        });
-                      }}
-                      className={`text-[10px] font-mono pt-0.5 hover:underline data-[copied=true]:text-emerald-400 ${isActive ? 'text-chalk-accent' : 'text-slate-500'}`}
-                      title={`Jump to ${formatTimestamp(seg.offset)} · Double-click to copy · ${seg.text.split(/\s+/).length} words`}
-                    >
-                      {formatTimestamp(seg.offset)}
-                    </button>
-                    {!compactMode && seg.duration && seg.duration > 0 && (
-                      <span className="text-[8px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums" title={`${formatTimestamp(seg.offset)}–${formatTimestamp(seg.offset + seg.duration)}`}>–{formatTimestamp(seg.offset + seg.duration)}</span>
-                    )}
-                    {!compactMode && (() => { const ws = seg.text.split(/\s+/).filter(Boolean); const wc = ws.length; const readSec = Math.max(1, Math.round(wc / 3.3)); const longPct = wc > 0 ? ws.filter(w => w.length >= 7).length / wc : 0; const lvl = longPct > 0.5 ? 'acad' : longPct > 0.3 ? 'adv' : null; return <span className="text-[7px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums" title={`${wc} words · ~${readSec}s to read${lvl ? ` · ${lvl === 'acad' ? 'academic' : 'advanced'} vocabulary` : ''}`}>{wc}w ~{readSec}s{lvl && <span className={lvl === 'acad' ? 'text-violet-500/50' : 'text-amber-500/50'}> {lvl}</span>}</span>; })()}
-                    {!compactMode && segDensities.size > 0 && (() => {
-                      const d = segDensities.get(segIndex) || 0;
-                      if (d < 0.15) return null;
-                      return (
-                        <div className="w-6 h-0.5 rounded-full bg-white/[0.04] overflow-hidden">
-                          <div className="h-full rounded-full bg-indigo-400/30" style={{ width: `${d * 100}%` }} />
-                        </div>
-                      );
-                    })()}
-                  </div>
-                  {!compactMode && seg.text.trim().endsWith('?') && (
-                    <span className={`shrink-0 text-[8px] font-bold w-3 text-center ${isActive && questionPulse ? 'text-purple-300 animate-pulse' : 'text-purple-400/50'}`} title={isActive && questionPulse ? 'Consider this question!' : 'Question asked'}>?</span>
-                  )}
-                  {!compactMode && /[""\u201C\u201D]/.test(seg.text) && (
-                    <span className="shrink-0 text-[8px] text-sky-400/30 font-serif" title="Contains a direct quote">&ldquo;</span>
-                  )}
-                  {!compactMode && /\b[A-Z]{2,}\b/.test(seg.text.replace(/\b(I|AI|US|UK|TV|OK|ID|URL|API|CEO|CTO|CFO|HR|IT|PR|QA)\b/g, '')) && (
-                    <span className="shrink-0 text-[7px] text-orange-400/40 font-bold" title="Contains emphasized text (ALL CAPS)">!</span>
-                  )}
-                  {!compactMode && /(\d{3,}|\d+%|\$\d|\d{4})/.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-teal-400/40 font-mono" title="Contains numeric data (statistics, dates, amounts)">#</span>
-                  )}
-                  {!compactMode && /\b(you should|make sure|remember to|don't forget|step \d|first,|next,|then,|finally,)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-green-400/40" title="Contains an action item or instruction">☐</span>
-                  )}
-                  {!compactMode && /^(however|furthermore|in contrast|on the other hand|to summarize|in conclusion|therefore|consequently|meanwhile|nevertheless)\b/i.test(seg.text.trim()) && (
-                    <span className="shrink-0 text-[7px] text-indigo-400/40" title="Logical transition">→</span>
-                  )}
-                  {!compactMode && i < filtered.length - 1 && (() => {
-                    if (!/\?\s*$/.test(seg.text)) return null;
-                    const next = filtered[i + 1];
-                    const gap = next.offset - (seg.offset + (seg.duration || 0));
-                    if (gap > 3) return null;
-                    if (/\?\s*$/.test(next.text)) return null;
-                    return <span className="shrink-0 text-[7px] text-rose-400/30" title="Rhetorical question — speaker answers it next">?!</span>;
-                  })()}
-                  {!compactMode && i > 0 && (() => {
-                    const curWords = seg.text.toLowerCase().split(/\s+/);
-                    if (curWords.length < 4) return null;
-                    const lookback = Math.max(0, i - 10);
-                    for (let j = lookback; j < i; j++) {
-                      const prevWords = filtered[j].text.toLowerCase().split(/\s+/);
-                      for (let k = 0; k <= prevWords.length - 3; k++) {
-                        const phrase = prevWords.slice(k, k + 3).join(' ');
-                        if (seg.text.toLowerCase().includes(phrase)) return <span className="shrink-0 text-[7px] text-amber-400/30" title={`Repeats phrase from segment ${j + 1}: "${phrase}"`}>&#8634;</span>;
-                      }
-                    }
-                    return null;
-                  })()}
-                  {!compactMode && /\b(first(ly)?|second(ly)?|third(ly)?|fourth|fifth|number (one|two|three|four|five)|step [1-5])\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-blue-400/30 font-mono" title="Speaker is enumerating items">1.</span>
-                  )}
-                  {!compactMode && (() => {
-                    const matches = seg.text.match(/\b(you|your|you're|you'll|you've|yourself)\b/gi);
-                    if (!matches || matches.length < 2) return null;
-                    return <span className="shrink-0 text-[7px] text-pink-400/30" title={`Direct address — ${matches.length} second-person references`}>you</span>;
-                  })()}
-                  {!compactMode && /\b(whereas|unlike|in contrast|compared to|on the other hand|although|while .{3,20} also|conversely)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-cyan-400/30 font-medium" title="Contains comparison or contrast language">vs</span>
-                  )}
-                  {!compactMode && /\b(because|therefore|as a result|leads to|causes|due to|that's why|so that|consequently|hence)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains cause-and-effect reasoning">&#x27F9;</span>
-                  )}
-                  {!compactMode && /\b(\w+\s+(is|are|means?|refers?\s+to|defined\s+as|known\s+as)\s+.{5,}|definition\s+of)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-emerald-400/30" title="Contains a definition">def</span>
-                  )}
-                  {!compactMode && /\b(what if|imagine|suppose|let's say|hypothetically|in theory|could be|would be|might be)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-orange-400/30" title="Contains hypothetical or conditional language">if</span>
-                  )}
-                  {!compactMode && /\b(in conclusion|to wrap up|finally|the bottom line|to conclude|all in all|in the end|summing up|to close)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-red-400/30" title="Contains concluding language">end</span>
-                  )}
-                  {!compactMode && /\b(for example|for instance|such as|like when|consider this|take for example|case in point|to illustrate)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-teal-400/30" title="Contains an example">eg</span>
-                  )}
-                  {!compactMode && /\b(compared to|versus|on the other hand|whereas|in contrast|unlike|different from|better than|worse than|rather than)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-indigo-400/30" title="Contains comparison language">vs</span>
-                  )}
-                  {!compactMode && /\b(absolutely|crucial|essential|never ever|most important|critical|fundamental|key point|vital)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-rose-400/30" title="Contains emphatic language">!</span>
-                  )}
-                  {!compactMode && /\b(step one|first you|then you|next step|in order to|make sure to|you need to|start by|begin with)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-lime-400/30" title="Contains instructional language">how</span>
-                  )}
-                  {!compactMode && /\b(once upon|story|let me tell you|back when|remember when|there was a time|years ago|in my experience)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains narrative or storytelling language">story</span>
-                  )}
-                  {!compactMode && /\b(because of|as a result|therefore|consequently|leads to|causes|due to|the reason|this means|that's why)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains cause-and-effect language">&#8756;</span>
-                  )}
-                  {!compactMode && /\b(\d+\s*%|\d+\s*(million|billion|thousand|percent)|statistics|data shows|according to|survey|study found)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-teal-400/30" title="Contains quantitative data or statistics">#</span>
-                  )}
-                  {!compactMode && /\b(if you|assuming|in case|provided that|supposing|what if|hypothetically|were to|would have)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-purple-400/30" title="Contains conditional or hypothetical language">if</span>
-                  )}
-                  {!compactMode && /\b(first of all|secondly|thirdly|finally|in the beginning|at the end|initially|eventually|subsequently|after that)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-orange-400/30" title="Contains temporal or sequential language">seq</span>
-                  )}
-                  {!compactMode && /\b(admittedly|granted|I understand|fair point|to be fair|having said that|nevertheless|nonetheless|even so)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-fuchsia-400/30" title="Contains concession or acknowledgment language">yet</span>
-                  )}
-                  {!compactMode && (() => {
-                    const words = seg.text.toLowerCase().split(/\s+/).filter(w => w.length > 3);
-                    const freq: Record<string, number> = {};
-                    for (const w of words) freq[w] = (freq[w] || 0) + 1;
-                    const maxRep = Math.max(0, ...Object.values(freq));
-                    if (maxRep >= 3) return <span className="shrink-0 text-[7px] text-red-400/30 tabular-nums" title={`Word repeated ${maxRep} times in segment`}>&times;{maxRep}</span>;
-                    return null;
-                  })()}
-                  {!compactMode && /\b(like a|similar to|think of it as|imagine|picture this|it's as if|just like|the same way|analogy|metaphor)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-emerald-400/30" title="Contains analogy or metaphorical language">~</span>
-                  )}
-                  {!compactMode && /\b(coming up|we'll see|later in|stay tuned|in a moment|up next|we'll discuss|we'll cover|we'll explore)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-blue-400/30" title="Previews or teases upcoming content">&rarr;</span>
-                  )}
-                  {!compactMode && /\b(to summarize|in summary|to recap|let's review|the takeaway|key points|wrapping up|in conclusion|overall)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-slate-400/30" title="Contains summary or recap language">&Sigma;</span>
-                  )}
-                  {!compactMode && /\b(be careful|watch out|warning|caution|don't forget|common mistake|pitfall|be aware|danger|risk)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains warning or cautionary language">&#9888;</span>
-                  )}
-                  {!compactMode && /\b(I think|in my opinion|I believe|personally|from my perspective|I feel|it seems to me|my view is|I'd say)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-pink-400/30" title="Contains opinion or subjective language">op</span>
-                  )}
-                  {!compactMode && /\b(number one|number two|point one|point two|first thing|second thing|reason one|reason two|item one|item two)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-cyan-400/30" title="Contains enumerated list items">1.</span>
-                  )}
-                  {!compactMode && /\b(what I mean is|to clarify|let me be clear|in other words|put differently|that is to say|to be specific|meaning that)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-violet-400/30" title="Contains clarification language">clr</span>
-                  )}
-                  {!compactMode && /\b(algorithm|protocol|framework|architecture|implementation|optimization|infrastructure|deployment|middleware|abstraction)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-green-400/30" title="Contains technical terminology">tech</span>
-                  )}
-                  {!compactMode && /\b(you guys|everyone|folks|ladies and gentlemen|my friends|dear viewers|you all|all of you|each of you)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Directly addresses the audience">@</span>
-                  )}
-                  {!compactMode && /\b(just kidding|joke|funny|hilarious|laughter|haha|humor|comedy|punchline|lighten up)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains humor or lighthearted language">lol</span>
-                  )}
-                  {!compactMode && /\b(subscribe|like this video|hit the bell|leave a comment|share this|check out|click the link|visit our|follow us)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-red-400/30" title="Contains a call to action">cta</span>
-                  )}
-                  {!compactMode && /\b(right\?|isn't it\??|don't you think|wouldn't you say|you know what I mean|aren't we|isn't that|doesn't it|won't it|can't we)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-indigo-400/30" title="Contains a rhetorical question">rh?</span>
-                  )}
-                  {!compactMode && /\b(by the way|as a side note|on a tangent|incidentally|off topic|side note|parenthetically|as an aside|digression)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-stone-400/30" title="Contains a parenthetical remark or aside">()</span>
-                  )}
-                  {!compactMode && /\b(look at|notice how|remember|consider|think about|pay attention|make sure|keep in mind|observe|note that)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-rose-400/30" title="Contains imperative/command language">!</span>
-                  )}
-                  {!compactMode && /\b(love|hate|excited|frustrated|passionate|thrilled|devastating|amazing|incredible|heartbreaking|furious|ecstatic)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-pink-400/30" title="Contains emotional or expressive language">&hearts;</span>
-                  )}
-                  {!compactMode && /\b(like a|as if|metaphorically|figuratively|in a sense|so to speak|as though|resembles|akin to|analogous)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains metaphor or figurative language">~</span>
-                  )}
-                  {!compactMode && /\b(to some extent|in some ways|partially|somewhat|kind of|sort of|more or less|roughly|arguably|in a way)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-neutral-400/30" title="Contains qualifying or hedging language">~q</span>
-                  )}
-                  {!compactMode && /\b(very very|really really|so so|again and again|over and over|more and more|bigger and bigger|better and better)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains repetition for emphasis">2x</span>
-                  )}
-                  {!compactMode && /\b(on the other hand|in contrast|conversely|nevertheless|however|whereas|unlike|on the contrary)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-red-400/30" title="Contains contrast or opposition language">vs</span>
-                  )}
-                  {!compactMode && /\b(first|second|third|fourth|fifth|firstly|secondly|thirdly|next|finally|lastly|step one|step two|step three)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-violet-400/30" title="Contains enumeration or sequencing language">1.</span>
-                  )}
-                  {!compactMode && /\b(because|therefore|as a result|consequently|due to|thus|hence|so that|for this reason|this means)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains causal connector language">∴</span>
-                  )}
-                  {!compactMode && /\b(furthermore|moreover|in addition|additionally|besides|what's more|on top of that|not only that)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-green-400/30" title="Contains additive connector language">+</span>
-                  )}
-                  {!compactMode && /\b(however|nevertheless|on the contrary|nonetheless|despite|in spite of|even so|yet)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-red-400/30" title="Contains adversative connector language">&#x2297;</span>
-                  )}
-                  {!compactMode && /\b(at this point|previously|later on|going forward|in the meantime|shortly after|by then|up until now)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-orange-400/30" title="Contains temporal marker language">&#x23F1;</span>
-                  )}
-                  {!compactMode && /\b(for example|for instance|such as|namely|to illustrate|as an example|like for instance|consider this)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-indigo-400/30" title="Contains exemplification language">eg</span>
-                  )}
-                  {!compactMode && /\b(in summary|to sum up|overall|all in all|in conclusion|to summarize|in short)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains summarization language">&#x03A3;</span>
-                  )}
-                  {!compactMode && /\b[A-Z]{3,}\b/.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains capitalized emphasis">CAP</span>
-                  )}
-                  {!compactMode && /\([^)]{3,}\)/.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-slate-400/30" title="Contains parenthetical content">()</span>
-                  )}
-                  {!compactMode && /"[^"]{3,}"/.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-emerald-400/30" title="Contains direct quotation">&#x201C;</span>
-                  )}
-                  {!compactMode && /\.{3}|…/.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-violet-400/30" title="Contains ellipsis or trailing off">&hellip;</span>
-                  )}
-                  {!compactMode && /\b(do|make|try|remember|note|consider|look at|watch|listen|notice|think about)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-rose-400/30" title="Contains imperative/instruction">!</span>
-                  )}
-                  {!compactMode && /\b(\d{4}|\d+%|\$\d+|\d+\.\d+)\b/.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-blue-400/30" title="Contains numerical reference">#</span>
-                  )}
-                  {!compactMode && /\b(but|however|although|whereas|on the other hand|in contrast|nevertheless|yet)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-pink-400/30" title="Contains contrast/contradiction">vs</span>
-                  )}
-                  {!compactMode && /\([^)]{3,}\)/.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains parenthetical/aside">()</span>
-                  )}
-                  {!compactMode && /\b(first|second|third|number one|number two|one,|two,|three,)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-lime-400/30" title="Contains enumeration/listing">1.</span>
-                  )}
-                  {!compactMode && /\b(best|worst|most|least|greatest|smallest|largest|highest|lowest|fastest)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains superlative">&#9733;</span>
-                  )}
-                  {!compactMode && /\b(I think|I believe|in my opinion|personally|my experience|I feel|I would say)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-cyan-400/30" title="Contains self-reference/opinion">I</span>
-                  )}
-                  {!compactMode && /\b(if you|if we|assuming|in case|provided that|unless|suppose|what if)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-purple-400/30" title="Contains conditional language">if</span>
-                  )}
-                  {!compactMode && /\b(yesterday|today|tomorrow|last week|next week|last year|next year|recently|currently|right now|at the time)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-pink-400/30" title="Contains temporal reference">&#9200;</span>
-                  )}
-                  {!compactMode && /!/.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-red-400/30" title="Contains exclamation/emphasis">!</span>
-                  )}
-                  {!compactMode && /\b(because|therefore|as a result|consequently|due to|leads to|caused by|so that)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-orange-400/30" title="Contains causal language">&#8756;</span>
-                  )}
-                  {!compactMode && /\b(although|even though|despite|in spite of|nevertheless|nonetheless|granted|admittedly)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-slate-400/30" title="Contains concessive language">~</span>
-                  )}
-                  {!compactMode && /\b(additionally|furthermore|moreover|in addition|on top of that|not only)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-green-400/30" title="Contains additive language">+</span>
-                  )}
-                  {!compactMode && /\b(before|after|during|while|meanwhile|subsequently|previously|eventually)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains temporal language">&#9203;</span>
-                  )}
-                  {!compactMode && /\b(excellent|terrible|outstanding|poor|remarkable|mediocre|impressive|disappointing)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains evaluative language">&#9733;</span>
-                  )}
-                  {!compactMode && /\b(should|must|need to|have to|ought to|required|essential|mandatory)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-indigo-400/30" title="Contains prescriptive language">&rarr;</span>
-                  )}
-                  {!compactMode && /\b(for example|for instance|such as|illustrate|demonstrate|consider|take for example|case in point)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-purple-400/30" title="Contains illustrative language">&#9670;</span>
-                  )}
-                  {!compactMode && /\b(more than|less than|greater|fewer|better|worse|compared to|in contrast)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-rose-400/30" title="Contains comparative language">&#8660;</span>
-                  )}
-                  {!compactMode && /\b(if|unless|otherwise|provided that|as long as|in case|whether|depending on)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains conditional language">&#9282;</span>
-                  )}
-                  {!compactMode && /\b(because|therefore|consequently|as a result|due to|hence|thus|so that)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-teal-400/30" title="Contains causal connector">&#8756;</span>
-                  )}
-                  {!compactMode && /\b(admittedly|granted|of course|naturally|true|indeed|certainly|no doubt)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-orange-400/30" title="Contains concessive language">&#8776;</span>
-                  )}
-                  {!compactMode && /\b(very very|really really|so so|much much|again and again|over and over|more and more|time and time)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains emphatic repetition">&#9889;</span>
-                  )}
-                  {!compactMode && /\b(previously|earlier|later|afterward|meanwhile|subsequently|eventually|at that point)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-cyan-400/30" title="Contains temporal reference">&#9203;</span>
-                  )}
-                  {!compactMode && /\b(furthermore|moreover|in addition|additionally|also|besides|not only|on top of that)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-lime-400/30" title="Contains additive language">+</span>
-                  )}
-                  {!compactMode && /\b(somewhat|fairly|quite|rather|relatively|slightly|partially|to some extent)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-purple-400/30" title="Contains qualifying language">~</span>
-                  )}
-                  {!compactMode && /\b(for example|for instance|such as|like|namely|including|e\.g\.|i\.e\.)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-rose-400/30" title="Contains exemplifying language">eg</span>
-                  )}
-                  {!compactMode && /\b(first|second|third|next|then|finally|lastly|step)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains sequential language">&rarr;</span>
-                  )}
-                  {!compactMode && /\b(however|but|although|despite|whereas|instead|on the other hand|nevertheless)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains contrastive language">&#8856;</span>
-                  )}
-                  {!compactMode && /\b(absolutely|definitely|certainly|undoubtedly|clearly|obviously|without a doubt|no question)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-red-400/30" title="Contains emphatic language">!</span>
-                  )}
-                  {!compactMode && /\b(maybe|perhaps|possibly|might|could be|presumably|probably|likely|it seems|it appears)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-teal-400/30" title="Contains speculative language">?</span>
-                  )}
-                  {!compactMode && /\b(more than|less than|greater|bigger|smaller|faster|slower|better|worse|compared to|relative to)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-purple-400/30" title="Contains comparative language">&ge;</span>
-                  )}
-                  {!compactMode && /\b(always|never|every time|without exception|invariably|constantly|guaranteed|100 percent|no doubt)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-cyan-400/30" title="Contains definitive language">&#9632;</span>
-                  )}
-                  {!compactMode && /\b(you should|I recommend|I suggest|my advice|it's best to|try to|aim for|consider doing|make it a habit|pro tip)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains advisory language">&#9656;</span>
-                  )}
-                  {!compactMode && /\b(first|then|next|after that|followed by|subsequently|finally|lastly|step by step|in sequence)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-lime-400/30" title="Contains sequential language">&rarr;</span>
-                  )}
-                  {!compactMode && /\b(in some cases|depending on|it varies|not always|sometimes|to some extent|more or less|roughly|approximately|in certain situations)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains qualifying language">~</span>
-                  )}
-                  {!compactMode && /\b(absolutely|incredible|amazing|unbelievable|mind-blowing|extraordinary|phenomenal|spectacular|outstanding|remarkable)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-red-400/30" title="Contains emphatic language">!</span>
-                  )}
-                  {!compactMode && /\b(what if|imagine|suppose|hypothetically|in theory|could potentially|might possibly|let's say|assuming|picture this)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains hypothetical language">?</span>
-                  )}
-                  {!compactMode && /\b(on the other hand|having said that|that being said|nevertheless|at the same time|even so|all the same|be that as it may|granted|fair enough)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-teal-400/30" title="Contains conciliatory language">&#9837;</span>
-                  )}
-                  {!compactMode && /\b(without a doubt|there's no question|clearly|obviously|undeniably|it's certain that|the fact is|make no mistake|rest assured|beyond dispute)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-violet-400/30" title="Contains assertive language">&#9656;</span>
-                  )}
-                  {!compactMode && /\b(could be|might be|perhaps|it seems|it appears|my guess is|chances are|presumably|conceivably|it looks like)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-rose-400/30" title="Contains speculative language">&#9671;</span>
-                  )}
-                  {!compactMode && /\b(regardless|in any case|be that as it may|no matter what|whatever the case|irrespective of|setting aside|leaving aside|putting aside|aside from that)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-lime-400/30" title="Contains dismissive language">&times;</span>
-                  )}
-                  {!compactMode && /\b(better than|worse than|superior|inferior|the best|the worst|outstanding|mediocre|excellent|terrible)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains evaluative language">&#9733;</span>
-                  )}
-                  {!compactMode && /\b(predicts|will likely|expected to|bound to|poised to|destined to|forecasted|projected to|anticipated to|on track to)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-violet-400/30" title="Contains predictive language">&#8594;</span>
-                  )}
-                  {!compactMode && /\b(I remember when|back in the day|there was a time|one time|story goes|true story|fun fact|believe it or not|interestingly enough|funny enough)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains anecdotal language">&#9670;</span>
-                  )}
-                  {!compactMode && /\b(hypothetically|what if|suppose that|imagine if|in theory|theoretically|assuming that|if we assume|let's say|for the sake of argument)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-lime-400/30" title="Contains hypothetical language">&#10065;</span>
-                  )}
-                  {!compactMode && /\b(you must|do this now|stop doing|start doing|go ahead and|make sure you|don't forget to|always do|never do|take action)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-teal-400/30" title="Contains imperative language">!</span>
-                  )}
-                  {!compactMode && /\b(not only .* but also|both .* and|either .* or|neither .* nor|the more .* the more|whether or not|as much as|just as .* so|on one hand .* on the other|correspondingly)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-rose-400/30" title="Contains correlative language">&#8596;</span>
-                  )}
-                  {!compactMode && /\b(as a side note|parenthetically|by the way|incidentally|on a related note|as an aside|speaking of which|it's worth noting|tangentially|side note)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains parenthetical language">( )</span>
-                  )}
-                  {!compactMode && /\b(that is|in other words|namely|i\.e\.|e\.g\.|for instance|for example|such as|to illustrate|to wit)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-violet-400/30" title="Contains appositional language">&#8776;</span>
-                  )}
-                  {!compactMode && /\b(after careful thought|upon deliberation|having considered|weighing the options|on reflection|after much thought|with due consideration|taking everything into account|all things considered|on second thought)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-fuchsia-400/30" title="Contains deliberative language">&#9878;</span>
-                  )}
-                  {!compactMode && /\b(you must|you need to|it is essential|it is imperative|make sure to|be sure to|don't forget to|always remember|never forget|you should always)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-lime-400/30" title="Contains imperative language">!</span>
-                  )}
-                  {!compactMode && /\b(the most important|the single biggest|the absolute best|by far the greatest|without a doubt the|the ultimate|the one thing|the defining|the paramount|the quintessential)\b/i.test(seg.text) && (
-                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains emphatic superlative">&#9733;</span>
-                  )}
-                  {!compactMode && (() => {
-                    const hasQ = (s: { text: string }) => /\?/.test(s.text);
-                    if (!hasQ(seg)) return null;
-                    if (i > 0 && hasQ(filtered[i - 1])) return null;
-                    let count = 0;
-                    for (let j = i; j < filtered.length && hasQ(filtered[j]); j++) count++;
-                    if (count < 3) return null;
-                    return <span className="shrink-0 text-[7px] text-cyan-400/30 tabular-nums" title={`${count} consecutive question segments`}>Q&times;{count}</span>;
-                  })()}
-                  {!compactMode && complexityLabel && (
-                    <span className={`shrink-0 text-[7px] font-bold uppercase tracking-wider px-1 py-0 rounded ${
-                      complexityLabel === 'complex' ? 'bg-rose-500/10 text-rose-400/60' : 'bg-amber-500/10 text-amber-400/50'
-                    }`} title={`${longWordCount} long words (${Math.round(longWordRatio * 100)}%)`}>
-                      {complexityLabel === 'complex' ? '!' : '~'}
-                    </span>
-                  )}
-                  {!compactMode && (() => {
-                    const ws = seg.text.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
-                    if (ws.length < 8) return null;
-                    const uniq = new Set(ws).size;
-                    const ratio = uniq / ws.length;
-                    if (ratio < 0.8) return null;
-                    return <span className="shrink-0 text-[6px] text-violet-400/40 font-medium" title={`High vocabulary diversity: ${Math.round(ratio * 100)}% unique words`}>div</span>;
-                  })()}
-                  <button
-                    onClick={() => onSeek(seg.offset)}
-                    onDoubleClick={(e) => { e.preventDefault(); if (onAskAbout) onAskAbout(seg.offset, seg.text); }}
-                    onMouseDown={(e) => {
-                      const btn = e.currentTarget;
-                      const timer = setTimeout(() => {
-                        const ts = formatTimestamp(seg.offset);
-                        navigator.clipboard.writeText(`[${ts}] ${seg.text}`).then(() => {
-                          btn.dataset.longCopied = 'true';
-                          setTimeout(() => { btn.dataset.longCopied = ''; }, 1200);
-                        });
-                      }, 500);
-                      btn.dataset.longTimer = String(timer);
-                    }}
-                    onMouseUp={(e) => { clearTimeout(Number(e.currentTarget.dataset.longTimer)); }}
-                    onMouseLeave={(e) => { clearTimeout(Number(e.currentTarget.dataset.longTimer)); }}
-                    className={`${fontSizeClass} leading-relaxed text-left flex-1 data-[long-copied=true]:text-emerald-400 ${isActive ? 'text-chalk-text' : 'text-slate-400'}`}
-                    style={isActive && segProgress > 0 && !search.trim() ? {
-                      background: `linear-gradient(90deg, rgba(59,130,246,0.15) ${segProgress * 100}%, transparent ${segProgress * 100}%)`,
-                      borderRadius: '2px',
-                    } : undefined}
-                    title={(() => {
-                      const pos = seg.offset < 60 ? `${Math.round(seg.offset)}s` : `${Math.floor(seg.offset / 60)}m ${Math.round(seg.offset % 60)}s`;
-                      const nearby = [filtered[i - 1], seg, filtered[i + 1]].filter(Boolean).map((s) => s.text).join(' ');
-                      const summary = nearby.length > 80 ? nearby.slice(0, 77) + '...' : nearby;
-                      return `${pos} into video · "${summary}"\nClick to seek · Hold to copy`;
-                    })()}
-                  >
-                    {typeof highlightedText === 'string' ? highlightedText : highlightedText}
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); toggleStar(seg.offset); }}
-                    onDoubleClick={(e) => { e.stopPropagation(); if (starred.has(seg.offset)) setEditingSegNote(seg.offset); }}
-                    className={`shrink-0 p-1 rounded-md transition-all ${
-                      starred.has(seg.offset)
-                        ? 'text-yellow-400 opacity-100'
-                        : 'opacity-0 group-hover/seg:opacity-100 text-slate-600 hover:text-yellow-400'
-                    }`}
-                    title={starred.has(seg.offset) ? (segNotes[seg.offset] ? `★ ${segNotes[seg.offset]} (dbl-click to edit)` : 'Unstar (dbl-click to add note)') : 'Star this segment'}
-                    aria-label={`${starred.has(seg.offset) ? 'Unstar' : 'Star'} segment at ${formatTimestamp(seg.offset)}`}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5">
-                      <path fillRule="evenodd" d="M8 1.75a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 13.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 7.874a.75.75 0 0 1 .416-1.28l4.21-.611L7.327 2.17A.75.75 0 0 1 8 1.75Z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  {starred.has(seg.offset) && segNotes[seg.offset] && editingSegNote !== seg.offset && (
-                    <span
-                      className="text-[8px] text-yellow-400/50 truncate max-w-[60px] shrink-0 cursor-pointer hover:text-yellow-400/80"
-                      onClick={(e) => { e.stopPropagation(); setEditingSegNote(seg.offset); }}
-                      title="Click to edit note"
-                    >{segNotes[seg.offset]}</span>
-                  )}
-                  {starred.has(seg.offset) && !segNotes[seg.offset] && editingSegNote !== seg.offset && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setEditingSegNote(seg.offset); }}
-                      className="opacity-0 group-hover/seg:opacity-100 text-[7px] text-yellow-500/40 hover:text-yellow-400/70 shrink-0 transition-opacity"
-                    >+note</button>
-                  )}
-                  {editingSegNote === seg.offset && (
-                    <input
-                      type="text"
-                      autoFocus
-                      defaultValue={segNotes[seg.offset] || ''}
-                      maxLength={50}
-                      placeholder="Add note..."
-                      onBlur={(e) => saveSegNote(seg.offset, e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') saveSegNote(seg.offset, (e.target as HTMLInputElement).value); if (e.key === 'Escape') setEditingSegNote(null); }}
-                      className="shrink-0 w-20 px-1 py-0 text-[9px] bg-yellow-500/10 border border-yellow-500/30 rounded text-yellow-300 placeholder:text-yellow-500/30 outline-none"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  )}
-                  {onAskAbout && (
-                    <>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const preview = seg.text.length > 80 ? seg.text.slice(0, 80) + '...' : seg.text;
-                        onAskAbout(seg.offset, `Explain this in simple terms: "${preview}"`);
-                      }}
-                      className="opacity-0 group-hover/seg:opacity-100 shrink-0 p-1 rounded-md text-slate-500 hover:text-amber-400 hover:bg-amber-400/10 transition-all"
-                      title="Explain this section"
-                      aria-label={`Explain section at ${formatTimestamp(seg.offset)}`}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-                        <path fillRule="evenodd" d="M8 15A7 7 0 1 0 8 1a7 7 0 0 0 0 14Zm.75-10.25a.75.75 0 0 0-1.5 0v4.5a.75.75 0 0 0 1.5 0v-4.5ZM8 13a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAskAbout(seg.offset, seg.text);
-                      }}
-                      className="opacity-0 group-hover/seg:opacity-100 shrink-0 p-1 rounded-md text-slate-500 hover:text-chalk-accent hover:bg-chalk-accent/10 transition-all"
-                      title="Ask about this moment"
-                      aria-label={`Ask about moment at ${formatTimestamp(seg.offset)}`}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-                        <path d="M1 8.74c0 1.36.49 2.6 1.3 3.56-.13.77-.45 1.48-.91 2.08a.38.38 0 0 0 .3.62c1.07 0 2-.37 2.74-.93A6.47 6.47 0 0 0 7.5 15.5c3.59 0 6.5-2.98 6.5-6.76S11.09 2 7.5 2 1 4.96 1 8.74Z" />
-                      </svg>
-                    </button>
-                    </>
-                  )}
-                </div>
-                </div>
-              );
-            })}
-          </>
-        )}
-      </div>
-      </div>
-
-      {/* "Coming next" preview when following along */}
-      {followAlong && activeIndex >= 0 && activeIndex < segments.length - 1 && viewMode === 'transcript' && (
-        <div className="px-3 py-2 border-t border-chalk-border/10 bg-chalk-surface/10">
-          <span className="text-[9px] text-slate-600 font-medium uppercase tracking-wider">Coming up</span>
-          <p className="text-[11px] text-slate-500/60 mt-0.5 line-clamp-2 leading-relaxed">
-            {segments.slice(activeIndex + 1, activeIndex + 3).map((s) => s.text).join(' ').slice(0, 120)}
-            {segments.slice(activeIndex + 1, activeIndex + 3).map((s) => s.text).join(' ').length > 120 ? '...' : ''}
+      {/* STT quality warning — hidden on mobile */}
+      {!isMobile && (source === 'groq-whisper' || source === 'local-whisper') && status === 'complete' && (
+        <div className="flex-none px-4 py-2 bg-amber-500/[0.06] border-b border-amber-500/20">
+          <p className="text-[10px] text-amber-400/80">
+            Auto-transcribed — timestamps may be approximate
           </p>
         </div>
       )}
 
-      {/* Reading progress percentage footer */}
-      {segments.length > 0 && readingProgress > 0 && viewMode === 'transcript' && (
-        <div className="px-3 py-1.5 border-t border-chalk-border/10 flex items-center justify-between">
-          <span className="text-[9px] text-slate-600 tabular-nums">
-            {Math.round(readingProgress * 100)}% covered
-            {readingProgress > 0.01 && readingProgress < 0.95 && stats && stats.speakingWPM > 0 && (() => {
-              const remainingWords = Math.round(stats.totalWords * (1 - readingProgress));
-              const remainingMin = Math.max(1, Math.round(remainingWords / stats.speakingWPM));
-              return <span className="text-slate-700"> · ~{remainingMin}m left</span>;
-            })()}
-          </span>
-          <div className="flex-1 mx-2 h-px bg-chalk-border/10 relative">
-            <div className="absolute inset-y-0 left-0 bg-chalk-accent/30" style={{ width: `${readingProgress * 100}%` }} />
+      {/* Segments */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className={`flex-1 overflow-y-auto ${isMobile ? 'overscroll-contain' : ''}`}
+      >
+        {filteredSegments.length === 0 && !isLoading && segments.length === 0 && (
+          <div className="px-4 py-8 text-center">
+            <p className="text-xs text-slate-500">No transcript available yet</p>
           </div>
-          <span className="text-[9px] text-slate-600 tabular-nums">{formatTimestamp(currentTime)}</span>
-        </div>
-      )}
+        )}
 
-      {/* Quick jump to percentage */}
-      {segments.length > 20 && viewMode === 'transcript' && (() => {
-        const totalDur = segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0);
-        if (totalDur < 60) return null;
-        return (
-          <div className="px-3 py-0.5 flex items-center justify-center gap-1">
-            {[25, 50, 75].map((pct) => (
-              <button
-                key={pct}
-                onClick={() => onSeek((pct / 100) * totalDur)}
-                className="px-1.5 py-0.5 rounded text-[8px] text-slate-600 hover:text-chalk-accent hover:bg-chalk-accent/10 transition-colors tabular-nums"
-                title={`Jump to ${pct}% (${formatTimestamp((pct / 100) * totalDur)})`}
-              >
-                {pct}%
-              </button>
-            ))}
+        {filteredSegments.length === 0 && search && segments.length > 0 && (
+          <div className="px-4 py-8 text-center">
+            <p className="text-xs text-slate-500">No matches for &ldquo;{search}&rdquo;</p>
           </div>
-        );
-      })()}
+        )}
 
-      {/* WPM sparkline */}
-      {segments.length > 20 && viewMode === 'transcript' && (() => {
-        const windowSec = 30;
-        const totalDur = segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0);
-        if (totalDur < 60) return null;
-        const buckets: number[] = [];
-        for (let t = 0; t < totalDur; t += windowSec) {
-          const words = segments
-            .filter((s) => s.offset >= t && s.offset < t + windowSec)
-            .reduce((sum, s) => sum + s.text.split(/\s+/).length, 0);
-          buckets.push(Math.round((words / windowSec) * 60));
-        }
-        if (buckets.length < 3) return null;
-        const max = Math.max(...buckets, 1);
-        const w = 200;
-        const h = 16;
-        const points = buckets.map((v, i) => `${(i / (buckets.length - 1)) * w},${h - (v / max) * h}`).join(' ');
-        const currentBucket = Math.min(Math.floor(currentTime / windowSec), buckets.length - 1);
-        const curX = (currentBucket / (buckets.length - 1)) * w;
-        return (
-          <div className="px-3 py-1 border-t border-chalk-border/10 flex items-center gap-2">
-            <span className="text-[8px] text-slate-700 shrink-0">WPM</span>
-            <svg viewBox={`0 0 ${w} ${h}`} className="flex-1 h-4" preserveAspectRatio="none">
-              <polyline points={points} fill="none" stroke="rgba(99,102,241,0.3)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
-              <line x1={curX} y1={0} x2={curX} y2={h} stroke="rgba(99,102,241,0.5)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
-            </svg>
-            <span className="text-[8px] text-slate-700 tabular-nums shrink-0">{buckets[currentBucket] ?? 0}</span>
-          </div>
-        );
-      })()}
+        {filteredSegments.map((seg, i) => {
+          const isActive = !search && segments[activeIndex] === seg;
+          const segChapter = chapterOffsets.has(seg.offset) ? getChapterLabel(seg.offset) : null;
 
-      {/* Speaker time breakdown */}
-      {speakerChanges.size >= 2 && viewMode === 'transcript' && (() => {
-        // Group segments by speaker turns
-        const turns: { start: number; dur: number }[] = [];
-        let tStart = 0;
-        for (let i = 1; i <= segments.length; i++) {
-          if (i === segments.length || speakerChanges.has(i)) {
-            const first = segments[tStart];
-            const last = segments[i - 1];
-            const dur = (last.offset + (last.duration || 0)) - first.offset;
-            turns.push({ start: tStart, dur });
-            tStart = i;
-          }
-        }
-        // Alternate speakers A/B
-        const speakerTime: Record<string, number> = {};
-        turns.forEach((t, i) => {
-          const label = i % 2 === 0 ? 'Speaker A' : 'Speaker B';
-          speakerTime[label] = (speakerTime[label] || 0) + t.dur;
-        });
-        const total = Object.values(speakerTime).reduce((a, b) => a + b, 0);
-        if (total < 30) return null;
-        return (
-          <div className="px-3 py-1 border-t border-chalk-border/10">
-            <div className="flex items-center gap-2 h-2">
-              {Object.entries(speakerTime).map(([name, dur]) => {
-                const displayName = speakerNames[name] || name;
-                const shortName = displayName.length > 10 ? displayName.slice(0, 10) : displayName;
-                return (
-                <div key={name} className="flex items-center gap-1 flex-1 min-w-0">
-                  <div
-                    className={`h-1.5 rounded-full ${name === 'Speaker A' ? 'bg-indigo-500/40' : 'bg-emerald-500/40'}`}
-                    style={{ width: `${Math.round((dur / total) * 100)}%` }}
-                  />
-                  {editingSpeaker === name ? (
-                    <input
-                      autoFocus
-                      className="text-[8px] text-slate-300 bg-transparent border-b border-chalk-accent/40 outline-none w-14 tabular-nums"
-                      defaultValue={displayName}
-                      onBlur={(e) => {
-                        const val = e.target.value.trim();
-                        setSpeakerNames((prev) => { const next = { ...prev, [name]: val || name }; if (videoId) localStorage.setItem(`chalk-speakers-${videoId}`, JSON.stringify(next)); return next; });
-                        setEditingSpeaker(null);
-                      }}
-                      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditingSpeaker(null); }}
-                    />
-                  ) : (
-                    <span
-                      className="text-[8px] text-slate-700 shrink-0 tabular-nums cursor-pointer hover:text-slate-400 transition-colors"
-                      onClick={() => setEditingSpeaker(name)}
-                      title={`Click to rename ${displayName}`}
-                    >{shortName} {Math.round((dur / total) * 100)}%</span>
-                  )}
+          return (
+            <div key={`${seg.offset}-${i}`}>
+              {/* Chapter divider */}
+              {segChapter && (
+                <div className={isMobile ? 'px-3 pt-2 pb-0.5' : 'px-4 pt-4 pb-1'}>
+                  <div className="flex items-center gap-2">
+                    <div className="h-px flex-1 bg-chalk-border/30" />
+                    <span className="text-[10px] text-slate-500 font-medium shrink-0">{segChapter}</span>
+                    <div className="h-px flex-1 bg-chalk-border/30" />
+                  </div>
                 </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })()}
+              )}
 
-      {/* "Jump to current" pill when user scrolls away */}
-      {userScrolled && activeIndex >= 0 && viewMode === 'transcript' && (
-        <div className="absolute bottom-2 inset-x-0 flex justify-center pointer-events-none">
-          <button
-            onClick={() => {
-              setUserScrolled(false);
-              activeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }}
-            className="pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-medium bg-chalk-surface/95 text-slate-300 border border-chalk-border/40 shadow-lg backdrop-blur-sm hover:bg-chalk-surface hover:text-chalk-text transition-colors"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-              <path d="M8 1a.75.75 0 0 1 .75.75v6.999l2.47-2.47a.75.75 0 1 1 1.06 1.061l-3.75 3.75a.75.75 0 0 1-1.06 0L3.72 7.34a.75.75 0 0 1 1.06-1.06l2.47 2.47V1.75A.75.75 0 0 1 8 1Z" />
-              <path d="M2.75 13a.75.75 0 0 0 0 1.5h10.5a.75.75 0 0 0 0-1.5H2.75Z" />
-            </svg>
-            Jump to current
-          </button>
-        </div>
-      )}
-      {/* Range selection copy bar */}
-      {selectRange && (
-        <div className="absolute bottom-12 inset-x-0 flex justify-center z-50 pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 backdrop-blur-sm shadow-lg">
-            <span className="text-[10px] text-cyan-300">{selectRange.end - selectRange.start + 1} segments selected</span>
-            <button
-              onClick={() => {
-                const selected = filtered.slice(selectRange.start, selectRange.end + 1);
-                const text = selected.map((s) => `[${formatTimestamp(s.offset)}] ${s.text}`).join('\n');
-                navigator.clipboard.writeText(text);
-                setSelectRange(null);
-              }}
-              className="text-[10px] font-medium text-cyan-200 hover:text-white px-2 py-0.5 rounded-full bg-cyan-500/30 hover:bg-cyan-500/50 transition-colors"
-            >Copy</button>
-            <button
-              onClick={() => setSelectRange(null)}
-              className="text-[10px] text-cyan-400/60 hover:text-cyan-300 transition-colors"
-            >Clear</button>
-          </div>
-        </div>
-      )}
-      {/* Right-click context menu */}
-      {ctxMenu && (
-        <div
-          className="fixed z-[100] min-w-[140px] py-1 rounded-lg bg-chalk-surface border border-chalk-border/40 shadow-xl backdrop-blur-sm"
-          style={{ left: ctxMenu.x, top: ctxMenu.y }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            className="w-full text-left px-3 py-1.5 text-[10px] text-slate-300 hover:bg-white/[0.06] transition-colors"
-            onClick={() => { navigator.clipboard.writeText(ctxMenu.text); setCtxMenu(null); }}
-          >Copy Text</button>
-          <button
-            className="w-full text-left px-3 py-1.5 text-[10px] text-slate-300 hover:bg-white/[0.06] transition-colors"
-            onClick={() => { navigator.clipboard.writeText(`[${formatTimestamp(ctxMenu.offset)}] ${ctxMenu.text}`); setCtxMenu(null); }}
-          >Copy with Timestamp</button>
-          {onAskAbout && (
-            <button
-              className="w-full text-left px-3 py-1.5 text-[10px] text-chalk-accent hover:bg-white/[0.06] transition-colors"
-              onClick={() => { onAskAbout(ctxMenu.offset, ctxMenu.text); setCtxMenu(null); }}
-            >Ask AI About This</button>
-          )}
-          <button
-            className="w-full text-left px-3 py-1.5 text-[10px] text-slate-300 hover:bg-white/[0.06] transition-colors"
-            onClick={() => { onSeek(ctxMenu.offset); setCtxMenu(null); }}
-          >Jump to {formatTimestamp(ctxMenu.offset)}</button>
-        </div>
-      )}
+              <div
+                ref={isActive ? activeRef : undefined}
+                onClick={() => onSeek(seg.offset)}
+                className={`group flex gap-3 cursor-pointer transition-colors ${
+                  isMobile ? 'px-3 py-1 active:scale-[0.99]' : 'px-4 py-1.5'
+                } ${
+                  isActive
+                    ? 'bg-chalk-accent/[0.08] border-l-2 border-l-chalk-accent'
+                    : 'border-l-2 border-l-transparent hover:bg-white/[0.03]'
+                }`}
+              >
+                <span className={`shrink-0 text-[10px] font-mono pt-0.5 ${
+                  isActive ? 'text-chalk-accent' : 'text-slate-600'
+                }`}>
+                  {formatTimestamp(seg.offset)}
+                </span>
+                <span className={`${
+                  isMobile ? 'text-[11px] leading-snug' : 'text-[12px] leading-relaxed'
+                } ${
+                  isActive ? 'text-chalk-text' : 'text-slate-400'
+                }`}>
+                  {search ? highlightMatch(seg.text, search) : seg.text}
+                </span>
+                {onAskAbout && !isMobile && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onAskAbout(seg.offset, seg.text);
+                    }}
+                    className="shrink-0 self-start mt-0.5 opacity-0 group-hover:opacity-100 text-slate-600 hover:text-chalk-accent transition-all"
+                    title="Ask about this"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                      <path d="M1 8.74c0 1.36.49 2.6 1.3 3.56-.13.77-.45 1.48-.91 2.08a.38.38 0 0 0 .3.62c1.07 0 2-.37 2.74-.93A6.47 6.47 0 0 0 7.5 15.5c3.59 0 6.5-2.98 6.5-6.76S11.09 2 7.5 2 1 4.96 1 8.74Z" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function PulsingEllipsis() {
-  return (
-    <span className="inline-flex gap-[1px]">
-      {[0, 1, 2].map((i) => (
-        <span
-          key={i}
-          className="inline-block animate-pulse"
-          style={{ animationDelay: `${i * 300}ms`, animationDuration: '1.2s' }}
-        >
-          .
-        </span>
-      ))}
-    </span>
-  );
-}
-
 function highlightMatch(text: string, query: string): React.ReactNode {
-  if (!query.trim()) return text;
-  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-  const parts = text.split(regex);
-  if (parts.length === 1) return text;
-
-  return parts.map((part, i) =>
-    regex.test(part) ? (
-      <mark key={i} className="bg-chalk-accent/30 text-chalk-text rounded-sm px-0.5">{part}</mark>
-    ) : (
-      part
-    )
+  if (!query) return text;
+  const lower = text.toLowerCase();
+  const q = query.toLowerCase();
+  const idx = lower.indexOf(q);
+  if (idx === -1) return text;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="bg-yellow-500/20 text-yellow-200 rounded-sm px-0.5">{text.slice(idx, idx + query.length)}</mark>
+      {text.slice(idx + query.length)}
+    </>
   );
-}
-
-function highlightKeyTerms(text: string, keyTerms: Set<string>, termMeta?: Map<string, { count: number; firstAt: number }>): React.ReactNode {
-  if (keyTerms.size === 0) return text;
-  const pattern = [...keyTerms].map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-  const regex = new RegExp(`\\b(${pattern})\\b`, 'gi');
-  const parts = text.split(regex);
-  if (parts.length === 1) return text;
-  return parts.map((part, i) => {
-    const lower = part.toLowerCase();
-    if (keyTerms.has(lower)) {
-      const meta = termMeta?.get(lower);
-      const tip = meta ? `"${lower}" — appears ${meta.count}x` : undefined;
-      return <span key={i} className="font-medium text-slate-300 cursor-help" title={tip}>{part}</span>;
-    }
-    return part;
-  });
 }

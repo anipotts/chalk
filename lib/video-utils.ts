@@ -9,6 +9,17 @@ export interface TranscriptSegment {
   duration: number; // seconds
 }
 
+export type TranscriptSource =
+  | 'innertube'
+  | 'yt-dlp'
+  | 'groq-whisper'
+  | 'local-whisper';
+
+export interface TranscriptResult {
+  segments: TranscriptSegment[];
+  source: TranscriptSource;
+}
+
 /**
  * Extract YouTube video ID from various URL formats.
  */

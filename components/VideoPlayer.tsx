@@ -6,6 +6,30 @@ import { DefaultVideoLayout, defaultLayoutIcons } from '@vidstack/react/player/l
 import '@vidstack/react/player/styles/default/theme.css';
 import '@vidstack/react/player/styles/default/layouts/video.css';
 
+/**
+ * Safely read a property from the Vidstack player instance.
+ * The player's internal $state proxy can throw "this.$state[prop] is not a function"
+ * when React 19 strict mode tears down / double-mounts components while the proxy
+ * is in an invalid state. This wrapper catches those errors gracefully.
+ */
+function safePlayerGet<T>(player: MediaPlayerInstance | null, getter: (p: MediaPlayerInstance) => T, fallback: T): T {
+  if (!player) return fallback;
+  try {
+    return getter(player);
+  } catch {
+    return fallback;
+  }
+}
+
+function safePlayerCall(player: MediaPlayerInstance | null, fn: (p: MediaPlayerInstance) => void): void {
+  if (!player) return;
+  try {
+    fn(player);
+  } catch {
+    // Player proxy in invalid state — ignore
+  }
+}
+
 interface VideoPlayerProps {
   videoId: string;
   onPause?: () => void;
@@ -40,27 +64,27 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
       case ' ':
       case 'k':
         e.preventDefault();
-        if (p.paused) {
-          p.play();
+        if (safePlayerGet(p, (pl) => pl.paused, true)) {
+          safePlayerCall(p, (pl) => pl.play());
         } else {
-          p.pause();
+          safePlayerCall(p, (pl) => pl.pause());
         }
         break;
       case 'ArrowLeft':
         e.preventDefault();
-        p.currentTime = Math.max(0, p.currentTime - 5);
+        safePlayerCall(p, (pl) => { pl.currentTime = Math.max(0, pl.currentTime - 5); });
         break;
       case 'ArrowRight':
         e.preventDefault();
-        p.currentTime = p.currentTime + 5;
+        safePlayerCall(p, (pl) => { pl.currentTime = pl.currentTime + 5; });
         break;
       case 'j':
         e.preventDefault();
-        p.currentTime = Math.max(0, p.currentTime - 10);
+        safePlayerCall(p, (pl) => { pl.currentTime = Math.max(0, pl.currentTime - 10); });
         break;
       case 'l':
         e.preventDefault();
-        p.currentTime = p.currentTime + 10;
+        safePlayerCall(p, (pl) => { pl.currentTime = pl.currentTime + 10; });
         break;
       case 'f':
         e.preventDefault();
@@ -73,17 +97,23 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
       case ',':
       case '<':
         e.preventDefault();
-        p.playbackRate = Math.max(0.25, p.playbackRate - 0.25);
-        showSpeed(`${p.playbackRate}x`);
+        safePlayerCall(p, (pl) => {
+          pl.playbackRate = Math.max(0.25, pl.playbackRate - 0.25);
+          showSpeed(`${pl.playbackRate}x`);
+          try { localStorage.setItem('chalk-playback-speed', String(pl.playbackRate)); } catch { /* ignore */ }
+        });
         break;
       case '.':
       case '>':
         e.preventDefault();
-        p.playbackRate = Math.min(3, p.playbackRate + 0.25);
-        showSpeed(`${p.playbackRate}x`);
+        safePlayerCall(p, (pl) => {
+          pl.playbackRate = Math.min(10, pl.playbackRate + 0.25);
+          showSpeed(`${pl.playbackRate}x`);
+          try { localStorage.setItem('chalk-playback-speed', String(pl.playbackRate)); } catch { /* ignore */ }
+        });
         break;
     }
-  }, [player]);
+  }, [player, showSpeed]);
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
@@ -103,18 +133,29 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
       ref={player}
       src={`youtube/${videoId}`}
       autoPlay
+      playsInline
       aspectRatio="16/9"
       crossOrigin
       onPause={() => onPause?.()}
       onPlay={() => onPlay?.()}
       onTimeUpdate={(e) => {
-        const detail = e as unknown as { currentTime: number };
-        if (typeof detail?.currentTime === 'number') {
-          onTimeUpdate?.(detail.currentTime);
+        try {
+          const detail = e as unknown as { currentTime: number };
+          if (typeof detail?.currentTime === 'number') {
+            onTimeUpdate?.(detail.currentTime);
+          }
+        } catch {
+          // Vidstack $state proxy may throw during teardown
         }
       }}
-      onCanPlay={() => onReady?.()}
-      className="w-full rounded-xl overflow-hidden bg-black"
+      onCanPlay={() => {
+        const savedSpeed = localStorage.getItem('chalk-playback-speed');
+        if (savedSpeed && player.current) {
+          safePlayerCall(player.current, (pl) => { pl.playbackRate = parseFloat(savedSpeed); });
+        }
+        onReady?.();
+      }}
+      className="w-full rounded-none md:rounded-xl overflow-hidden bg-black"
     >
       <MediaProvider />
       <DefaultVideoLayout icons={defaultLayoutIcons} />

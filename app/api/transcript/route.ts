@@ -1,11 +1,16 @@
-import { fetchTranscript, deduplicateSegments, type TranscriptSegment } from '@/lib/transcript';
+/**
+ * JSON transcript endpoint (backward-compatible).
+ * POST /api/transcript  body: { videoId }
+ *
+ * Returns: { segments, source }
+ * Uses 3-tier cache hierarchy before fetching.
+ */
+
+import { fetchTranscript, deduplicateSegments, mergeIntoSentences } from '@/lib/transcript';
+import { getCachedTranscript, setCachedTranscript } from '@/lib/transcript-cache';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 30;
-
-// Simple in-memory cache (persists for lambda lifetime)
-const cache = new Map<string, { segments: TranscriptSegment[]; fetchedAt: number }>();
-const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+export const maxDuration = 120;
 
 export async function POST(req: Request) {
   let body;
@@ -16,24 +21,26 @@ export async function POST(req: Request) {
   }
 
   const { videoId } = body;
-  if (!videoId || typeof videoId !== 'string' || videoId.length > 20) {
+  if (!videoId || typeof videoId !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
     return Response.json({ error: 'Invalid videoId' }, { status: 400 });
   }
 
-  // Check cache
-  const cached = cache.get(videoId);
-  if (cached && Date.now() - cached.fetchedAt < CACHE_TTL) {
-    return Response.json({ segments: cached.segments });
+  // Check cache hierarchy (L1 memory → L2 Supabase)
+  const cached = await getCachedTranscript(videoId);
+  if (cached && cached.segments.length > 0) {
+    return Response.json({ segments: cached.segments, source: cached.source });
   }
 
+  // Fetch from source (Phase 1 caption race → Phase 2 STT cascade)
   try {
-    const rawSegments = await fetchTranscript(videoId);
-    const segments = deduplicateSegments(rawSegments);
+    const result = await fetchTranscript(videoId);
+    const segments = mergeIntoSentences(deduplicateSegments(result.segments));
 
-    // Cache result
-    cache.set(videoId, { segments, fetchedAt: Date.now() });
+    if (segments.length > 0) {
+      setCachedTranscript(videoId, segments, result.source);
+    }
 
-    return Response.json({ segments });
+    return Response.json({ segments, source: result.source });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to fetch transcript';
     return Response.json({ error: message }, { status: 500 });

@@ -2,18 +2,25 @@
  * Server-side transcript fetching.
  * This file imports Node.js-only packages — do NOT import from client components.
  * For client-safe utils, import from '@/lib/video-utils' instead.
+ *
+ * Architecture:
+ *   Phase 1 — Caption race (Promise.any): Innertube ANDROID + yt-dlp in parallel
+ *   Phase 2 — STT cascade (sequential): Groq Whisper → local Whisper
  */
 
-import { YoutubeTranscript } from 'youtube-transcript';
+import { execFile } from 'child_process';
 import { tmpdir } from 'os';
 import { join } from 'path';
 import { randomBytes } from 'crypto';
+import { readFile, unlink } from 'fs/promises';
+import { withRetry, withTimeout } from './retry';
+import { isGroqAvailable, transcribeWithGroq } from './stt/groq-whisper';
 
 // Re-export client-safe types and functions so API routes can use them
-export type { TranscriptSegment } from './video-utils';
+export type { TranscriptSegment, TranscriptSource, TranscriptResult } from './video-utils';
 export { formatTimestamp, buildVideoContext, parseTimestampLinks, extractVideoId } from './video-utils';
 
-import type { TranscriptSegment } from './video-utils';
+import type { TranscriptSegment, TranscriptResult } from './video-utils';
 
 // ─── Innertube types ───────────────────────────────────────────────────────────
 
@@ -37,7 +44,39 @@ interface Json3Response {
   }>;
 }
 
-// ─── Tier 1: Innertube API ─────────────────────────────────────────────────────
+/**
+ * Parse YouTube's XML timedtext format (returned by ANDROID client).
+ * Format: <timedtext><body><p t="14980" d="1480">text</p>...</body></timedtext>
+ */
+function parseTimedTextXml(xml: string): TranscriptSegment[] {
+  const segments: TranscriptSegment[] = [];
+  // Match <p t="ms" d="ms">text</p> elements
+  const regex = /<p\s+t="(\d+)"(?:\s+d="(\d+)")?[^>]*>([^<]*(?:<[^/][^<]*)*?)<\/p>/g;
+  let match;
+  while ((match = regex.exec(xml)) !== null) {
+    const offset = parseInt(match[1], 10) / 1000;
+    const duration = match[2] ? parseInt(match[2], 10) / 1000 : 0;
+    // Decode HTML entities
+    const text = match[3]
+      .replace(/<[^>]+>/g, '') // strip inner tags
+      .replace(/&#39;/g, "'")
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .trim();
+    if (text) {
+      segments.push({ text, offset, duration });
+    }
+  }
+  return segments;
+}
+
+// ─── Tier 1: Innertube API (ANDROID client) ─────────────────────────────────────
+//
+// YouTube's WEB client no longer returns caption tracks as of early 2025.
+// The ANDROID client still returns them, but caption URLs serve XML timedtext
+// instead of JSON3 (the fmt param is ignored). We parse the XML directly.
 
 async function fetchTranscriptInnertube(videoId: string): Promise<TranscriptSegment[]> {
   const controller = new AbortController();
@@ -52,8 +91,9 @@ async function fetchTranscriptInnertube(videoId: string): Promise<TranscriptSegm
         videoId,
         context: {
           client: {
-            clientName: 'WEB',
-            clientVersion: '2.20241201.00.00',
+            clientName: 'ANDROID',
+            clientVersion: '19.29.37',
+            hl: 'en',
           },
         },
       }),
@@ -74,107 +114,145 @@ async function fetchTranscriptInnertube(videoId: string): Promise<TranscriptSegm
   const manual = enTracks.find((t) => t.kind !== 'asr');
   const track = manual || enTracks[0] || tracks[0];
 
-  // Fetch JSON3 format
-  const url = new URL(track.baseUrl);
-  url.searchParams.set('fmt', 'json3');
-  const captionResp = await fetch(url.toString());
+  // Fetch captions (ANDROID client returns XML timedtext regardless of fmt param)
+  const captionController = new AbortController();
+  const captionTimeout = setTimeout(() => captionController.abort(), 10000);
+  let captionResp;
+  try {
+    captionResp = await fetch(track.baseUrl, { signal: captionController.signal });
+  } finally {
+    clearTimeout(captionTimeout);
+  }
   if (!captionResp.ok) throw new Error(`Caption fetch failed: ${captionResp.status}`);
 
-  const json3 = (await captionResp.json()) as Json3Response;
-  if (!json3.events) throw new Error('No events in JSON3 response');
+  const body = await captionResp.text();
 
-  return json3.events
-    .filter((e) => e.segs && e.segs.length > 0)
-    .map((e) => ({
-      text: e.segs!.map((s) => s.utf8).join(''),
-      offset: e.tStartMs / 1000,
-      duration: (e.dDurationMs || 0) / 1000,
-    }));
+  // Try JSON3 first (in case YouTube changes behavior), fall back to XML
+  let segments: TranscriptSegment[];
+  try {
+    const json3 = JSON.parse(body) as Json3Response;
+    if (json3.events) {
+      segments = json3.events
+        .filter((e) => e.segs && e.segs.length > 0)
+        .map((e) => ({
+          text: e.segs!.map((s) => s.utf8).join(''),
+          offset: e.tStartMs / 1000,
+          duration: (e.dDurationMs || 0) / 1000,
+        }));
+    } else {
+      segments = [];
+    }
+  } catch {
+    // Not JSON — parse as XML timedtext
+    segments = parseTimedTextXml(body);
+  }
+
+  if (segments.length === 0) throw new Error('Innertube: returned 0 segments');
+  return segments;
 }
 
-// ─── Tier 2: youtube-transcript package ────────────────────────────────────────
-
-async function fetchTranscriptPackage(videoId: string): Promise<TranscriptSegment[]> {
-  const raw = await YoutubeTranscript.fetchTranscript(videoId);
-  return raw.map((item) => ({
-    text: item.text,
-    offset: item.offset / 1000,
-    duration: item.duration / 1000,
-  }));
-}
-
-// ─── Tier 3: youtube-dl-exec ───────────────────────────────────────────────────
+// ─── Tier 2: yt-dlp CLI (write subs to file) ───────────────────────────────────
 
 async function fetchTranscriptYtDlp(videoId: string): Promise<TranscriptSegment[]> {
-  const { default: youtubedl } = await import('youtube-dl-exec');
-  const result = (await youtubedl(`https://www.youtube.com/watch?v=${videoId}`, {
-    writeAutoSub: true,
-    subFormat: 'json3',
-    skipDownload: true,
-    output: '-',
-    dumpJson: true,
-  })) as Record<string, unknown>;
+  const tempBase = join(tmpdir(), `chalk-subs-${randomBytes(6).toString('hex')}`);
+  const expectedSubFile = `${tempBase}.en.json3`;
 
-  const subs = result.subtitles as Record<string, Array<{ ext: string; url: string }>> | undefined;
-  const autoSubs = result.automatic_captions as Record<string, Array<{ ext: string; url: string }>> | undefined;
-  const captionList = subs?.en || autoSubs?.en;
+  try {
+    // Use execFile directly so yt-dlp goes through full client negotiation
+    // (JS challenge solving, multiple client fallbacks) instead of dumpJson
+    // which uses a lightweight metadata path that YouTube now blocks.
+    await execFilePromise('yt-dlp', [
+      `https://www.youtube.com/watch?v=${videoId}`,
+      '--write-auto-sub',
+      '--sub-lang', 'en',
+      '--sub-format', 'json3',
+      '--skip-download',
+      '-o', tempBase,
+    ]);
 
-  if (captionList) {
-    const json3 = captionList.find((s) => s.ext === 'json3');
-    if (json3?.url) {
-      const resp = await fetch(json3.url);
-      const data = (await resp.json()) as Json3Response;
-      if (data.events) {
-        return data.events
-          .filter((e) => e.segs && e.segs.length > 0)
-          .map((e) => ({
-            text: e.segs!.map((s) => s.utf8).join(''),
-            offset: e.tStartMs / 1000,
-            duration: (e.dDurationMs || 0) / 1000,
-          }));
-      }
-    }
+    // yt-dlp writes the sub file as <output>.en.json3
+    const raw = await readFile(expectedSubFile, 'utf-8');
+    const data = JSON.parse(raw) as Json3Response;
+
+    if (!data.events) throw new Error('No events in json3 subtitle file');
+
+    const segments = data.events
+      .filter((e) => e.segs && e.segs.length > 0)
+      .map((e) => ({
+        text: e.segs!.map((s) => s.utf8).join(''),
+        offset: e.tStartMs / 1000,
+        duration: (e.dDurationMs || 0) / 1000,
+      }));
+
+    if (segments.length === 0) throw new Error('yt-dlp: json3 had 0 segments');
+    return segments;
+  } finally {
+    await unlink(expectedSubFile).catch(() => {});
   }
-
-  throw new Error('No captions found via yt-dlp');
 }
 
-// ─── Main caption fetcher (tiers 1-3) ──────────────────────────────────────────
+// ─── STT: Local Whisper CLI ───────────────────────────────────────────────────
+
+interface WhisperSegment {
+  start: number;
+  end: number;
+  text: string;
+}
+
+interface WhisperOutput {
+  segments: WhisperSegment[];
+}
+
+function execFilePromise(cmd: string, args: string[]): Promise<{ stdout: string; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    execFile(cmd, args, { timeout: 300_000 }, (err, stdout, stderr) => {
+      if (err) reject(err);
+      else resolve({ stdout, stderr });
+    });
+  });
+}
 
 /**
- * Fetch transcript for a YouTube video.
- * Tier order: Innertube API → youtube-transcript → youtube-dl-exec
+ * Returns the path to the local Whisper CLI, or null if not configured/available.
  */
-export async function fetchTranscript(videoId: string): Promise<TranscriptSegment[]> {
-  const errors: string[] = [];
+function getWhisperCliPath(): string | null {
+  // Explicit env var takes priority
+  if (process.env.WHISPER_CLI_PATH) return process.env.WHISPER_CLI_PATH;
+  // Dev-only default
+  if (process.env.NODE_ENV === 'development') return '/opt/homebrew/bin/whisper';
+  return null;
+}
 
-  // Tier 1: Innertube API (most reliable for caption videos)
-  try {
-    const result = await fetchTranscriptInnertube(videoId);
-    console.log(`[transcript] ${videoId}: fetched via Innertube (${result.length} segments)`);
-    return result;
-  } catch (e) {
-    errors.push(`Innertube: ${e instanceof Error ? e.message : String(e)}`);
-  }
+async function fetchTranscriptLocalWhisper(audioPath: string): Promise<TranscriptSegment[]> {
+  const whisperPath = getWhisperCliPath();
+  if (!whisperPath) throw new Error('Local Whisper not available (WHISPER_CLI_PATH not set)');
 
-  // Tier 2: youtube-transcript package
-  try {
-    const result = await fetchTranscriptPackage(videoId);
-    console.log(`[transcript] ${videoId}: fetched via youtube-transcript (${result.length} segments)`);
-    return result;
-  } catch (e) {
-    errors.push(`Package: ${e instanceof Error ? e.message : String(e)}`);
-  }
+  const jsonPath = audioPath.replace(/\.wav$/, '.json');
 
-  // Tier 3: youtube-dl-exec
   try {
-    const result = await fetchTranscriptYtDlp(videoId);
-    console.log(`[transcript] ${videoId}: fetched via yt-dlp (${result.length} segments)`);
-    return result;
-  } catch (e) {
-    errors.push(`YT-DLP: ${e instanceof Error ? e.message : String(e)}`);
-    console.error(`[transcript] ${videoId}: all tiers failed:`, errors.join('; '));
-    throw new Error(`Could not fetch transcript for video ${videoId}`);
+    console.log(`[transcript] running local Whisper on ${audioPath}...`);
+    await execFilePromise(whisperPath, [
+      audioPath,
+      '--model', 'base',
+      '--output_format', 'json',
+      '--language', 'en',
+      '--output_dir', tmpdir(),
+    ]);
+
+    const raw = await readFile(jsonPath, 'utf-8');
+    const data = JSON.parse(raw) as WhisperOutput;
+
+    if (!data.segments || data.segments.length === 0) {
+      throw new Error('Whisper produced no segments');
+    }
+
+    return data.segments.map((s) => ({
+      text: s.text.trim(),
+      offset: s.start,
+      duration: s.end - s.start,
+    }));
+  } finally {
+    await unlink(jsonPath).catch(() => {});
   }
 }
 
@@ -198,6 +276,112 @@ export async function downloadAudio(videoId: string): Promise<string> {
   return tempPath;
 }
 
+// ─── Phase 1: Caption race ─────────────────────────────────────────────────────
+
+type CaptionTier = 'innertube' | 'yt-dlp';
+
+interface CaptionRaceResult {
+  segments: TranscriptSegment[];
+  source: CaptionTier;
+}
+
+const INNERTUBE_TIMEOUT = 15_000; // 15s — Innertube is fast when it works
+const YTDLP_TIMEOUT = 30_000;    // 30s — yt-dlp needs time for JS challenge solving
+const RACE_TIMEOUT = 35_000;     // 35s overall caption race
+
+export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
+  // Two caption tiers run concurrently — first non-empty result wins.
+  // Innertube ANDROID is fast (~1-2s) and handles most videos.
+  // yt-dlp CLI is slower (~10-15s) but most reliable (full JS challenge solving).
+  // youtube-transcript package removed — uses same broken WEB Innertube path.
+  const tiers: Array<{ fn: () => Promise<TranscriptSegment[]>; source: CaptionTier; timeout: number }> = [
+    { fn: () => fetchTranscriptInnertube(videoId), source: 'innertube', timeout: INNERTUBE_TIMEOUT },
+    { fn: () => fetchTranscriptYtDlp(videoId), source: 'yt-dlp', timeout: YTDLP_TIMEOUT },
+  ];
+
+  const raceEntries = tiers.map(({ fn, source, timeout }) =>
+    withTimeout(
+      withRetry(fn, { retries: 1, delayMs: 1000 }),
+      timeout,
+      source,
+    ).then((segments) => ({ segments, source }))
+  );
+
+  return withTimeout(
+    Promise.any(raceEntries),
+    RACE_TIMEOUT,
+    'Caption race',
+  );
+}
+
+// ─── Phase 2: STT cascade ──────────────────────────────────────────────────────
+
+export async function sttCascade(videoId: string): Promise<TranscriptResult> {
+  console.log(`[transcript] ${videoId}: all captions failed, starting STT cascade`);
+
+  // Download audio once (shared by both STT tiers)
+  const audioPath = await downloadAudio(videoId);
+
+  try {
+    // Tier 1: Groq Whisper (cloud, fast)
+    if (isGroqAvailable()) {
+      try {
+        console.log(`[transcript] ${videoId}: trying Groq Whisper...`);
+        const audioBuffer = await readFile(audioPath);
+        const segments = await transcribeWithGroq(audioBuffer, `${videoId}.wav`);
+        if (segments.length > 0) {
+          console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (${segments.length} segments)`);
+          return { segments, source: 'groq-whisper' };
+        }
+      } catch (e) {
+        console.warn(`[transcript] ${videoId}: Groq Whisper failed:`, e instanceof Error ? e.message : e);
+      }
+    }
+
+    // Tier 2: Local Whisper (offline fallback)
+    try {
+      console.log(`[transcript] ${videoId}: trying local Whisper...`);
+      const segments = await fetchTranscriptLocalWhisper(audioPath);
+      console.log(`[transcript] ${videoId}: transcribed via local Whisper (${segments.length} segments)`);
+      return { segments, source: 'local-whisper' };
+    } catch (e) {
+      console.warn(`[transcript] ${videoId}: local Whisper failed:`, e instanceof Error ? e.message : e);
+    }
+
+    throw new Error('All STT tiers failed');
+  } finally {
+    await unlink(audioPath).catch(() => {});
+  }
+}
+
+// ─── Main pipeline ─────────────────────────────────────────────────────────────
+
+/**
+ * Fetch transcript for a YouTube video.
+ *
+ * Phase 1: Caption race (Innertube ANDROID + yt-dlp in parallel)
+ * Phase 2: STT cascade (Groq Whisper → local Whisper) — only if all captions fail
+ *
+ * Returns TranscriptResult with segments + source metadata.
+ */
+export async function fetchTranscript(videoId: string): Promise<TranscriptResult> {
+  // Phase 1: Caption race
+  try {
+    const result = await captionRace(videoId);
+    console.log(`[transcript] ${videoId}: fetched via ${result.source} (${result.segments.length} segments)`);
+    return result;
+  } catch {
+    // All caption tiers failed — fall through to STT
+  }
+
+  // Phase 2: STT cascade
+  try {
+    return await sttCascade(videoId);
+  } catch {
+    throw new Error(`Could not fetch transcript for video ${videoId}`);
+  }
+}
+
 /**
  * Deduplicate overlapping auto-generated caption segments.
  */
@@ -213,4 +397,74 @@ export function deduplicateSegments(segments: TranscriptSegment[]): TranscriptSe
     result.push(curr);
   }
   return result;
+}
+
+/**
+ * Merge tiny caption fragments into sentence-level segments.
+ *
+ * YouTube auto-captions arrive as 2-3 word fragments every ~2s.
+ * This merges them into natural sentence chunks by accumulating text
+ * until we hit a sentence-ending punctuation, a time gap > 3s,
+ * or a reasonable length (~120 chars).
+ */
+export function mergeIntoSentences(segments: TranscriptSegment[]): TranscriptSegment[] {
+  if (segments.length === 0) return [];
+
+  const TIME_GAP_THRESHOLD = 3; // seconds — gap between segments that forces a break
+  const MAX_CHARS = 150;        // soft limit before forcing a break
+  const MIN_CHARS = 30;         // don't break on punctuation if under this
+
+  const merged: TranscriptSegment[] = [];
+  let accText = '';
+  let accStart = 0;
+  let accEnd = 0;
+
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    const text = seg.text.trim();
+    if (!text) continue;
+
+    const segEnd = seg.offset + (seg.duration || 0);
+
+    if (accText === '') {
+      // Start a new accumulation
+      accText = text;
+      accStart = seg.offset;
+      accEnd = segEnd;
+      continue;
+    }
+
+    // Check if we should flush the accumulator before adding this segment
+    const gap = seg.offset - accEnd;
+    const endsWithSentence = /[.!?][\s"')\]]?$/.test(accText);
+    const tooLong = accText.length >= MAX_CHARS;
+    const sentenceBreak = endsWithSentence && accText.length >= MIN_CHARS;
+
+    if (gap > TIME_GAP_THRESHOLD || tooLong || sentenceBreak) {
+      // Flush accumulated text
+      merged.push({
+        text: accText,
+        offset: accStart,
+        duration: accEnd - accStart,
+      });
+      accText = text;
+      accStart = seg.offset;
+      accEnd = segEnd;
+    } else {
+      // Append to accumulator
+      accText += ' ' + text;
+      accEnd = segEnd;
+    }
+  }
+
+  // Flush remaining
+  if (accText) {
+    merged.push({
+      text: accText,
+      offset: accStart,
+      duration: accEnd - accStart,
+    });
+  }
+
+  return merged;
 }

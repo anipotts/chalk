@@ -29,7 +29,8 @@ export function useVideoTitle(videoId: string | null): {
           setTitle(data.title);
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         // Silently fail — title is optional
       })
       .finally(() => setLoading(false));
