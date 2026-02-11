@@ -1595,6 +1595,9 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           <path d="M3.3 12.04a.75.75 0 0 1-1.1-1.02L5.17 8 2.2 4.98a.75.75 0 0 1 1.1-1.02l3.5 3.56a.75.75 0 0 1 0 1.02l-3.5 3.5ZM8.75 12a.75.75 0 0 1 0-1.5h4.5a.75.75 0 0 1 0 1.5h-4.5Z" />
                         </svg>
                       </button>
+                      {msg.content.length > 200 && (
+                        <span className="text-[7px] text-slate-700 tabular-nums opacity-0 group-hover/msg:opacity-100 transition-opacity" title={`${msg.content.length} characters`}>{msg.content.length > 999 ? `${(msg.content.length / 1000).toFixed(1)}k` : msg.content.length}c</span>
+                      )}
                     </div>
                   )}
                   {/* Context menu for assistant messages */}

@@ -333,11 +333,13 @@ export default function Home() {
     saveRecentVideo(videoId, url.trim());
     fetchAndSaveTitle(videoId);
     recordStudyDay();
+    try { const k = `chalk-video-visits-${videoId}`; localStorage.setItem(k, String((parseInt(localStorage.getItem(k) || '0', 10) || 0) + 1)); } catch {}
     router.push(`/watch?v=${videoId}`);
   };
 
   const handleRecentClick = (video: RecentVideo) => {
     recordStudyDay();
+    try { const k = `chalk-video-visits-${video.id}`; localStorage.setItem(k, String((parseInt(localStorage.getItem(k) || '0', 10) || 0) + 1)); } catch {}
     router.push(`/watch?v=${video.id}`);
   };
 
@@ -970,6 +972,13 @@ export default function Home() {
                             const aiWords = msgs.filter((m: { role: string }) => m.role === 'assistant').reduce((sum: number, m: { content: string }) => sum + m.content.split(/\s+/).filter(Boolean).length, 0);
                             if (aiWords > 50) return <span className="text-[8px] text-emerald-400/40 tabular-nums" title={`${aiWords} words from AI responses`}>{aiWords > 999 ? `${(aiWords / 1000).toFixed(1)}k` : aiWords}w AI</span>;
                           }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
+                          const visits = typeof window !== 'undefined' ? parseInt(localStorage.getItem(`chalk-video-visits-${video.id}`) || '0', 10) : 0;
+                          if (visits >= 2) return <span className="text-[8px] text-teal-400/40 tabular-nums" title={`${visits} sessions`}>{visits} sessions</span>;
                         } catch { /* ignore */ }
                         return null;
                       })()}

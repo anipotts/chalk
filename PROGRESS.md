@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 113 (Completed)
+- [x] Transcript Segment Repeat Count Indicator — "Nx" badge below reading progress dot for segments seeked 2+ times
+- [x] Chat Response Character Count — show "Xc" character count on AI messages >200 chars in action bar
+- [x] Home Page Video Card Session Count — track visits per video, show "N sessions" badge for 2+ visits
+- [x] Build verification PASSED
+
 ## Wave 112 (Completed)
 - [x] Transcript Segment Vocabulary Level Indicator — "adv"/"acad" badge based on 7+ char word density (>30%/>50%)
 - [x] Chat Input @Mention Feature — typing "@" shows quick command popup (Quiz, Summarize, Explain, Simplify)

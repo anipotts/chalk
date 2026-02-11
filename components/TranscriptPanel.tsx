@@ -197,6 +197,7 @@ export function TranscriptPanel({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [selCopied, setSelCopied] = useState(false);
   const playedSegments = useRef<Set<number>>(new Set());
+  const seekCounts = useRef<Map<number, number>>(new Map());
 
   // Auto-generate chapters from segments
   const chapters = useMemo(() => generateChapters(segments), [segments]);
@@ -1482,9 +1483,12 @@ export function TranscriptPanel({
                     }
                   }}
                 >
-                  {/* Reading progress dot */}
+                  {/* Reading progress dot + repeat count */}
                   {!compactMode && (
-                    <div className={`shrink-0 w-1 h-1 rounded-full mt-2 ${playedSegments.current.has(segIndex) ? 'bg-emerald-500/50' : 'bg-slate-700/30'}`} title={playedSegments.current.has(segIndex) ? 'Played' : 'Not yet played'} />
+                    <div className="shrink-0 flex flex-col items-center gap-0.5">
+                      <div className={`w-1 h-1 rounded-full mt-2 ${playedSegments.current.has(segIndex) ? 'bg-emerald-500/50' : 'bg-slate-700/30'}`} title={playedSegments.current.has(segIndex) ? 'Played' : 'Not yet played'} />
+                      {(seekCounts.current.get(segIndex) || 0) >= 2 && <span className="text-[6px] text-sky-400/40 tabular-nums leading-none" title={`Seeked ${seekCounts.current.get(segIndex)} times`}>{seekCounts.current.get(segIndex)}x</span>}
+                    </div>
                   )}
                   {/* Key moment indicator dot */}
                   {!compactMode && (() => {
@@ -1506,7 +1510,7 @@ export function TranscriptPanel({
                   )}
                   <div className="shrink-0 flex flex-col items-center gap-0.5">
                     <button
-                      onClick={() => { onSeek(seg.offset); try { window.history.replaceState(null, '', `#t=${Math.round(seg.offset)}`); } catch {} }}
+                      onClick={() => { onSeek(seg.offset); seekCounts.current.set(segIndex, (seekCounts.current.get(segIndex) || 0) + 1); try { window.history.replaceState(null, '', `#t=${Math.round(seg.offset)}`); } catch {} }}
                       onDoubleClick={(e) => {
                         e.stopPropagation();
                         const ts = formatTimestamp(seg.offset);
