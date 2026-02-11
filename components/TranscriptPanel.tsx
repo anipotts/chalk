@@ -1846,6 +1846,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(you should|I recommend|I suggest|my advice|it's best to|try to|aim for|consider doing|make it a habit|pro tip)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains advisory language">&#9656;</span>
                   )}
+                  {!compactMode && /\b(first|then|next|after that|followed by|subsequently|finally|lastly|step by step|in sequence)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-lime-400/30" title="Contains sequential language">&rarr;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 208 — Sequential language detection, persuasive badge, question complexity score
+- [x] TranscriptPanel: sequential language detection — "→" in lime-400/30, regex for first/then/next/after that/followed by/subsequently/finally/lastly/step by step/in sequence
+- [x] ChatOverlay: persuasive badge — "persuasive" in emerald-500/10, detects you'll love/trust me/here's why/the best part/what's great/you won't regret/believe me/honestly/game changer/absolutely
+- [x] Home page: question complexity score badge — "X complexity" in lime-400/40, variable chatQCS, shows avg words per user question when ≥3 messages and avg ≥8 words
+- [x] Build verification PASSED
+
 ### Wave 207 — Advisory language detection, illustrative badge, response growth ratio
 - [x] TranscriptPanel: advisory language detection — "▸" in amber-400/30, regex for you should/I recommend/I suggest/my advice/it's best to/try to/aim for/consider doing/make it a habit/pro tip
 - [x] ChatOverlay: illustrative badge — "illustrative" in purple-500/10, detects for instance/to illustrate/picture this/as an example/like when/such as/take for example/here's a case/imagine if/say for instance
