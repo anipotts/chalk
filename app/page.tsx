@@ -1642,6 +1642,20 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatAW = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatAW) {
+                            const allAW: { role: string; content?: string }[] = JSON.parse(chatAW);
+                            const aiMsgsAW = allAW.filter(m => m.role === 'assistant' && m.content);
+                            if (aiMsgsAW.length >= 2) {
+                              const avgWords = Math.round(aiMsgsAW.reduce((sum, m) => sum + m.content!.split(/\s+/).filter(Boolean).length, 0) / aiMsgsAW.length);
+                              return <span className="text-[8px] text-lime-400/40 tabular-nums" title={`Average AI response: ${avgWords} words`}>{avgWords} avg words</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatCC = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatCC) {
                             const allCC: { role: string; content?: string }[] = JSON.parse(chatCC);

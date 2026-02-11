@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 174 — Ellipsis detection, hedging badge, average response length
+- [x] TranscriptPanel: ellipsis/trailing off detection — `…` (&hellip;) in violet-400/30, regex `/\.{3}|…/`
+- [x] ChatOverlay: hedging badge — "hedges" in yellow-500/10, detects hedging/uncertain language
+- [x] HomePage: average response length badge — "X avg words" in lime-400/40, average AI response word count (variable `chatAW`)
+- [x] Build verification PASSED
+
 ### Wave 173 — Quotation detection, emphasis badge, AI citation count
 - [x] TranscriptPanel: quotation detection indicator — `"` (&#x201C;) in emerald-400/30, regex `/"[^"]{3,}"/`
 - [x] ChatOverlay: emphasis badge — "emphasizes" in red-500/10, detects importance/emphasis language
