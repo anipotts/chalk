@@ -65,6 +65,8 @@ export function ReasoningPanel({
       {/* Toggle button */}
       <button
         onClick={() => setIsExpanded((prev) => !prev)}
+        aria-expanded={isExpanded}
+        aria-controls="reasoning-content"
         className={`
           group flex items-center gap-2 px-3 py-1.5 rounded-full text-xs
           transition-all duration-200 cursor-pointer
@@ -115,6 +117,7 @@ export function ReasoningPanel({
             className="overflow-hidden"
           >
             <div
+              id="reasoning-content"
               className="
                 mt-2 p-4 rounded-xl
                 bg-chalk-surface/30 border border-chalk-border/20

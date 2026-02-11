@@ -40,19 +40,28 @@ interface Json3Response {
 // ─── Tier 1: Innertube API ─────────────────────────────────────────────────────
 
 async function fetchTranscriptInnertube(videoId: string): Promise<TranscriptSegment[]> {
-  const resp = await fetch('https://www.youtube.com/youtubei/v1/player', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      videoId,
-      context: {
-        client: {
-          clientName: 'WEB',
-          clientVersion: '2.20241201.00.00',
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
+  let resp;
+  try {
+    resp = await fetch('https://www.youtube.com/youtubei/v1/player', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        videoId,
+        context: {
+          client: {
+            clientName: 'WEB',
+            clientVersion: '2.20241201.00.00',
+          },
         },
-      },
-    }),
-  });
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!resp.ok) throw new Error(`Innertube request failed: ${resp.status}`);
 
@@ -137,24 +146,34 @@ async function fetchTranscriptYtDlp(videoId: string): Promise<TranscriptSegment[
  * Tier order: Innertube API → youtube-transcript → youtube-dl-exec
  */
 export async function fetchTranscript(videoId: string): Promise<TranscriptSegment[]> {
+  const errors: string[] = [];
+
   // Tier 1: Innertube API (most reliable for caption videos)
   try {
-    return await fetchTranscriptInnertube(videoId);
-  } catch {
-    // Fall through
+    const result = await fetchTranscriptInnertube(videoId);
+    console.log(`[transcript] ${videoId}: fetched via Innertube (${result.length} segments)`);
+    return result;
+  } catch (e) {
+    errors.push(`Innertube: ${e instanceof Error ? e.message : String(e)}`);
   }
 
   // Tier 2: youtube-transcript package
   try {
-    return await fetchTranscriptPackage(videoId);
-  } catch {
-    // Fall through
+    const result = await fetchTranscriptPackage(videoId);
+    console.log(`[transcript] ${videoId}: fetched via youtube-transcript (${result.length} segments)`);
+    return result;
+  } catch (e) {
+    errors.push(`Package: ${e instanceof Error ? e.message : String(e)}`);
   }
 
   // Tier 3: youtube-dl-exec
   try {
-    return await fetchTranscriptYtDlp(videoId);
-  } catch {
+    const result = await fetchTranscriptYtDlp(videoId);
+    console.log(`[transcript] ${videoId}: fetched via yt-dlp (${result.length} segments)`);
+    return result;
+  } catch (e) {
+    errors.push(`YT-DLP: ${e instanceof Error ? e.message : String(e)}`);
+    console.error(`[transcript] ${videoId}: all tiers failed:`, errors.join('; '));
     throw new Error(`Could not fetch transcript for video ${videoId}`);
   }
 }

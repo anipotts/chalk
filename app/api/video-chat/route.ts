@@ -11,17 +11,22 @@ export async function POST(req: Request) {
   try {
     body = await req.json();
   } catch {
-    return new Response('Invalid JSON', { status: 400 });
+    return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
   const { message, currentTimestamp, segments, history, model: modelChoice, videoTitle } = body;
 
   if (!message || typeof message !== 'string') {
-    return new Response('Missing message', { status: 400 });
+    return Response.json({ error: 'Missing message' }, { status: 400 });
   }
 
   if (message.length > 2000) {
-    return new Response('Message too long (max 2000 characters)', { status: 400 });
+    return Response.json({ error: 'Message too long (max 2000 characters)' }, { status: 400 });
+  }
+
+  // Validate segments array structure
+  if (segments && !Array.isArray(segments)) {
+    return Response.json({ error: 'Invalid segments format' }, { status: 400 });
   }
 
   // Resolve model
@@ -44,7 +49,17 @@ export async function POST(req: Request) {
   // Build transcript context around current position
   const typedSegments = (segments || []) as TranscriptSegment[];
   const currentTime = typeof currentTimestamp === 'number' ? currentTimestamp : 0;
-  const transcriptContext = buildVideoContext(typedSegments, currentTime);
+
+  // For short videos (< 10 min of transcript), send the full transcript for better context
+  const totalDuration = typedSegments.length > 0
+    ? typedSegments[typedSegments.length - 1].offset + (typedSegments[typedSegments.length - 1].duration || 0)
+    : 0;
+  const fullTranscriptText = typedSegments.map((s) => `[${formatTimestamp(s.offset)}] ${s.text}`).join('\n');
+  const useFullTranscript = totalDuration < 600 && fullTranscriptText.length < 12000;
+
+  const transcriptContext = useFullTranscript
+    ? fullTranscriptText
+    : buildVideoContext(typedSegments, currentTime);
 
   // Build system prompt with video context
   const systemPrompt = buildVideoSystemPrompt({

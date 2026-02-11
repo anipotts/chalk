@@ -62,6 +62,16 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
           (p as unknown as HTMLElement).requestFullscreen?.();
         }
         break;
+      case ',':
+      case '<':
+        e.preventDefault();
+        p.playbackRate = Math.max(0.25, p.playbackRate - 0.25);
+        break;
+      case '.':
+      case '>':
+        e.preventDefault();
+        p.playbackRate = Math.min(3, p.playbackRate + 0.25);
+        break;
     }
   }, [player]);
 

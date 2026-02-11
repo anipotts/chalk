@@ -9,6 +9,7 @@ const RECENT_VIDEOS_KEY = 'chalk-recent-videos';
 interface RecentVideo {
   id: string;
   url: string;
+  title?: string;
   timestamp: number;
 }
 
@@ -21,10 +22,27 @@ function getRecentVideos(): RecentVideo[] {
   }
 }
 
-function saveRecentVideo(videoId: string, url: string) {
+function saveRecentVideo(videoId: string, url: string, title?: string) {
   const recent = getRecentVideos().filter((v) => v.id !== videoId);
-  recent.unshift({ id: videoId, url, timestamp: Date.now() });
+  recent.unshift({ id: videoId, url, title, timestamp: Date.now() });
   localStorage.setItem(RECENT_VIDEOS_KEY, JSON.stringify(recent.slice(0, 10)));
+}
+
+// Fetch title in background and update localStorage
+function fetchAndSaveTitle(videoId: string) {
+  fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`)
+    .then((r) => r.json())
+    .then((data: { title?: string }) => {
+      if (data.title) {
+        const recent = getRecentVideos();
+        const idx = recent.findIndex((v) => v.id === videoId);
+        if (idx !== -1 && !recent[idx].title) {
+          recent[idx].title = data.title;
+          localStorage.setItem(RECENT_VIDEOS_KEY, JSON.stringify(recent));
+        }
+      }
+    })
+    .catch(() => {});
 }
 
 export default function Home() {
@@ -48,6 +66,7 @@ export default function Home() {
     }
 
     saveRecentVideo(videoId, url.trim());
+    fetchAndSaveTitle(videoId);
     router.push(`/watch?v=${videoId}`);
   };
 
@@ -103,7 +122,7 @@ export default function Home() {
                 onClick={() => {
                   const id = extractVideoId(ex.url);
                   if (id) {
-                    saveRecentVideo(id, ex.url);
+                    saveRecentVideo(id, ex.url, ex.label);
                     router.push(`/watch?v=${id}`);
                   }
                 }}
@@ -131,10 +150,19 @@ export default function Home() {
                   {/* Thumbnail */}
                   <img
                     src={`https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`}
-                    alt=""
+                    alt={video.title || ''}
                     className="w-20 h-11 object-cover rounded-lg bg-chalk-surface shrink-0"
                   />
-                  <span className="text-xs text-slate-400 truncate">{video.url}</span>
+                  <div className="min-w-0 flex-1">
+                    {video.title ? (
+                      <>
+                        <span className="text-xs text-chalk-text truncate block">{video.title}</span>
+                        <span className="text-[10px] text-slate-500 truncate block">{video.url}</span>
+                      </>
+                    ) : (
+                      <span className="text-xs text-slate-400 truncate block">{video.url}</span>
+                    )}
+                  </div>
                 </button>
               ))}
             </div>
@@ -142,10 +170,18 @@ export default function Home() {
         )}
       </div>
 
-      {/* Footer link to math viz */}
-      <div className="flex-none py-4 text-center border-t border-chalk-border/20">
+      {/* Footer links */}
+      <div className="flex-none py-4 flex items-center justify-center gap-4 border-t border-chalk-border/20">
+        <a href="/history" className="text-xs text-slate-500 hover:text-slate-400 transition-colors">
+          Study History
+        </a>
+        <span className="text-slate-700">·</span>
+        <a href="/collections" className="text-xs text-slate-500 hover:text-slate-400 transition-colors">
+          Collections
+        </a>
+        <span className="text-slate-700">·</span>
         <a href="/math" className="text-xs text-slate-500 hover:text-slate-400 transition-colors">
-          Chalk Math Visualizer
+          Math Visualizer
         </a>
       </div>
     </div>

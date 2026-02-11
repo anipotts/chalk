@@ -72,6 +72,9 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
         type="button"
         onClick={() => !disabled && setOpen(!open)}
         disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`Model: ${selected.label}`}
         className={`
           flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium
           transition-all duration-150 cursor-pointer select-none
@@ -89,13 +92,15 @@ export function ModelSelector({ value, onChange, disabled }: ModelSelectorProps)
       {/* Dropdown */}
       {open && (
         <div className="absolute bottom-full left-0 mb-2 w-56 rounded-xl bg-chalk-surface border border-chalk-border/40 shadow-xl shadow-black/30 overflow-hidden z-50 animate-in fade-in slide-in-from-bottom-2 duration-150">
-          <div className="p-1">
+          <div className="p-1" role="listbox" aria-label="Select AI model">
             {MODELS.map((model) => {
               const isActive = model.id === value;
               return (
                 <button
                   key={model.id}
                   type="button"
+                  role="option"
+                  aria-selected={isActive}
                   onClick={() => {
                     onChange(model.id);
                     setOpen(false);
