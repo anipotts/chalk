@@ -1825,6 +1825,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(for example|for instance|such as|like|namely|including|e\.g\.|i\.e\.)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-rose-400/30" title="Contains exemplifying language">eg</span>
                   )}
+                  {!compactMode && /\b(first|second|third|next|then|finally|lastly|step)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains sequential language">&rarr;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

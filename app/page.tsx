@@ -1600,6 +1600,26 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatTS = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatTS) {
+                            const allTS: { role: string; content?: string }[] = JSON.parse(chatTS);
+                            const userMsgs = allTS.filter(m => m.role === 'user' && m.content);
+                            if (userMsgs.length >= 4) {
+                              let shifts = 0;
+                              for (let ti = 1; ti < userMsgs.length; ti++) {
+                                const prevWords = new Set(userMsgs[ti - 1].content!.toLowerCase().split(/\s+/).filter(w => w.length >= 4));
+                                const currWords = userMsgs[ti].content!.toLowerCase().split(/\s+/).filter(w => w.length >= 4);
+                                const overlap = currWords.some(w => prevWords.has(w));
+                                if (!overlap) shifts++;
+                              }
+                              if (shifts >= 2) return <span className="text-[8px] text-indigo-400/40 tabular-nums" title={`${shifts} topic shifts detected`}>{shifts} topic shifts</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatCB = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatCB) {
                             const allCB: { role: string; content?: string }[] = JSON.parse(chatCB);

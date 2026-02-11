@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 201 — Sequential language detection, summarizing badge, topic shift count
+- [x] TranscriptPanel: sequential language detection — "→" in sky-400/30, regex for first/second/third/next/then/finally/lastly/step
+- [x] ChatOverlay: summarizing badge — "summarizing" in amber-500/10, detects in summary/to summarize/overall/in conclusion/the key point/essentially/in short/to sum up
+- [x] Home page video card: topic shift count — "X topic shifts" in indigo-400/40, variable chatTS, counts user messages with no shared significant words (>=4 msgs, >=2 shifts)
+- [x] Build verification PASSED
+
 ### Wave 200 — Exemplifying language detection, exploratory badge, conversation balance
 - [x] TranscriptPanel: exemplifying language detection — "eg" in rose-400/30, regex for for example/for instance/such as/like/namely/including/e.g./i.e.
 - [x] ChatOverlay: exploratory badge — "exploratory" in violet-500/10, detects let's explore/let's look at/let's consider/let's examine/diving into/looking at/exploring/delving into
