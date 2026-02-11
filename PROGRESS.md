@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 101 (Completed)
+- [x] Transcript Segment Select Range Copy — shift-click to select range of segments, floating copy bar
+- [x] Chat Quick Topic Switch Pill — "New Topic" pill button to start fresh topic thread in conversation
+- [x] Home Page Video Card Pin to Top — pin icon on cards, pinned videos sort first in list
+- [x] Build verification PASSED
+
 ## Wave 100 (Completed) -- MILESTONE!
 - [x] Transcript Bookmark Quick Notes — inline "+note" button and click-to-edit on starred segments
 - [x] Chat Thread Depth Indicator — "Turn N" dividers every 5 user questions

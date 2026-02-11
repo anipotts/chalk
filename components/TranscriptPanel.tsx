@@ -135,6 +135,8 @@ export function TranscriptPanel({
   const hlMatch = highlightColor === 'blue' ? 'bg-blue-500/20 border-l-blue-400 ring-1 ring-blue-400/30' : highlightColor === 'green' ? 'bg-emerald-500/20 border-l-emerald-400 ring-1 ring-emerald-400/30' : 'bg-purple-500/20 border-l-purple-400 ring-1 ring-purple-400/30';
   const [compactMode, setCompactMode] = useState(false);
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; offset: number; text: string } | null>(null);
+  const [selectRange, setSelectRange] = useState<{ start: number; end: number } | null>(null);
+  const lastClickedIdx = useRef<number>(-1);
 
   // Dismiss context menu on click away
   useEffect(() => {
@@ -1412,16 +1414,28 @@ export function TranscriptPanel({
                     if (search.trim() && el) matchRefs.current.set(i, el);
                   }}
                   className={`group/seg w-full flex items-start ${compactMode ? 'gap-1 px-2 py-0.5' : 'gap-2 px-3 py-2'} transition-all hover:bg-chalk-surface/60 animate-in fade-in duration-300 ${difficultyHeat} ${
-                    isCurrentMatch
-                      ? `${hlMatch} border-l-2`
-                      : isActive
-                        ? `${hlActive} border-l-2`
-                        : starred.has(seg.offset)
-                          ? 'border-l-2 border-l-yellow-500/60'
-                          : 'border-l-2 border-l-transparent'
+                    selectRange && i >= selectRange.start && i <= selectRange.end
+                      ? 'bg-cyan-500/10 border-l-2 border-l-cyan-400'
+                      : isCurrentMatch
+                        ? `${hlMatch} border-l-2`
+                        : isActive
+                          ? `${hlActive} border-l-2`
+                          : starred.has(seg.offset)
+                            ? 'border-l-2 border-l-yellow-500/60'
+                            : 'border-l-2 border-l-transparent'
                   }`}
                   style={isActive ? { animation: 'activeBorderPulse 2s ease-in-out infinite' } : undefined}
                   onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, offset: seg.offset, text: seg.text }); }}
+                  onClick={(e) => {
+                    if (e.shiftKey && lastClickedIdx.current >= 0) {
+                      const start = Math.min(lastClickedIdx.current, i);
+                      const end = Math.max(lastClickedIdx.current, i);
+                      setSelectRange({ start, end });
+                    } else {
+                      setSelectRange(null);
+                      lastClickedIdx.current = i;
+                    }
+                  }}
                 >
                   {/* Key moment indicator dot */}
                   {!compactMode && (() => {
@@ -1723,6 +1737,27 @@ export function TranscriptPanel({
             </svg>
             Jump to current
           </button>
+        </div>
+      )}
+      {/* Range selection copy bar */}
+      {selectRange && (
+        <div className="absolute bottom-12 inset-x-0 flex justify-center z-50 pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/20 border border-cyan-500/30 backdrop-blur-sm shadow-lg">
+            <span className="text-[10px] text-cyan-300">{selectRange.end - selectRange.start + 1} segments selected</span>
+            <button
+              onClick={() => {
+                const selected = filtered.slice(selectRange.start, selectRange.end + 1);
+                const text = selected.map((s) => `[${formatTimestamp(s.offset)}] ${s.text}`).join('\n');
+                navigator.clipboard.writeText(text);
+                setSelectRange(null);
+              }}
+              className="text-[10px] font-medium text-cyan-200 hover:text-white px-2 py-0.5 rounded-full bg-cyan-500/30 hover:bg-cyan-500/50 transition-colors"
+            >Copy</button>
+            <button
+              onClick={() => setSelectRange(null)}
+              className="text-[10px] text-cyan-400/60 hover:text-cyan-300 transition-colors"
+            >Clear</button>
+          </div>
         </div>
       )}
       {/* Right-click context menu */}

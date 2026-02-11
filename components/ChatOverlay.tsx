@@ -1674,6 +1674,27 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
               )}
             </AnimatePresence>
 
+            {/* New Topic pill — appears after 5+ messages to visually start a fresh thread */}
+            {messages.length >= 5 && !isStreaming && (
+              <div className="flex justify-center py-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const divider: ChatMessage = { id: `divider-${Date.now()}`, role: 'assistant', content: '---\n**New topic started.** Ask a new question below.' };
+                    setMessages((prev) => [...prev, divider]);
+                    setTimeout(() => scrollToBottom(), 50);
+                  }}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] text-slate-500 border border-dashed border-slate-700/40 hover:text-chalk-accent hover:border-chalk-accent/30 hover:bg-chalk-accent/5 transition-colors"
+                  title="Start a new topic in this conversation"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5">
+                    <path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z" />
+                  </svg>
+                  New Topic
+                </button>
+              </div>
+            )}
+
             {/* Input area — unified pill shape */}
             <form
               onSubmit={handleSubmit}

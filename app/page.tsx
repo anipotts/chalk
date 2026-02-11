@@ -209,6 +209,10 @@ export default function Home() {
   const [inputShake, setInputShake] = useState(false);
   const [tipIndex, setTipIndex] = useState(new Date().getDay());
   const [selectedVideoIdx, setSelectedVideoIdx] = useState(-1);
+  const [pinnedVideoIds, setPinnedVideoIds] = useState<Set<string>>(() => {
+    if (typeof window === 'undefined') return new Set();
+    try { return new Set(JSON.parse(localStorage.getItem('chalk-pinned-videos') || '[]')); } catch { return new Set(); }
+  });
   const previewAbort = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -733,6 +737,9 @@ export default function Home() {
             })()}
             <div className={viewMode === 'grid' ? 'space-y-1.5' : 'space-y-0.5'}>
               {[...recentVideos].sort((a, b) => {
+                const aPinned = pinnedVideoIds.has(a.id) ? 1 : 0;
+                const bPinned = pinnedVideoIds.has(b.id) ? 1 : 0;
+                if (aPinned !== bPinned) return bPinned - aPinned;
                 if (videoSort === 'title') return (a.title || a.url).localeCompare(b.title || b.url);
                 if (videoSort === 'views') {
                   const va = typeof window !== 'undefined' ? parseInt(localStorage.getItem(`chalk-visits-${a.id}`) || '0', 10) : 0;
@@ -937,6 +944,28 @@ export default function Home() {
                       })()}
                     </div>
                   </div>
+                  {/* Pin button */}
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPinnedVideoIds((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(video.id)) next.delete(video.id); else next.add(video.id);
+                        localStorage.setItem('chalk-pinned-videos', JSON.stringify([...next]));
+                        return next;
+                      });
+                    }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); setPinnedVideoIds((prev) => { const next = new Set(prev); if (next.has(video.id)) next.delete(video.id); else next.add(video.id); localStorage.setItem('chalk-pinned-videos', JSON.stringify([...next])); return next; }); } }}
+                    className={`absolute top-1.5 right-6 p-0.5 rounded transition-all ${pinnedVideoIds.has(video.id) ? 'text-amber-400 opacity-100' : 'opacity-0 group-hover/card:opacity-100 text-slate-600 hover:text-amber-400 hover:bg-amber-500/10'}`}
+                    title={pinnedVideoIds.has(video.id) ? 'Unpin from top' : 'Pin to top'}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                      <path d="M10.97 2.22a.75.75 0 0 1 1.06 0l1.75 1.75a.75.75 0 0 1-.177 1.206l-2.12 1.06-.818 2.455a.75.75 0 0 1-1.262.308L7.97 7.57 5.03 10.51a.75.75 0 1 1-1.06-1.06L6.91 6.51 5.48 5.08a.75.75 0 0 1 .308-1.262l2.455-.818 1.06-2.12a.75.75 0 0 1 .667-.36Z" />
+                    </svg>
+                  </span>
+                  {/* Delete button */}
                   <span
                     role="button"
                     tabIndex={0}
