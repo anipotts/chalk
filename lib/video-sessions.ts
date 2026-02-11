@@ -331,3 +331,250 @@ export async function deleteCollection(collectionId: string): Promise<boolean> {
     return false;
   }
 }
+
+// ─── Video Bookmarks ──────────────────────────────────────────────────────
+
+export interface VideoBookmark {
+  id: string;
+  video_id: string;
+  video_title: string | null;
+  timestamp_seconds: number;
+  note: string;
+  color: string;
+  created_at: string;
+}
+
+export async function listBookmarks(videoId: string): Promise<VideoBookmark[]> {
+  try {
+    const { data, error } = await supabase
+      .from('video_bookmarks')
+      .select('*')
+      .eq('video_id', videoId)
+      .order('timestamp_seconds', { ascending: true });
+    if (error) throw error;
+    return (data as VideoBookmark[]) || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function createBookmark(
+  videoId: string,
+  timestampSeconds: number,
+  note?: string,
+  videoTitle?: string,
+  color?: string,
+): Promise<VideoBookmark | null> {
+  try {
+    const { data, error } = await supabase
+      .from('video_bookmarks')
+      .insert({
+        video_id: videoId,
+        video_title: videoTitle || null,
+        timestamp_seconds: timestampSeconds,
+        note: note || '',
+        color: color || 'blue',
+      })
+      .select('*')
+      .single();
+    if (error) throw error;
+    return data as VideoBookmark;
+  } catch {
+    return null;
+  }
+}
+
+export async function deleteBookmark(bookmarkId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('video_bookmarks')
+      .delete()
+      .eq('id', bookmarkId);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function updateBookmarkNote(bookmarkId: string, note: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('video_bookmarks')
+      .update({ note })
+      .eq('id', bookmarkId);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+// ─── Flashcards ──────────────────────────────────────────────────────
+
+export interface StudyFlashcard {
+  id: string;
+  video_id: string;
+  video_title: string | null;
+  front: string;
+  back: string;
+  timestamp_seconds: number | null;
+  ease_factor: number;
+  interval_days: number;
+  repetitions: number;
+  next_review: string;
+  created_at: string;
+}
+
+export async function listFlashcards(videoId?: string): Promise<StudyFlashcard[]> {
+  try {
+    let query = supabase
+      .from('study_flashcards')
+      .select('*')
+      .order('next_review', { ascending: true });
+    if (videoId) query = query.eq('video_id', videoId);
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data as StudyFlashcard[]) || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function getDueFlashcards(limit: number = 20): Promise<StudyFlashcard[]> {
+  try {
+    const { data, error } = await supabase
+      .from('study_flashcards')
+      .select('*')
+      .lte('next_review', new Date().toISOString())
+      .order('next_review', { ascending: true })
+      .limit(limit);
+    if (error) throw error;
+    return (data as StudyFlashcard[]) || [];
+  } catch {
+    return [];
+  }
+}
+
+export async function createFlashcard(
+  videoId: string,
+  front: string,
+  back: string,
+  videoTitle?: string,
+  timestampSeconds?: number,
+): Promise<StudyFlashcard | null> {
+  try {
+    const { data, error } = await supabase
+      .from('study_flashcards')
+      .insert({
+        video_id: videoId,
+        video_title: videoTitle || null,
+        front,
+        back,
+        timestamp_seconds: timestampSeconds ?? null,
+      })
+      .select('*')
+      .single();
+    if (error) throw error;
+    return data as StudyFlashcard;
+  } catch {
+    return null;
+  }
+}
+
+export async function reviewFlashcard(
+  cardId: string,
+  quality: 'again' | 'hard' | 'easy',
+): Promise<boolean> {
+  try {
+    // Fetch current card
+    const { data: card, error: fetchError } = await supabase
+      .from('study_flashcards')
+      .select('*')
+      .eq('id', cardId)
+      .single();
+    if (fetchError || !card) return false;
+
+    // SM-2 inspired algorithm
+    let { ease_factor, interval_days, repetitions } = card;
+    const now = new Date();
+
+    if (quality === 'again') {
+      repetitions = 0;
+      interval_days = 0;
+    } else if (quality === 'hard') {
+      ease_factor = Math.max(1.3, ease_factor - 0.15);
+      if (repetitions === 0) interval_days = 1;
+      else interval_days = Math.ceil(interval_days * 1.2);
+      repetitions += 1;
+    } else {
+      ease_factor = Math.min(3.0, ease_factor + 0.15);
+      if (repetitions === 0) interval_days = 1;
+      else if (repetitions === 1) interval_days = 3;
+      else interval_days = Math.ceil(interval_days * ease_factor);
+      repetitions += 1;
+    }
+
+    const nextReview = new Date(now.getTime() + interval_days * 86400000);
+
+    const { error } = await supabase
+      .from('study_flashcards')
+      .update({
+        ease_factor,
+        interval_days,
+        repetitions,
+        next_review: nextReview.toISOString(),
+      })
+      .eq('id', cardId);
+
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+export async function deleteFlashcard(cardId: string): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('study_flashcards')
+      .delete()
+      .eq('id', cardId);
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
+// ─── Video Notes ──────────────────────────────────────────────────────
+
+export async function loadVideoNotes(videoId: string): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from('video_notes')
+      .select('content')
+      .eq('video_id', videoId)
+      .single();
+    if (error || !data) return '';
+    return data.content || '';
+  } catch {
+    return '';
+  }
+}
+
+export async function saveVideoNotes(
+  videoId: string,
+  content: string,
+  videoTitle?: string,
+): Promise<boolean> {
+  try {
+    const { error } = await supabase
+      .from('video_notes')
+      .upsert({
+        video_id: videoId,
+        content,
+        video_title: videoTitle || null,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'video_id' });
+    return !error;
+  } catch {
+    return false;
+  }
+}

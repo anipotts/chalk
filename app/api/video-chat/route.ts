@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { message, currentTimestamp, segments, history, model: modelChoice, videoTitle } = body;
+  const { message, currentTimestamp, segments, history, model: modelChoice, videoTitle, personality } = body;
 
   if (!message || typeof message !== 'string') {
     return Response.json({ error: 'Missing message' }, { status: 400 });
@@ -62,11 +62,21 @@ export async function POST(req: Request) {
     : buildVideoContext(typedSegments, currentTime);
 
   // Build system prompt with video context
-  const systemPrompt = buildVideoSystemPrompt({
+  let systemPrompt = buildVideoSystemPrompt({
     transcriptContext,
     currentTimestamp: formatTimestamp(currentTime),
     videoTitle,
   });
+
+  // Apply personality modifier
+  const PERSONALITY_PROMPTS: Record<string, string> = {
+    encouraging: '\n\nAdopt an encouraging, supportive teaching style. Praise the user for good questions, celebrate their understanding, and use positive reinforcement. Be warm and enthusiastic.',
+    strict: '\n\nAdopt a direct, no-nonsense teaching style. Be concise and challenging. Point out gaps in understanding directly. Push the user to think deeper. No fluff.',
+    socratic: '\n\nAdopt the Socratic method. Instead of giving direct answers, guide the user with probing questions. Help them discover answers themselves. Only reveal answers if they are truly stuck.',
+  };
+  if (personality && PERSONALITY_PROMPTS[personality]) {
+    systemPrompt += PERSONALITY_PROMPTS[personality];
+  }
 
   // Build messages array from history
   const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];

@@ -285,25 +285,36 @@ function SummaryRenderer({ content, onSeek }: { content: string; onSeek: (second
 
 /** Renders inline content with **bold**, `code`, and [M:SS] timestamp links */
 function InlineContent({ text, onSeek }: { text: string; onSeek: (seconds: number) => void }) {
-  const tsResult = parseTimestampLinks(text);
+  const timestamps = parseTimestampLinks(text);
 
-  return (
-    <>
-      {tsResult.map((part, idx) => {
-        if (typeof part === 'string') {
-          return <InlineFormatted key={idx} text={part} />;
-        }
-        return (
-          <TimestampLink
-            key={idx}
-            seconds={part.seconds}
-            display={part.display}
-            onSeek={onSeek}
-          />
-        );
-      })}
-    </>
-  );
+  if (timestamps.length === 0) {
+    return <InlineFormatted text={text} />;
+  }
+
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+
+  for (const ts of timestamps) {
+    if (ts.index > lastIndex) {
+      parts.push(<InlineFormatted key={`pre-${ts.index}`} text={text.slice(lastIndex, ts.index)} />);
+    }
+    const display = ts.match.slice(1, -1); // Remove brackets
+    parts.push(
+      <TimestampLink
+        key={`ts-${ts.index}`}
+        timestamp={display}
+        seconds={ts.seconds}
+        onSeek={onSeek}
+      />
+    );
+    lastIndex = ts.index + ts.match.length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(<InlineFormatted key="end" text={text.slice(lastIndex)} />);
+  }
+
+  return <>{parts}</>;
 }
 
 /** Handles **bold** and `code` formatting */

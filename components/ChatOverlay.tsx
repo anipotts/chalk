@@ -6,8 +6,10 @@ import { VideoAIMessage } from './VideoAIMessage';
 import { ModelSelector, type ModelChoice } from './ModelSelector';
 import { splitReasoningFromText } from '@/lib/stream-parser';
 import { pickSuggestions } from '@/lib/suggestions';
-import { saveVideoSession, loadVideoSession, createSharedNote, trackVideoEvent } from '@/lib/video-sessions';
-import type { TranscriptSegment } from '@/lib/video-utils';
+import { saveVideoSession, loadVideoSession, createSharedNote, trackVideoEvent, createFlashcard } from '@/lib/video-sessions';
+import { formatTimestamp, type TranscriptSegment } from '@/lib/video-utils';
+import { QuizButton } from './QuizModal';
+import { VocabularyButton } from './VocabularyPanel';
 
 interface ChatMessage {
   id: string;
@@ -71,18 +73,73 @@ function DownArrowIcon() {
   );
 }
 
+/* ─── Context-based topic extraction ─── */
+
+function extractContextTopics(segments: TranscriptSegment[], currentTime: number): string[] {
+  if (segments.length === 0) return [];
+
+  // Get segments within 60s of current time
+  const nearby = segments.filter((s) => Math.abs(s.offset - currentTime) < 60);
+  if (nearby.length === 0) return [];
+
+  const text = nearby.map((s) => s.text).join(' ').toLowerCase();
+
+  // Extract meaningful phrases (2-3 word combos that appear capitalized or quoted)
+  const words = text.split(/\s+/).filter((w) => w.length > 4);
+  // Count word frequency
+  const freq = new Map<string, number>();
+  for (const w of words) {
+    const clean = w.replace(/[^a-z]/g, '');
+    if (clean.length > 4 && !STOP_WORDS.has(clean)) {
+      freq.set(clean, (freq.get(clean) || 0) + 1);
+    }
+  }
+
+  // Top keywords by frequency
+  const topWords = [...freq.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([w]) => w);
+
+  if (topWords.length === 0) return [];
+
+  return topWords.map((w) => `What does "${w}" mean in this context?`).slice(0, 2);
+}
+
+const STOP_WORDS = new Set([
+  'about', 'after', 'again', 'being', 'could', 'didnt', 'doing', 'every',
+  'first', 'going', 'great', 'gonna', 'gotta', 'would', 'could', 'there',
+  'their', 'these', 'thing', 'think', 'those', 'where', 'which', 'while',
+  'right', 'other', 'really', 'actually', 'basically', 'literally', 'something',
+  'people', 'stuff', 'things', 'thats', 'youre', 'theyre',
+]);
+
 /* ─── Suggestion rows (vertical, full-width) ─── */
 
 function SuggestionRows({
   currentTime,
   hasTranscript,
+  segments,
   onSelect,
+  videoTitle,
 }: {
   currentTime: number;
   hasTranscript: boolean;
+  segments: TranscriptSegment[];
   onSelect: (text: string) => void;
+  videoTitle?: string;
 }) {
-  const suggestions = pickSuggestions(currentTime, hasTranscript, 3);
+  const baseSuggestions = pickSuggestions(currentTime, hasTranscript, 3);
+  // Replace first suggestion with a video-specific one if title is available
+  const suggestions = useMemo(() => {
+    if (!videoTitle) return baseSuggestions;
+    const titleQ = `What are the main ideas in "${videoTitle.length > 50 ? videoTitle.slice(0, 50) + '...' : videoTitle}"?`;
+    return [titleQ, ...baseSuggestions.slice(1)];
+  }, [videoTitle, baseSuggestions]);
+  const contextTopics = useMemo(
+    () => extractContextTopics(segments, currentTime),
+    [segments, currentTime]
+  );
 
   return (
     <div className="flex flex-col items-center justify-center py-6 px-2 gap-4">
@@ -108,6 +165,31 @@ function SuggestionRows({
           </button>
         ))}
       </div>
+
+      {/* Context-aware topic suggestions */}
+      {contextTopics.length > 0 && (
+        <div className="w-full space-y-1.5">
+          <div className="flex items-center gap-1.5 text-slate-600 px-1">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+              <path fillRule="evenodd" d="M11.986 3H12a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h.014A2.25 2.25 0 0 1 6.25 1h3.5a2.25 2.25 0 0 1 2.236 2ZM9.75 2.5h-3.5a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5Z" clipRule="evenodd" />
+            </svg>
+            <span className="text-[10px]">From current section</span>
+          </div>
+          {contextTopics.map((topic) => (
+            <button
+              key={topic}
+              type="button"
+              onClick={() => onSelect(topic)}
+              className="group w-full flex items-center gap-3 px-3.5 py-2 rounded-lg text-[12px] text-slate-500 bg-chalk-accent/[0.03] border border-chalk-accent/10 hover:bg-chalk-accent/[0.08] hover:text-slate-300 hover:border-chalk-accent/20 active:scale-[0.98] transition-all duration-150 cursor-pointer text-left"
+            >
+              <span className="flex-1">{topic}</span>
+              <span className="text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                <ArrowRightIcon />
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -187,9 +269,20 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
   const [selectedModel, setSelectedModel] = useState<ModelChoice>('auto');
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   const [shareStatus, setShareStatus] = useState<'idle' | 'sharing' | 'done'>('idle');
+  const [flashcardStatus, setFlashcardStatus] = useState<'idle' | 'generating' | 'done'>('idle');
+  const [eli5Mode, setEli5Mode] = useState(false);
+  const [teachBackMode, setTeachBackMode] = useState(false);
+  const [personality, setPersonality] = useState<'default' | 'encouraging' | 'strict' | 'socratic'>('default');
+  const [catchUpRange, setCatchUpRange] = useState<{ from: number; to: number } | null>(null);
+  const [takeaways, setTakeaways] = useState<{ text: string; timestamp: number }[] | null>(null);
+  const [takeawaysLoading, setTakeawaysLoading] = useState(false);
+  const [digestOpen, setDigestOpen] = useState(false);
+  const [digestLoading, setDigestLoading] = useState(false);
+  const [digestData, setDigestData] = useState<{ takeaways: { text: string; timestamp: number }[] } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const prevTimeRef = useRef<number>(currentTime);
 
   // Video progress calculation
   const videoDuration = useMemo(() => {
@@ -198,6 +291,15 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
     return last.offset + (last.duration || 0);
   }, [segments]);
   const videoProgress = videoDuration > 0 ? Math.min(currentTime / videoDuration, 1) : 0;
+
+  // Detect forward skips (>30s) to offer "What did I miss?" catch-up
+  useEffect(() => {
+    const delta = currentTime - prevTimeRef.current;
+    if (delta > 30 && segments.length > 0) {
+      setCatchUpRange({ from: prevTimeRef.current, to: currentTime });
+    }
+    prevTimeRef.current = currentTime;
+  }, [currentTime, segments.length]);
 
   // Persist chat messages to localStorage + Supabase (background sync)
   useEffect(() => {
@@ -295,6 +397,14 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
     const abortController = new AbortController();
     abortRef.current = abortController;
 
+    // Mode-specific prompt wrapping
+    let effectivePrompt = prompt;
+    if (teachBackMode) {
+      effectivePrompt = `[TEACH BACK MODE] The student is trying to explain a concept back to you. Evaluate their explanation for accuracy and completeness based on the video content. Be encouraging but point out any misconceptions. Then ask a follow-up question to deepen their understanding. Student says: "${prompt}"`;
+    } else if (eli5Mode) {
+      effectivePrompt = `Explain this very simply, as if to a complete beginner with no background knowledge: ${prompt}`;
+    }
+
     const userMsg: ChatMessage = { id: Date.now().toString(), role: 'user', content: prompt };
     const assistantId = (Date.now() + 1).toString();
     const newMessages = [...messages, userMsg];
@@ -311,12 +421,13 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: prompt,
+          message: effectivePrompt,
           currentTimestamp: currentTime,
           segments,
           history,
           model: selectedModel,
           videoTitle,
+          personality: personality !== 'default' ? personality : undefined,
         }),
         signal: abortController.signal,
       });
@@ -390,7 +501,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
     } finally {
       setIsStreaming(false);
     }
-  }, [isStreaming, messages, currentTime, segments, selectedModel, videoTitle, scrollToBottom]);
+  }, [isStreaming, messages, currentTime, segments, selectedModel, videoTitle, scrollToBottom, eli5Mode, teachBackMode, personality]);
 
   const handleSubmit = async (e?: { preventDefault(): void }) => {
     e?.preventDefault();
@@ -434,6 +545,18 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
               <div className="flex items-center gap-2 text-slate-400">
                 <ChatBubbleIcon />
                 <span className="text-xs font-medium">Ask about this video</span>
+                {messages.length >= 4 && (() => {
+                  const userMsgs = messages.filter((m) => m.role === 'user');
+                  const avgLen = userMsgs.reduce((a, m) => a + m.content.length, 0) / Math.max(1, userMsgs.length);
+                  const depth = avgLen > 100 ? 'deep' : avgLen > 40 ? 'exploring' : 'starting';
+                  const labels = { starting: 'Getting started', exploring: 'Exploring', deep: 'Deep dive' };
+                  const colors = { starting: 'text-slate-500', exploring: 'text-amber-400', deep: 'text-emerald-400' };
+                  return (
+                    <span className={`text-[9px] font-medium ${colors[depth]} hidden sm:inline`}>
+                      {labels[depth]}
+                    </span>
+                  );
+                })()}
               </div>
               <div className="flex items-center gap-1">
                 {messages.length > 0 && (
@@ -494,6 +617,179 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                       Export
                     </button>
                     <button
+                      onClick={() => {
+                        const title = videoTitle || 'Video Chat';
+                        const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Chalk - ${title}</title>
+<style>
+body { font-family: -apple-system, system-ui, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; }
+h1 { font-size: 20px; border-bottom: 2px solid #3b82f6; padding-bottom: 8px; }
+.meta { color: #666; font-size: 13px; margin-bottom: 24px; }
+.msg { margin-bottom: 16px; padding: 12px; border-radius: 8px; }
+.user { background: #f0f4ff; border-left: 3px solid #3b82f6; }
+.assistant { background: #f9fafb; border-left: 3px solid #10b981; }
+.role { font-size: 11px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; }
+.role.user-role { color: #3b82f6; }
+.role.ai-role { color: #10b981; }
+.content { font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+.footer { margin-top: 32px; padding-top: 12px; border-top: 1px solid #e5e7eb; font-size: 11px; color: #999; }
+@media print { body { margin: 20px; } }
+</style></head><body>
+<h1>${title}</h1>
+<div class="meta">${videoId ? `Video ID: ${videoId} · ` : ''}${messages.length} messages · Generated by Chalk</div>
+${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 'user' ? 'user-role' : 'ai-role'}">${m.role === 'user' ? 'You' : 'Chalk AI'}</div><div class="content">${m.content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div></div>`).join('\n')}
+<div class="footer">Exported from Chalk · ${new Date().toLocaleDateString()}</div>
+</body></html>`;
+                        const win = window.open('', '_blank');
+                        if (win) {
+                          win.document.write(html);
+                          win.document.close();
+                        }
+                      }}
+                      className="flex items-center gap-1 px-2 py-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors text-[10px]"
+                      aria-label="Print chat"
+                      title="Open printable version"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                        <path fillRule="evenodd" d="M3 4.75A2.75 2.75 0 0 1 5.75 2h4.5A2.75 2.75 0 0 1 13 4.75v1.5h.25A1.75 1.75 0 0 1 15 8v3.25a1.75 1.75 0 0 1-1.75 1.75H13v.25A2.75 2.75 0 0 1 10.25 16h-4.5A2.75 2.75 0 0 1 3 13.25V13h-.25A1.75 1.75 0 0 1 1 11.25V8a1.75 1.75 0 0 1 1.75-1.75H3v-1.5Z" clipRule="evenodd" />
+                      </svg>
+                      Print
+                    </button>
+                    <button
+                      onClick={async () => {
+                        if (!videoId || flashcardStatus === 'generating') return;
+                        setFlashcardStatus('generating');
+                        try {
+                          const resp = await fetch('/api/generate-flashcards', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ messages, videoTitle }),
+                          });
+                          if (!resp.ok) throw new Error('Failed');
+                          const { cards } = await resp.json();
+                          if (cards && Array.isArray(cards)) {
+                            for (const card of cards) {
+                              await createFlashcard(videoId, card.front, card.back, videoTitle, card.timestamp);
+                            }
+                          }
+                          setFlashcardStatus('done');
+                          setTimeout(() => setFlashcardStatus('idle'), 2000);
+                        } catch {
+                          setFlashcardStatus('idle');
+                        }
+                      }}
+                      disabled={flashcardStatus === 'generating'}
+                      className="flex items-center gap-1 px-2 py-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors text-[10px]"
+                      aria-label={flashcardStatus === 'done' ? 'Flashcards created!' : 'Create flashcards'}
+                      title={flashcardStatus === 'done' ? 'Flashcards created!' : 'Generate flashcards from conversation'}
+                    >
+                      {flashcardStatus === 'done' ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3 text-emerald-400">
+                          <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                          <path d="M8 .75a.75.75 0 0 1 .697.473l1.524 3.84 3.84 1.524a.75.75 0 0 1 0 1.396l-3.84 1.524-1.524 3.84a.75.75 0 0 1-1.394 0L5.78 9.507l-3.84-1.524a.75.75 0 0 1 0-1.396l3.84-1.524L7.303 1.223A.75.75 0 0 1 8 .75Z" />
+                        </svg>
+                      )}
+                      {flashcardStatus === 'done' ? 'Created!' : flashcardStatus === 'generating' ? '...' : 'Cards'}
+                    </button>
+                    {videoId && segments.length > 0 && (
+                      <>
+                        <button
+                          onClick={async () => {
+                            if (takeaways) { setTakeaways(null); return; }
+                            setTakeawaysLoading(true);
+                            try {
+                              const resp = await fetch('/api/key-takeaways', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ segments, videoTitle }),
+                              });
+                              const data = await resp.json();
+                              if (data.takeaways) setTakeaways(data.takeaways);
+                            } catch { /* ignore */ }
+                            setTakeawaysLoading(false);
+                          }}
+                          disabled={takeawaysLoading}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] transition-colors ${
+                            takeaways
+                              ? 'bg-emerald-500/15 text-emerald-400'
+                              : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]'
+                          }`}
+                          title="Key takeaways"
+                        >
+                          {takeawaysLoading ? (
+                            <div className="w-3 h-3 border border-slate-500/40 border-t-slate-400 rounded-full animate-spin" />
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                              <path fillRule="evenodd" d="M11.986 3H12a2 2 0 0 1 2 2v6a2 2 0 0 1-1.5 1.937V7A2.5 2.5 0 0 0 10 4.5H4.063A2 2 0 0 1 6 3h.014A2.25 2.25 0 0 1 8.25 1h-.5a2.25 2.25 0 0 1 2.236 2ZM10 6H4a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1Zm-3 2.75a.75.75 0 0 0-1.5 0v3.5a.75.75 0 0 0 1.5 0v-3.5Zm3.5 0a.75.75 0 0 0-1.5 0v3.5a.75.75 0 0 0 1.5 0v-3.5Z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                          TL;DR
+                        </button>
+                        <QuizButton videoId={videoId} videoTitle={videoTitle} segments={segments} onSeek={onSeek} />
+                        <VocabularyButton videoId={videoId} videoTitle={videoTitle} segments={segments} onSeek={onSeek} />
+                        <button
+                          onClick={() => {
+                            // Build a quick quiz prompt from current section
+                            const nearby = segments.filter(
+                              (s) => Math.abs(s.offset - currentTime) < 120
+                            );
+                            const context = nearby.map((s) => s.text).join(' ').slice(0, 300);
+                            const prompt = context
+                              ? `Ask me a quick quiz question to test my understanding of what was just discussed: "${context.slice(0, 150)}..."`
+                              : 'Ask me a quick quiz question about what we just watched.';
+                            submitMessage(prompt);
+                          }}
+                          disabled={isStreaming}
+                          className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
+                          title="Quick quiz about current section"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                            <path fillRule="evenodd" d="M15 8A7 7 0 1 1 1 8a7 7 0 0 1 14 0ZM9 5a1 1 0 1 1-2 0 1 1 0 0 1 2 0ZM6.75 8a.75.75 0 0 0 0 1.5h.75v1.75a.75.75 0 0 0 1.5 0v-2.5A.75.75 0 0 0 8.25 8h-1.5Z" clipRule="evenodd" />
+                          </svg>
+                          Quick Q
+                        </button>
+                        <button
+                          onClick={async () => {
+                            if (digestOpen) { setDigestOpen(false); return; }
+                            setDigestOpen(true);
+                            if (!digestData) {
+                              setDigestLoading(true);
+                              try {
+                                const resp = await fetch('/api/key-takeaways', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ segments, videoTitle }),
+                                });
+                                const data = await resp.json();
+                                if (data.takeaways) setDigestData({ takeaways: data.takeaways });
+                              } catch { /* ignore */ }
+                              setDigestLoading(false);
+                            }
+                          }}
+                          disabled={digestLoading}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-md text-[10px] transition-colors ${
+                            digestOpen
+                              ? 'bg-sky-500/15 text-sky-400'
+                              : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]'
+                          }`}
+                          title="Video digest summary"
+                        >
+                          {digestLoading ? (
+                            <div className="w-3 h-3 border border-slate-500/40 border-t-slate-400 rounded-full animate-spin" />
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                              <path d="M2.5 3A1.5 1.5 0 0 0 1 4.5v.793c.026.009.051.02.076.032L7.674 8.51c.206.1.446.1.652 0l6.598-3.185A.755.755 0 0 1 15 5.293V4.5A1.5 1.5 0 0 0 13.5 3h-11Z" />
+                              <path d="M15 6.954 8.978 9.86a2.25 2.25 0 0 1-1.956 0L1 6.954V11.5A1.5 1.5 0 0 0 2.5 13h11a1.5 1.5 0 0 0 1.5-1.5V6.954Z" />
+                            </svg>
+                          )}
+                          Digest
+                        </button>
+                      </>
+                    )}
+                    <button
                       onClick={() => { setMessages([]); setInput(''); saveChatHistory(videoId, []); }}
                       className="flex items-center gap-1 px-2 py-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors text-[10px]"
                       aria-label="Clear chat"
@@ -527,8 +823,174 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
               className="flex-1 overflow-y-auto min-h-0 px-4 py-3 space-y-4"
               style={{ overscrollBehavior: 'contain' }}
             >
+              {/* Key takeaways card */}
+              {takeaways && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="px-3 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-medium text-emerald-400">Key Takeaways</span>
+                    <button
+                      onClick={() => setTakeaways(null)}
+                      className="text-slate-500 hover:text-slate-300 transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                        <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <ul className="space-y-1.5">
+                    {takeaways.map((t, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <span className="text-emerald-500 text-[10px] mt-0.5 shrink-0">&#x2022;</span>
+                        <span className="text-[11px] text-slate-300 leading-relaxed flex-1">{t.text}</span>
+                        {t.timestamp > 0 && (
+                          <button
+                            onClick={() => onSeek(t.timestamp)}
+                            className="text-[9px] font-mono text-emerald-500/60 hover:text-emerald-400 shrink-0 transition-colors"
+                          >
+                            {formatTimestamp(t.timestamp)}
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              )}
+
+              {/* Video digest card */}
+              {digestOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-xl bg-gradient-to-br from-sky-500/10 via-indigo-500/5 to-violet-500/10 border border-sky-500/20 overflow-hidden"
+                >
+                  <div className="px-4 py-3 border-b border-sky-500/10">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-sky-400">
+                          <path d="M2.5 3A1.5 1.5 0 0 0 1 4.5v.793c.026.009.051.02.076.032L7.674 8.51c.206.1.446.1.652 0l6.598-3.185A.755.755 0 0 1 15 5.293V4.5A1.5 1.5 0 0 0 13.5 3h-11Z" />
+                          <path d="M15 6.954 8.978 9.86a2.25 2.25 0 0 1-1.956 0L1 6.954V11.5A1.5 1.5 0 0 0 2.5 13h11a1.5 1.5 0 0 0 1.5-1.5V6.954Z" />
+                        </svg>
+                        <span className="text-xs font-semibold text-sky-300">Video Digest</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            const last = segments.length > 0 ? segments[segments.length - 1] : null;
+                            const dur = last ? Math.round((last.offset + (last.duration || 0)) / 60) : 0;
+                            const takeawayText = digestData?.takeaways?.map((t, i) => `${i + 1}. ${t.text}`).join('\n') || 'No takeaways';
+                            const chatCount = messages.filter((m) => m.role === 'user').length;
+                            const text = `📋 Video Digest: ${videoTitle || 'Video'}\n\n⏱ Duration: ~${dur} min · ${segments.length} segments\n💬 ${chatCount} questions asked\n\n✨ Key Takeaways:\n${takeawayText}\n\n—Chalk Video Learning Assistant`;
+                            navigator.clipboard.writeText(text);
+                          }}
+                          className="text-[9px] text-sky-500/60 hover:text-sky-400 transition-colors"
+                          title="Copy digest"
+                        >
+                          Copy
+                        </button>
+                        <button onClick={() => setDigestOpen(false)} className="text-slate-500 hover:text-slate-300 transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                            <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-1 truncate">{videoTitle || 'Untitled Video'}</p>
+                  </div>
+                  <div className="px-4 py-2.5">
+                    {/* Stats row */}
+                    <div className="flex items-center gap-4 mb-2.5">
+                      {segments.length > 0 && (() => {
+                        const last = segments[segments.length - 1];
+                        const dur = Math.round((last.offset + (last.duration || 0)) / 60);
+                        return <span className="text-[10px] text-slate-500">~{dur} min</span>;
+                      })()}
+                      <span className="text-[10px] text-slate-500">{segments.length} segments</span>
+                      <span className="text-[10px] text-slate-500">{messages.filter((m) => m.role === 'user').length} questions</span>
+                    </div>
+                    {/* Takeaways */}
+                    {digestLoading ? (
+                      <div className="flex items-center gap-2 py-3">
+                        <div className="w-3 h-3 border border-sky-500/40 border-t-sky-400 rounded-full animate-spin" />
+                        <span className="text-[10px] text-slate-500">Generating digest...</span>
+                      </div>
+                    ) : digestData?.takeaways ? (
+                      <div>
+                        <span className="text-[10px] font-medium text-sky-400/80 uppercase tracking-wider">Key Takeaways</span>
+                        <ul className="mt-1.5 space-y-1.5">
+                          {digestData.takeaways.map((t, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <span className="text-sky-500/70 text-[10px] mt-0.5 shrink-0">{i + 1}.</span>
+                              <span className="text-[11px] text-slate-300 leading-relaxed flex-1">{t.text}</span>
+                              {t.timestamp > 0 && (
+                                <button
+                                  onClick={() => onSeek(t.timestamp)}
+                                  className="text-[9px] font-mono text-sky-500/50 hover:text-sky-400 shrink-0 transition-colors"
+                                >
+                                  {formatTimestamp(t.timestamp)}
+                                </button>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-slate-500 py-2">Could not generate digest.</p>
+                    )}
+                    {/* What you explored */}
+                    {messages.filter((m) => m.role === 'user').length > 0 && (
+                      <div className="mt-3 pt-2.5 border-t border-sky-500/10">
+                        <span className="text-[10px] font-medium text-indigo-400/80 uppercase tracking-wider">What You Explored</span>
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {messages.filter((m) => m.role === 'user').slice(-6).map((m) => {
+                            const preview = m.content.length > 30 ? m.content.slice(0, 30) + '...' : m.content;
+                            return (
+                              <span key={m.id} className="text-[9px] text-indigo-300/70 px-1.5 py-0.5 rounded-full bg-indigo-500/10 border border-indigo-500/15">
+                                {preview}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Learning path breadcrumb */}
+              {messages.filter((m) => m.role === 'user').length >= 2 && (
+                <div className="flex items-center gap-1 flex-wrap px-1 pb-1">
+                  <span className="text-[9px] text-slate-600 shrink-0">Path:</span>
+                  {messages
+                    .filter((m) => m.role === 'user')
+                    .slice(-5)
+                    .map((m, i) => {
+                      const words = m.content.split(/\s+/).filter((w) => w.length > 3).slice(0, 3).join(' ');
+                      const label = words.length > 20 ? words.slice(0, 20) + '...' : words;
+                      return (
+                        <span key={m.id} className="flex items-center gap-1">
+                          {i > 0 && <span className="text-[8px] text-slate-700">&rarr;</span>}
+                          <span className="text-[9px] text-slate-500 px-1.5 py-0.5 rounded bg-white/[0.03] border border-white/[0.05]">{label}</span>
+                        </span>
+                      );
+                    })}
+                </div>
+              )}
+
               {messages.length === 0 && (
                 <>
+                  {(() => {
+                    const hour = new Date().getHours();
+                    const greeting = hour < 6 ? 'Late night study grind!' : hour < 12 ? 'Good morning study session!' : hour < 17 ? 'Afternoon learning!' : hour < 21 ? 'Evening study time!' : 'Night owl session!';
+                    return (
+                      <div className="text-center pt-2">
+                        <span className="text-[10px] text-slate-600">{greeting}</span>
+                      </div>
+                    );
+                  })()}
                   {segments.length === 0 && (
                     <div className="text-center px-4 pt-2">
                       <p className="text-[11px] text-slate-500">
@@ -539,7 +1001,9 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                   <SuggestionRows
                     currentTime={currentTime}
                     hasTranscript={segments.length > 0}
+                    segments={segments}
                     onSelect={handleSuggestionSelect}
+                    videoTitle={videoTitle}
                   />
                 </>
               )}
@@ -552,6 +1016,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                     thinking={msg.thinking}
                     thinkingDuration={msg.thinkingDuration}
                     onSeek={onSeek}
+                    videoId={videoId}
                   />
                   {/* Follow-up chips after last assistant message */}
                   {msg.role === 'assistant' && i === messages.length - 1 && !isStreaming && msg.content && (
@@ -559,6 +1024,43 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                   )}
                 </div>
               ))}
+
+              {/* "What did I miss?" catch-up banner */}
+              {catchUpRange && !isStreaming && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-amber-400 shrink-0">
+                    <path fillRule="evenodd" d="M8 1.75a.75.75 0 0 1 .692.462l1.41 3.393 3.664.293a.75.75 0 0 1 .428 1.317L11.46 9.63l.837 3.558a.75.75 0 0 1-1.12.814L8 12.28l-3.177 1.722a.75.75 0 0 1-1.12-.814l.837-3.558L1.806 7.215a.75.75 0 0 1 .428-1.317l3.664-.293 1.41-3.393A.75.75 0 0 1 8 1.75Z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-[11px] text-amber-300 flex-1">
+                    Skipped {formatTimestamp(catchUpRange.from)} → {formatTimestamp(catchUpRange.to)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const q = `Summarize what was discussed between [${formatTimestamp(catchUpRange.from)}] and [${formatTimestamp(catchUpRange.to)}]. What did I miss?`;
+                      setCatchUpRange(null);
+                      submitMessage(q);
+                    }}
+                    className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 hover:text-amber-200 transition-colors whitespace-nowrap"
+                  >
+                    What did I miss?
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCatchUpRange(null)}
+                    className="p-0.5 rounded text-amber-500/50 hover:text-amber-400 transition-colors"
+                    aria-label="Dismiss"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                      <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
+                    </svg>
+                  </button>
+                </motion.div>
+              )}
             </div>
 
             {/* Scroll-to-bottom pill */}
@@ -589,8 +1091,66 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
               style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
             >
               <div className="flex items-end rounded-xl bg-white/[0.06] ring-1 ring-white/[0.08] focus-within:ring-chalk-accent/40 focus-within:bg-white/[0.08] focus-within:shadow-[0_0_0_3px_rgba(59,130,246,0.08)] transition-all duration-200">
-                <div className="pl-2 pb-2.5 shrink-0">
+                <div className="pl-2 pb-2.5 shrink-0 flex items-center gap-1">
                   <ModelSelector value={selectedModel} onChange={setSelectedModel} disabled={isStreaming} />
+                  <button
+                    type="button"
+                    onClick={() => setEli5Mode((v) => !v)}
+                    className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-all duration-150 ${
+                      eli5Mode
+                        ? 'bg-amber-500/20 text-amber-400 ring-1 ring-amber-500/30'
+                        : 'text-slate-500 hover:text-slate-400 hover:bg-white/[0.06]'
+                    }`}
+                    aria-label={eli5Mode ? 'ELI5 mode on — click to disable' : 'Enable Explain Like I\'m 5 mode'}
+                    title={eli5Mode ? 'ELI5 mode ON — answers simplified' : 'Explain Like I\'m 5'}
+                  >
+                    ELI5
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setTeachBackMode((v) => !v); if (!teachBackMode) setEli5Mode(false); }}
+                    className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-all duration-150 ${
+                      teachBackMode
+                        ? 'bg-emerald-500/20 text-emerald-400 ring-1 ring-emerald-500/30'
+                        : 'text-slate-500 hover:text-slate-400 hover:bg-white/[0.06]'
+                    }`}
+                    aria-label={teachBackMode ? 'Teach Back mode on' : 'Enable Teach Back mode'}
+                    title={teachBackMode ? 'Teach Back ON — explain concepts to the AI' : 'Teach Back — explain what you learned'}
+                  >
+                    TB
+                  </button>
+                  <div className="relative group/pers">
+                    <button
+                      type="button"
+                      className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold transition-all duration-150 ${
+                        personality !== 'default'
+                          ? personality === 'encouraging' ? 'bg-pink-500/20 text-pink-400 ring-1 ring-pink-500/30'
+                          : personality === 'strict' ? 'bg-red-500/20 text-red-400 ring-1 ring-red-500/30'
+                          : 'bg-violet-500/20 text-violet-400 ring-1 ring-violet-500/30'
+                          : 'text-slate-500 hover:text-slate-400 hover:bg-white/[0.06]'
+                      }`}
+                      title={personality === 'default' ? 'Study coach personality' : `${personality} mode`}
+                    >
+                      {personality === 'default' ? 'Coach' : personality === 'encouraging' ? '♥' : personality === 'strict' ? '!' : '?'}
+                    </button>
+                    <div className="absolute bottom-full left-0 mb-1 hidden group-hover/pers:flex flex-col bg-slate-800/95 backdrop-blur-sm rounded-lg border border-white/10 shadow-xl py-1 min-w-[130px] z-50">
+                      {([['default', 'Default', ''], ['encouraging', 'Encouraging', 'Warm & supportive'], ['strict', 'Strict', 'Direct & challenging'], ['socratic', 'Socratic', 'Questions to guide']] as const).map(([key, label, desc]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setPersonality(key)}
+                          className={`px-3 py-1.5 text-left text-[11px] transition-colors ${
+                            personality === key
+                              ? 'bg-white/10 text-slate-200'
+                              : 'text-slate-400 hover:bg-white/[0.06] hover:text-slate-300'
+                          }`}
+                        >
+                          <div className="font-medium">{label}</div>
+                          {desc && <div className="text-[9px] text-slate-500">{desc}</div>}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
                 <textarea
                   ref={inputRef}
@@ -607,7 +1167,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                       handleSubmit();
                     }
                   }}
-                  placeholder={isStreaming ? 'Generating response...' : 'Ask about the video...'}
+                  placeholder={isStreaming ? 'Generating response...' : teachBackMode ? 'Explain what you learned...' : 'Ask about the video...'}
                   disabled={isStreaming}
                   aria-label="Video question input"
                   rows={1}

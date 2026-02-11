@@ -13,6 +13,7 @@ interface VideoAIMessageProps {
   thinking?: string;
   thinkingDuration?: number;
   onSeek?: (seconds: number) => void;
+  videoId?: string;
 }
 
 function SparkleIcon() {
@@ -57,7 +58,7 @@ function applyInlineFormatting(text: string, keyPrefix: string): React.ReactNode
 /**
  * Renders a text segment with both timestamp links and inline formatting.
  */
-function renderInlineContent(text: string, onSeek: ((seconds: number) => void) | undefined, keyPrefix: string): React.ReactNode[] {
+function renderInlineContent(text: string, onSeek: ((seconds: number) => void) | undefined, keyPrefix: string, videoId?: string): React.ReactNode[] {
   // First pass: extract timestamps
   const timestamps = onSeek ? parseTimestampLinks(text) : [];
   if (timestamps.length === 0) {
@@ -78,6 +79,7 @@ function renderInlineContent(text: string, onSeek: ((seconds: number) => void) |
         timestamp={display}
         seconds={ts.seconds}
         onSeek={onSeek!}
+        videoId={videoId}
       />
     );
     lastIndex = ts.index + ts.match.length;
@@ -98,7 +100,7 @@ function renderInlineContent(text: string, onSeek: ((seconds: number) => void) |
  * - Numbered lists (1. item)
  * - [M:SS] timestamp citations as clickable pills
  */
-function renderRichContent(content: string, onSeek?: (seconds: number) => void): React.ReactNode {
+function renderRichContent(content: string, onSeek?: (seconds: number) => void, videoId?: string): React.ReactNode {
   const lines = content.split('\n');
   const blocks: React.ReactNode[] = [];
   let currentList: { type: 'ul' | 'ol'; items: string[] } | null = null;
@@ -107,7 +109,7 @@ function renderRichContent(content: string, onSeek?: (seconds: number) => void):
   function flushList() {
     if (!currentList) return;
     const items = currentList.items.map((item, i) => (
-      <li key={i} className="ml-4">{renderInlineContent(item, onSeek, `li-${blockIdx}-${i}`)}</li>
+      <li key={i} className="ml-4">{renderInlineContent(item, onSeek, `li-${blockIdx}-${i}`, videoId)}</li>
     ));
     if (currentList.type === 'ul') {
       blocks.push(<ul key={`bl-${blockIdx++}`} className="list-disc space-y-0.5 my-1">{items}</ul>);
@@ -138,7 +140,7 @@ function renderRichContent(content: string, onSeek?: (seconds: number) => void):
       if (line.trim()) {
         blocks.push(
           <span key={`bl-${blockIdx++}`}>
-            {renderInlineContent(line, onSeek, `p-${blockIdx}`)}
+            {renderInlineContent(line, onSeek, `p-${blockIdx}`, videoId)}
             {'\n'}
           </span>
         );
@@ -183,7 +185,57 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingDuration, onSeek }: VideoAIMessageProps) {
+function ReactionButtons({ messageId }: { messageId?: string }) {
+  const storageKey = messageId ? `chalk-reaction-${messageId}` : '';
+  const [reaction, setReaction] = useState<'up' | 'down' | null>(() => {
+    if (!storageKey || typeof window === 'undefined') return null;
+    try {
+      return localStorage.getItem(storageKey) as 'up' | 'down' | null;
+    } catch { return null; }
+  });
+
+  const handleReaction = useCallback((type: 'up' | 'down') => {
+    const newReaction = reaction === type ? null : type;
+    setReaction(newReaction);
+    if (storageKey) {
+      try {
+        if (newReaction) localStorage.setItem(storageKey, newReaction);
+        else localStorage.removeItem(storageKey);
+      } catch { /* ignore */ }
+    }
+  }, [reaction, storageKey]);
+
+  return (
+    <div className="inline-flex items-center gap-0.5 ml-1">
+      <button
+        onClick={() => handleReaction('up')}
+        className={`p-0.5 rounded transition-all ${
+          reaction === 'up' ? 'text-emerald-400' : 'opacity-0 group-hover:opacity-100 text-slate-600 hover:text-emerald-400'
+        }`}
+        aria-label="Helpful"
+        title="Helpful"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5">
+          <path d="M2.09 15a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h1.382a1 1 0 0 0 .894-.553l2.236-4.472A.5.5 0 0 1 7.059 1.5h.382a1.5 1.5 0 0 1 1.5 1.5v2.5h3.559a1.5 1.5 0 0 1 1.487 1.704l-.971 6.5A1.5 1.5 0 0 1 11.53 15H2.09Z" />
+        </svg>
+      </button>
+      <button
+        onClick={() => handleReaction('down')}
+        className={`p-0.5 rounded transition-all ${
+          reaction === 'down' ? 'text-rose-400' : 'opacity-0 group-hover:opacity-100 text-slate-600 hover:text-rose-400'
+        }`}
+        aria-label="Not helpful"
+        title="Not helpful"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5">
+          <path d="M13.91 1a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-1.382a1 1 0 0 0-.894.553l-2.236 4.472a.5.5 0 0 1-.447.275h-.382a1.5 1.5 0 0 1-1.5-1.5v-2.5H3.51a1.5 1.5 0 0 1-1.487-1.704l.971-6.5A1.5 1.5 0 0 1 4.47 1h9.44Z" />
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingDuration, onSeek, videoId }: VideoAIMessageProps) {
   if (role === 'user') {
     return (
       <motion.div
@@ -241,7 +293,7 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
 
         {hasContent && (
           <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-            {renderRichContent(content, onSeek)}
+            {renderRichContent(content, onSeek, videoId)}
             {isStreaming && (
               <span className="inline-block w-0.5 h-4 bg-chalk-accent/70 animate-pulse ml-0.5 align-middle" />
             )}
@@ -252,10 +304,11 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
           <p className="text-sm text-slate-500 italic">No response generated.</p>
         )}
 
-        {/* Copy button — appears on hover */}
+        {/* Copy button + reactions — appears on hover */}
         {hasContent && !isStreaming && (
-          <div className="mt-1">
+          <div className="mt-1 flex items-center">
             <CopyButton text={content} />
+            <ReactionButtons messageId={videoId ? `${videoId}-${content.slice(0, 20).replace(/\s/g, '')}` : undefined} />
           </div>
         )}
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { MediaPlayer, MediaProvider, type MediaPlayerInstance } from '@vidstack/react';
 import { DefaultVideoLayout, defaultLayoutIcons } from '@vidstack/react/player/layouts/default';
 import '@vidstack/react/player/styles/default/theme.css';
@@ -18,6 +18,14 @@ interface VideoPlayerProps {
 export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, playerRef }: VideoPlayerProps) {
   const internalRef = useRef<MediaPlayerInstance>(null);
   const player = playerRef || internalRef;
+  const [speedOverlay, setSpeedOverlay] = useState<string | null>(null);
+  const speedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const showSpeed = useCallback((speed: string) => {
+    setSpeedOverlay(speed);
+    if (speedTimerRef.current) clearTimeout(speedTimerRef.current);
+    speedTimerRef.current = setTimeout(() => setSpeedOverlay(null), 1200);
+  }, []);
 
   // Keyboard shortcuts
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -66,11 +74,13 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
       case '<':
         e.preventDefault();
         p.playbackRate = Math.max(0.25, p.playbackRate - 0.25);
+        showSpeed(`${p.playbackRate}x`);
         break;
       case '.':
       case '>':
         e.preventDefault();
         p.playbackRate = Math.min(3, p.playbackRate + 0.25);
+        showSpeed(`${p.playbackRate}x`);
         break;
     }
   }, [player]);
@@ -81,6 +91,14 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
   }, [handleKeyDown]);
 
   return (
+    <div className="relative">
+    {speedOverlay && (
+      <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+        <div className="px-4 py-2 rounded-xl bg-black/70 backdrop-blur-sm text-white text-lg font-bold animate-in fade-in zoom-in-95 duration-150">
+          {speedOverlay}
+        </div>
+      </div>
+    )}
     <MediaPlayer
       ref={player}
       src={`youtube/${videoId}`}
@@ -101,5 +119,6 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
       <MediaProvider />
       <DefaultVideoLayout icons={defaultLayoutIcons} />
     </MediaPlayer>
+    </div>
   );
 }
