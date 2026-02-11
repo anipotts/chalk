@@ -587,11 +587,21 @@ export function TranscriptPanel({
     <div className={wrapperClass}>
       {/* Reading position indicator */}
       {segments.length > 0 && (
-        <div className="h-0.5 bg-chalk-border/10 w-full">
-          <div
-            className="h-full bg-chalk-accent/40 transition-[width] duration-500 ease-linear"
-            style={{ width: `${readingProgress * 100}%` }}
-          />
+        <div className="relative">
+          <div className="h-0.5 bg-chalk-border/10 w-full">
+            <div
+              className="h-full bg-chalk-accent/40 transition-[width] duration-500 ease-linear"
+              style={{ width: `${readingProgress * 100}%` }}
+            />
+          </div>
+          {currentTime > 0 && (() => {
+            const totalDur = segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0);
+            const remaining = Math.max(0, totalDur - currentTime);
+            if (remaining < 1) return null;
+            const m = Math.floor(remaining / 60);
+            const s = Math.round(remaining % 60);
+            return <span className="absolute right-1 -top-3.5 text-[8px] text-slate-600 tabular-nums">-{m}:{s.toString().padStart(2, '0')}</span>;
+          })()}
         </div>
       )}
       {/* Transcript density heatmap bar */}

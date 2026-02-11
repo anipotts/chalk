@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 84 (Completed)
+- [x] Transcript Remaining Time Display — show countdown "-M:SS" next to reading progress bar
+- [x] Chat Total Words Exchanged — count both user + AI words in conversation stats
+- [x] Home Page Keyboard Navigation Hint — show "↑↓ to navigate · Enter to open" below video list
+- [x] Build verification PASSED
+
 ## Wave 83 (Completed)
 - [x] Transcript Paragraph Count — display paragraph count at top of paragraph mode view
 - [x] Chat Rating Summary — show up/down vote counts in conversation stats

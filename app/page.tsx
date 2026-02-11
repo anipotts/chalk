@@ -882,6 +882,9 @@ export default function Home() {
             <p className="text-[10px] text-slate-700 mt-1">Your recent videos will appear here</p>
           </div>
         )}
+        {recentVideos.length > 1 && (
+          <p className="text-[9px] text-slate-700 text-center mt-2">&uarr;&darr; to navigate &middot; Enter to open</p>
+        )}
       </div>
 
       {/* Recent activity timeline */}
