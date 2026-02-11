@@ -1379,11 +1379,25 @@ export function TranscriptPanel({
                   )}
                   <button
                     onClick={() => onSeek(seg.offset)}
-                    className={`${fontSizeClass} leading-relaxed text-left flex-1 ${isActive ? 'text-chalk-text' : 'text-slate-400'}`}
+                    onMouseDown={(e) => {
+                      const btn = e.currentTarget;
+                      const timer = setTimeout(() => {
+                        const ts = formatTimestamp(seg.offset);
+                        navigator.clipboard.writeText(`[${ts}] ${seg.text}`).then(() => {
+                          btn.dataset.longCopied = 'true';
+                          setTimeout(() => { btn.dataset.longCopied = ''; }, 1200);
+                        });
+                      }, 500);
+                      btn.dataset.longTimer = String(timer);
+                    }}
+                    onMouseUp={(e) => { clearTimeout(Number(e.currentTarget.dataset.longTimer)); }}
+                    onMouseLeave={(e) => { clearTimeout(Number(e.currentTarget.dataset.longTimer)); }}
+                    className={`${fontSizeClass} leading-relaxed text-left flex-1 data-[long-copied=true]:text-emerald-400 ${isActive ? 'text-chalk-text' : 'text-slate-400'}`}
                     style={isActive && segProgress > 0 && !search.trim() ? {
                       background: `linear-gradient(90deg, rgba(59,130,246,0.15) ${segProgress * 100}%, transparent ${segProgress * 100}%)`,
                       borderRadius: '2px',
                     } : undefined}
+                    title="Click to seek · Hold to copy with timestamp"
                   >
                     {typeof highlightedText === 'string' ? highlightedText : highlightedText}
                   </button>

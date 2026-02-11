@@ -202,6 +202,7 @@ export default function Home() {
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const [lastSessionAgo, setLastSessionAgo] = useState<string | null>(null);
   const [totalWordsLearned, setTotalWordsLearned] = useState(0);
+  const [clipboardUrl, setClipboardUrl] = useState<string | null>(null);
   const [selectedVideoIdx, setSelectedVideoIdx] = useState(-1);
   const previewAbort = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -469,16 +470,29 @@ export default function Home() {
 
           {/* URL Input */}
           <form onSubmit={handleSubmit} className="w-full max-w-xl mx-auto">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 relative">
               <input
                 ref={inputRef}
                 type="text"
                 value={url}
-                onChange={(e) => { setUrl(e.target.value); setError(''); }}
+                onChange={(e) => { setUrl(e.target.value); setError(''); setClipboardUrl(null); }}
+                onFocus={() => {
+                  if (!url.trim() && navigator.clipboard?.readText) {
+                    navigator.clipboard.readText().then((text) => {
+                      if (text && /youtu\.?be/.test(text) && extractVideoId(text)) setClipboardUrl(text);
+                    }).catch(() => {});
+                  }
+                }}
+                onBlur={() => setTimeout(() => setClipboardUrl(null), 200)}
                 placeholder="Paste a YouTube URL..."
                 className="flex-1 px-5 py-3.5 rounded-full bg-chalk-surface border border-chalk-border/40 text-chalk-text placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-chalk-accent/50 focus:border-transparent transition-all"
                 autoFocus
               />
+              {clipboardUrl && !url.trim() && (
+                <button type="button" onMouseDown={() => { setUrl(clipboardUrl); setClipboardUrl(null); }} className="absolute top-full mt-1 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-medium bg-chalk-accent/20 text-chalk-accent border border-chalk-accent/30 hover:bg-chalk-accent/30 transition-colors whitespace-nowrap z-10">
+                  Paste from clipboard
+                </button>
+              )}
               <button
                 type="submit"
                 disabled={!url.trim()}

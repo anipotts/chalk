@@ -1550,7 +1550,7 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
               className="px-4 pt-3"
               style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}
             >
-              <div className="flex items-end rounded-xl bg-white/[0.06] ring-1 ring-white/[0.08] focus-within:ring-chalk-accent/40 focus-within:bg-white/[0.08] focus-within:shadow-[0_0_0_3px_rgba(59,130,246,0.08)] transition-all duration-200">
+              <div className="flex items-end rounded-xl bg-white/[0.06] ring-1 ring-white/[0.08] focus-within:ring-chalk-accent/50 focus-within:bg-white/[0.08] focus-within:shadow-[0_0_0_4px_rgba(59,130,246,0.12),0_0_12px_rgba(59,130,246,0.08)] transition-all duration-300">
                 <div className="pl-2 pb-2.5 shrink-0 flex items-center gap-1">
                   <ModelSelector value={selectedModel} onChange={setSelectedModel} disabled={isStreaming} />
                   <button

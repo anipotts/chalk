@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 78 (Completed)
+- [x] Transcript Segment Copy Formatting — long-press (500ms) on segment copies [M:SS] text to clipboard
+- [x] Chat Input Focus Glow — enhanced box-shadow on input focus with larger radius and accent color
+- [x] Home Page Quick URL Paste — detect YouTube URL in clipboard on input focus, show paste button
+- [x] Build verification PASSED
+
 ## Wave 77 (Completed)
 - [x] Transcript Question Pulse — visual pulse animation on question segments in followAlong mode
 - [x] Chat Message Bookmark Count — bookmark count badge in chat header
