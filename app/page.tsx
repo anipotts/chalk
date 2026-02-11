@@ -1322,6 +1322,19 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const stars = typeof window !== 'undefined' ? localStorage.getItem(`chalk-stars-${video.id}`) : null;
+                          const dur = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-duration-${video.id}`) || '0') : 0;
+                          if (stars && dur > 60) {
+                            const starCount = JSON.parse(stars).length;
+                            const estSegs = Math.max(1, Math.round(dur / 10));
+                            const pct = Math.round((starCount / estSegs) * 100);
+                            if (pct >= 5) return <span className="text-[8px] text-amber-400/40 tabular-nums" title={`${starCount} starred segments out of ~${estSegs} total (${pct}%)`}>{pct}% starred</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

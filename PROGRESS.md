@@ -958,6 +958,12 @@ Status: RUNNING
 - [x] Home Page Video Card Note Length — "N ch note" badge showing character count of user notes for the video
 - [x] Build verification PASSED
 
+### Wave 141 — Conditional language detection, reference badge, starred ratio
+- [x] Transcript Segment Conditional Language Detection — "if" indicator when segment contains conditional/hypothetical language (if you, assuming, what if, supposing)
+- [x] Chat Message Reference Badge — "reference" badge on AI messages that cite external sources (according to, research shows, evidence suggests)
+- [x] Home Page Video Card Starred Segments Ratio — "N% starred" badge showing percentage of transcript segments that are starred
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

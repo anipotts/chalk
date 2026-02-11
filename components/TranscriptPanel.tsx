@@ -1640,6 +1640,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(\d+\s*%|\d+\s*(million|billion|thousand|percent)|statistics|data shows|according to|survey|study found)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-teal-400/30" title="Contains quantitative data or statistics">#</span>
                   )}
+                  {!compactMode && /\b(if you|assuming|in case|provided that|supposing|what if|hypothetically|were to|would have)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-purple-400/30" title="Contains conditional or hypothetical language">if</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
