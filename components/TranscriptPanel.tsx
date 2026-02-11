@@ -672,6 +672,9 @@ export function TranscriptPanel({
                 Cloud
               </button>
             )}
+            {currentTime > 0 && (
+              <span className="text-[10px] font-mono text-slate-600 tabular-nums">{formatTimestamp(currentTime)}</span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {viewMode === 'transcript' && segments.length > 10 && (

@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 85 (Completed)
+- [x] Transcript Current Position Timestamp — show current video time in header next to tabs
+- [x] Chat Conversation Turn Count — show turn count in conversation stats summary
+- [x] Home Page URL Input Clear Button — X button to clear URL input when text is present
+- [x] Build verification PASSED
+
 ## Wave 84 (Completed)
 - [x] Transcript Remaining Time Display — show countdown "-M:SS" next to reading progress bar
 - [x] Chat Total Words Exchanged — count both user + AI words in conversation stats

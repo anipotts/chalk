@@ -491,6 +491,18 @@ export default function Home() {
                 className="flex-1 px-5 py-3.5 rounded-full bg-chalk-surface border border-chalk-border/40 text-chalk-text placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-chalk-accent/50 focus:border-transparent transition-all"
                 autoFocus
               />
+              {url.trim() && (
+                <button
+                  type="button"
+                  onClick={() => { setUrl(''); setError(''); inputRef.current?.focus(); }}
+                  className="absolute right-[5.5rem] top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-300 hover:bg-white/10 transition-colors"
+                  title="Clear URL"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                    <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
+                  </svg>
+                </button>
+              )}
               {clipboardUrl && !url.trim() && (
                 <button type="button" onMouseDown={() => { setUrl(clipboardUrl); setClipboardUrl(null); }} className="absolute top-full mt-1 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[11px] font-medium bg-chalk-accent/20 text-chalk-accent border border-chalk-accent/30 hover:bg-chalk-accent/30 transition-colors whitespace-nowrap z-10">
                   Paste from clipboard
