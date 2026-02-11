@@ -111,6 +111,11 @@ export function TranscriptPanel({
 }: TranscriptPanelProps) {
   const [search, setSearch] = useState('');
   const [searchMatchIndex, setSearchMatchIndex] = useState(0);
+  const [searchHistory, setSearchHistory] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try { return JSON.parse(localStorage.getItem('chalk-transcript-search-history') || '[]'); } catch { return []; }
+  });
+  const [showSearchHistory, setShowSearchHistory] = useState(false);
   const [userScrolled, setUserScrolled] = useState(false);
   const [followAlong, setFollowAlong] = useState(false);
   const [viewMode, setViewMode] = useState<'transcript' | 'chapters' | 'notes' | 'cloud'>('transcript');
@@ -770,7 +775,7 @@ export function TranscriptPanel({
             )}
           </div>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 relative">
           <input
             ref={searchInputRef}
             type="text"
@@ -779,15 +784,33 @@ export function TranscriptPanel({
             onKeyDown={(e) => {
               if (e.key === 'Escape') {
                 setSearch('');
+                setShowSearchHistory(false);
                 searchInputRef.current?.blur();
-              } else if (matchCount > 0) {
-                if (e.key === 'Enter' && e.shiftKey) goToPrevMatch();
-                else if (e.key === 'Enter') goToNextMatch();
+              } else if (e.key === 'Enter') {
+                setShowSearchHistory(false);
+                if (search.trim()) {
+                  const updated = [search.trim(), ...searchHistory.filter((h) => h !== search.trim())].slice(0, 5);
+                  setSearchHistory(updated);
+                  try { localStorage.setItem('chalk-transcript-search-history', JSON.stringify(updated)); } catch {}
+                }
+                if (matchCount > 0) {
+                  if (e.shiftKey) goToPrevMatch();
+                  else goToNextMatch();
+                }
               }
             }}
+            onFocus={() => { if (!search.trim() && searchHistory.length > 0) setShowSearchHistory(true); }}
+            onBlur={() => setTimeout(() => setShowSearchHistory(false), 150)}
             placeholder="Search transcript (/)..."
             className="flex-1 px-3 py-1.5 rounded-lg bg-chalk-bg/60 border border-chalk-border/30 text-xs text-chalk-text placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-chalk-accent/50"
           />
+          {showSearchHistory && searchHistory.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 z-50 rounded-lg bg-chalk-surface border border-chalk-border/30 shadow-xl overflow-hidden">
+              {searchHistory.map((term) => (
+                <button key={term} type="button" onMouseDown={() => { setSearch(term); setShowSearchHistory(false); }} className="w-full px-3 py-1.5 text-left text-[11px] text-slate-400 hover:bg-white/[0.06] hover:text-slate-300 transition-colors truncate">{term}</button>
+              ))}
+            </div>
+          )}
           {matchCount > 0 && (
             <>
               <span className="text-[10px] text-slate-500 shrink-0 tabular-nums">

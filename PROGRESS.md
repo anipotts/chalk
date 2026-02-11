@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 75 (Completed)
+- [x] Transcript Search History — dropdown of recent search terms when input is focused and empty
+- [x] Chat Response Rating — thumbs up/down buttons on each AI message with toggle highlight
+- [x] Home Page Total Words Learned — running word count from all AI responses in footer stats
+- [x] Build verification PASSED
+
 ## Wave 74 (Completed)
 - [x] Transcript Compact Mode — toggle compact view with reduced spacing, hidden decorations (dots, stats, complexity)
 - [x] Chat Conversation Stats Summary — inline stats showing question/answer count and total word count

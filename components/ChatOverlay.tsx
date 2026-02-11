@@ -19,6 +19,7 @@ interface ChatMessage {
   thinkingDuration?: number;
   responseDuration?: number; // ms from send to completion
   model?: string; // which AI model generated the response
+  rating?: 'up' | 'down'; // user rating
 }
 
 interface ChatOverlayProps {
@@ -565,6 +566,12 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
           model: selectedModel === 'auto' ? 'sonnet' : selectedModel,
         },
       ]);
+      // Track total words learned
+      try {
+        const wordCount = finalText.split(/\s+/).filter(Boolean).length;
+        const prev = parseInt(localStorage.getItem('chalk-total-words-learned') || '0', 10);
+        localStorage.setItem('chalk-total-words-learned', String(prev + wordCount));
+      } catch { /* ignore */ }
     } catch (error) {
       if (abortController.signal.aborted) return;
       const errMsg = error instanceof Error ? error.message : 'Something went wrong';
@@ -1337,6 +1344,16 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                         {msg.role === 'assistant' && msg.model && msg.content && (
                           <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[8px] font-medium bg-white/[0.04] text-slate-600 border border-white/[0.06]">
                             {msg.model === 'opus' ? 'Opus' : msg.model === 'sonnet' ? 'Sonnet' : msg.model === 'haiku' ? 'Haiku' : msg.model}
+                          </span>
+                        )}
+                        {msg.role === 'assistant' && msg.content && (
+                          <span className="inline-flex items-center gap-0.5 ml-1 mt-0.5">
+                            <button onClick={() => setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, rating: m.rating === 'up' ? undefined : 'up' } : m))} className={`p-0.5 rounded transition-colors ${msg.rating === 'up' ? 'text-emerald-400' : 'text-slate-700 hover:text-slate-500'}`} title="Helpful">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5"><path d="M2.09 15a1 1 0 0 0 1-1V8a1 1 0 1 0-2 0v6a1 1 0 0 0 1 1ZM5.765 13H4.09V8.24l2.74-5.48a.5.5 0 0 1 .67-.22l.26.13a1.5 1.5 0 0 1 .77 1.78L7.82 7h4.27a2 2 0 0 1 1.95 2.43l-.95 4.25A2 2 0 0 1 11.14 15H7.09a2 2 0 0 1-1.325-.5Z" /></svg>
+                            </button>
+                            <button onClick={() => setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, rating: m.rating === 'down' ? undefined : 'down' } : m))} className={`p-0.5 rounded transition-colors ${msg.rating === 'down' ? 'text-red-400' : 'text-slate-700 hover:text-slate-500'}`} title="Not helpful">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5"><path d="M13.91 1a1 1 0 0 0-1 1v6a1 1 0 1 0 2 0V2a1 1 0 0 0-1-1ZM10.235 3h1.675v4.76l-2.74 5.48a.5.5 0 0 1-.67.22l-.26-.13a1.5 1.5 0 0 1-.77-1.78L8.18 9H3.91a2 2 0 0 1-1.95-2.43l.95-4.25A2 2 0 0 1 4.86 1h4.05a2 2 0 0 1 1.325.5Z" /></svg>
+                            </button>
                           </span>
                         )}
                       </>

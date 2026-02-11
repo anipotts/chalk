@@ -201,6 +201,7 @@ export default function Home() {
   const [dailyGoal] = useState(() => getDailyGoal());
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const [lastSessionAgo, setLastSessionAgo] = useState<string | null>(null);
+  const [totalWordsLearned, setTotalWordsLearned] = useState(0);
   const [selectedVideoIdx, setSelectedVideoIdx] = useState(-1);
   const previewAbort = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -221,6 +222,11 @@ export default function Home() {
         setLastSessionAgo(mins < 2 ? 'just now' : mins < 60 ? `${mins}m ago` : hrs < 24 ? `${hrs}h ago` : `${days}d ago`);
       }
       localStorage.setItem('chalk-last-session', String(Date.now()));
+    } catch { /* ignore */ }
+    // Total words learned
+    try {
+      const w = parseInt(localStorage.getItem('chalk-total-words-learned') || '0', 10);
+      if (w > 0) setTotalWordsLearned(w);
     } catch { /* ignore */ }
   }, []);
 
@@ -903,6 +909,9 @@ export default function Home() {
           )}
           {lastSessionAgo && lastSessionAgo !== 'just now' && (
             <><span>·</span><span>Last visit: {lastSessionAgo}</span></>
+          )}
+          {totalWordsLearned > 0 && (
+            <><span>·</span><span>{totalWordsLearned.toLocaleString()} words learned</span></>
           )}
         </div>
       )}
