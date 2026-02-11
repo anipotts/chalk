@@ -926,6 +926,16 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const fc = typeof window !== 'undefined' ? localStorage.getItem(`chalk-quick-flashcards-${video.id}`) : null;
+                          if (fc) {
+                            const cards = JSON.parse(fc);
+                            if (cards.length > 0) return <span className="text-[8px] text-violet-400/60 tabular-nums" title={`${cards.length} flashcard${cards.length > 1 ? 's' : ''} saved`}>{cards.length} card{cards.length > 1 ? 's' : ''}</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

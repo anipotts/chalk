@@ -196,6 +196,7 @@ export function TranscriptPanel({
   const scrollTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [selCopied, setSelCopied] = useState(false);
+  const playedSegments = useRef<Set<number>>(new Set());
 
   // Auto-generate chapters from segments
   const chapters = useMemo(() => generateChapters(segments), [segments]);
@@ -438,6 +439,7 @@ export function TranscriptPanel({
     const next = segments[i + 1];
     return currentTime >= seg.offset && (!next || currentTime < next.offset);
   });
+  if (activeIndex >= 0) playedSegments.current.add(activeIndex);
 
   // Auto-scroll to active segment (unless user has manually scrolled, or followAlong overrides)
   useEffect(() => {
@@ -1464,6 +1466,10 @@ export function TranscriptPanel({
                     }
                   }}
                 >
+                  {/* Reading progress dot */}
+                  {!compactMode && (
+                    <div className={`shrink-0 w-1 h-1 rounded-full mt-2 ${playedSegments.current.has(segIndex) ? 'bg-emerald-500/50' : 'bg-slate-700/30'}`} title={playedSegments.current.has(segIndex) ? 'Played' : 'Not yet played'} />
+                  )}
                   {/* Key moment indicator dot */}
                   {!compactMode && (() => {
                     const words = seg.text.split(/\s+/).length;

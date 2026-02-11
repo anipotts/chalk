@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 109 (Completed)
+- [x] Transcript Segment Reading Progress Dots — green/muted dot per segment tracking playback history via ref
+- [x] Chat Message Copy Count — copy count badge ("Nx") appears on messages copied 2+ times via ref tracker
+- [x] Home Page Video Card Flashcard Count — show "N cards" badge on video cards with saved flashcards
+- [x] Build verification PASSED
+
 ## Wave 108 (Completed)
 - [x] Transcript Segment Search Match Preview — search-matching segments get subtle accent tint on hover
 - [x] Chat Message Quick Flashcard — one-click flashcard icon saves Q&A pair to localStorage

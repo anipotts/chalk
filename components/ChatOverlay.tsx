@@ -358,6 +358,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
   const prevTimeRef = useRef<number>(currentTime);
   const scrolledAtCountRef = useRef<number>(0);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const copyCounts = useRef<Map<string, number>>(new Map());
 
   // Max message content length for relative bars
   const maxContentLength = useMemo(() => {
@@ -1513,6 +1514,7 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                       <button
                         onClick={(e) => {
                           navigator.clipboard.writeText(msg.content);
+                          copyCounts.current.set(msg.id, (copyCounts.current.get(msg.id) || 0) + 1);
                           const btn = e.currentTarget;
                           btn.dataset.copied = 'true';
                           setTimeout(() => { btn.dataset.copied = ''; }, 1200);
@@ -1525,6 +1527,9 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           <path d="M4 5a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 4 14h5a1.5 1.5 0 0 0 1.5-1.5V8.621a1.5 1.5 0 0 0-.44-1.06L7.94 5.439A1.5 1.5 0 0 0 6.878 5H4Z" />
                         </svg>
                       </button>
+                      {(copyCounts.current.get(msg.id) || 0) >= 2 && (
+                        <span className="text-[7px] text-slate-600 tabular-nums opacity-0 group-hover/msg:opacity-100 transition-opacity" title={`Copied ${copyCounts.current.get(msg.id)} times`}>{copyCounts.current.get(msg.id)}x</span>
+                      )}
                       <button
                         onClick={() => toggleSave(msg.id)}
                         className={`p-0.5 rounded opacity-0 group-hover/msg:opacity-100 transition-opacity ${savedMsgIds.has(msg.id) ? '!opacity-100 text-yellow-400' : 'text-slate-600 hover:text-yellow-400'}`}
