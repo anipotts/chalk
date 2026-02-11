@@ -801,6 +801,16 @@ export function TranscriptPanel({
             )}
           </div>
         </div>
+        {/* Current chapter label when following along */}
+        {followAlong && chapters.length > 0 && (() => {
+          const cur = [...chapters].reverse().find((c) => currentTime >= c.offset);
+          if (!cur) return null;
+          return (
+            <p className="text-[10px] text-slate-500 truncate px-1" title={cur.label}>
+              {cur.label}
+            </p>
+          );
+        })()}
         <div className="flex items-center gap-1.5 relative">
           <input
             ref={searchInputRef}

@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 79 (Completed)
+- [x] Transcript Active Chapter Label — show current chapter name in header when following along
+- [x] Chat Average Response Time — show avg AI response time badge in chat header
+- [x] Home Page Video Card Hover Lift — subtle scale + shadow on video card hover
+- [x] Build verification PASSED
+
 ## Wave 78 (Completed)
 - [x] Transcript Segment Copy Formatting — long-press (500ms) on segment copies [M:SS] text to clipboard
 - [x] Chat Input Focus Glow — enhanced box-shadow on input focus with larger radius and accent color

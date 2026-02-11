@@ -743,6 +743,17 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                     {savedMsgIds.size}
                   </span>
                 )}
+                {/* Average response time */}
+                {(() => {
+                  const durations = messages.filter((m) => m.role === 'assistant' && m.responseDuration).map((m) => m.responseDuration!);
+                  if (durations.length < 2) return null;
+                  const avg = (durations.reduce((a, b) => a + b, 0) / durations.length / 1000).toFixed(1);
+                  return (
+                    <span className="hidden sm:inline-flex items-center gap-0.5 text-[8px] px-1 py-0.5 rounded bg-white/[0.04] text-slate-600 tabular-nums" title={`Average AI response time across ${durations.length} responses`}>
+                      Avg {avg}s
+                    </span>
+                  );
+                })()}
                 {/* Reaction tally */}
                 {messages.length > 0 && (() => {
                   let upCount = 0;
