@@ -1430,6 +1430,21 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatRr = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatRr) {
+                            const allRr: { role: string; content: string }[] = JSON.parse(chatRr).filter((m: { role: string; content: string }) => m.content);
+                            const uWords = allRr.filter(m => m.role === 'user').reduce((s, m) => s + m.content.split(/\s+/).filter(Boolean).length, 0);
+                            const aWords = allRr.filter(m => m.role === 'assistant').reduce((s, m) => s + m.content.split(/\s+/).filter(Boolean).length, 0);
+                            if (uWords >= 10 && allRr.length >= 6) {
+                              const ratio = Math.round(aWords / uWords);
+                              if (ratio >= 2) return <span className="text-[8px] text-purple-400/40 tabular-nums" title={`AI wrote ${aWords} words vs your ${uWords} words`}>{ratio}:1 ratio</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

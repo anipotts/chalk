@@ -1669,6 +1669,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(be careful|watch out|warning|caution|don't forget|common mistake|pitfall|be aware|danger|risk)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains warning or cautionary language">&#9888;</span>
                   )}
+                  {!compactMode && /\b(I think|in my opinion|I believe|personally|from my perspective|I feel|it seems to me|my view is|I'd say)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-pink-400/30" title="Contains opinion or subjective language">op</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

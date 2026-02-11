@@ -1006,6 +1006,12 @@ Status: RUNNING
 - [x] Home Page Video Card Longest Question — "max Nw" badge showing the longest user question word count
 - [x] Build verification PASSED
 
+### Wave 149 — Opinion detection, transition badge, response word ratio
+- [x] Transcript Segment Opinion/Subjective Detection — "op" indicator when segment contains subjective language (I think, in my opinion, personally)
+- [x] Chat Message Transition Badge — "transition" badge on AI messages switching topics (moving on, switching gears, speaking of)
+- [x] Home Page Video Card Response Time Ratio — "N:1 ratio" badge showing AI-to-user word ratio
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
