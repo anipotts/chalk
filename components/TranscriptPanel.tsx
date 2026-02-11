@@ -1738,6 +1738,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b[A-Z]{3,}\b/.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains capitalized emphasis">CAP</span>
                   )}
+                  {!compactMode && /\([^)]{3,}\)/.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-slate-400/30" title="Contains parenthetical content">()</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

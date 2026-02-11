@@ -1642,6 +1642,24 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatQR = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatQR) {
+                            const allQR: { role: string; content?: string }[] = JSON.parse(chatQR);
+                            const userQR = allQR.filter(m => m.role === 'user' && m.content).map(m => new Set(m.content!.toLowerCase().split(/\s+/).filter(w => w.length >= 3)));
+                            let repeats = 0;
+                            for (let ri = 0; ri < userQR.length; ri++) {
+                              for (let rj = ri + 1; rj < userQR.length; rj++) {
+                                const shared = [...userQR[ri]].filter(w => userQR[rj].has(w)).length;
+                                if (shared >= 3) repeats++;
+                              }
+                            }
+                            if (repeats >= 1) return <span className="text-[8px] text-amber-400/40 tabular-nums" title={`${repeats} question pairs share 3+ words`}>{repeats} repeats</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatRV = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatRV) {
                             const allRV: { role: string; content?: string }[] = JSON.parse(chatRV);

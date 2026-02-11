@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 172 — Parenthetical content detection, restatement badge, question repetition
+- [x] Transcript Segment Parenthetical Content Detection — "()" indicator when segment contains parenthetical content (text in parentheses)
+- [x] Chat Message Restatement Badge — "restates" badge on AI messages containing restatement language (in other words, that is to say, put differently, essentially)
+- [x] Home Page Video Card Question Repetition — "X repeats" badge showing count of similar question pairs sharing 3+ words
+- [x] Build verification PASSED
+
 ### Wave 171 — Capitalization emphasis detection, enumeration badge, response vocabulary
 - [x] Transcript Segment Emphasis via Capitalization Detection — "CAP" indicator when segment contains ALL CAPS words (3+ letters)
 - [x] Chat Message Enumeration Badge — "enumerates" badge on AI messages containing enumeration language (first, second, third, firstly, lastly, moreover)
