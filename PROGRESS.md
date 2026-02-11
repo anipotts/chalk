@@ -263,6 +263,25 @@ Status: RUNNING
 - [x] Speaking pace stats (words per minute) in transcript panel header
 - [x] Build verification PASSED
 
+## Wave 43 (Completed)
+- [x] Contextual AI follow-up suggestions (pattern-based questions from response content instead of random)
+- [x] Video Pace Indicators on timeline (red=fast speaking, blue=slow speaking, hover to see)
+- [x] Smart Bookmark Names (auto-generates label from nearby transcript when pressing B)
+- [x] Build verification PASSED
+
+## Wave 42 (Completed)
+- [x] Transcript Minimap — VS Code-style density minimap on transcript panel right edge (60 rows, click to seek)
+- [x] Video Mood Ring — ambient glow around video player shifts color based on current segment sentiment
+- [x] AI Confidence indicator on chat responses (Grounded/Contextual/General based on timestamp citations)
+- [x] Build verification PASSED
+
+## Wave 41 (Completed)
+- [x] "Skip to Key Moment" prev/next chapter navigation buttons (chevron arrows flanking chapter pills)
+- [x] "Context Window" badge in chat header (shows % of transcript in AI's current context)
+- [x] Watch progress bars on home page recent videos (thin accent/green bar, checkmark for completed)
+- [x] Video duration persistence for progress calculation (chalk-duration-{id} localStorage)
+- [x] Build verification PASSED
+
 ## Wave 40 (Completed)
 - [x] Video Recap animation on completion (scrolling topic summary with progress dots)
 - [x] First-visit keyboard shortcut onboarding overlay (Space, C, B, / shortcuts)

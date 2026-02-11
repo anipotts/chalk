@@ -304,11 +304,28 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
           <p className="text-sm text-slate-500 italic">No response generated.</p>
         )}
 
-        {/* Copy button + reactions — appears on hover */}
+        {/* Copy button + reactions + confidence — appears on hover */}
         {hasContent && !isStreaming && (
           <div className="mt-1 flex items-center">
             <CopyButton text={content} />
             <ReactionButtons messageId={videoId ? `${videoId}-${content.slice(0, 20).replace(/\s/g, '')}` : undefined} />
+            {/* AI Confidence indicator */}
+            {(() => {
+              const tsMatches = content.match(/\[(\d{1,2}:\d{2})\]/g);
+              const tsCount = tsMatches ? tsMatches.length : 0;
+              const len = content.length;
+              // High confidence: multiple timestamps cited; Medium: some content; Low: very short/no timestamps
+              const confidence = tsCount >= 3 ? 'high' : tsCount >= 1 ? 'medium' : len > 100 ? 'medium' : 'low';
+              const labels = { high: 'Grounded', medium: 'Contextual', low: 'General' };
+              const colors = { high: 'text-emerald-500', medium: 'text-amber-500', low: 'text-slate-600' };
+              const dots = { high: 'bg-emerald-500', medium: 'bg-amber-500', low: 'bg-slate-600' };
+              return (
+                <span className={`opacity-0 group-hover:opacity-100 transition-opacity ml-auto flex items-center gap-1 text-[9px] ${colors[confidence]}`} title={`${labels[confidence]}: ${tsCount} timestamp${tsCount !== 1 ? 's' : ''} cited`}>
+                  <span className={`w-1 h-1 rounded-full ${dots[confidence]}`} />
+                  {labels[confidence]}
+                </span>
+              );
+            })()}
           </div>
         )}
       </div>

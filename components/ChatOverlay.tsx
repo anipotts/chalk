@@ -196,7 +196,7 @@ function SuggestionRows({
 
 /* ─── Follow-up suggestion chips ─── */
 
-const FOLLOW_UPS = [
+const GENERIC_FOLLOW_UPS = [
   'Tell me more',
   'Give me an example',
   'Why is that important?',
@@ -207,12 +207,54 @@ const FOLLOW_UPS = [
   'Can you summarize that?',
 ];
 
-function FollowUpChips({ onSelect }: { onSelect: (text: string) => void }) {
-  // Pick 2 random follow-ups
+function generateContextualFollowUps(lastResponse: string): string[] {
+  const suggestions: string[] = [];
+  const text = lastResponse.toLowerCase();
+
+  // Extract key nouns/topics from the response (simple extraction)
+  const sentences = lastResponse.split(/[.!?]+/).filter((s) => s.trim().length > 10);
+  const firstSubject = sentences[0]?.trim().split(/\s+/).slice(0, 5).join(' ');
+
+  // Pattern-based contextual suggestions
+  if (/\[\d{1,2}:\d{2}\]/.test(lastResponse)) {
+    suggestions.push('What happens right after that moment?');
+  }
+  if (text.includes('example') || text.includes('instance')) {
+    suggestions.push('Can you give another example?');
+  }
+  if (text.includes('because') || text.includes('reason')) {
+    suggestions.push('What are the implications of this?');
+  }
+  if (text.includes('step') || text.includes('process') || text.includes('first')) {
+    suggestions.push('Walk me through each step');
+  }
+  if (text.includes('important') || text.includes('key') || text.includes('crucial')) {
+    suggestions.push('Why does this matter in practice?');
+  }
+  if (text.includes('different') || text.includes('compare') || text.includes('versus')) {
+    suggestions.push('Which approach is better and why?');
+  }
+  if (firstSubject && firstSubject.length > 10 && suggestions.length < 3) {
+    suggestions.push(`Elaborate on "${firstSubject.length > 30 ? firstSubject.slice(0, 30) + '...' : firstSubject}"`);
+  }
+
+  // Fill remaining with generic
+  while (suggestions.length < 3) {
+    const generic = GENERIC_FOLLOW_UPS[Math.floor(Math.random() * GENERIC_FOLLOW_UPS.length)];
+    if (!suggestions.includes(generic)) suggestions.push(generic);
+  }
+
+  return suggestions.slice(0, 3);
+}
+
+function FollowUpChips({ onSelect, lastResponse }: { onSelect: (text: string) => void; lastResponse?: string }) {
   const chips = useMemo(() => {
-    const shuffled = [...FOLLOW_UPS].sort(() => Math.random() - 0.5);
+    if (lastResponse && lastResponse.length > 20) {
+      return generateContextualFollowUps(lastResponse);
+    }
+    const shuffled = [...GENERIC_FOLLOW_UPS].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 2);
-  }, []);
+  }, [lastResponse]);
 
   return (
     <motion.div
@@ -554,6 +596,24 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                   return (
                     <span className={`text-[9px] font-medium ${colors[depth]} hidden sm:inline`}>
                       {labels[depth]}
+                    </span>
+                  );
+                })()}
+                {/* Context window coverage badge */}
+                {segments.length > 0 && (() => {
+                  const totalDur = segments.length > 0 ? segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0) : 0;
+                  if (totalDur <= 0) return null;
+                  const winStart = Math.max(0, currentTime - 120);
+                  const winEnd = Math.min(totalDur, currentTime + 60);
+                  const windowSegs = segments.filter((s) => s.offset >= winStart && s.offset <= winEnd);
+                  const pct = Math.round((windowSegs.length / segments.length) * 100);
+                  return (
+                    <span
+                      className="hidden sm:inline-flex items-center gap-0.5 text-[8px] font-mono px-1 py-0.5 rounded bg-white/[0.04] text-slate-600"
+                      title={`AI context: ${formatTimestamp(winStart)} → ${formatTimestamp(winEnd)} (${windowSegs.length}/${segments.length} segments)`}
+                    >
+                      <span className="w-1 h-1 rounded-full bg-emerald-500/60" />
+                      {pct}%
                     </span>
                   );
                 })()}
@@ -1020,7 +1080,7 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                   />
                   {/* Follow-up chips after last assistant message */}
                   {msg.role === 'assistant' && i === messages.length - 1 && !isStreaming && msg.content && (
-                    <FollowUpChips onSelect={handleSuggestionSelect} />
+                    <FollowUpChips onSelect={handleSuggestionSelect} lastResponse={msg.content} />
                   )}
                 </div>
               ))}

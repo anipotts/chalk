@@ -159,6 +159,25 @@ export function VideoTimeline({ videoId, segments, currentTime, onSeek, videoTit
     return buckets.map((w) => w / maxWords);
   }, [segments, duration]);
 
+  // Detect pace changes (fast/slow speaking segments)
+  const paceMarkers = useMemo(() => {
+    if (segments.length < 10 || duration === 0) return [];
+    const markers: { offset: number; type: 'fast' | 'slow' }[] = [];
+    const wps = segments.map((s) => {
+      const words = s.text.split(/\s+/).filter(Boolean).length;
+      const dur = s.duration || 3;
+      return words / dur;
+    });
+    const avg = wps.reduce((a, b) => a + b, 0) / wps.length;
+    const fastThreshold = avg * 1.8;
+    const slowThreshold = avg * 0.4;
+    for (let i = 0; i < segments.length; i++) {
+      if (wps[i] > fastThreshold) markers.push({ offset: segments[i].offset, type: 'fast' });
+      else if (wps[i] < slowThreshold && wps[i] > 0) markers.push({ offset: segments[i].offset, type: 'slow' });
+    }
+    return markers;
+  }, [segments, duration]);
+
   // Detect silence gaps (>3s between segments)
   const silenceGaps = useMemo(() => {
     if (segments.length < 2 || duration === 0) return [];
@@ -292,6 +311,19 @@ export function VideoTimeline({ videoId, segments, currentTime, onSeek, videoTit
                 className="absolute top-0 w-1.5 h-1.5 rounded-full bg-rose-500/60 z-9 pointer-events-none"
                 style={{ left: `${pct}%`, marginLeft: '-3px', marginTop: '-1px' }}
                 title={`Activity hot spot at ${formatTimestamp(t)}`}
+              />
+            );
+          })}
+
+          {/* Pace markers (fast=red, slow=blue) */}
+          {paceMarkers.map((pm, i) => {
+            const pct = (pm.offset / duration) * 100;
+            return (
+              <div
+                key={`pace-${i}`}
+                className={`absolute bottom-0 w-0.5 h-1 opacity-0 group-hover:opacity-60 transition-opacity pointer-events-none z-[2] ${pm.type === 'fast' ? 'bg-rose-400' : 'bg-sky-400'}`}
+                style={{ left: `${pct}%` }}
+                title={`${pm.type === 'fast' ? 'Fast' : 'Slow'} speaking at ${formatTimestamp(pm.offset)}`}
               />
             );
           })}

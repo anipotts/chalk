@@ -445,16 +445,21 @@ function WatchContent() {
     } catch { /* ignore */ }
   }, [videoId]);
 
-  // Save progress every 5 seconds
+  // Save progress every 5 seconds (also save duration for home page progress bars)
   useEffect(() => {
     if (!videoId) return;
     progressSaveRef.current = setInterval(() => {
       if (currentTime > 5) {
         localStorage.setItem(`chalk-progress-${videoId}`, String(currentTime));
+        if (segments.length > 0) {
+          const lastSeg = segments[segments.length - 1];
+          const dur = lastSeg.offset + (lastSeg.duration || 0);
+          if (dur > 0) localStorage.setItem(`chalk-duration-${videoId}`, String(dur));
+        }
       }
     }, 5000);
     return () => clearInterval(progressSaveRef.current);
-  }, [videoId, currentTime]);
+  }, [videoId, currentTime, segments]);
 
   // Track watch time (only counts when playing)
   useEffect(() => {
@@ -836,8 +841,13 @@ function WatchContent() {
           createBookmark(videoId, start, `Section ${formatTimestamp(start)} → ${formatTimestamp(end)}`, videoTitle || undefined, 'amber');
           setToast(`Section bookmarked: ${formatTimestamp(start)} → ${formatTimestamp(end)}`);
         } else {
-          createBookmark(videoId, currentTime, '', videoTitle || undefined, 'blue');
-          setToast('Bookmarked!');
+          // Smart bookmark name from nearby transcript
+          const nearbySeg = segments.find((s) => Math.abs(s.offset - currentTime) < 5);
+          const smartLabel = nearbySeg
+            ? nearbySeg.text.trim().split(/\s+/).slice(0, 6).join(' ').replace(/[.,;:!?]+$/, '')
+            : '';
+          createBookmark(videoId, currentTime, smartLabel, videoTitle || undefined, 'blue');
+          setToast(smartLabel ? `Bookmarked: "${smartLabel}"` : 'Bookmarked!');
         }
         setTimeout(() => setToast(null), 1500);
         addScore(3); // +3 for bookmarking
@@ -1317,7 +1327,19 @@ function WatchContent() {
               </button>
             )}
             <div className={miniPlayer ? '' : 'flex items-start justify-center p-2 sm:p-4 h-full'}>
-              <div className={miniPlayer ? 'w-full' : 'w-full max-w-5xl relative'} onTouchStart={handleDoubleTap}>
+              <div
+                className={miniPlayer ? 'w-full' : 'w-full max-w-5xl relative'}
+                onTouchStart={handleDoubleTap}
+                style={{
+                  boxShadow: !focusMode && !miniPlayer && ambientMood !== 'neutral'
+                    ? ambientMood === 'positive'
+                      ? '0 0 30px rgba(59,130,246,0.12), 0 0 60px rgba(59,130,246,0.06)'
+                      : '0 0 30px rgba(239,68,68,0.10), 0 0 60px rgba(239,68,68,0.05)'
+                    : undefined,
+                  borderRadius: !miniPlayer ? '0.75rem' : undefined,
+                  transition: 'box-shadow 1s ease',
+                }}
+              >
                 <VideoPlayer
                   videoId={videoId}
                   onPause={handlePause}
@@ -1337,10 +1359,27 @@ function WatchContent() {
             </div>
           </div>
 
-          {/* Chapter navigation bar */}
+          {/* Chapter navigation bar with prev/next */}
           {!focusMode && chapters.length > 0 && (
             <div className="flex-none px-2 overflow-x-auto scrollbar-hide">
               <div className="flex items-center gap-1 py-1">
+                {/* Prev chapter */}
+                <button
+                  onClick={() => {
+                    const prev = [...chapters].reverse().find((ch) => ch.offset < currentTime - 2);
+                    if (prev) {
+                      handleSeek(prev.offset);
+                      setToast(`← ${prev.label}`);
+                      setTimeout(() => setToast(null), 1500);
+                    }
+                  }}
+                  className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
+                  title="Previous chapter"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                    <path fillRule="evenodd" d="M12.78 7.28a.75.75 0 0 1-1.06 0L8 3.56 4.28 7.28a.75.75 0 0 1-1.06-1.06l4.25-4.25a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06Z" clipRule="evenodd" transform="rotate(-90 8 8)" />
+                  </svg>
+                </button>
                 {chapters.map((ch, i) => {
                   const nextOffset = chapters[i + 1]?.offset ?? Infinity;
                   const isActive = currentTime >= ch.offset && currentTime < nextOffset;
@@ -1370,6 +1409,23 @@ function WatchContent() {
                     </button>
                   );
                 })}
+                {/* Next chapter */}
+                <button
+                  onClick={() => {
+                    const next = chapters.find((ch) => ch.offset > currentTime + 2);
+                    if (next) {
+                      handleSeek(next.offset);
+                      setToast(`→ ${next.label}`);
+                      setTimeout(() => setToast(null), 1500);
+                    }
+                  }}
+                  className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
+                  title="Next chapter"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                    <path fillRule="evenodd" d="M3.22 8.72a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1-1.06 1.06L8 4.94 4.28 8.72a.75.75 0 0 1-1.06 0Z" clipRule="evenodd" transform="rotate(90 8 8)" />
+                  </svg>
+                </button>
               </div>
             </div>
           )}

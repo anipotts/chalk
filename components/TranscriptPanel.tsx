@@ -724,6 +724,49 @@ export function TranscriptPanel({
           </button>
         </div>
       )}
+      <div className="relative h-full">
+      {/* Transcript minimap */}
+      {viewMode === 'transcript' && filtered.length > 20 && (() => {
+        const totalDur = segments.length > 0 ? segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0) : 0;
+        if (totalDur <= 0) return null;
+        const rows = 60;
+        const rowDur = totalDur / rows;
+        const miniData = Array.from({ length: rows }, (_, i) => {
+          const t0 = i * rowDur;
+          const t1 = t0 + rowDur;
+          const segs = segments.filter((s) => s.offset >= t0 && s.offset < t1);
+          const words = segs.reduce((a, s) => a + s.text.split(/\s+/).filter(Boolean).length, 0);
+          return words;
+        });
+        const maxWords = Math.max(...miniData, 1);
+        const viewportPct = totalDur > 0 ? Math.min(1, 30 / totalDur) : 0.1; // ~30s visible
+        const viewportTop = totalDur > 0 ? Math.min(1 - viewportPct, currentTime / totalDur) : 0;
+        return (
+          <div
+            className="absolute right-0 top-0 bottom-0 w-3 z-10 opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const pct = (e.clientY - rect.top) / rect.height;
+              onSeek(pct * totalDur);
+            }}
+          >
+            <div className="w-full h-full flex flex-col bg-chalk-bg/60 backdrop-blur-sm">
+              {miniData.map((w, i) => (
+                <div
+                  key={i}
+                  className="flex-1"
+                  style={{ backgroundColor: `rgba(99,102,241,${(w / maxWords) * 0.5})` }}
+                />
+              ))}
+            </div>
+            {/* Viewport indicator */}
+            <div
+              className="absolute right-0 w-full border border-chalk-accent/50 bg-chalk-accent/10 rounded-sm pointer-events-none"
+              style={{ top: `${viewportTop * 100}%`, height: `${viewportPct * 100}%` }}
+            />
+          </div>
+        );
+      })()}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
@@ -960,6 +1003,7 @@ export function TranscriptPanel({
             })}
           </>
         )}
+      </div>
       </div>
 
       {/* "Coming next" preview when following along */}

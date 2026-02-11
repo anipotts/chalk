@@ -406,18 +406,44 @@ export default function Home() {
               Recent Videos
             </h3>
             <div className="space-y-1.5">
-              {recentVideos.slice(0, 5).map((video) => (
+              {recentVideos.slice(0, 5).map((video) => {
+                // Watch progress bar data
+                let watchPct = 0;
+                try {
+                  const prog = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-progress-${video.id}`) || '0') : 0;
+                  const dur = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-duration-${video.id}`) || '0') : 0;
+                  if (dur > 0 && prog > 0) watchPct = Math.min(1, prog / dur);
+                } catch { /* ignore */ }
+                return (
                 <button
                   key={video.id}
                   onClick={() => handleRecentClick(video)}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-chalk-surface/30 border border-chalk-border/20 hover:bg-chalk-surface/50 hover:border-chalk-border/40 transition-all text-left"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-chalk-surface/30 border border-chalk-border/20 hover:bg-chalk-surface/50 hover:border-chalk-border/40 transition-all text-left relative overflow-hidden"
                 >
+                  {/* Watch progress bar */}
+                  {watchPct > 0 && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5">
+                      <div
+                        className={`h-full transition-all ${watchPct > 0.9 ? 'bg-emerald-500/60' : 'bg-chalk-accent/40'}`}
+                        style={{ width: `${watchPct * 100}%` }}
+                      />
+                    </div>
+                  )}
                   {/* Thumbnail */}
-                  <img
-                    src={`https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`}
-                    alt={video.title || ''}
-                    className="w-20 h-11 object-cover rounded-lg bg-chalk-surface shrink-0"
-                  />
+                  <div className="relative shrink-0">
+                    <img
+                      src={`https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`}
+                      alt={video.title || ''}
+                      className="w-20 h-11 object-cover rounded-lg bg-chalk-surface"
+                    />
+                    {watchPct > 0.9 && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-emerald-400">
+                          <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
                   <div className="min-w-0 flex-1">
                     {video.title ? (
                       <>
@@ -441,7 +467,8 @@ export default function Home() {
                     })()}
                   </div>
                 </button>
-              ))}
+              );
+              })}
             </div>
           </div>
         )}
