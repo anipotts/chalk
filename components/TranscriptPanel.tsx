@@ -1173,7 +1173,7 @@ export function TranscriptPanel({
               className="flex-1 w-full resize-none bg-chalk-bg/40 border border-chalk-border/20 rounded-lg px-3 py-2 text-xs text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-chalk-accent/30 focus:border-transparent leading-relaxed"
             />
             {notes.trim() && (
-              <p className="text-[9px] text-slate-700 text-right tabular-nums">{notes.split(/\s+/).filter(Boolean).length} words</p>
+              <p className="text-[9px] text-slate-700 text-right tabular-nums">{notes.split(/\s+/).filter(Boolean).length} words · {notes.length} chars</p>
             )}
           </div>
         ) : viewMode === 'chapters' && chapters.length > 0 ? (

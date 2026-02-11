@@ -890,6 +890,17 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                     </button>
                     <button
                       onClick={() => {
+                        const plain = messages.map((m) => `${m.role === 'user' ? 'You' : 'AI'}: ${m.content}`).join('\n\n');
+                        navigator.clipboard.writeText(plain);
+                      }}
+                      className="flex items-center gap-1 px-1.5 py-1 rounded-md text-slate-600 hover:text-slate-300 hover:bg-white/[0.06] transition-colors text-[9px]"
+                      aria-label="Copy as plain text"
+                      title="Copy as plain text (no formatting)"
+                    >
+                      TXT
+                    </button>
+                    <button
+                      onClick={() => {
                         const title = videoTitle || 'Video Chat';
                         const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Chalk - ${title}</title>
