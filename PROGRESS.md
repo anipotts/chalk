@@ -892,6 +892,12 @@ Status: RUNNING
 - [x] Home Page Video Card Conversation Recency Score — active/recent/cold badge based on last visit timestamp
 - [x] Build verification PASSED
 
+## Wave 130 (Completed)
+- [x] Transcript Segment Definition Detection — "def" indicator on segments with definition patterns (is, means, defined as, refers to)
+- [x] Chat Message Conciseness Score Badge — "concise" badge on short AI answers (<100 words) with timestamp citations
+- [x] Home Page Video Card Chat Depth Ratio — deep/dialog/query-heavy badge based on AI-to-user word ratio
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

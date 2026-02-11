@@ -1187,6 +1187,23 @@ export default function Home() {
                         try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
+                            const msgs: { role: string; content: string }[] = JSON.parse(chat);
+                            const userWords = msgs.filter((m) => m.role === 'user' && m.content).reduce((s, m) => s + m.content.split(/\s+/).length, 0);
+                            const aiWords = msgs.filter((m) => m.role === 'assistant' && m.content).reduce((s, m) => s + m.content.split(/\s+/).length, 0);
+                            if (userWords >= 5 && aiWords >= 5) {
+                              const ratio = aiWords / userWords;
+                              if (ratio >= 3) return <span className="text-[8px] text-blue-400/40" title={`AI wrote ${Math.round(ratio)}x more words than you`}>deep</span>;
+                              if (ratio >= 0.5) return <span className="text-[8px] text-green-400/40" title={`Balanced dialog — AI/user word ratio: ${ratio.toFixed(1)}`}>dialog</span>;
+                              return <span className="text-[8px] text-amber-400/40" title={`Query-heavy — you wrote more than AI`}>query-heavy</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
+                          const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chat) {
                             const msgs = JSON.parse(chat);
                             const lastQ = [...msgs].reverse().find((m: { role: string }) => m.role === 'user');
                             if (lastQ) {

@@ -1610,6 +1610,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(because|therefore|as a result|leads to|causes|due to|that's why|so that|consequently|hence)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains cause-and-effect reasoning">&#x27F9;</span>
                   )}
+                  {!compactMode && /\b(\w+\s+(is|are|means?|refers?\s+to|defined\s+as|known\s+as)\s+.{5,}|definition\s+of)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-emerald-400/30" title="Contains a definition">def</span>
+                  )}
                   {!compactMode && complexityLabel && (
                     <span className={`shrink-0 text-[7px] font-bold uppercase tracking-wider px-1 py-0 rounded ${
                       complexityLabel === 'complex' ? 'bg-rose-500/10 text-rose-400/60' : 'bg-amber-500/10 text-amber-400/50'
