@@ -1622,6 +1622,15 @@ export function TranscriptPanel({
                   {!compactMode && /\b(for example|for instance|such as|like when|consider this|take for example|case in point|to illustrate)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-teal-400/30" title="Contains an example">eg</span>
                   )}
+                  {!compactMode && (() => {
+                    const hasQ = (s: { text: string }) => /\?/.test(s.text);
+                    if (!hasQ(seg)) return null;
+                    if (i > 0 && hasQ(filtered[i - 1])) return null;
+                    let count = 0;
+                    for (let j = i; j < filtered.length && hasQ(filtered[j]); j++) count++;
+                    if (count < 3) return null;
+                    return <span className="shrink-0 text-[7px] text-cyan-400/30 tabular-nums" title={`${count} consecutive question segments`}>Q&times;{count}</span>;
+                  })()}
                   {!compactMode && complexityLabel && (
                     <span className={`shrink-0 text-[7px] font-bold uppercase tracking-wider px-1 py-0 rounded ${
                       complexityLabel === 'complex' ? 'bg-rose-500/10 text-rose-400/60' : 'bg-amber-500/10 text-amber-400/50'

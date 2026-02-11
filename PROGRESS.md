@@ -916,6 +916,12 @@ Status: RUNNING
 - [x] Home Page Video Card Favorite Segment Count — "N starred" badge showing starred transcript segments per video
 - [x] Build verification PASSED
 
+### Wave 134 — Question cluster, follow-up badge, timed questions count
+- [x] Transcript Segment Question Cluster Detection — "Q×N" indicator when 3+ consecutive segments contain questions (only on first segment of cluster)
+- [x] Chat Message Follow-Up Question Badge — "follow-up" badge on user messages referencing prior context (what about, tell me more, you mentioned, etc.)
+- [x] Home Page Video Card Timed Questions Count — "N timed Qs" badge showing user questions that reference specific timestamps [M:SS]
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

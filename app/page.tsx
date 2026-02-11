@@ -1239,6 +1239,17 @@ export default function Home() {
                         try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
+                            const userMsgs: { role: string; content: string }[] = JSON.parse(chat).filter((m: { role: string; content: string }) => m.role === 'user' && m.content);
+                            const timedQs = userMsgs.filter((m) => /\[\d+:\d{2}\]/.test(m.content));
+                            if (timedQs.length >= 2) return <span className="text-[8px] text-fuchsia-400/40 tabular-nums" title={`${timedQs.length} questions referencing specific timestamps`}>{timedQs.length} timed Qs</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
+                          const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chat) {
                             const msgs = JSON.parse(chat);
                             const lastQ = [...msgs].reverse().find((m: { role: string }) => m.role === 'user');
                             if (lastQ) {
