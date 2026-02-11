@@ -426,6 +426,44 @@ export default function Home() {
             <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3 text-center">
               Recent Videos
             </h3>
+            {/* Time spent breakdown bar */}
+            {(() => {
+              const timeData = recentVideos.slice(0, 5).map((v) => {
+                try {
+                  const prog = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-progress-${v.id}`) || '0') : 0;
+                  return { id: v.id, title: v.title || v.id, time: Math.round(prog) };
+                } catch { return { id: v.id, title: v.title || v.id, time: 0 }; }
+              }).filter((d) => d.time > 0);
+              const totalTime = timeData.reduce((a, d) => a + d.time, 0);
+              if (totalTime < 10) return null;
+              const barColors = ['bg-blue-500/60', 'bg-violet-500/60', 'bg-emerald-500/60', 'bg-amber-500/60', 'bg-rose-500/60'];
+              return (
+                <div className="mb-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[9px] text-slate-600 uppercase tracking-wider">Time Invested</span>
+                    <span className="text-[9px] text-slate-500 tabular-nums">{Math.round(totalTime / 60)}m total</span>
+                  </div>
+                  <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-white/[0.04]">
+                    {timeData.map((d, i) => (
+                      <div
+                        key={d.id}
+                        className={`${barColors[i % barColors.length]} transition-all`}
+                        style={{ width: `${(d.time / totalTime) * 100}%` }}
+                        title={`${d.title}: ${Math.round(d.time / 60)}m`}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex gap-2 mt-1 flex-wrap">
+                    {timeData.map((d, i) => (
+                      <span key={d.id} className="flex items-center gap-1">
+                        <span className={`w-1.5 h-1.5 rounded-full ${barColors[i % barColors.length]}`} />
+                        <span className="text-[8px] text-slate-600 truncate max-w-[80px]">{d.title}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
             <div className="space-y-1.5">
               {recentVideos.slice(0, 5).map((video) => {
                 // Watch progress bar data

@@ -891,10 +891,12 @@ export function TranscriptPanel({
               // Chapter boundary inline summary card
               const chapterAtSeg = !search.trim() && chapters.find((ch) => ch.offset === seg.offset);
 
-              // Difficulty heat coloring
+              // Difficulty heat coloring + complexity label
               const segWords = seg.text.split(/\s+/).filter(Boolean);
-              const longWordRatio = segWords.length > 0 ? segWords.filter((w) => w.length > 7).length / segWords.length : 0;
+              const longWordCount = segWords.filter((w) => w.length > 7).length;
+              const longWordRatio = segWords.length > 0 ? longWordCount / segWords.length : 0;
               const difficultyHeat = longWordRatio > 0.3 ? 'bg-rose-500/[0.03]' : longWordRatio > 0.15 ? 'bg-amber-500/[0.02]' : '';
+              const complexityLabel = longWordRatio > 0.3 && segWords.length > 6 ? 'complex' : longWordRatio > 0.2 && segWords.length > 8 ? 'technical' : null;
 
               // Karaoke-style progress within active segment
               let segProgress = 0;
@@ -977,6 +979,13 @@ export function TranscriptPanel({
                   >
                     {formatTimestamp(seg.offset)}
                   </button>
+                  {complexityLabel && (
+                    <span className={`shrink-0 text-[7px] font-bold uppercase tracking-wider px-1 py-0 rounded ${
+                      complexityLabel === 'complex' ? 'bg-rose-500/10 text-rose-400/60' : 'bg-amber-500/10 text-amber-400/50'
+                    }`} title={`${longWordCount} long words (${Math.round(longWordRatio * 100)}%)`}>
+                      {complexityLabel === 'complex' ? '!' : '~'}
+                    </span>
+                  )}
                   <button
                     onClick={() => onSeek(seg.offset)}
                     className={`text-xs leading-relaxed text-left flex-1 ${isActive ? 'text-chalk-text' : 'text-slate-400'}`}

@@ -263,6 +263,12 @@ Status: RUNNING
 - [x] Speaking pace stats (words per minute) in transcript panel header
 - [x] Build verification PASSED
 
+## Wave 46 (Completed)
+- [x] Chat Message Search — search bar with match count, non-matching messages dimmed to 25% opacity
+- [x] Transcript Sentence Complexity — "!" badge on complex segments, "~" on technical segments (based on long-word ratio)
+- [x] Video Time Spent breakdown bar on home page — proportional colored segments per video with legend
+- [x] Build verification PASSED
+
 ## Wave 45 (Completed)
 - [x] Enhanced speaker turn separators (distinguishes "new topic" from "speaker change" via word overlap detection)
 - [x] Chat Pinned Messages — pin/unpin AI responses (amber highlight, pin icon, count badge in header, localStorage persistence)

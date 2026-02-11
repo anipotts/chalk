@@ -321,6 +321,8 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
   const [digestOpen, setDigestOpen] = useState(false);
   const [digestLoading, setDigestLoading] = useState(false);
   const [digestData, setDigestData] = useState<{ takeaways: { text: string; timestamp: number }[] } | null>(null);
+  const [chatSearch, setChatSearch] = useState('');
+  const [chatSearchOpen, setChatSearchOpen] = useState(false);
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(() => {
     if (!videoId || typeof window === 'undefined') return new Set();
     try {
@@ -891,6 +893,19 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     </button>
                   </>
                 )}
+                {/* Chat search toggle */}
+                {messages.length > 2 && (
+                  <button
+                    onClick={() => { setChatSearchOpen((v) => !v); if (chatSearchOpen) setChatSearch(''); }}
+                    className={`p-1 rounded-md transition-colors ${chatSearchOpen ? 'text-chalk-accent bg-chalk-accent/10' : 'text-slate-600 hover:text-slate-400 hover:bg-white/[0.04]'}`}
+                    title="Search chat"
+                    aria-label="Search chat messages"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                      <path fillRule="evenodd" d="M9.965 11.026a5 5 0 1 1 1.06-1.06l2.755 2.754a.75.75 0 1 1-1.06 1.06l-2.755-2.754ZM10.5 7a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                )}
                 <button
                   onClick={onToggle}
                   className="flex items-center gap-1.5 px-2 py-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
@@ -903,6 +918,25 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                 </button>
               </div>
             </div>
+
+            {/* Chat search bar */}
+            {chatSearchOpen && (
+              <div className="px-3 py-1.5 border-b border-white/[0.06] flex items-center gap-2">
+                <input
+                  type="text"
+                  value={chatSearch}
+                  onChange={(e) => setChatSearch(e.target.value)}
+                  placeholder="Search messages..."
+                  className="flex-1 bg-transparent text-xs text-chalk-text placeholder:text-slate-600 outline-none"
+                  autoFocus
+                />
+                {chatSearch && (
+                  <span className="text-[10px] text-slate-500 tabular-nums">
+                    {messages.filter((m) => m.content.toLowerCase().includes(chatSearch.toLowerCase())).length} matches
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Messages */}
             <div
@@ -1096,8 +1130,17 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                   />
                 </>
               )}
-              {messages.map((msg, i) => (
-                <div key={msg.id}>
+              {messages.map((msg, i) => {
+                const searchActive = chatSearch.trim().length > 0;
+                const matchesSearch = searchActive && msg.content.toLowerCase().includes(chatSearch.toLowerCase());
+                return (
+                <div
+                  key={msg.id}
+                  className={searchActive && !matchesSearch ? 'opacity-25 transition-opacity duration-200' : 'transition-opacity duration-200'}
+                >
+                  {searchActive && matchesSearch && (
+                    <div className="absolute left-0 w-0.5 h-full bg-chalk-accent/50 rounded-full" />
+                  )}
                   <VideoAIMessage
                     role={msg.role}
                     content={msg.content}
@@ -1114,7 +1157,8 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     <FollowUpChips onSelect={handleSuggestionSelect} lastResponse={msg.content} />
                   )}
                 </div>
-              ))}
+                );
+              })}
 
               {/* "What did I miss?" catch-up banner */}
               {catchUpRange && !isStreaming && (
