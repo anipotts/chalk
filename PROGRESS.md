@@ -418,6 +418,12 @@ Status: RUNNING
 - [x] Video Duration Badge — formatted duration overlay on thumbnails in recent videos
 - [x] Build verification PASSED
 
+## Wave 51 (Completed)
+- [x] Segment Bookmark Notes — double-click starred segments to attach short notes, persisted in localStorage
+- [x] Chat Session Stats — "5 Qs · 12m" stats badge in chat header
+- [x] Enhanced Transcript Tooltips — richer timestamps tooltips with word count and "Jump to" text
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

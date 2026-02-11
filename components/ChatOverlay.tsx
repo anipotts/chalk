@@ -666,6 +666,18 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                     {pinnedIds.size}
                   </span>
                 )}
+                {/* Session stats */}
+                {messages.length >= 2 && (() => {
+                  const userCount = messages.filter((m) => m.role === 'user').length;
+                  const firstTs = parseInt(messages[0]?.id || '0', 10);
+                  const elapsed = firstTs > 0 ? Math.round((Date.now() - firstTs) / 60000) : 0;
+                  if (userCount === 0) return null;
+                  return (
+                    <span className="hidden sm:inline-flex items-center gap-0.5 text-[8px] px-1 py-0.5 rounded bg-white/[0.04] text-slate-600 tabular-nums">
+                      {userCount} Q{userCount !== 1 ? 's' : ''}{elapsed > 0 ? ` · ${elapsed}m` : ''}
+                    </span>
+                  );
+                })()}
                 {/* Reaction tally */}
                 {messages.length > 0 && (() => {
                   let upCount = 0;

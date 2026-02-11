@@ -135,6 +135,22 @@ export function TranscriptPanel({
       return next;
     });
   }, [videoId]);
+  // Per-segment bookmark notes
+  const [segNotes, setSegNotes] = useState<Record<number, string>>(() => {
+    if (!videoId || typeof window === 'undefined') return {};
+    try { return JSON.parse(localStorage.getItem(`chalk-seg-notes-${videoId}`) || '{}'); } catch { return {}; }
+  });
+  const [editingSegNote, setEditingSegNote] = useState<number | null>(null);
+  const saveSegNote = useCallback((offset: number, note: string) => {
+    setSegNotes((prev) => {
+      const next = { ...prev };
+      if (note.trim()) next[offset] = note.trim().slice(0, 50);
+      else delete next[offset];
+      if (videoId) localStorage.setItem(`chalk-seg-notes-${videoId}`, JSON.stringify(next));
+      return next;
+    });
+    setEditingSegNote(null);
+  }, [videoId]);
   const [notes, setNotes] = useState('');
   const [notesSaving, setNotesSaving] = useState(false);
   const notesSaveTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -1095,7 +1111,7 @@ export function TranscriptPanel({
                         });
                       }}
                       className={`text-[10px] font-mono pt-0.5 hover:underline data-[copied=true]:text-emerald-400 ${isActive ? 'text-chalk-accent' : 'text-slate-500'}`}
-                      title="Click to seek · Double-click to copy"
+                      title={`Jump to ${formatTimestamp(seg.offset)} · Double-click to copy · ${seg.text.split(/\s+/).length} words`}
                     >
                       {formatTimestamp(seg.offset)}
                     </button>
@@ -1128,18 +1144,35 @@ export function TranscriptPanel({
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); toggleStar(seg.offset); }}
+                    onDoubleClick={(e) => { e.stopPropagation(); if (starred.has(seg.offset)) setEditingSegNote(seg.offset); }}
                     className={`shrink-0 p-1 rounded-md transition-all ${
                       starred.has(seg.offset)
                         ? 'text-yellow-400 opacity-100'
                         : 'opacity-0 group-hover/seg:opacity-100 text-slate-600 hover:text-yellow-400'
                     }`}
-                    title={starred.has(seg.offset) ? 'Unstar' : 'Star this segment'}
+                    title={starred.has(seg.offset) ? (segNotes[seg.offset] ? `★ ${segNotes[seg.offset]} (dbl-click to edit)` : 'Unstar (dbl-click to add note)') : 'Star this segment'}
                     aria-label={`${starred.has(seg.offset) ? 'Unstar' : 'Star'} segment at ${formatTimestamp(seg.offset)}`}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5">
                       <path fillRule="evenodd" d="M8 1.75a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 13.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 7.874a.75.75 0 0 1 .416-1.28l4.21-.611L7.327 2.17A.75.75 0 0 1 8 1.75Z" clipRule="evenodd" />
                     </svg>
                   </button>
+                  {starred.has(seg.offset) && segNotes[seg.offset] && editingSegNote !== seg.offset && (
+                    <span className="text-[8px] text-yellow-400/50 truncate max-w-[60px] shrink-0">{segNotes[seg.offset]}</span>
+                  )}
+                  {editingSegNote === seg.offset && (
+                    <input
+                      type="text"
+                      autoFocus
+                      defaultValue={segNotes[seg.offset] || ''}
+                      maxLength={50}
+                      placeholder="Add note..."
+                      onBlur={(e) => saveSegNote(seg.offset, e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') saveSegNote(seg.offset, (e.target as HTMLInputElement).value); if (e.key === 'Escape') setEditingSegNote(null); }}
+                      className="shrink-0 w-20 px-1 py-0 text-[9px] bg-yellow-500/10 border border-yellow-500/30 rounded text-yellow-300 placeholder:text-yellow-500/30 outline-none"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  )}
                   {onAskAbout && (
                     <>
                     <button
