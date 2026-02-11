@@ -116,6 +116,7 @@ export function TranscriptPanel({
   const [viewMode, setViewMode] = useState<'transcript' | 'chapters' | 'notes' | 'cloud'>('transcript');
   const [starred, setStarred] = useState<Set<number>>(new Set());
   const [showStarredOnly, setShowStarredOnly] = useState(false);
+  const [paragraphMode, setParagraphMode] = useState(false);
 
   // Load starred segments from localStorage
   useEffect(() => {
@@ -613,6 +614,15 @@ export function TranscriptPanel({
             )}
           </div>
           <div className="flex items-center gap-2">
+            {viewMode === 'transcript' && segments.length > 10 && (
+              <button
+                onClick={() => setParagraphMode((v) => !v)}
+                className={`px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors ${paragraphMode ? 'text-chalk-accent bg-chalk-accent/15' : 'text-slate-500 hover:text-slate-400'}`}
+                title={paragraphMode ? 'Switch to segment view' : 'Switch to paragraph view'}
+              >
+                {paragraphMode ? 'Segments' : 'Paragraphs'}
+              </button>
+            )}
             {lang && isComplete && (
               <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-500/15 text-slate-400 border border-slate-500/20">
                 {lang}
@@ -1053,7 +1063,46 @@ export function TranscriptPanel({
                 {search ? 'No matches found' : 'No transcript available'}
               </p>
             )}
-            {filtered.map((seg, i) => {
+            {/* Paragraph mode */}
+            {paragraphMode && filtered.length > 0 && (() => {
+              const paragraphs: { startOffset: number; segs: TranscriptSegment[] }[] = [];
+              let current: TranscriptSegment[] = [];
+              for (let i = 0; i < filtered.length; i++) {
+                if (i > 0) {
+                  const gap = filtered[i].offset - (filtered[i - 1].offset + (filtered[i - 1].duration || 0));
+                  if (gap > 2) {
+                    if (current.length > 0) paragraphs.push({ startOffset: current[0].offset, segs: current });
+                    current = [];
+                  }
+                }
+                current.push(filtered[i]);
+              }
+              if (current.length > 0) paragraphs.push({ startOffset: current[0].offset, segs: current });
+              return (
+                <div className="px-3 py-2 space-y-3">
+                  {paragraphs.map((para) => {
+                    const isParaActive = para.segs.some((s) => segments.indexOf(s) === activeIndex);
+                    return (
+                      <div
+                        key={para.startOffset}
+                        className={`text-xs leading-relaxed rounded-lg px-2 py-1.5 transition-colors ${isParaActive ? 'bg-chalk-accent/10 border-l-2 border-l-chalk-accent' : 'border-l-2 border-l-transparent hover:bg-chalk-surface/40'}`}
+                      >
+                        <button
+                          onClick={() => onSeek(para.startOffset)}
+                          className="text-[9px] text-slate-600 font-mono mr-1.5 hover:text-chalk-accent tabular-nums"
+                        >
+                          {formatTimestamp(para.startOffset)}
+                        </button>
+                        <span className={isParaActive ? 'text-chalk-text' : 'text-slate-400'}>
+                          {para.segs.map((s) => s.text).join(' ')}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+            {!paragraphMode && filtered.map((seg, i) => {
               const segIndex = segments.indexOf(seg);
               const isActive = segIndex === activeIndex;
               const isCurrentMatch = search.trim() && i === searchMatchIndex;

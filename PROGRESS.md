@@ -460,6 +460,12 @@ Status: RUNNING
 - [x] Video Card Topic Tags — keyword-based topic pill (Math, Coding, etc.) on home cards
 - [x] Build verification PASSED
 
+## Wave 58 (Completed)
+- [x] Transcript Paragraph Mode — toggle between segment-by-segment and flowing paragraph view
+- [x] Chat Quick Actions — right-click context menu on AI messages (copy, quote, pin)
+- [x] Home Page Video Filter — search/filter recent videos by title keyword
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

@@ -193,6 +193,7 @@ export default function Home() {
   const [streak, setStreak] = useState<StreakData>({ currentStreak: 0, lastStudyDate: '', totalDays: 0, freezesAvailable: 0, longestStreak: 0 });
   const [preview, setPreview] = useState<VideoPreview | null>(null);
   const [activity, setActivity] = useState<Record<string, number>>({});
+  const [videoFilter, setVideoFilter] = useState('');
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [dailyGoal] = useState(() => getDailyGoal());
   const previewAbort = useRef<AbortController | null>(null);
@@ -483,9 +484,20 @@ export default function Home() {
         {/* Recent videos */}
         {recentVideos.length > 0 && (
           <div className="mt-12 w-full max-w-xl mx-auto relative z-10">
-            <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-3 text-center">
-              Recent Videos
-            </h3>
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wider">
+                Recent Videos
+              </h3>
+              {recentVideos.length > 3 && (
+                <input
+                  type="text"
+                  value={videoFilter}
+                  onChange={(e) => setVideoFilter(e.target.value)}
+                  placeholder="Filter..."
+                  className="w-24 px-2 py-0.5 rounded-md text-[10px] bg-chalk-surface/50 border border-chalk-border/30 text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-chalk-accent/40"
+                />
+              )}
+            </div>
             {/* Time spent breakdown bar */}
             {(() => {
               const timeData = recentVideos.slice(0, 5).map((v) => {
@@ -525,7 +537,7 @@ export default function Home() {
               );
             })()}
             <div className="space-y-1.5">
-              {recentVideos.slice(0, 5).map((video) => {
+              {recentVideos.slice(0, 5).filter((v) => !videoFilter.trim() || (v.title || v.url).toLowerCase().includes(videoFilter.toLowerCase())).map((video) => {
                 // Watch progress bar data
                 let watchPct = 0;
                 try {

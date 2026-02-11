@@ -325,6 +325,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
   const [chatSearch, setChatSearch] = useState('');
   const [chatSearchOpen, setChatSearchOpen] = useState(false);
   const [inputHistoryIdx, setInputHistoryIdx] = useState(-1);
+  const [ctxMenu, setCtxMenu] = useState<{ msgId: string; x: number; y: number } | null>(null);
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(() => {
     if (!videoId || typeof window === 'undefined') return new Set();
     try {
@@ -1014,6 +1015,7 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
             <div
               ref={scrollRef}
               onScroll={handleScroll}
+              onClick={() => ctxMenu && setCtxMenu(null)}
               aria-live="polite"
               className="flex-1 overflow-y-auto min-h-0 px-4 py-3 space-y-4"
               style={{ overscrollBehavior: 'contain' }}
@@ -1208,7 +1210,13 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                 return (
                 <div
                   key={msg.id}
-                  className={searchActive && !matchesSearch ? 'opacity-25 transition-opacity duration-200' : 'transition-opacity duration-200'}
+                  className={`relative ${searchActive && !matchesSearch ? 'opacity-25 transition-opacity duration-200' : 'transition-opacity duration-200'}`}
+                  onContextMenu={(e) => {
+                    if (msg.role !== 'assistant' || !msg.content) return;
+                    e.preventDefault();
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    setCtxMenu({ msgId: msg.id, x: e.clientX - rect.left, y: e.clientY - rect.top });
+                  }}
                 >
                   {searchActive && matchesSearch && (
                     <div className="absolute left-0 w-0.5 h-full bg-chalk-accent/50 rounded-full" />
@@ -1227,6 +1235,27 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     onTogglePin={msg.role === 'assistant' ? () => togglePin(msg.id) : undefined}
                     maxContentLength={maxContentLength}
                   />
+                  {/* Context menu for assistant messages */}
+                  {ctxMenu && ctxMenu.msgId === msg.id && msg.role === 'assistant' && (
+                    <div
+                      className="absolute z-30 flex flex-col py-1 rounded-lg bg-chalk-surface border border-chalk-border/50 shadow-xl backdrop-blur-sm animate-in fade-in zoom-in-95 duration-100"
+                      style={{ left: Math.min(ctxMenu.x, 200), top: ctxMenu.y }}
+                      onMouseLeave={() => setCtxMenu(null)}
+                    >
+                      <button
+                        className="px-3 py-1.5 text-[11px] text-left text-slate-300 hover:text-chalk-text hover:bg-chalk-accent/15 transition-colors"
+                        onClick={() => { navigator.clipboard.writeText(msg.content); setCtxMenu(null); }}
+                      >Copy text</button>
+                      <button
+                        className="px-3 py-1.5 text-[11px] text-left text-slate-300 hover:text-chalk-text hover:bg-chalk-accent/15 transition-colors"
+                        onClick={() => { navigator.clipboard.writeText(`> ${msg.content.replace(/\n/g, '\n> ')}`); setCtxMenu(null); }}
+                      >Copy as quote</button>
+                      <button
+                        className="px-3 py-1.5 text-[11px] text-left text-slate-300 hover:text-chalk-text hover:bg-chalk-accent/15 transition-colors"
+                        onClick={() => { togglePin(msg.id); setCtxMenu(null); }}
+                      >{pinnedIds.has(msg.id) ? 'Unpin' : 'Pin'}</button>
+                    </div>
+                  )}
                   {/* Follow-up chips after last assistant message */}
                   {msg.role === 'assistant' && i === messages.length - 1 && !isStreaming && msg.content && (
                     <FollowUpChips onSelect={handleSuggestionSelect} lastResponse={msg.content} />
