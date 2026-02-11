@@ -1527,7 +1527,12 @@ export function TranscriptPanel({
                       background: `linear-gradient(90deg, rgba(59,130,246,0.15) ${segProgress * 100}%, transparent ${segProgress * 100}%)`,
                       borderRadius: '2px',
                     } : undefined}
-                    title={`${seg.offset < 60 ? `${Math.round(seg.offset)}s` : `${Math.floor(seg.offset / 60)}m ${Math.round(seg.offset % 60)}s`} into video · Click to seek · Hold to copy`}
+                    title={(() => {
+                      const pos = seg.offset < 60 ? `${Math.round(seg.offset)}s` : `${Math.floor(seg.offset / 60)}m ${Math.round(seg.offset % 60)}s`;
+                      const nearby = [filtered[i - 1], seg, filtered[i + 1]].filter(Boolean).map((s) => s.text).join(' ');
+                      const summary = nearby.length > 80 ? nearby.slice(0, 77) + '...' : nearby;
+                      return `${pos} into video · "${summary}"\nClick to seek · Hold to copy`;
+                    })()}
                   >
                     {typeof highlightedText === 'string' ? highlightedText : highlightedText}
                   </button>

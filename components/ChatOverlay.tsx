@@ -703,6 +703,20 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                     <path fillRule="evenodd" d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
                   </svg>
                 </button>
+                {messages.filter((m) => m.role === 'assistant' && m.content.length > 300).length >= 2 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const longIds = messages.filter((m) => m.role === 'assistant' && m.content.length > 300).map((m) => m.id);
+                      const allExpanded = longIds.every((id) => expandedMsgs.has(id));
+                      setExpandedMsgs(allExpanded ? new Set() : new Set(longIds));
+                    }}
+                    className="hidden sm:inline-flex items-center justify-center px-1 h-4 rounded text-[8px] text-slate-600 hover:text-slate-400 hover:bg-white/[0.06] transition-colors tabular-nums"
+                    title={expandedMsgs.size > 0 ? 'Collapse all messages' : 'Expand all messages'}
+                  >
+                    {expandedMsgs.size > 0 ? '⊟' : '⊞'}
+                  </button>
+                )}
                 {!headerCollapsed && messages.length >= 4 && (() => {
                   const userMsgs = messages.filter((m) => m.role === 'user');
                   const avgLen = userMsgs.reduce((a, m) => a + m.content.length, 0) / Math.max(1, userMsgs.length);

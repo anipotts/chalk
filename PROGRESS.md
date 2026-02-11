@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 104 (Completed)
+- [x] Transcript Segment Auto-Summarize on Hover — tooltip shows condensed context from surrounding segments
+- [x] Chat Message Expand/Collapse All — toggle button in header to expand or collapse all long AI messages
+- [x] Home Page Video Card Gradient Border on Hover — accent-colored border glow and shadow on card hover
+- [x] Build verification PASSED
+
 ## Wave 103 (Completed)
 - [x] Transcript Segment Highlight Fade History — recently-active segments get a subtle blue fade trail (10s decay)
 - [x] Chat Message Quick Share to Clipboard — share icon copies formatted snippet with video title attribution
