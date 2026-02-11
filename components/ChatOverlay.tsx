@@ -1531,6 +1531,9 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                 const userCount = messages.filter((m) => m.role === 'user').length;
                 const aiCount = messages.filter((m) => m.role === 'assistant' && m.content).length;
                 const totalWords = messages.filter((m) => m.role === 'assistant').reduce((sum, m) => sum + m.content.split(/\s+/).filter(Boolean).length, 0);
+                const firstTs = parseInt(messages[0]?.id || '0', 10);
+                const agoMin = firstTs > 0 ? Math.round((Date.now() - firstTs) / 60000) : 0;
+                const agoLabel = agoMin < 1 ? 'just now' : agoMin < 60 ? `${agoMin}m ago` : `${Math.floor(agoMin / 60)}h ago`;
                 return (
                   <div className="flex items-center justify-center gap-3 py-1.5 text-[9px] text-slate-600">
                     <span>{userCount} question{userCount !== 1 ? 's' : ''}</span>
@@ -1538,6 +1541,7 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     <span>{aiCount} answer{aiCount !== 1 ? 's' : ''}</span>
                     <span className="text-slate-700">&middot;</span>
                     <span>{totalWords.toLocaleString()} words</span>
+                    {firstTs > 0 && (<><span className="text-slate-700">&middot;</span><span>started {agoLabel}</span></>)}
                   </div>
                 );
               })()}

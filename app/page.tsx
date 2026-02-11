@@ -720,7 +720,7 @@ export default function Home() {
                 <button
                   key={video.id}
                   onClick={() => handleRecentClick(video)}
-                  className={`group/card w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-chalk-surface/30 border hover:bg-chalk-surface/50 hover:border-chalk-border/40 hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 active:scale-[0.98] transition-all duration-200 text-left relative overflow-hidden ${vidIdx === selectedVideoIdx ? 'border-chalk-accent/50 ring-1 ring-chalk-accent/30' : 'border-chalk-border/20'}`}
+                  className={`group/card w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-chalk-surface/30 border hover:bg-chalk-surface/50 hover:border-chalk-border/40 hover:scale-[1.02] hover:shadow-lg hover:shadow-black/20 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-chalk-accent/60 focus-visible:outline-none transition-all duration-200 text-left relative overflow-hidden ${vidIdx === selectedVideoIdx ? 'border-chalk-accent/50 ring-1 ring-chalk-accent/30' : 'border-chalk-border/20'}`}
                 >
                   {/* Watch progress bar */}
                   {watchPct > 0 && (

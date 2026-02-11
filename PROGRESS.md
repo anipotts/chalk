@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 82 (Completed)
+- [x] Transcript Starred Count Badge — show number of starred segments next to filter button
+- [x] Chat First Message Age — show "started Xm ago" in conversation stats summary
+- [x] Home Page Video Card Focus Ring — visible focus ring for keyboard-navigated cards
+- [x] Build verification PASSED
+
 ## Wave 81 (Completed)
 - [x] Transcript Segment Double-Click to Ask — double-click segment to ask AI about it
 - [x] Chat Input Autocomplete Dismiss — Escape hides autocomplete suggestions
