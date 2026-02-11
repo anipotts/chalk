@@ -62,6 +62,11 @@ body {
   animation: typingDot 1.4s infinite;
 }
 
+@keyframes tipProgress {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   20% { transform: translateX(-6px); }

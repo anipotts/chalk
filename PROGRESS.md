@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 87 (Completed)
+- [x] Transcript Chapter Progress Indicator — thin progress bar per chapter in chapters view
+- [x] Chat Message Count Milestone — show milestone badges at 5, 10, 20, 50, 100 messages
+- [x] Home Page Tip Rotation — rotate study tips every 10s with animated progress bar
+- [x] Build verification PASSED
+
 ## Wave 86 (Completed)
 - [x] Transcript Segment Index Display — show "seg X/Y" next to current position timestamp
 - [x] Chat Conversation Density — show avg words per message in conversation stats

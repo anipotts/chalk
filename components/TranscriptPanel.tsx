@@ -1205,6 +1205,13 @@ export function TranscriptPanel({
                       )}
                     </div>
                   </button>
+                  {/* Chapter watch progress */}
+                  {durSec > 0 && (() => {
+                    const chEnd = ch.offset + durSec;
+                    const pct = currentTime <= ch.offset ? 0 : currentTime >= chEnd ? 1 : (currentTime - ch.offset) / durSec;
+                    if (pct <= 0) return null;
+                    return <div className="h-0.5 mx-3"><div className="h-full bg-chalk-accent/30 rounded-full transition-[width] duration-500" style={{ width: `${Math.round(pct * 100)}%` }} /></div>;
+                  })()}
                 </div>
               );
             })}

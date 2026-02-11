@@ -204,6 +204,7 @@ export default function Home() {
   const [totalWordsLearned, setTotalWordsLearned] = useState(0);
   const [clipboardUrl, setClipboardUrl] = useState<string | null>(null);
   const [inputShake, setInputShake] = useState(false);
+  const [tipIndex, setTipIndex] = useState(new Date().getDay());
   const [selectedVideoIdx, setSelectedVideoIdx] = useState(-1);
   const previewAbort = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -235,6 +236,12 @@ export default function Home() {
   // Session duration timer
   useEffect(() => {
     const interval = setInterval(() => setSessionSeconds((s) => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Rotate study tips every 10 seconds
+  useEffect(() => {
+    const interval = setInterval(() => setTipIndex((i) => (i + 1) % 7), 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -339,18 +346,23 @@ export default function Home() {
             })()}
           </p>
 
-          {/* Daily study tip */}
-          <p className="text-[10px] text-slate-600 italic mb-4 max-w-sm mx-auto">
-            {[
-              'Pause frequently to reflect on what you just learned.',
-              'Try explaining a concept back to the AI in your own words.',
-              'Bookmark key moments so you can revisit them later.',
-              'Ask "why" questions to deepen understanding.',
-              'Take notes alongside the video for better retention.',
-              'Review your study streak to stay motivated.',
-              'Compare what you learned today with yesterday.',
-            ][new Date().getDay()]}
-          </p>
+          {/* Rotating study tip */}
+          <div className="mb-4 max-w-sm mx-auto">
+            <p className="text-[10px] text-slate-600 italic">
+              {[
+                'Pause frequently to reflect on what you just learned.',
+                'Try explaining a concept back to the AI in your own words.',
+                'Bookmark key moments so you can revisit them later.',
+                'Ask "why" questions to deepen understanding.',
+                'Take notes alongside the video for better retention.',
+                'Review your study streak to stay motivated.',
+                'Compare what you learned today with yesterday.',
+              ][tipIndex]}
+            </p>
+            <div className="h-0.5 mt-1 bg-chalk-border/10 rounded-full overflow-hidden">
+              <div className="h-full bg-chalk-accent/20 rounded-full" style={{ animation: 'tipProgress 10s linear infinite' }} />
+            </div>
+          </div>
 
           {/* Study streak + daily goal + heatmap */}
           {(streak.currentStreak > 0 || todayMinutes > 0) && (

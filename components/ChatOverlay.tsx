@@ -1328,6 +1328,7 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
               {messages.map((msg, i) => {
                 const searchActive = chatSearch.trim().length > 0;
                 const matchesSearch = searchActive && msg.content.toLowerCase().includes(chatSearch.toLowerCase());
+                const milestone = [5, 10, 20, 50, 100].includes(i + 1) ? i + 1 : 0;
                 return (
                 <div
                   key={msg.id}
@@ -1339,6 +1340,9 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     setCtxMenu({ msgId: msg.id, x: e.clientX - rect.left, y: e.clientY - rect.top });
                   }}
                 >
+                  {milestone > 0 && (
+                    <p className="text-center text-[8px] text-slate-600 py-1">{milestone} messages</p>
+                  )}
                   {searchActive && matchesSearch && (
                     <div className="absolute left-0 w-0.5 h-full bg-chalk-accent/50 rounded-full" />
                   )}
