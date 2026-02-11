@@ -999,6 +999,19 @@ export default function Home() {
                         try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
+                            const aiMsgs = JSON.parse(chat).filter((m: { role: string; content: string }) => m.role === 'assistant' && m.content);
+                            if (aiMsgs.length >= 3) {
+                              const avgW = Math.round(aiMsgs.reduce((s: number, m: { content: string }) => s + m.content.split(/\s+/).filter(Boolean).length, 0) / aiMsgs.length);
+                              return <span className="text-[8px] text-cyan-400/40 tabular-nums" title={`Average AI response: ~${avgW} words across ${aiMsgs.length} responses`}>~{avgW}w avg</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
+                          const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chat) {
                             const msgs = JSON.parse(chat);
                             const lastQ = [...msgs].reverse().find((m: { role: string }) => m.role === 'user');
                             if (lastQ) {

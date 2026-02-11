@@ -1403,6 +1403,15 @@ export function TranscriptPanel({
                 segProgress = Math.min(1, Math.max(0, (currentTime - seg.offset) / seg.duration));
               }
 
+              // Paragraph break detection — topic shift between consecutive segments
+              const showTopicBreak = !search.trim() && !showSpeakerDivider && !topicLabel && !chapterAtSeg && i > 0 && (() => {
+                const prev = filtered[i - 1];
+                const prevWords = new Set(prev.text.toLowerCase().split(/\s+/).filter(w => w.length > 4));
+                const curWords = seg.text.toLowerCase().split(/\s+/).filter(w => w.length > 4);
+                const shared = curWords.filter(w => prevWords.has(w)).length;
+                return shared < 2 && prevWords.size > 3 && curWords.length > 3;
+              })();
+
               return (
                 <div key={`wrap-${seg.offset}-${i}`}>
                 {chapterAtSeg && i > 0 && (
@@ -1438,6 +1447,9 @@ export function TranscriptPanel({
                     </div>
                   );
                 })()}
+                {showTopicBreak && (
+                  <div className="mx-6 my-0.5 h-px bg-gradient-to-r from-transparent via-slate-700/20 to-transparent" />
+                )}
                 {/* Silence marker for gaps >= 3 seconds */}
                 {i > 0 && !showSpeakerDivider && !search.trim() && (() => {
                   const prevSeg = filtered[i - 1];

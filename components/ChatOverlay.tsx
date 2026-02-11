@@ -1991,6 +1991,8 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                   }}
                   placeholder={isStreaming ? 'Generating response...' : teachBackMode ? 'Explain what you learned...' : (() => {
                     if (segments.length === 0) return 'Ask about the video...';
+                    const msgCount = messages.length;
+                    if (msgCount > 20) return `${msgCount} msgs — ask a focused question...`;
                     const totalDur = segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0);
                     if (currentTime < 15) return 'Ask about the intro...';
                     if (totalDur > 0 && currentTime > totalDur * 0.9) return 'Summarize the conclusion...';

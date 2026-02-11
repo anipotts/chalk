@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 116 (Completed)
+- [x] Transcript Segment Paragraph Break Detection — gradient divider between segments with low word overlap (topic shift)
+- [x] Chat Input Smart Placeholder with Context — shows message count hint when conversation exceeds 20 messages
+- [x] Home Page Video Card Average Response Length — "~Nw avg" badge for videos with 3+ AI responses
+- [x] Build verification PASSED
+
 ## Wave 115 (Completed)
 - [x] Transcript Segment Hot Seek Indicator — repeat count badge turns orange at 3+ seeks with "hot segment" tooltip
 - [x] Chat Message Word Density Bar — hover-revealed bar below AI messages >100 words showing relative length vs longest
