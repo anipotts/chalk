@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 122 (Completed)
+- [x] Transcript Segment Action Item Detection — checkbox icon on segments with instructions ("you should", "make sure", etc.)
+- [x] Chat Message Timestamp Citation Count — "N refs" badge on AI responses with 2+ timestamp citations
+- [x] Home Page Video Card Last Visit Relative Time — enhanced time display using precise lastvisit tracking + "Xd ago" for week-old
+- [x] Build verification PASSED
+
 ## Wave 121 (Completed)
 - [x] Transcript Segment Number Detection — "#" data indicator on segments with percentages, amounts, dates, or large numbers
 - [x] Chat Message List Detection Badge — "list" badge on AI responses containing numbered or bulleted lists

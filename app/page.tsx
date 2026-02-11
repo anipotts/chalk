@@ -335,6 +335,7 @@ export default function Home() {
     recordStudyDay();
     try { const k = `chalk-video-visits-${videoId}`; localStorage.setItem(k, String((parseInt(localStorage.getItem(k) || '0', 10) || 0) + 1)); } catch {}
     try { const sk = `chalk-video-streak-${videoId}`; const days: string[] = JSON.parse(localStorage.getItem(sk) || '[]'); const today = new Date().toISOString().split('T')[0]; if (days[days.length - 1] !== today) { days.push(today); localStorage.setItem(sk, JSON.stringify(days.slice(-30))); } } catch {}
+    try { localStorage.setItem(`chalk-video-lastvisit-${videoId}`, String(Date.now())); } catch {}
     router.push(`/watch?v=${videoId}`);
   };
 
@@ -342,6 +343,7 @@ export default function Home() {
     recordStudyDay();
     try { const k = `chalk-video-visits-${video.id}`; localStorage.setItem(k, String((parseInt(localStorage.getItem(k) || '0', 10) || 0) + 1)); } catch {}
     try { const sk = `chalk-video-streak-${video.id}`; const days: string[] = JSON.parse(localStorage.getItem(sk) || '[]'); const today = new Date().toISOString().split('T')[0]; if (days[days.length - 1] !== today) { days.push(today); localStorage.setItem(sk, JSON.stringify(days.slice(-30))); } } catch {}
+    try { localStorage.setItem(`chalk-video-lastvisit-${video.id}`, String(Date.now())); } catch {}
     router.push(`/watch?v=${video.id}`);
   };
 
@@ -893,17 +895,19 @@ export default function Home() {
                         return null;
                       })()}
                       {(() => {
-                        if (!video.timestamp) return null;
-                        const ago = Date.now() - video.timestamp;
+                        const lastVisitTs = typeof window !== 'undefined' ? parseInt(localStorage.getItem(`chalk-video-lastvisit-${video.id}`) || '0', 10) : 0;
+                        const ts = lastVisitTs || video.timestamp;
+                        if (!ts) return null;
+                        const ago = Date.now() - ts;
                         const mins = Math.floor(ago / 60000);
                         const hrs = Math.floor(ago / 3600000);
                         const days = Math.floor(ago / 86400000);
-                        const label = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : hrs < 24 ? `${hrs}h ago` : (() => {
-                          const d = new Date(video.timestamp);
+                        const label = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : hrs < 24 ? `${hrs}h ago` : days < 7 ? `${days}d ago` : (() => {
+                          const d = new Date(ts);
                           return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                         })();
                         return (
-                          <span className="text-[9px] text-slate-600 tabular-nums">{label}</span>
+                          <span className="text-[9px] text-slate-600 tabular-nums" title={lastVisitTs ? 'Last visited' : 'Added'}>{label}</span>
                         );
                       })()}
                       {(() => {

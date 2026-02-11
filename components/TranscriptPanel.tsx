@@ -1569,6 +1569,9 @@ export function TranscriptPanel({
                   {!compactMode && /(\d{3,}|\d+%|\$\d|\d{4})/.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-teal-400/40 font-mono" title="Contains numeric data (statistics, dates, amounts)">#</span>
                   )}
+                  {!compactMode && /\b(you should|make sure|remember to|don't forget|step \d|first,|next,|then,|finally,)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-green-400/40" title="Contains an action item or instruction">☐</span>
+                  )}
                   {!compactMode && complexityLabel && (
                     <span className={`shrink-0 text-[7px] font-bold uppercase tracking-wider px-1 py-0 rounded ${
                       complexityLabel === 'complex' ? 'bg-rose-500/10 text-rose-400/60' : 'bg-amber-500/10 text-amber-400/50'
