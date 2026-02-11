@@ -1102,6 +1102,12 @@ Status: RUNNING
 - [x] Home Page Video Card Longest Streak — "X day streak" badge showing longest consecutive viewing streak
 - [x] Build verification PASSED
 
+### Wave 165 — Causal connector detection, caveat badge, first question age
+- [x] Transcript Segment Causal Connector Detection — "∴" indicator when segment contains causal language (because, therefore, as a result, consequently, thus)
+- [x] Chat Message Caveat Badge — "caveat" badge on AI messages containing caveats (keep in mind, it's worth noting, be aware, important to note)
+- [x] Home Page Video Card First Question Age — "asked Xd ago" badge showing days since first chat question
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

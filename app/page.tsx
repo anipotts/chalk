@@ -1615,6 +1615,20 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatAge = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatAge) {
+                            const allAge: { role: string; timestamp?: number }[] = JSON.parse(chatAge);
+                            const firstTs = allAge.find(m => m.role === 'user' && m.timestamp)?.timestamp;
+                            if (firstTs) {
+                              const daysAgo = Math.floor((Date.now() - firstTs) / (1000 * 60 * 60 * 24));
+                              if (daysAgo >= 1) return <span className="text-[8px] text-sky-400/40 tabular-nums" title={`First question asked ${daysAgo} day${daysAgo !== 1 ? 's' : ''} ago`}>asked {daysAgo}d ago</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const streakData = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-streak-${video.id}`) : null;
                           if (streakData) {
                             const dates: string[] = JSON.parse(streakData);

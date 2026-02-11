@@ -1717,6 +1717,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(first|second|third|fourth|fifth|firstly|secondly|thirdly|next|finally|lastly|step one|step two|step three)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-violet-400/30" title="Contains enumeration or sequencing language">1.</span>
                   )}
+                  {!compactMode && /\b(because|therefore|as a result|consequently|due to|thus|hence|so that|for this reason|this means)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains causal connector language">∴</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
