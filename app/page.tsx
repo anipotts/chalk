@@ -512,8 +512,19 @@ export default function Home() {
                     ) : (
                       <span className="text-xs text-slate-400 truncate block">{video.url}</span>
                     )}
-                    {/* Visit count + quick note */}
+                    {/* Visit count + last watched + quick note */}
                     <div className="flex items-center gap-2 mt-0.5">
+                      {(() => {
+                        if (!video.timestamp) return null;
+                        const ago = Date.now() - video.timestamp;
+                        const mins = Math.floor(ago / 60000);
+                        const hrs = Math.floor(ago / 3600000);
+                        const days = Math.floor(ago / 86400000);
+                        const label = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : hrs < 24 ? `${hrs}h ago` : days < 7 ? `${days}d ago` : `${Math.floor(days / 7)}w ago`;
+                        return (
+                          <span className="text-[9px] text-slate-600 tabular-nums">{label}</span>
+                        );
+                      })()}
                       {(() => {
                         try {
                           const visits = typeof window !== 'undefined' ? parseInt(localStorage.getItem(`chalk-visits-${video.id}`) || '0', 10) : 0;

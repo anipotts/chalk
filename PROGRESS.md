@@ -406,6 +406,12 @@ Status: RUNNING
 - lib/transcript.ts (timeout, logging)
 - lib/supabase.ts (existing)
 
+## Wave 49 (Completed)
+- [x] Transcript Keyword Density Bar — per-segment word density normalized bar below timestamps
+- [x] Chat Response Time indicator — shows response duration (e.g. "1.2s") on hover
+- [x] Last Watched Indicator — relative time labels (e.g. "3h ago") on home page cards
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

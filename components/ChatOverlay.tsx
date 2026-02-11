@@ -17,6 +17,7 @@ interface ChatMessage {
   content: string;
   thinking?: string;
   thinkingDuration?: number;
+  responseDuration?: number; // ms from send to completion
 }
 
 interface ChatOverlayProps {
@@ -512,6 +513,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
         thinkingDuration = Date.now() - thinkingStart;
       }
 
+      const responseDuration = Date.now() - thinkingStart;
       setMessages([
         ...newMessages,
         {
@@ -520,6 +522,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
           content: finalText,
           thinking: finalReasoning || undefined,
           thinkingDuration,
+          responseDuration,
         },
       ]);
     } catch (error) {
@@ -1183,6 +1186,7 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     isStreaming={isStreaming && msg.id === messages[messages.length - 1]?.id && msg.role === 'assistant'}
                     thinking={msg.thinking}
                     thinkingDuration={msg.thinkingDuration}
+                    responseDuration={msg.responseDuration}
                     onSeek={onSeek}
                     videoId={videoId}
                     pinned={pinnedIds.has(msg.id)}

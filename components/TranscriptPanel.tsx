@@ -252,6 +252,18 @@ export function TranscriptPanel({
     return { totalWords, readMinutes, speakingWPM, avgSegDuration };
   }, [segments]);
 
+  // Per-segment word density (normalized 0-1 relative to max)
+  const segDensities = useMemo(() => {
+    if (segments.length < 5) return new Map<number, number>();
+    const wordCounts = segments.map((s) => s.text.split(/\s+/).filter(Boolean).length);
+    const maxWords = Math.max(...wordCounts, 1);
+    const densities = new Map<number, number>();
+    for (let i = 0; i < segments.length; i++) {
+      densities.set(i, wordCounts[i] / maxWords);
+    }
+    return densities;
+  }, [segments]);
+
   // Load notes from Supabase
   useEffect(() => {
     if (videoId) {
@@ -1036,22 +1048,33 @@ export function TranscriptPanel({
                       />
                     ) : <div className="shrink-0 w-1" />;
                   })()}
-                  <button
-                    onClick={() => onSeek(seg.offset)}
-                    onDoubleClick={(e) => {
-                      e.stopPropagation();
-                      const ts = formatTimestamp(seg.offset);
-                      navigator.clipboard.writeText(ts).then(() => {
-                        const btn = e.currentTarget;
-                        btn.dataset.copied = 'true';
-                        setTimeout(() => { btn.dataset.copied = ''; }, 1200);
-                      });
-                    }}
-                    className={`text-[10px] font-mono shrink-0 pt-0.5 hover:underline data-[copied=true]:text-emerald-400 ${isActive ? 'text-chalk-accent' : 'text-slate-500'}`}
-                    title="Click to seek · Double-click to copy"
-                  >
-                    {formatTimestamp(seg.offset)}
-                  </button>
+                  <div className="shrink-0 flex flex-col items-center gap-0.5">
+                    <button
+                      onClick={() => onSeek(seg.offset)}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        const ts = formatTimestamp(seg.offset);
+                        navigator.clipboard.writeText(ts).then(() => {
+                          const btn = e.currentTarget;
+                          btn.dataset.copied = 'true';
+                          setTimeout(() => { btn.dataset.copied = ''; }, 1200);
+                        });
+                      }}
+                      className={`text-[10px] font-mono pt-0.5 hover:underline data-[copied=true]:text-emerald-400 ${isActive ? 'text-chalk-accent' : 'text-slate-500'}`}
+                      title="Click to seek · Double-click to copy"
+                    >
+                      {formatTimestamp(seg.offset)}
+                    </button>
+                    {segDensities.size > 0 && (() => {
+                      const d = segDensities.get(segIndex) || 0;
+                      if (d < 0.15) return null;
+                      return (
+                        <div className="w-6 h-0.5 rounded-full bg-white/[0.04] overflow-hidden">
+                          <div className="h-full rounded-full bg-indigo-400/30" style={{ width: `${d * 100}%` }} />
+                        </div>
+                      );
+                    })()}
+                  </div>
                   {complexityLabel && (
                     <span className={`shrink-0 text-[7px] font-bold uppercase tracking-wider px-1 py-0 rounded ${
                       complexityLabel === 'complex' ? 'bg-rose-500/10 text-rose-400/60' : 'bg-amber-500/10 text-amber-400/50'

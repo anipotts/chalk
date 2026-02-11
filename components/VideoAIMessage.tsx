@@ -12,6 +12,7 @@ interface VideoAIMessageProps {
   isStreaming?: boolean;
   thinking?: string;
   thinkingDuration?: number;
+  responseDuration?: number;
   onSeek?: (seconds: number) => void;
   videoId?: string;
   pinned?: boolean;
@@ -237,7 +238,7 @@ function ReactionButtons({ messageId }: { messageId?: string }) {
   );
 }
 
-export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingDuration, onSeek, videoId, pinned, onTogglePin }: VideoAIMessageProps) {
+export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingDuration, responseDuration, onSeek, videoId, pinned, onTogglePin }: VideoAIMessageProps) {
   if (role === 'user') {
     return (
       <motion.div
@@ -324,6 +325,12 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
               </button>
             )}
             <ReactionButtons messageId={videoId ? `${videoId}-${content.slice(0, 20).replace(/\s/g, '')}` : undefined} />
+            {/* Response time */}
+            {responseDuration && responseDuration > 0 && (
+              <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] text-slate-600 tabular-nums ml-1" title={`Response took ${(responseDuration / 1000).toFixed(1)}s`}>
+                {responseDuration < 1000 ? `${responseDuration}ms` : `${(responseDuration / 1000).toFixed(1)}s`}
+              </span>
+            )}
             {/* AI Confidence indicator */}
             {(() => {
               const tsMatches = content.match(/\[(\d{1,2}:\d{2})\]/g);
