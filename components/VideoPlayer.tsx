@@ -135,7 +135,6 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
       autoPlay
       playsInline
       aspectRatio="16/9"
-      crossOrigin
       onPause={() => onPause?.()}
       onPlay={() => onPlay?.()}
       onTimeUpdate={(e) => {

@@ -34,6 +34,15 @@ interface InnertubePlayerResponse {
       }>;
     };
   };
+  streamingData?: {
+    adaptiveFormats?: Array<{
+      itag: number;
+      url?: string;
+      mimeType: string;
+      contentLength?: string;
+      approxDurationMs?: string;
+    }>;
+  };
 }
 
 interface Json3Response {
@@ -353,8 +362,75 @@ async function fetchTranscriptLocalWhisper(audioPath: string): Promise<Transcrip
 // ─── Audio download helper for STT tiers ───────────────────────────────────────
 
 /**
+ * Download audio from YouTube via Innertube streaming URLs (HTTP-only, no yt-dlp needed).
+ * Fetches the player response to get adaptive audio stream URLs, then downloads directly.
+ * Returns a Buffer of audio data for Groq Whisper. Works on Vercel serverless.
+ */
+async function downloadAudioHTTP(videoId: string): Promise<Buffer> {
+  // Get player response with streaming data
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
+  let resp;
+  try {
+    resp = await fetch('https://www.youtube.com/youtubei/v1/player?key=AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w&prettyPrint=false', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'com.google.android.youtube/19.44.38 (Linux; U; Android 14)',
+        'X-YouTube-Client-Name': '3',
+        'X-YouTube-Client-Version': '19.44.38',
+      },
+      body: JSON.stringify({
+        videoId,
+        context: {
+          client: {
+            clientName: 'ANDROID',
+            clientVersion: '19.44.38',
+            androidSdkVersion: 34,
+            hl: 'en',
+            gl: 'US',
+          },
+        },
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!resp.ok) throw new Error(`Innertube player request failed: ${resp.status}`);
+
+  const data = (await resp.json()) as InnertubePlayerResponse;
+  const formats = data.streamingData?.adaptiveFormats;
+  if (!formats || formats.length === 0) throw new Error('No streaming formats available');
+
+  // Find an audio-only stream (prefer mp4a/opus, smallest file)
+  const audioFormats = formats
+    .filter((f) => f.mimeType.startsWith('audio/') && f.url)
+    .sort((a, b) => parseInt(a.contentLength || '999999999') - parseInt(b.contentLength || '999999999'));
+
+  if (audioFormats.length === 0) throw new Error('No audio streams with direct URLs');
+
+  const audioUrl = audioFormats[0].url!;
+  console.log(`[transcript] downloading audio via HTTP (itag ${audioFormats[0].itag}, ~${Math.round(parseInt(audioFormats[0].contentLength || '0') / 1024)}KB)`);
+
+  // Download the audio stream
+  const audioController = new AbortController();
+  const audioTimeout = setTimeout(() => audioController.abort(), 120000); // 2 min for audio download
+  try {
+    const audioResp = await fetch(audioUrl, { signal: audioController.signal });
+    if (!audioResp.ok) throw new Error(`Audio download failed: ${audioResp.status}`);
+    const arrayBuffer = await audioResp.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  } finally {
+    clearTimeout(audioTimeout);
+  }
+}
+
+/**
  * Download audio from a YouTube video as WAV (16kHz mono) to a temp file.
- * Returns the path to the temp WAV file. Caller is responsible for cleanup.
+ * Uses yt-dlp CLI (not available on Vercel). Use downloadAudioHTTP for serverless.
  */
 export async function downloadAudio(videoId: string): Promise<string> {
   const { default: youtubedl } = await import('youtube-dl-exec');
@@ -415,39 +491,59 @@ export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
 export async function sttCascade(videoId: string): Promise<TranscriptResult> {
   console.log(`[transcript] ${videoId}: all captions failed, starting STT cascade`);
 
-  // Download audio once (shared by both STT tiers)
-  const audioPath = await downloadAudio(videoId);
-
-  try {
-    // Tier 1: Groq Whisper (cloud, fast)
-    if (isGroqAvailable()) {
-      try {
-        console.log(`[transcript] ${videoId}: trying Groq Whisper...`);
-        const audioBuffer = await readFile(audioPath);
-        const segments = await transcribeWithGroq(audioBuffer, `${videoId}.wav`);
-        if (segments.length > 0) {
-          console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (${segments.length} segments)`);
-          return { segments, source: 'groq-whisper' };
-        }
-      } catch (e) {
-        console.warn(`[transcript] ${videoId}: Groq Whisper failed:`, e instanceof Error ? e.message : e);
-      }
-    }
-
-    // Tier 2: Local Whisper (offline fallback)
+  // Strategy 1: HTTP audio download → Groq Whisper (works on Vercel, no yt-dlp needed)
+  if (isGroqAvailable()) {
     try {
-      console.log(`[transcript] ${videoId}: trying local Whisper...`);
-      const segments = await fetchTranscriptLocalWhisper(audioPath);
-      console.log(`[transcript] ${videoId}: transcribed via local Whisper (${segments.length} segments)`);
-      return { segments, source: 'local-whisper' };
+      console.log(`[transcript] ${videoId}: trying HTTP audio download + Groq Whisper...`);
+      const audioBuffer = await downloadAudioHTTP(videoId);
+      const segments = await transcribeWithGroq(audioBuffer, `${videoId}.webm`);
+      if (segments.length > 0) {
+        console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (HTTP download, ${segments.length} segments)`);
+        return { segments, source: 'groq-whisper' };
+      }
     } catch (e) {
-      console.warn(`[transcript] ${videoId}: local Whisper failed:`, e instanceof Error ? e.message : e);
+      console.warn(`[transcript] ${videoId}: HTTP + Groq Whisper failed:`, e instanceof Error ? e.message : e);
     }
-
-    throw new Error('All STT tiers failed');
-  } finally {
-    await unlink(audioPath).catch(() => {});
   }
+
+  // Strategy 2: yt-dlp audio download → Groq or local Whisper (works locally, not on Vercel)
+  let audioPath: string | null = null;
+  try {
+    audioPath = await downloadAudio(videoId);
+  } catch (e) {
+    console.warn(`[transcript] ${videoId}: yt-dlp audio download failed:`, e instanceof Error ? e.message : e);
+  }
+
+  if (audioPath) {
+    try {
+      if (isGroqAvailable()) {
+        try {
+          console.log(`[transcript] ${videoId}: trying Groq Whisper (yt-dlp audio)...`);
+          const audioBuffer = await readFile(audioPath);
+          const segments = await transcribeWithGroq(audioBuffer, `${videoId}.wav`);
+          if (segments.length > 0) {
+            console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (${segments.length} segments)`);
+            return { segments, source: 'groq-whisper' };
+          }
+        } catch (e) {
+          console.warn(`[transcript] ${videoId}: Groq Whisper failed:`, e instanceof Error ? e.message : e);
+        }
+      }
+
+      try {
+        console.log(`[transcript] ${videoId}: trying local Whisper...`);
+        const segments = await fetchTranscriptLocalWhisper(audioPath);
+        console.log(`[transcript] ${videoId}: transcribed via local Whisper (${segments.length} segments)`);
+        return { segments, source: 'local-whisper' };
+      } catch (e) {
+        console.warn(`[transcript] ${videoId}: local Whisper failed:`, e instanceof Error ? e.message : e);
+      }
+    } finally {
+      await unlink(audioPath).catch(() => {});
+    }
+  }
+
+  throw new Error('All STT tiers failed');
 }
 
 // ─── Main pipeline ─────────────────────────────────────────────────────────────

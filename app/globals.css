@@ -125,6 +125,16 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* Vidstack YouTube embed: ensure native YouTube UI is hidden and Vidstack controls intercept events */
+[data-media-provider] iframe.vds-youtube[data-no-controls] {
+  pointer-events: none !important;
+}
+
+[data-media-provider] .vds-blocker {
+  z-index: 2 !important;
+  pointer-events: auto !important;
+}
+
 /* Mafs overrides for dark theme */
 .MafsView {
   --mafs-bg: transparent !important;
