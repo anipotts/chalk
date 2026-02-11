@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 102 (Completed)
+- [x] Transcript Speaker Label Edit — click speaker names in breakdown to rename and persist per video
+- [x] Chat Message Reaction Emoji Picker — 4 quick reactions (bulb, check, fire, confused) on AI messages
+- [x] Home Page Video Card Completion Sparkle — pulsing sparkle accents on fully watched video thumbnails
+- [x] Build verification PASSED
+
 ## Wave 101 (Completed)
 - [x] Transcript Segment Select Range Copy — shift-click to select range of segments, floating copy bar
 - [x] Chat Quick Topic Switch Pill — "New Topic" pill button to start fresh topic thread in conversation

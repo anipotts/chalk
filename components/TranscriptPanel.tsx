@@ -137,6 +137,11 @@ export function TranscriptPanel({
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; offset: number; text: string } | null>(null);
   const [selectRange, setSelectRange] = useState<{ start: number; end: number } | null>(null);
   const lastClickedIdx = useRef<number>(-1);
+  const [speakerNames, setSpeakerNames] = useState<Record<string, string>>(() => {
+    if (typeof window === 'undefined' || !videoId) return {};
+    try { return JSON.parse(localStorage.getItem(`chalk-speakers-${videoId}`) || '{}'); } catch { return {}; }
+  });
+  const [editingSpeaker, setEditingSpeaker] = useState<string | null>(null);
 
   // Dismiss context menu on click away
   useEffect(() => {
@@ -1707,15 +1712,37 @@ export function TranscriptPanel({
         return (
           <div className="px-3 py-1 border-t border-chalk-border/10">
             <div className="flex items-center gap-2 h-2">
-              {Object.entries(speakerTime).map(([name, dur]) => (
+              {Object.entries(speakerTime).map(([name, dur]) => {
+                const displayName = speakerNames[name] || name;
+                const shortName = displayName.length > 10 ? displayName.slice(0, 10) : displayName;
+                return (
                 <div key={name} className="flex items-center gap-1 flex-1 min-w-0">
                   <div
                     className={`h-1.5 rounded-full ${name === 'Speaker A' ? 'bg-indigo-500/40' : 'bg-emerald-500/40'}`}
                     style={{ width: `${Math.round((dur / total) * 100)}%` }}
                   />
-                  <span className="text-[8px] text-slate-700 shrink-0 tabular-nums">{name.split(' ')[1]} {Math.round((dur / total) * 100)}%</span>
+                  {editingSpeaker === name ? (
+                    <input
+                      autoFocus
+                      className="text-[8px] text-slate-300 bg-transparent border-b border-chalk-accent/40 outline-none w-14 tabular-nums"
+                      defaultValue={displayName}
+                      onBlur={(e) => {
+                        const val = e.target.value.trim();
+                        setSpeakerNames((prev) => { const next = { ...prev, [name]: val || name }; if (videoId) localStorage.setItem(`chalk-speakers-${videoId}`, JSON.stringify(next)); return next; });
+                        setEditingSpeaker(null);
+                      }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); if (e.key === 'Escape') setEditingSpeaker(null); }}
+                    />
+                  ) : (
+                    <span
+                      className="text-[8px] text-slate-700 shrink-0 tabular-nums cursor-pointer hover:text-slate-400 transition-colors"
+                      onClick={() => setEditingSpeaker(name)}
+                      title={`Click to rename ${displayName}`}
+                    >{shortName} {Math.round((dur / total) * 100)}%</span>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );

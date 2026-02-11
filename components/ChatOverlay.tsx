@@ -20,6 +20,7 @@ interface ChatMessage {
   responseDuration?: number; // ms from send to completion
   model?: string; // which AI model generated the response
   rating?: 'up' | 'down'; // user rating
+  reactions?: string[]; // emoji reactions e.g. ['bulb', 'fire']
 }
 
 interface ChatOverlayProps {
@@ -1455,6 +1456,27 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                             <button onClick={() => setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, rating: m.rating === 'down' ? undefined : 'down' } : m))} className={`p-0.5 rounded transition-colors ${msg.rating === 'down' ? 'text-red-400' : 'text-slate-700 hover:text-slate-500'}`} title="Not helpful">
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5"><path d="M13.91 1a1 1 0 0 0-1 1v6a1 1 0 1 0 2 0V2a1 1 0 0 0-1-1ZM10.235 3h1.675v4.76l-2.74 5.48a.5.5 0 0 1-.67.22l-.26-.13a1.5 1.5 0 0 1-.77-1.78L8.18 9H3.91a2 2 0 0 1-1.95-2.43l.95-4.25A2 2 0 0 1 4.86 1h4.05a2 2 0 0 1 1.325.5Z" /></svg>
                             </button>
+                            {/* Quick emoji reactions */}
+                            {[
+                              { key: 'bulb', emoji: '\uD83D\uDCA1', label: 'Insightful' },
+                              { key: 'check', emoji: '\u2705', label: 'Accurate' },
+                              { key: 'fire', emoji: '\uD83D\uDD25', label: 'Amazing' },
+                              { key: 'confused', emoji: '\uD83D\uDE15', label: 'Unclear' },
+                            ].map((r) => {
+                              const has = msg.reactions?.includes(r.key);
+                              return (
+                                <button
+                                  key={r.key}
+                                  onClick={() => setMessages((prev) => prev.map((m) => {
+                                    if (m.id !== msg.id) return m;
+                                    const cur = m.reactions || [];
+                                    return { ...m, reactions: has ? cur.filter((x) => x !== r.key) : [...cur, r.key] };
+                                  }))}
+                                  className={`p-0.5 rounded text-[9px] transition-all ${has ? 'opacity-100 scale-110' : 'opacity-0 group-hover/msg:opacity-60 hover:!opacity-100'}`}
+                                  title={r.label}
+                                >{r.emoji}</button>
+                              );
+                            })}
                           </span>
                         )}
                       </>
