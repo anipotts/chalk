@@ -1672,6 +1672,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(I think|in my opinion|I believe|personally|from my perspective|I feel|it seems to me|my view is|I'd say)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-pink-400/30" title="Contains opinion or subjective language">op</span>
                   )}
+                  {!compactMode && /\b(number one|number two|point one|point two|first thing|second thing|reason one|reason two|item one|item two)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-cyan-400/30" title="Contains enumerated list items">1.</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

@@ -1445,6 +1445,25 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatSim = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatSim) {
+                            const uMsgsSim: { role: string; content: string }[] = JSON.parse(chatSim).filter((m: { role: string; content: string }) => m.role === 'user' && m.content);
+                            if (uMsgsSim.length >= 4) {
+                              const firstWords = new Set(uMsgsSim[0].content.toLowerCase().split(/\s+/).filter(w => w.length > 3));
+                              const lastWords = new Set(uMsgsSim[uMsgsSim.length - 1].content.toLowerCase().split(/\s+/).filter(w => w.length > 3));
+                              if (firstWords.size > 0) {
+                                const shared = [...firstWords].filter(w => lastWords.has(w)).length;
+                                const pct = shared / firstWords.size;
+                                if (pct < 0.3) return <span className="text-[8px] text-orange-400/40" title="First and last questions share few words — topic evolved">topic shift</span>;
+                                if (pct >= 0.7) return <span className="text-[8px] text-blue-400/40" title="First and last questions share many words — stayed focused">focused</span>;
+                              }
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

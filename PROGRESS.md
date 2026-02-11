@@ -1012,6 +1012,12 @@ Status: RUNNING
 - [x] Home Page Video Card Response Time Ratio — "N:1 ratio" badge showing AI-to-user word ratio
 - [x] Build verification PASSED
 
+### Wave 150 — Enumeration detection, limitation badge, question similarity (MILESTONE!)
+- [x] Transcript Segment Enumeration/List Detection — "1." indicator when segment contains enumerated items (number one, point two, first thing)
+- [x] Chat Message Limitation Badge — "limitation" badge on AI messages acknowledging limitations (I can't, beyond my, unfortunately I)
+- [x] Home Page Video Card First vs Last Question Similarity — "topic shift" or "focused" badge showing question topic evolution
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
