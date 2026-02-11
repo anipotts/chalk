@@ -1115,6 +1115,9 @@ export function TranscriptPanel({
                     >
                       {formatTimestamp(seg.offset)}
                     </button>
+                    {seg.duration && seg.duration > 0 && (
+                      <span className="text-[8px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums">({Math.round(seg.duration)}s)</span>
+                    )}
                     {segDensities.size > 0 && (() => {
                       const d = segDensities.get(segIndex) || 0;
                       if (d < 0.15) return null;

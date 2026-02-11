@@ -551,6 +551,23 @@ export default function Home() {
                     {/* Visit count + last watched + quick note */}
                     <div className="flex items-center gap-2 mt-0.5">
                       {(() => {
+                        try {
+                          const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chat) {
+                            const count = JSON.parse(chat).length;
+                            if (count > 0) return (
+                              <span className="text-[9px] text-slate-600 flex items-center gap-0.5 tabular-nums">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5">
+                                  <path d="M1 8.74c0 1.36.49 2.6 1.3 3.56-.13.77-.45 1.48-.91 2.08a.38.38 0 0 0 .3.62c1.07 0 2-.37 2.74-.93A6.47 6.47 0 0 0 7.5 15.5c3.59 0 6.5-2.98 6.5-6.76S11.09 2 7.5 2 1 4.96 1 8.74Z" />
+                                </svg>
+                                {count}
+                              </span>
+                            );
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
                         if (!video.timestamp) return null;
                         const ago = Date.now() - video.timestamp;
                         const mins = Math.floor(ago / 60000);

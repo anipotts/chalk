@@ -336,6 +336,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const prevTimeRef = useRef<number>(currentTime);
+  const scrolledAtCountRef = useRef<number>(0);
 
   // Video progress calculation
   const videoDuration = useMemo(() => {
@@ -416,8 +417,12 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    setIsScrolledUp(scrollHeight - scrollTop - clientHeight > 60);
-  }, []);
+    const scrolledUp = scrollHeight - scrollTop - clientHeight > 60;
+    if (scrolledUp && !isScrolledUp) {
+      scrolledAtCountRef.current = messages.length;
+    }
+    setIsScrolledUp(scrolledUp);
+  }, [isScrolledUp, messages.length]);
 
   const handleStop = useCallback(() => {
     abortRef.current?.abort();
@@ -1267,7 +1272,10 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-chalk-surface/90 text-slate-300 border border-chalk-border/30 shadow-lg backdrop-blur-sm hover:bg-chalk-surface transition-colors"
                   >
                     <DownArrowIcon />
-                    New messages
+                    {(() => {
+                      const unseen = messages.length - scrolledAtCountRef.current;
+                      return unseen > 0 ? `${unseen} new` : 'New messages';
+                    })()}
                   </button>
                 </motion.div>
               )}

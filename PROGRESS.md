@@ -436,6 +436,12 @@ Status: RUNNING
 - [x] Video Card Hover Preview — first user question shown on recent video cards
 - [x] Build verification PASSED
 
+## Wave 54 (Completed)
+- [x] Segment Duration Display — "(3s)" duration shown on timestamp hover
+- [x] Unseen Message Count — scroll-to-bottom pill shows "2 new" count
+- [x] Video Card Chat Count — chat bubble icon + message count on home page cards
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
