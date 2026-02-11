@@ -118,6 +118,11 @@ export function TranscriptPanel({
   const [showStarredOnly, setShowStarredOnly] = useState(false);
   const [paragraphMode, setParagraphMode] = useState(false);
   const [showLineNumbers, setShowLineNumbers] = useState(false);
+  const [fontSize, setFontSize] = useState<'sm' | 'md' | 'lg'>(() => {
+    if (typeof window === 'undefined') return 'sm';
+    return (localStorage.getItem('chalk-transcript-font') as 'sm' | 'md' | 'lg') || 'sm';
+  });
+  const fontSizeClass = fontSize === 'lg' ? 'text-sm' : fontSize === 'md' ? 'text-xs' : 'text-[11px]';
 
   // Load starred segments from localStorage
   useEffect(() => {
@@ -652,6 +657,19 @@ export function TranscriptPanel({
                 title={showLineNumbers ? 'Hide line numbers' : 'Show line numbers'}
               >
                 #
+              </button>
+            )}
+            {viewMode === 'transcript' && (
+              <button
+                onClick={() => {
+                  const next = fontSize === 'sm' ? 'md' : fontSize === 'md' ? 'lg' : 'sm';
+                  setFontSize(next);
+                  localStorage.setItem('chalk-transcript-font', next);
+                }}
+                className="px-1 py-0.5 rounded text-[10px] font-medium text-slate-500 hover:text-slate-400 transition-colors"
+                title={`Font size: ${fontSize === 'sm' ? 'Small' : fontSize === 'md' ? 'Medium' : 'Large'}`}
+              >
+                A{fontSize === 'sm' ? '-' : fontSize === 'md' ? '' : '+'}
               </button>
             )}
             {lang && isComplete && (
@@ -1302,7 +1320,7 @@ export function TranscriptPanel({
                   )}
                   <button
                     onClick={() => onSeek(seg.offset)}
-                    className={`text-xs leading-relaxed text-left flex-1 ${isActive ? 'text-chalk-text' : 'text-slate-400'}`}
+                    className={`${fontSizeClass} leading-relaxed text-left flex-1 ${isActive ? 'text-chalk-text' : 'text-slate-400'}`}
                     style={isActive && segProgress > 0 && !search.trim() ? {
                       background: `linear-gradient(90deg, rgba(59,130,246,0.15) ${segProgress * 100}%, transparent ${segProgress * 100}%)`,
                       borderRadius: '2px',

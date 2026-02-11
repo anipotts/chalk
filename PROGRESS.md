@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 73 (Completed)
+- [x] Transcript Font Size Toggle — A-/A/A+ button to cycle small/medium/large text, persisted in localStorage
+- [x] Chat Model Badge — shows which AI model (Opus/Sonnet/Haiku) generated each response
+- [x] Home Page Last Session Time — tracks and shows "Last visit: Xm/Xh ago" in footer
+- [x] Build verification PASSED
+
 ## Wave 72 (Completed)
 - [x] Transcript Scroll Position Memory — remember and restore scroll position per video in localStorage
 - [x] Chat Empty State Enhancement — video thumbnail + title card in empty chat overlay

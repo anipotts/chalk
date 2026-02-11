@@ -200,6 +200,7 @@ export default function Home() {
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [dailyGoal] = useState(() => getDailyGoal());
   const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [lastSessionAgo, setLastSessionAgo] = useState<string | null>(null);
   const [selectedVideoIdx, setSelectedVideoIdx] = useState(-1);
   const previewAbort = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -209,6 +210,18 @@ export default function Home() {
     setStreak(getStreak());
     setActivity(getActivity());
     setTodayMinutes(getTodayMinutes());
+    // Last session tracking
+    try {
+      const prev = localStorage.getItem('chalk-last-session');
+      if (prev) {
+        const ago = Date.now() - parseInt(prev, 10);
+        const mins = Math.floor(ago / 60000);
+        const hrs = Math.floor(ago / 3600000);
+        const days = Math.floor(ago / 86400000);
+        setLastSessionAgo(mins < 2 ? 'just now' : mins < 60 ? `${mins}m ago` : hrs < 24 ? `${hrs}h ago` : `${days}d ago`);
+      }
+      localStorage.setItem('chalk-last-session', String(Date.now()));
+    } catch { /* ignore */ }
   }, []);
 
   // Session duration timer
@@ -881,6 +894,9 @@ export default function Home() {
                 Session: {sessionSeconds < 60 ? `${sessionSeconds}s` : sessionSeconds < 3600 ? `${Math.floor(sessionSeconds / 60)}m ${sessionSeconds % 60}s` : `${Math.floor(sessionSeconds / 3600)}h ${Math.floor((sessionSeconds % 3600) / 60)}m`}
               </span>
             </>
+          )}
+          {lastSessionAgo && lastSessionAgo !== 'just now' && (
+            <><span>·</span><span>Last visit: {lastSessionAgo}</span></>
           )}
         </div>
       )}

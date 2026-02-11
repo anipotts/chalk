@@ -18,6 +18,7 @@ interface ChatMessage {
   thinking?: string;
   thinkingDuration?: number;
   responseDuration?: number; // ms from send to completion
+  model?: string; // which AI model generated the response
 }
 
 interface ChatOverlayProps {
@@ -479,7 +480,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
     const assistantId = (Date.now() + 1).toString();
     const newMessages = [...messages, userMsg];
 
-    setMessages([...newMessages, { id: assistantId, role: 'assistant', content: '' }]);
+    setMessages([...newMessages, { id: assistantId, role: 'assistant', content: '', model: selectedModel === 'auto' ? 'sonnet' : selectedModel }]);
     setInput('');
     setIsStreaming(true);
     setIsScrolledUp(false);
@@ -561,6 +562,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
           thinking: finalReasoning || undefined,
           thinkingDuration,
           responseDuration,
+          model: selectedModel === 'auto' ? 'sonnet' : selectedModel,
         },
       ]);
     } catch (error) {
@@ -1331,6 +1333,11 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           >
                             {isCollapsed ? 'Show more' : 'Show less'}
                           </button>
+                        )}
+                        {msg.role === 'assistant' && msg.model && msg.content && (
+                          <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[8px] font-medium bg-white/[0.04] text-slate-600 border border-white/[0.06]">
+                            {msg.model === 'opus' ? 'Opus' : msg.model === 'sonnet' ? 'Sonnet' : msg.model === 'haiku' ? 'Haiku' : msg.model}
+                          </span>
                         )}
                       </>
                     );
