@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 94 (Completed)
+- [x] Transcript Search Match Count per Chapter — show search hit count in chapters view
+- [x] Chat Model Selection Memory — persist selected model to localStorage
+- [x] Home Page Video Card Thumbnail Zoom — subtle scale on hover
+- [x] Build verification PASSED
+
 ## Wave 93 (Completed)
 - [x] Transcript Starred Segments Quick Nav — prev/next arrows to jump between starred segments
 - [x] Chat Header Message Rate — show messages per minute in conversation stats

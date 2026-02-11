@@ -311,7 +311,11 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
   const [messages, setMessages] = useState<ChatMessage[]>(() => loadChatHistory(videoId));
   const [input, setInput] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<ModelChoice>('auto');
+  const [selectedModel, setSelectedModelRaw] = useState<ModelChoice>(() => {
+    if (typeof window === 'undefined') return 'auto';
+    try { const stored = localStorage.getItem('chalk-chat-model'); return (stored as ModelChoice) || 'auto'; } catch { return 'auto'; }
+  });
+  const setSelectedModel = useCallback((m: ModelChoice) => { setSelectedModelRaw(m); try { localStorage.setItem('chalk-chat-model', m); } catch { /* ignore */ } }, []);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   const [shareStatus, setShareStatus] = useState<'idle' | 'sharing' | 'done'>('idle');
   const [flashcardStatus, setFlashcardStatus] = useState<'idle' | 'generating' | 'done'>('idle');

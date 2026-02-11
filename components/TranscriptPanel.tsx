@@ -1225,6 +1225,11 @@ export function TranscriptPanel({
                             const questionCount = chapterSegs.filter((s) => s.text.trim().endsWith('?')).length;
                             return questionCount > 0 ? ` · ${questionCount}?` : '';
                           })()}
+                          {search && (() => {
+                            const q = search.toLowerCase();
+                            const hitCount = chapterSegs.filter((s) => s.text.toLowerCase().includes(q)).length;
+                            return hitCount > 0 ? <span className="text-chalk-accent"> · {hitCount} match{hitCount !== 1 ? 'es' : ''}</span> : null;
+                          })()}
                         </span>
                       </div>
                       {subtopics.length > 0 && (
