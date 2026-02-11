@@ -982,6 +982,12 @@ Status: RUNNING
 - [x] Home Page Video Card Conversation Momentum — "↑ momentum" or "↓ momentum" showing whether questions accelerate or decelerate
 - [x] Build verification PASSED
 
+### Wave 145 — Analogy detection, comparison badge, unique words in questions
+- [x] Transcript Segment Analogy Detection — "~" indicator when segment contains analogies or metaphors (like a, similar to, imagine, picture this)
+- [x] Chat Message Comparison Badge — "comparison" badge on AI messages comparing things (on one hand, pros and cons, in contrast)
+- [x] Home Page Video Card Unique Words in Questions — "N unique words" badge showing vocabulary diversity in user questions
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

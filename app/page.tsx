@@ -1377,6 +1377,19 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatUw = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatUw) {
+                            const uMsgsUw: { role: string; content: string }[] = JSON.parse(chatUw).filter((m: { role: string; content: string }) => m.role === 'user' && m.content);
+                            if (uMsgsUw.length >= 3) {
+                              const allWords = new Set(uMsgsUw.flatMap(m => m.content.toLowerCase().split(/\s+/).filter(w => w.length > 3)));
+                              if (allWords.size >= 20) return <span className="text-[8px] text-teal-400/40 tabular-nums" title={`${allWords.size} unique words across ${uMsgsUw.length} questions`}>{allWords.size} unique words</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

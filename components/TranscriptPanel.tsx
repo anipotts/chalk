@@ -1657,6 +1657,9 @@ export function TranscriptPanel({
                     if (maxRep >= 3) return <span className="shrink-0 text-[7px] text-red-400/30 tabular-nums" title={`Word repeated ${maxRep} times in segment`}>&times;{maxRep}</span>;
                     return null;
                   })()}
+                  {!compactMode && /\b(like a|similar to|think of it as|imagine|picture this|it's as if|just like|the same way|analogy|metaphor)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-emerald-400/30" title="Contains analogy or metaphorical language">~</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
