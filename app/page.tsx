@@ -1600,6 +1600,31 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatRSE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatRSE) {
+                            const allRSE: { role: string; content?: string }[] = JSON.parse(chatRSE);
+                            const exSzRS: number[] = [];
+                            for (let i = 0; i < allRSE.length - 1; i++) {
+                              if (allRSE[i].role === 'user' && allRSE[i + 1]?.role === 'assistant') {
+                                const uw = (allRSE[i].content || '').split(/\s+/).filter(Boolean).length;
+                                const aw = (allRSE[i + 1].content || '').split(/\s+/).filter(Boolean).length;
+                                exSzRS.push(uw + aw);
+                              }
+                            }
+                            if (exSzRS.length >= 3) {
+                              const mn = Math.min(...exSzRS);
+                              const mx = Math.max(...exSzRS);
+                              if (mn > 0) {
+                                const ratio = Math.round(mx / mn);
+                                if (ratio >= 2) return <span className="text-[8px] text-rose-400/40 tabular-nums" title={`Exchange range ratio: ${mx}/${mn} = ${ratio}:1 across ${exSzRS.length} exchanges`}>{ratio}:1 rng</span>;
+                              }
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatSDE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatSDE) {
                             const allSDE: { role: string; content?: string }[] = JSON.parse(chatSDE);

@@ -1885,6 +1885,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(you must|do this now|stop doing|start doing|go ahead and|make sure you|don't forget to|always do|never do|take action)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-teal-400/30" title="Contains imperative language">!</span>
                   )}
+                  {!compactMode && /\b(not only .* but also|both .* and|either .* or|neither .* nor|the more .* the more|whether or not|as much as|just as .* so|on one hand .* on the other|correspondingly)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-rose-400/30" title="Contains correlative language">&#8596;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

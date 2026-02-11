@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 221 — Correlative language detection, concessive badge, exchange range ratio
+- [x] TranscriptPanel: correlative language detection — "↔" in rose-400/30, regex for not only…but also/both…and/either…or/neither…nor/the more…the more/whether or not/as much as/just as…so/on one hand…on the other/correspondingly
+- [x] ChatOverlay: concessive badge — "concessive" in rose-500/10, detects although/even though/despite the fact/granted that/while it is true/admittedly/I concede/notwithstanding/be that as it may/all the same
+- [x] Home page: exchange range ratio badge — "X:1 rng" in rose-400/40, computes max/min exchange size ratio across ≥3 exchanges (variable chatRSE)
+- [x] Build verification PASSED
+
 ### Wave 220 — Imperative language detection, elaborative badge, std dev words per exchange
 - [x] TranscriptPanel: imperative language detection — "!" in teal-400/30, regex for you must/do this now/stop doing/start doing/go ahead and/make sure you/don't forget to/always do/never do/take action
 - [x] ChatOverlay: elaborative badge — "elaborative" in teal-500/10, detects to elaborate/in other words/that is to say/put simply/more specifically/to clarify/what I mean is/to be precise/to put it another way/essentially
