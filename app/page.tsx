@@ -1642,6 +1642,20 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatUW = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatUW) {
+                            const allUW: { role: string; content?: string }[] = JSON.parse(chatUW);
+                            const userMsgsUW = allUW.filter(m => m.role === 'user' && m.content);
+                            if (userMsgsUW.length >= 1) {
+                              const totalWords = userMsgsUW.reduce((sum, m) => sum + m.content!.split(/\s+/).filter(Boolean).length, 0);
+                              if (totalWords >= 5) return <span className="text-[8px] text-rose-400/40 tabular-nums" title={`Total user words: ${totalWords}`}>{totalWords} user words</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatLQ = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatLQ) {
                             const allLQ: { role: string; content?: string }[] = JSON.parse(chatLQ);

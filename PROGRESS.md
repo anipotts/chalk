@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 180 — Superlative detection, exemplification badge, total user words
+- [x] TranscriptPanel: superlative detection — "★" in yellow-400/30, regex for best/worst/most/least/greatest etc.
+- [x] ChatOverlay: exemplification badge — "examples" in violet-500/10, detects for example/for instance/such as/e.g.
+- [x] HomePage: total user words — "X user words" in rose-400/40, variable chatUW
+- [x] Build verification PASSED
+
 ### Wave 179 — Enumeration detection, causal badge, last question preview
 - [x] TranscriptPanel: enumeration/listing detection — "1." in lime-400/30, regex for first/second/third/number one etc.
 - [x] ChatOverlay: causal language badge — "causal" in orange-500/10, detects because/therefore/consequently/due to
