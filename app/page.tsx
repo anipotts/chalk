@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { extractVideoId } from '@/lib/video-utils';
+import { ChalkboardSimple } from '@phosphor-icons/react';
 
 const RECENT_VIDEOS_KEY = 'chalk-recent-videos';
 
@@ -69,7 +70,10 @@ export default function HomePage() {
       {/* Hero */}
       <div className="flex-1 flex items-center justify-center px-4">
         <div className="w-full max-w-xl text-center">
-          <h1 className="text-3xl font-bold text-chalk-text mb-2">Chalk</h1>
+          <h1 className="text-3xl font-bold text-chalk-text mb-2 flex items-center justify-center gap-2">
+            <ChalkboardSimple size={32} />
+            chalk
+          </h1>
           <p className="text-sm text-slate-500 mb-8">
             Learn from any YouTube video with AI
           </p>

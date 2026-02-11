@@ -168,7 +168,7 @@ export default function AnalyticsPage() {
       <div className="border-b border-chalk-border/30 bg-chalk-bg/80 backdrop-blur-md">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
           <a href="/" className="text-lg font-semibold text-chalk-text hover:text-chalk-accent transition-colors">
-            Chalk
+            chalk
           </a>
           <span className="text-slate-600">|</span>
           <span className="text-sm text-slate-400">Study Analytics</span>

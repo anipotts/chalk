@@ -359,7 +359,7 @@ export function ChatInterface() {
             </svg>
           </button>
           <div>
-            <h1 className="text-lg font-semibold text-chalk-text">Chalk</h1>
+            <h1 className="text-lg font-semibold text-chalk-text">chalk</h1>
             <p className="text-xs text-slate-500">Like texting a mathematician</p>
           </div>
         </div>

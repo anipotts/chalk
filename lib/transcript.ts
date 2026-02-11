@@ -84,16 +84,23 @@ async function fetchTranscriptInnertube(videoId: string): Promise<TranscriptSegm
 
   let resp;
   try {
-    resp = await fetch('https://www.youtube.com/youtubei/v1/player', {
+    resp = await fetch('https://www.youtube.com/youtubei/v1/player?key=AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w&prettyPrint=false', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'com.google.android.youtube/19.44.38 (Linux; U; Android 14)',
+        'X-YouTube-Client-Name': '3',
+        'X-YouTube-Client-Version': '19.44.38',
+      },
       body: JSON.stringify({
         videoId,
         context: {
           client: {
             clientName: 'ANDROID',
-            clientVersion: '19.29.37',
+            clientVersion: '19.44.38',
+            androidSdkVersion: 34,
             hl: 'en',
+            gl: 'US',
           },
         },
       }),
@@ -148,6 +155,93 @@ async function fetchTranscriptInnertube(videoId: string): Promise<TranscriptSegm
   }
 
   if (segments.length === 0) throw new Error('Innertube: returned 0 segments');
+  return segments;
+}
+
+// ─── Tier 1b: Web page scrape (extract ytInitialPlayerResponse from HTML) ────
+//
+// Fetches the YouTube watch page with browser-like headers and extracts
+// the embedded player response. More reliable from datacenter IPs than
+// the Innertube API POST because it looks like a normal page visit.
+
+async function fetchTranscriptWebScrape(videoId: string): Promise<TranscriptSegment[]> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
+  let resp;
+  try {
+    resp = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+        Accept: 'text/html,application/xhtml+xml',
+      },
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!resp.ok) throw new Error(`YouTube page fetch failed: ${resp.status}`);
+
+  const html = await resp.text();
+
+  // Extract ytInitialPlayerResponse from the page source
+  const playerMatch = html.match(/var\s+ytInitialPlayerResponse\s*=\s*(\{[\s\S]+?\});\s*(?:var|<\/script>)/);
+  if (!playerMatch) throw new Error('Could not find ytInitialPlayerResponse in page HTML');
+
+  let playerData: InnertubePlayerResponse;
+  try {
+    playerData = JSON.parse(playerMatch[1]) as InnertubePlayerResponse;
+  } catch {
+    throw new Error('Failed to parse ytInitialPlayerResponse JSON');
+  }
+
+  const tracks = playerData.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+  if (!tracks || tracks.length === 0) throw new Error('Web scrape: no caption tracks found');
+
+  // Prefer English manual captions over ASR
+  const enTracks = tracks.filter((t) => t.languageCode.startsWith('en'));
+  const manual = enTracks.find((t) => t.kind !== 'asr');
+  const track = manual || enTracks[0] || tracks[0];
+
+  // Fetch caption URL with JSON3 format
+  const captionUrl = new URL(track.baseUrl);
+  captionUrl.searchParams.set('fmt', 'json3');
+
+  const captionController = new AbortController();
+  const captionTimeout = setTimeout(() => captionController.abort(), 10000);
+  let captionResp;
+  try {
+    captionResp = await fetch(captionUrl.toString(), { signal: captionController.signal });
+  } finally {
+    clearTimeout(captionTimeout);
+  }
+  if (!captionResp.ok) throw new Error(`Web scrape caption fetch failed: ${captionResp.status}`);
+
+  const body = await captionResp.text();
+
+  let segments: TranscriptSegment[];
+  try {
+    const json3 = JSON.parse(body) as Json3Response;
+    if (json3.events) {
+      segments = json3.events
+        .filter((e) => e.segs && e.segs.length > 0)
+        .map((e) => ({
+          text: e.segs!.map((s) => s.utf8).join(''),
+          offset: e.tStartMs / 1000,
+          duration: (e.dDurationMs || 0) / 1000,
+        }));
+    } else {
+      segments = [];
+    }
+  } catch {
+    // Fall back to XML parsing
+    segments = parseTimedTextXml(body);
+  }
+
+  if (segments.length === 0) throw new Error('Web scrape: returned 0 segments');
+  console.log(`[transcript] web scrape: got ${segments.length} segments`);
   return segments;
 }
 
@@ -286,16 +380,18 @@ interface CaptionRaceResult {
 }
 
 const INNERTUBE_TIMEOUT = 15_000; // 15s — Innertube is fast when it works
+const WEBSCRAPE_TIMEOUT = 20_000; // 20s — page fetch + caption fetch
 const YTDLP_TIMEOUT = 30_000;    // 30s — yt-dlp needs time for JS challenge solving
 const RACE_TIMEOUT = 35_000;     // 35s overall caption race
 
 export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
-  // Two caption tiers run concurrently — first non-empty result wins.
-  // Innertube ANDROID is fast (~1-2s) and handles most videos.
-  // yt-dlp CLI is slower (~10-15s) but most reliable (full JS challenge solving).
-  // youtube-transcript package removed — uses same broken WEB Innertube path.
+  // Three caption tiers run concurrently — first non-empty result wins.
+  // Innertube ANDROID is fast (~1-2s) but YouTube may block from datacenter IPs.
+  // Web scrape fetches the watch page HTML — looks like a browser visit, most reliable on Vercel.
+  // yt-dlp CLI is slower (~10-15s) but handles most edge cases (not available on Vercel).
   const tiers: Array<{ fn: () => Promise<TranscriptSegment[]>; source: CaptionTier; timeout: number }> = [
     { fn: () => fetchTranscriptInnertube(videoId), source: 'innertube', timeout: INNERTUBE_TIMEOUT },
+    { fn: () => fetchTranscriptWebScrape(videoId), source: 'innertube', timeout: WEBSCRAPE_TIMEOUT },
     { fn: () => fetchTranscriptYtDlp(videoId), source: 'yt-dlp', timeout: YTDLP_TIMEOUT },
   ];
 

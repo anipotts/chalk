@@ -1,7 +1,7 @@
 import { streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { buildVideoSystemPrompt } from '@/lib/prompts/video-assistant';
-import { buildVideoContext, formatTimestamp, type TranscriptSegment } from '@/lib/video-utils';
+import { formatTimestamp, type TranscriptSegment } from '@/lib/video-utils';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -46,20 +46,28 @@ export async function POST(req: Request) {
   const model = anthropic(MODEL_IDS[resolvedModel]);
   const isDeep = resolvedModel === 'opus';
 
-  // Build transcript context around current position
+  // Build full transcript context with priority markers around current position
   const typedSegments = (segments || []) as TranscriptSegment[];
   const currentTime = typeof currentTimestamp === 'number' ? currentTimestamp : 0;
 
-  // For short videos (< 10 min of transcript), send the full transcript for better context
-  const totalDuration = typedSegments.length > 0
-    ? typedSegments[typedSegments.length - 1].offset + (typedSegments[typedSegments.length - 1].duration || 0)
-    : 0;
-  const fullTranscriptText = typedSegments.map((s) => `[${formatTimestamp(s.offset)}] ${s.text}`).join('\n');
-  const useFullTranscript = totalDuration < 600 && fullTranscriptText.length < 12000;
+  // Always send the full transcript, partitioned into watched (high priority) and upcoming (awareness)
+  const watched = typedSegments.filter((s) => s.offset <= currentTime);
+  const upcoming = typedSegments.filter((s) => s.offset > currentTime);
 
-  const transcriptContext = useFullTranscript
-    ? fullTranscriptText
-    : buildVideoContext(typedSegments, currentTime);
+  let transcriptContext = '';
+  if (watched.length > 0) {
+    transcriptContext += '<watched_content priority="high">\n';
+    transcriptContext += watched.map((s) => `[${formatTimestamp(s.offset)}] ${s.text}`).join('\n');
+    transcriptContext += '\n</watched_content>';
+  }
+  if (upcoming.length > 0) {
+    transcriptContext += '\n\n<upcoming_content priority="low">\n';
+    transcriptContext += upcoming.map((s) => `[${formatTimestamp(s.offset)}] ${s.text}`).join('\n');
+    transcriptContext += '\n</upcoming_content>';
+  }
+  if (!transcriptContext) {
+    transcriptContext = '(No transcript available)';
+  }
 
   // Build system prompt with video context
   const safeVideoTitle = typeof videoTitle === 'string' ? videoTitle.slice(0, 200) : undefined;

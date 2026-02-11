@@ -8,6 +8,7 @@ import { ChatOverlay } from '@/components/ChatOverlay';
 import { useTranscriptStream } from '@/hooks/useTranscriptStream';
 import { useVideoTitle } from '@/hooks/useVideoTitle';
 import { formatTimestamp } from '@/lib/video-utils';
+import { ChalkboardSimple } from '@phosphor-icons/react';
 import type { MediaPlayerInstance } from '@vidstack/react';
 
 const VideoPlayer = dynamic(
@@ -389,7 +390,8 @@ function WatchContent() {
         {/* Top bar — hidden on mobile, z-20 so speed dropdown escapes above the video area */}
         <div className="hidden md:flex flex-none items-center gap-3 px-4 py-2.5 border-b border-chalk-border/30 bg-chalk-bg/80 backdrop-blur-md relative z-20">
           <a href="/" className="flex items-center gap-1.5 text-lg font-semibold text-chalk-text hover:text-chalk-accent transition-colors">
-            Chalk
+            <ChalkboardSimple size={20} />
+            chalk
           </a>
           <span className="text-slate-600 hidden sm:inline">|</span>
           <div className="flex-1 min-w-0 hidden sm:flex items-center gap-2">

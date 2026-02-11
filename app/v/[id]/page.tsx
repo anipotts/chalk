@@ -10,7 +10,7 @@ export default async function SharedViz({ params }: { params: Promise<{ id: stri
       <div className="min-h-screen bg-chalk-bg p-6">
         <div className="max-w-3xl mx-auto">
           <div className="mb-4">
-            <a href="/" className="text-chalk-accent text-sm hover:underline">&larr; Back to Chalk</a>
+            <a href="/" className="text-chalk-accent text-sm hover:underline">&larr; Back to chalk</a>
           </div>
           <div className="mb-4 text-sm text-slate-400">
             Original prompt: &ldquo;{prompt}&rdquo;
@@ -25,7 +25,7 @@ export default async function SharedViz({ params }: { params: Promise<{ id: stri
         <div className="text-center">
           <h1 className="text-2xl font-semibold text-chalk-text mb-2">Not found</h1>
           <p className="text-slate-400">This visualization doesn&apos;t exist or has been removed.</p>
-          <a href="/" className="text-chalk-accent text-sm hover:underline mt-4 inline-block">Go to Chalk</a>
+          <a href="/" className="text-chalk-accent text-sm hover:underline mt-4 inline-block">Go to chalk</a>
         </div>
       </div>
     );
