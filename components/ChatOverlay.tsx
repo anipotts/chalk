@@ -321,6 +321,13 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
   const [digestOpen, setDigestOpen] = useState(false);
   const [digestLoading, setDigestLoading] = useState(false);
   const [digestData, setDigestData] = useState<{ takeaways: { text: string; timestamp: number }[] } | null>(null);
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(() => {
+    if (!videoId || typeof window === 'undefined') return new Set();
+    try {
+      const stored = localStorage.getItem(`chalk-pinned-${videoId}`);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch { return new Set(); }
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -555,6 +562,18 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
     submitMessage(text);
   };
 
+  const togglePin = useCallback((msgId: string) => {
+    setPinnedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(msgId)) next.delete(msgId);
+      else next.add(msgId);
+      if (videoId) {
+        try { localStorage.setItem(`chalk-pinned-${videoId}`, JSON.stringify([...next])); } catch { /* ignore */ }
+      }
+      return next;
+    });
+  }, [videoId]);
+
   return (
     <AnimatePresence>
       {visible && (
@@ -617,6 +636,16 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                     </span>
                   );
                 })()}
+                {/* Pinned count */}
+                {pinnedIds.size > 0 && (
+                  <span className="hidden sm:inline-flex items-center gap-0.5 text-[8px] px-1 py-0.5 rounded bg-amber-500/10 text-amber-500/70">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2 h-2">
+                      <path d="M10.97 2.22a.75.75 0 0 1 1.06 0l1.75 1.75a.75.75 0 0 1-.177 1.2l-2.032.904-.71.71 1.428 1.428a.75.75 0 0 1-1.06 1.06L9.8 7.844l-3.09 3.091a.75.75 0 0 1-1.06-1.06l3.09-3.091-1.428-1.428a.75.75 0 0 1 1.06-1.06l1.427 1.427.711-.71.904-2.032a.75.75 0 0 1 .177-.511l.398-.45Z" />
+                      <path d="M3.28 12.72a.75.75 0 0 1 0-1.06l2-2a.75.75 0 1 1 1.06 1.06l-2 2a.75.75 0 0 1-1.06 0Z" />
+                    </svg>
+                    {pinnedIds.size}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-1">
                 {messages.length > 0 && (
@@ -1077,6 +1106,8 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     thinkingDuration={msg.thinkingDuration}
                     onSeek={onSeek}
                     videoId={videoId}
+                    pinned={pinnedIds.has(msg.id)}
+                    onTogglePin={msg.role === 'assistant' ? () => togglePin(msg.id) : undefined}
                   />
                   {/* Follow-up chips after last assistant message */}
                   {msg.role === 'assistant' && i === messages.length - 1 && !isStreaming && msg.content && (

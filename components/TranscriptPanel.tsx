@@ -463,6 +463,32 @@ export function TranscriptPanel({
           />
         </div>
       )}
+      {/* Transcript density heatmap bar */}
+      {viewMode === 'transcript' && segments.length > 10 && (() => {
+        const totalDur = segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0);
+        if (totalDur <= 0) return null;
+        const bars = 40;
+        const barDur = totalDur / bars;
+        const data = Array.from({ length: bars }, (_, i) => {
+          const t0 = i * barDur;
+          const segs = segments.filter((s) => s.offset >= t0 && s.offset < t0 + barDur);
+          return segs.reduce((a, s) => a + s.text.split(/\s+/).filter(Boolean).length, 0);
+        });
+        const max = Math.max(...data, 1);
+        const curBar = Math.min(bars - 1, Math.floor(currentTime / barDur));
+        return (
+          <div className="flex h-1.5 w-full cursor-pointer" title="Transcript density — click to seek">
+            {data.map((d, i) => (
+              <div
+                key={i}
+                className={`flex-1 transition-colors ${i === curBar ? 'ring-1 ring-chalk-accent/60' : ''}`}
+                style={{ backgroundColor: `rgba(139,92,246,${0.1 + (d / max) * 0.5})` }}
+                onClick={() => onSeek(i * barDur)}
+              />
+            ))}
+          </div>
+        );
+      })()}
       {/* Header + search */}
       <div className="p-3 border-b border-chalk-border/30 space-y-2">
         <div className="flex items-center justify-between">
@@ -888,13 +914,22 @@ export function TranscriptPanel({
                     <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">{chapterAtSeg.label}</p>
                   </div>
                 )}
-                {showSpeakerDivider && (
-                  <div className="flex items-center gap-2 px-3 py-1">
-                    <div className="flex-1 h-px bg-chalk-border/20" />
-                    <span className="text-[9px] text-slate-600 font-medium">speaker change</span>
-                    <div className="flex-1 h-px bg-chalk-border/20" />
-                  </div>
-                )}
+                {showSpeakerDivider && (() => {
+                  // Detect if it's a topic shift or just a pause
+                  const prevSeg = i > 0 ? filtered[i - 1] : null;
+                  const prevWords = new Set((prevSeg?.text || '').toLowerCase().split(/\s+/));
+                  const curWords = seg.text.toLowerCase().split(/\s+/).filter(Boolean);
+                  const overlap = curWords.filter((w) => prevWords.has(w) && w.length > 3).length;
+                  const isTopicShift = curWords.length > 3 && overlap < 2;
+                  const label = isTopicShift ? 'new topic' : 'speaker change';
+                  return (
+                    <div className="flex items-center gap-2 px-3 py-1">
+                      <div className={`flex-1 h-px ${isTopicShift ? 'bg-violet-500/20' : 'bg-chalk-border/20'}`} />
+                      <span className={`text-[9px] font-medium ${isTopicShift ? 'text-violet-400/60' : 'text-slate-600'}`}>{label}</span>
+                      <div className={`flex-1 h-px ${isTopicShift ? 'bg-violet-500/20' : 'bg-chalk-border/20'}`} />
+                    </div>
+                  );
+                })()}
                 <div
                   key={`${seg.offset}-${i}`}
                   ref={(el) => {

@@ -279,6 +279,27 @@ export default function Home() {
                         {streak.freezesAvailable}
                       </span>
                     )}
+                    {/* Completed videos count */}
+                    {(() => {
+                      try {
+                        const recent = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem(RECENT_VIDEOS_KEY) || '[]') : [];
+                        let completed = 0;
+                        for (const v of recent) {
+                          const prog = parseFloat(localStorage.getItem(`chalk-progress-${v.id}`) || '0');
+                          const dur = parseFloat(localStorage.getItem(`chalk-duration-${v.id}`) || '0');
+                          if (dur > 0 && prog / dur > 0.9) completed++;
+                        }
+                        if (completed > 0) return (
+                          <span className="text-[10px] text-emerald-500/60 flex items-center gap-0.5" title={`${completed} video${completed > 1 ? 's' : ''} completed`}>
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                              <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
+                            </svg>
+                            {completed}
+                          </span>
+                        );
+                      } catch { /* ignore */ }
+                      return null;
+                    })()}
                   </div>
                 )}
                 {/* Daily goal ring */}
@@ -453,18 +474,29 @@ export default function Home() {
                     ) : (
                       <span className="text-xs text-slate-400 truncate block">{video.url}</span>
                     )}
-                    {/* Quick note sticky */}
-                    {(() => {
-                      try {
-                        const note = typeof window !== 'undefined' ? localStorage.getItem(`chalk-note-${video.id}`) : null;
-                        if (note) return (
-                          <span className="text-[9px] text-yellow-400/70 truncate block mt-0.5" title={note}>
-                            📝 {note.length > 50 ? note.slice(0, 50) + '...' : note}
-                          </span>
-                        );
-                      } catch { /* ignore */ }
-                      return null;
-                    })()}
+                    {/* Visit count + quick note */}
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {(() => {
+                        try {
+                          const visits = typeof window !== 'undefined' ? parseInt(localStorage.getItem(`chalk-visits-${video.id}`) || '0', 10) : 0;
+                          if (visits > 1) return (
+                            <span className="text-[9px] text-slate-600 tabular-nums">{visits}x watched</span>
+                          );
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
+                          const note = typeof window !== 'undefined' ? localStorage.getItem(`chalk-note-${video.id}`) : null;
+                          if (note) return (
+                            <span className="text-[9px] text-yellow-400/70 truncate" title={note}>
+                              📝 {note.length > 30 ? note.slice(0, 30) + '...' : note}
+                            </span>
+                          );
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                    </div>
                   </div>
                 </button>
               );

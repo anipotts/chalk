@@ -263,6 +263,18 @@ Status: RUNNING
 - [x] Speaking pace stats (words per minute) in transcript panel header
 - [x] Build verification PASSED
 
+## Wave 45 (Completed)
+- [x] Enhanced speaker turn separators (distinguishes "new topic" from "speaker change" via word overlap detection)
+- [x] Chat Pinned Messages — pin/unpin AI responses (amber highlight, pin icon, count badge in header, localStorage persistence)
+- [x] Video Completion Badge — shows completed count in streak area (green checkmark + count)
+- [x] Build verification PASSED
+
+## Wave 44 (Completed)
+- [x] Transcript Density Heatmap bar (40-segment purple heatmap at top of transcript panel, click to seek)
+- [x] Per-video visit counter ("3x watched" badge on home page recent videos)
+- [x] Visit count tracking in watch page (chalk-visits-{id} in localStorage)
+- [x] Build verification PASSED
+
 ## Wave 43 (Completed)
 - [x] Contextual AI follow-up suggestions (pattern-based questions from response content instead of random)
 - [x] Video Pace Indicators on timeline (red=fast speaking, blue=slow speaking, hover to see)

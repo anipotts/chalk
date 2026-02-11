@@ -433,7 +433,7 @@ function WatchContent() {
   const progressSaveRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const watchTimeRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
-  // Load saved progress
+  // Load saved progress + track visit count
   useEffect(() => {
     if (!videoId) return;
     try {
@@ -442,6 +442,10 @@ function WatchContent() {
         const seconds = parseFloat(saved);
         if (seconds > 5) setContinueFrom(seconds);
       }
+      // Increment visit counter
+      const visitKey = `chalk-visits-${videoId}`;
+      const visits = parseInt(localStorage.getItem(visitKey) || '0', 10);
+      localStorage.setItem(visitKey, String(visits + 1));
     } catch { /* ignore */ }
   }, [videoId]);
 

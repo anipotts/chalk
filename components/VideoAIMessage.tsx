@@ -14,6 +14,8 @@ interface VideoAIMessageProps {
   thinkingDuration?: number;
   onSeek?: (seconds: number) => void;
   videoId?: string;
+  pinned?: boolean;
+  onTogglePin?: () => void;
 }
 
 function SparkleIcon() {
@@ -235,7 +237,7 @@ function ReactionButtons({ messageId }: { messageId?: string }) {
   );
 }
 
-export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingDuration, onSeek, videoId }: VideoAIMessageProps) {
+export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingDuration, onSeek, videoId, pinned, onTogglePin }: VideoAIMessageProps) {
   if (role === 'user') {
     return (
       <motion.div
@@ -259,7 +261,7 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className="flex justify-start gap-2.5 group"
+      className={`flex justify-start gap-2.5 group ${pinned ? 'bg-amber-500/[0.03] -mx-2 px-2 py-1 rounded-lg border-l-2 border-amber-500/30' : ''}`}
     >
       {/* Assistant avatar */}
       <div className="w-6 h-6 rounded-full bg-chalk-accent/15 text-chalk-accent flex items-center justify-center shrink-0 mt-0.5">
@@ -308,6 +310,19 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
         {hasContent && !isStreaming && (
           <div className="mt-1 flex items-center">
             <CopyButton text={content} />
+            {onTogglePin && (
+              <button
+                onClick={onTogglePin}
+                className={`opacity-0 group-hover:opacity-100 transition-all p-1 rounded-md ${pinned ? 'text-amber-400 opacity-100' : 'text-slate-600 hover:text-amber-400'}`}
+                title={pinned ? 'Unpin message' : 'Pin message'}
+                aria-label={pinned ? 'Unpin' : 'Pin'}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                  <path d="M10.97 2.22a.75.75 0 0 1 1.06 0l1.75 1.75a.75.75 0 0 1-.177 1.2l-2.032.904-.71.71 1.428 1.428a.75.75 0 0 1-1.06 1.06L9.8 7.844l-3.09 3.091a.75.75 0 0 1-1.06-1.06l3.09-3.091-1.428-1.428a.75.75 0 0 1 1.06-1.06l1.427 1.427.711-.71.904-2.032a.75.75 0 0 1 .177-.511l.398-.45Z" />
+                  <path d="M3.28 12.72a.75.75 0 0 1 0-1.06l2-2a.75.75 0 1 1 1.06 1.06l-2 2a.75.75 0 0 1-1.06 0Z" />
+                </svg>
+              </button>
+            )}
             <ReactionButtons messageId={videoId ? `${videoId}-${content.slice(0, 20).replace(/\s/g, '')}` : undefined} />
             {/* AI Confidence indicator */}
             {(() => {
