@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 195 — Concessive language detection, advisory badge, exchange count
+- [x] TranscriptPanel: concessive language detection — "≈" in orange-400/30, regex for admittedly/granted/of course/naturally/true/indeed/certainly/no doubt
+- [x] ChatOverlay: advisory badge — "advisory" in rose-500/10, detects I recommend/I suggest/you should consider/it would be wise/my advice/best practice/tip/pro tip
+- [x] Home page video card: exchange count — "X exchanges" in sky-400/40, variable chatEC, counts user+assistant consecutive pairs (>=2)
+- [x] Build verification PASSED
+
 ### Wave 194 — Causal connector detection, definitive badge, shortest exchange
 - [x] TranscriptPanel: causal connector detection — "∴" in teal-400/30, regex for because/therefore/consequently/as a result/due to/hence/thus/so that
 - [x] ChatOverlay: definitive badge — "definitive" in blue-500/10, detects definitely/certainly/absolutely/undoubtedly/without question/clearly/unquestionably/indisputably

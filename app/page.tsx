@@ -1600,6 +1600,20 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatEC = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatEC) {
+                            const allEC: { role: string; content?: string }[] = JSON.parse(chatEC);
+                            let pairCount = 0;
+                            for (let ei = 0; ei < allEC.length - 1; ei++) {
+                              if (allEC[ei].role === 'user' && allEC[ei + 1]?.role === 'assistant') pairCount++;
+                            }
+                            if (pairCount >= 2) return <span className="text-[8px] text-sky-400/40 tabular-nums" title={`${pairCount} question-answer exchanges`}>{pairCount} exchanges</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatSE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatSE) {
                             const allSE: { role: string; content?: string }[] = JSON.parse(chatSE);
