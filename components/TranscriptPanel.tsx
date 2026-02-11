@@ -1067,6 +1067,10 @@ export function TranscriptPanel({
                             const uniqueWords = new Set(chapterText.replace(/[^a-z\s]/g, '').split(/\s+/).filter((w) => w.length > 4));
                             return uniqueWords.size > 5 ? ` · ${uniqueWords.size} terms` : '';
                           })()}
+                          {(() => {
+                            const questionCount = chapterSegs.filter((s) => s.text.trim().endsWith('?')).length;
+                            return questionCount > 0 ? ` · ${questionCount}?` : '';
+                          })()}
                         </span>
                       </div>
                       {subtopics.length > 0 && (

@@ -342,6 +342,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
     } catch { return new Set(); }
   });
   const [expandedMsgs, setExpandedMsgs] = useState<Set<string>>(new Set());
+  const [inputSuggestionIdx, setInputSuggestionIdx] = useState(-1);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -361,6 +362,19 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
     return last.offset + (last.duration || 0);
   }, [segments]);
   const videoProgress = videoDuration > 0 ? Math.min(currentTime / videoDuration, 1) : 0;
+
+  // Input autocomplete suggestions from past questions
+  const inputSuggestions = useMemo(() => {
+    if (!input.trim() || input.trim().length < 2) return [];
+    const query = input.trim().toLowerCase();
+    const pastQuestions = messages
+      .filter((m) => m.role === 'user')
+      .map((m) => m.content)
+      .filter((c, i, arr) => arr.indexOf(c) === i); // dedupe
+    return pastQuestions
+      .filter((q) => q.toLowerCase().includes(query) && q.toLowerCase() !== query)
+      .slice(0, 3);
+  }, [input, messages]);
 
   // Detect forward skips (>30s) to offer "What did I miss?" catch-up
   useEffect(() => {
@@ -1536,16 +1550,55 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     </button>
                   )}
                 </div>
+                {/* Autocomplete suggestions from past questions */}
+                {inputSuggestions.length > 0 && (
+                  <div className="flex flex-col border-b border-white/[0.06]">
+                    {inputSuggestions.map((sug, i) => (
+                      <button
+                        key={sug}
+                        type="button"
+                        onClick={() => { setInput(sug); setInputSuggestionIdx(-1); inputRef.current?.focus(); }}
+                        className={`px-3 py-1.5 text-left text-[11px] truncate transition-colors ${i === inputSuggestionIdx ? 'bg-white/[0.08] text-slate-300' : 'text-slate-500 hover:bg-white/[0.05] hover:text-slate-400'}`}
+                      >
+                        {sug}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <textarea
                   ref={inputRef}
                   value={input}
                   onChange={(e) => {
                     setInput(e.target.value);
+                    setInputSuggestionIdx(-1);
                     // Auto-resize
                     e.target.style.height = 'auto';
                     e.target.style.height = Math.min(e.target.scrollHeight, 96) + 'px';
                   }}
                   onKeyDown={(e) => {
+                    // Handle autocomplete navigation
+                    if (inputSuggestions.length > 0) {
+                      if (e.key === 'Tab' || (e.key === 'ArrowDown' && inputSuggestionIdx < inputSuggestions.length - 1 && input.trim())) {
+                        e.preventDefault();
+                        setInputSuggestionIdx((prev) => Math.min(prev + 1, inputSuggestions.length - 1));
+                        return;
+                      }
+                      if (e.key === 'ArrowUp' && inputSuggestionIdx > 0 && input.trim()) {
+                        e.preventDefault();
+                        setInputSuggestionIdx((prev) => prev - 1);
+                        return;
+                      }
+                      if (e.key === 'Enter' && !e.shiftKey && inputSuggestionIdx >= 0) {
+                        e.preventDefault();
+                        setInput(inputSuggestions[inputSuggestionIdx]);
+                        setInputSuggestionIdx(-1);
+                        return;
+                      }
+                      if (e.key === 'Escape') {
+                        setInputSuggestionIdx(-1);
+                        return;
+                      }
+                    }
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       setInputHistoryIdx(-1);

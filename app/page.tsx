@@ -199,6 +199,7 @@ export default function Home() {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [dailyGoal] = useState(() => getDailyGoal());
+  const [sessionSeconds, setSessionSeconds] = useState(0);
   const previewAbort = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -207,6 +208,12 @@ export default function Home() {
     setStreak(getStreak());
     setActivity(getActivity());
     setTodayMinutes(getTodayMinutes());
+  }, []);
+
+  // Session duration timer
+  useEffect(() => {
+    const interval = setInterval(() => setSessionSeconds((s) => s + 1), 1000);
+    return () => clearInterval(interval);
   }, []);
 
   // Global keyboard shortcuts: Enter → focus input, Escape → blur
@@ -848,10 +855,18 @@ export default function Home() {
       })()}
 
       {/* Footer links */}
-      {streak.totalDays > 0 && (
+      {(streak.totalDays > 0 || sessionSeconds > 0) && (
         <div className="flex items-center justify-center gap-3 py-2 text-[10px] text-slate-700">
-          <span>{streak.totalDays} total study day{streak.totalDays !== 1 ? 's' : ''}</span>
+          {streak.totalDays > 0 && <span>{streak.totalDays} total study day{streak.totalDays !== 1 ? 's' : ''}</span>}
           {streak.longestStreak > 1 && <><span>·</span><span>{streak.longestStreak} day best streak</span></>}
+          {sessionSeconds >= 5 && (
+            <>
+              {streak.totalDays > 0 && <span>·</span>}
+              <span className="tabular-nums">
+                Session: {sessionSeconds < 60 ? `${sessionSeconds}s` : sessionSeconds < 3600 ? `${Math.floor(sessionSeconds / 60)}m ${sessionSeconds % 60}s` : `${Math.floor(sessionSeconds / 3600)}h ${Math.floor((sessionSeconds % 3600) / 60)}m`}
+              </span>
+            </>
+          )}
         </div>
       )}
       <div className="flex-none py-4 flex items-center justify-center gap-4 border-t border-chalk-border/20">

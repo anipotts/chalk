@@ -526,6 +526,18 @@ Status: RUNNING
 - [x] Home Page Video Count Badge — total count next to "Recent Videos"
 - [x] Build verification PASSED
 
+## Wave 69 (Completed)
+- [x] Transcript Segment Word Count — visible word count on hover per segment
+- [x] Chat Message Copy Button — inline copy icon with success flash on hover
+- [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
+- [x] Build verification PASSED
+
+## Wave 70 (Completed)
+- [x] Transcript Section Summary Count — question count per chapter in chapters view
+- [x] Chat Input Suggestions — autocomplete dropdown from past questions while typing
+- [x] Home Page Session Duration — live session timer in footer
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
