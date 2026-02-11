@@ -340,6 +340,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch { return new Set(); }
   });
+  const [expandedMsgs, setExpandedMsgs] = useState<Set<string>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -1267,20 +1268,37 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                   {searchActive && matchesSearch && (
                     <div className="absolute left-0 w-0.5 h-full bg-chalk-accent/50 rounded-full" />
                   )}
-                  <VideoAIMessage
-                    role={msg.role}
-                    content={msg.content}
-                    isStreaming={isStreaming && msg.id === messages[messages.length - 1]?.id && msg.role === 'assistant'}
-                    thinking={msg.thinking}
-                    thinkingDuration={msg.thinkingDuration}
-                    responseDuration={msg.responseDuration}
-                    messageId={msg.id}
-                    onSeek={onSeek}
-                    videoId={videoId}
-                    pinned={pinnedIds.has(msg.id)}
-                    onTogglePin={msg.role === 'assistant' ? () => togglePin(msg.id) : undefined}
-                    maxContentLength={maxContentLength}
-                  />
+                  {(() => {
+                    const isLong = msg.role === 'assistant' && msg.content.length > 300 && i < messages.length - 1;
+                    const isCollapsed = isLong && !expandedMsgs.has(msg.id);
+                    const displayContent = isCollapsed ? msg.content.slice(0, 200).trim() + '...' : msg.content;
+                    return (
+                      <>
+                        <VideoAIMessage
+                          role={msg.role}
+                          content={displayContent}
+                          isStreaming={isStreaming && msg.id === messages[messages.length - 1]?.id && msg.role === 'assistant'}
+                          thinking={msg.thinking}
+                          thinkingDuration={msg.thinkingDuration}
+                          responseDuration={msg.responseDuration}
+                          messageId={msg.id}
+                          onSeek={onSeek}
+                          videoId={videoId}
+                          pinned={pinnedIds.has(msg.id)}
+                          onTogglePin={msg.role === 'assistant' ? () => togglePin(msg.id) : undefined}
+                          maxContentLength={maxContentLength}
+                        />
+                        {isLong && (
+                          <button
+                            onClick={() => setExpandedMsgs((prev) => { const n = new Set(prev); if (n.has(msg.id)) n.delete(msg.id); else n.add(msg.id); return n; })}
+                            className="text-[9px] text-chalk-accent/70 hover:text-chalk-accent mt-0.5 ml-1 transition-colors"
+                          >
+                            {isCollapsed ? 'Show more' : 'Show less'}
+                          </button>
+                        )}
+                      </>
+                    );
+                  })()}
                   {/* Save/bookmark icon */}
                   {msg.role === 'assistant' && msg.content && (
                     <button

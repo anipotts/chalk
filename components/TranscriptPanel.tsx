@@ -1372,6 +1372,26 @@ export function TranscriptPanel({
         </div>
       )}
 
+      {/* Quick jump to percentage */}
+      {segments.length > 20 && viewMode === 'transcript' && (() => {
+        const totalDur = segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0);
+        if (totalDur < 60) return null;
+        return (
+          <div className="px-3 py-0.5 flex items-center justify-center gap-1">
+            {[25, 50, 75].map((pct) => (
+              <button
+                key={pct}
+                onClick={() => onSeek((pct / 100) * totalDur)}
+                className="px-1.5 py-0.5 rounded text-[8px] text-slate-600 hover:text-chalk-accent hover:bg-chalk-accent/10 transition-colors tabular-nums"
+                title={`Jump to ${pct}% (${formatTimestamp((pct / 100) * totalDur)})`}
+              >
+                {pct}%
+              </button>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* WPM sparkline */}
       {segments.length > 20 && viewMode === 'transcript' && (() => {
         const windowSec = 30;

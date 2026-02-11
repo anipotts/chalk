@@ -287,7 +287,12 @@ export default function Home() {
             Chalk
           </h1>
           <p className="text-lg text-slate-400 mb-6 max-w-md mx-auto leading-relaxed">
-            Paste a YouTube URL. Pause the video. Ask AI anything about what you&apos;re watching.
+            {(() => {
+              const hour = new Date().getHours();
+              const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+              const tip = hour < 12 ? 'Start your day with a video lesson.' : hour < 17 ? 'Perfect time for focused learning.' : 'Wind down with something interesting.';
+              return `${greeting}! ${tip}`;
+            })()}
           </p>
 
           {/* Study streak + daily goal + heatmap */}

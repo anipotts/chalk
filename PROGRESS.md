@@ -496,6 +496,12 @@ Status: RUNNING
 - [x] Home Page Category Filter — filter videos by detected topic tag chips
 - [x] Build verification PASSED
 
+## Wave 64 (Completed)
+- [x] Transcript Line Numbers — toggleable segment index column via # button
+- [x] Chat Quick Reply Templates — "Tell me more", "Give an example", "Simplify this" buttons
+- [x] Home Page Activity Timeline — vertical timeline of recent study events
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
