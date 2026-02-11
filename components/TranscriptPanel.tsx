@@ -1705,6 +1705,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(like a|as if|metaphorically|figuratively|in a sense|so to speak|as though|resembles|akin to|analogous)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains metaphor or figurative language">~</span>
                   )}
+                  {!compactMode && /\b(to some extent|in some ways|partially|somewhat|kind of|sort of|more or less|roughly|arguably|in a way)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-neutral-400/30" title="Contains qualifying or hedging language">~q</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

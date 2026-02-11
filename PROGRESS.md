@@ -1078,6 +1078,12 @@ Status: RUNNING
 - [x] Home Page Video Card Response Ratio — "X:1 ratio" badge showing AI-to-user message ratio
 - [x] Build verification PASSED
 
+### Wave 161 — Qualification detection, suggestion badge, average AI words
+- [x] Transcript Segment Qualification Detection — "~q" indicator when segment contains hedging language (somewhat, kind of, sort of, more or less)
+- [x] Chat Message Suggestion Badge — "suggests" badge on AI messages containing suggestions (I suggest, I recommend, you might want, consider trying)
+- [x] Home Page Video Card Average AI Words — "avg Xw/a" badge showing average AI response word count
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

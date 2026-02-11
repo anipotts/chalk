@@ -1754,6 +1754,12 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           );
                           return null;
                         })()}
+                        {msg.role === 'assistant' && msg.content.length > 30 && (() => {
+                          if (/\b(I suggest|you might want|consider trying|I recommend|you could try|it would be worth|try to)\b/i.test(msg.content)) return (
+                            <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[7px] font-medium bg-lime-500/10 text-lime-400/50 border border-lime-500/10" title="Contains suggestions or recommendations">suggests</span>
+                          );
+                          return null;
+                        })()}
                         {msg.role === 'assistant' && msg.content.split(/\s+/).filter(Boolean).length > 100 && (() => {
                           const wc = msg.content.split(/\s+/).filter(Boolean).length;
                           const maxWc = Math.max(...messages.filter(m => m.role === 'assistant' && m.content).map(m => m.content.split(/\s+/).filter(Boolean).length));
