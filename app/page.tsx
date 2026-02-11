@@ -1600,6 +1600,20 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatUWD = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatUWD) {
+                            const allUWD: { role: string; content?: string }[] = JSON.parse(chatUWD);
+                            const userMsgs = allUWD.filter(m => m.role === 'user' && m.content);
+                            if (userMsgs.length >= 4) {
+                              const allWords = new Set(userMsgs.flatMap(m => m.content!.toLowerCase().split(/\s+/).filter(Boolean)));
+                              if (allWords.size >= 20) return <span className="text-[8px] text-teal-400/40 tabular-nums" title={`${allWords.size} unique words in your questions`}>{allWords.size} unique words</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatQD = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatQD) {
                             const allQD: { role: string; content?: string }[] = JSON.parse(chatQD);
