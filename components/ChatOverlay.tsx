@@ -754,6 +754,17 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                     </span>
                   );
                 })()}
+                {/* Longest response */}
+                {(() => {
+                  const aiMsgs = messages.filter((m) => m.role === 'assistant' && m.content);
+                  if (aiMsgs.length < 3) return null;
+                  const maxWords = Math.max(...aiMsgs.map((m) => m.content.split(/\s+/).filter(Boolean).length));
+                  return (
+                    <span className="hidden sm:inline-flex items-center text-[8px] px-1 py-0.5 rounded bg-white/[0.04] text-slate-600 tabular-nums" title={`Longest AI response: ${maxWords} words`}>
+                      Max {maxWords}w
+                    </span>
+                  );
+                })()}
                 {/* Reaction tally */}
                 {messages.length > 0 && (() => {
                   let upCount = 0;

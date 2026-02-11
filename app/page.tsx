@@ -203,6 +203,7 @@ export default function Home() {
   const [lastSessionAgo, setLastSessionAgo] = useState<string | null>(null);
   const [totalWordsLearned, setTotalWordsLearned] = useState(0);
   const [clipboardUrl, setClipboardUrl] = useState<string | null>(null);
+  const [inputShake, setInputShake] = useState(false);
   const [selectedVideoIdx, setSelectedVideoIdx] = useState(-1);
   const previewAbort = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -293,6 +294,8 @@ export default function Home() {
     const videoId = extractVideoId(url.trim());
     if (!videoId) {
       setError('Please enter a valid YouTube URL');
+      setInputShake(true);
+      setTimeout(() => setInputShake(false), 500);
       return;
     }
 
@@ -470,7 +473,7 @@ export default function Home() {
 
           {/* URL Input */}
           <form onSubmit={handleSubmit} className="w-full max-w-xl mx-auto">
-            <div className="flex items-center gap-2 relative">
+            <div className="flex items-center gap-2 relative transition-transform" style={inputShake ? { animation: 'shake 0.4s ease-in-out' } : undefined}>
               <input
                 ref={inputRef}
                 type="text"

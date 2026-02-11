@@ -1407,7 +1407,7 @@ export function TranscriptPanel({
                       background: `linear-gradient(90deg, rgba(59,130,246,0.15) ${segProgress * 100}%, transparent ${segProgress * 100}%)`,
                       borderRadius: '2px',
                     } : undefined}
-                    title="Click to seek · Hold to copy with timestamp"
+                    title={`${seg.offset < 60 ? `${Math.round(seg.offset)}s` : `${Math.floor(seg.offset / 60)}m ${Math.round(seg.offset % 60)}s`} into video · Click to seek · Hold to copy`}
                   >
                     {typeof highlightedText === 'string' ? highlightedText : highlightedText}
                   </button>

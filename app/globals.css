@@ -62,6 +62,14 @@ body {
   animation: typingDot 1.4s infinite;
 }
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
 .typing-dot:nth-child(2) {
   animation-delay: 0.2s;
 }

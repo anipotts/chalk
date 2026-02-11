@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 80 (Completed)
+- [x] Transcript Segment Hover Time Tooltip — show "Xm Xs into video" on segment hover
+- [x] Chat Longest Response Badge — show max word count badge in chat header
+- [x] Home Page URL Input Shake — shake animation on invalid URL submit
+- [x] Build verification PASSED
+
 ## Wave 79 (Completed)
 - [x] Transcript Active Chapter Label — show current chapter name in header when following along
 - [x] Chat Average Response Time — show avg AI response time badge in chat header
