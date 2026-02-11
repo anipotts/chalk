@@ -1615,6 +1615,21 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatMed = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatMed) {
+                            const aiMsgsMed: { role: string; content: string }[] = JSON.parse(chatMed).filter((m: { role: string; content: string }) => m.role === 'assistant' && m.content);
+                            if (aiMsgsMed.length >= 3) {
+                              const wcs = aiMsgsMed.map(m => m.content.split(/\s+/).filter(Boolean).length).sort((a, b) => a - b);
+                              const mid = Math.floor(wcs.length / 2);
+                              const median = wcs.length % 2 ? wcs[mid] : Math.round((wcs[mid - 1] + wcs[mid]) / 2);
+                              if (median >= 10) return <span className="text-[8px] text-orange-400/40 tabular-nums" title={`Median AI response length: ${median} words across ${aiMsgsMed.length} responses`}>med {median}w</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatRatio = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatRatio) {
                             const allRatio: { role: string }[] = JSON.parse(chatRatio);

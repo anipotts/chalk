@@ -1090,6 +1090,12 @@ Status: RUNNING
 - [x] Home Page Video Card Unique Question Words — "X unique words" badge showing unique non-stopword words across questions
 - [x] Build verification PASSED
 
+### Wave 163 — Contrast marker detection, analogy badge, median response length
+- [x] Transcript Segment Contrast Marker Detection — "vs" indicator when segment contains contrast or opposition language (on the other hand, in contrast, conversely, however)
+- [x] Chat Message Analogy Badge — "analogy" badge on AI messages containing analogies (think of it like, similar to how, just like, it's like)
+- [x] Home Page Video Card Median Response Length — "med Xw" badge showing median AI response word count
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

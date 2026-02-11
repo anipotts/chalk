@@ -1711,6 +1711,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(very very|really really|so so|again and again|over and over|more and more|bigger and bigger|better and better)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains repetition for emphasis">2x</span>
                   )}
+                  {!compactMode && /\b(on the other hand|in contrast|conversely|nevertheless|however|whereas|unlike|on the contrary)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-red-400/30" title="Contains contrast or opposition language">vs</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
