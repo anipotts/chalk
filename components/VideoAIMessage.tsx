@@ -365,7 +365,8 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
               const mins = Math.floor(ago / 60000);
               if (mins < 1) return null;
               const label = mins < 60 ? `${mins}m ago` : `${Math.floor(mins / 60)}h ago`;
-              return <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] text-slate-700 ml-1">{label}</span>;
+              const exactTime = new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              return <span className="opacity-0 group-hover:opacity-100 transition-opacity text-[9px] text-slate-700 ml-1 cursor-pointer hover:text-slate-500" title={`Sent at ${exactTime} — click to copy`} onClick={() => navigator.clipboard.writeText(exactTime)}>{label}</span>;
             })()}
             {/* AI Confidence indicator */}
             {(() => {

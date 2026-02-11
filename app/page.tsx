@@ -200,6 +200,8 @@ export default function Home() {
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [dailyGoal] = useState(() => getDailyGoal());
   const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [lastSessionAgo, setLastSessionAgo] = useState<string | null>(null);
   const [totalWordsLearned, setTotalWordsLearned] = useState(0);
   const [clipboardUrl, setClipboardUrl] = useState<string | null>(null);
@@ -318,7 +320,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-chalk-bg flex flex-col">
+    <div className="min-h-[100dvh] bg-chalk-bg flex flex-col overflow-y-auto h-[100dvh]" onScroll={(e) => { const el = e.currentTarget; setShowScrollTop(el.scrollTop > 300); }} ref={scrollContainerRef}>
       {/* Hero with animated gradient */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-16 relative overflow-hidden">
         {/* Animated background gradient */}
@@ -1013,6 +1015,18 @@ export default function Home() {
         </a>
       </div>
       <p className="text-[9px] text-slate-700 text-center pb-2">Chalk {new Date().getFullYear()}</p>
+      {showScrollTop && (
+        <button
+          onClick={() => scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="fixed bottom-6 right-6 z-50 w-8 h-8 rounded-full bg-chalk-surface border border-chalk-border/40 text-slate-400 hover:text-chalk-text hover:bg-chalk-surface/80 transition-all shadow-lg flex items-center justify-center"
+          title="Scroll to top"
+          aria-label="Scroll to top"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
+            <path fillRule="evenodd" d="M8 14a.75.75 0 0 1-.75-.75V4.56L4.22 7.59a.75.75 0 0 1-1.06-1.06l4.25-4.25a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1-1.06 1.06L8.75 4.56v8.69A.75.75 0 0 1 8 14Z" clipRule="evenodd" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

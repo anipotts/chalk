@@ -683,6 +683,11 @@ export function TranscriptPanel({
                 {viewMode === 'chapters' && chapters.length > 0 && <span className="text-slate-700"> {chapters.length} ch</span>}
               </span>
             )}
+            {viewMode === 'transcript' && activeIndex >= 0 && activeIndex < segments.length && (
+              <span className="hidden sm:block text-[9px] text-slate-600 truncate max-w-[180px]" title={segments[activeIndex].text}>
+                {segments[activeIndex].text.length > 40 ? segments[activeIndex].text.slice(0, 40).trim() + '\u2026' : segments[activeIndex].text}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {viewMode === 'transcript' && segments.length > 10 && (
