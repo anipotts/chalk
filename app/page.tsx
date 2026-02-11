@@ -1600,6 +1600,34 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatSKE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatSKE) {
+                            const allSKE: { role: string; content?: string }[] = JSON.parse(chatSKE);
+                            const exSzSK: number[] = [];
+                            for (let i = 0; i < allSKE.length - 1; i++) {
+                              if (allSKE[i].role === 'user' && allSKE[i + 1]?.role === 'assistant') {
+                                const uw = (allSKE[i].content || '').split(/\s+/).filter(Boolean).length;
+                                const aw = (allSKE[i + 1].content || '').split(/\s+/).filter(Boolean).length;
+                                exSzSK.push(uw + aw);
+                              }
+                            }
+                            if (exSzSK.length >= 4) {
+                              const mean = exSzSK.reduce((a, b) => a + b, 0) / exSzSK.length;
+                              const sorted = [...exSzSK].sort((a, b) => a - b);
+                              const median = sorted.length % 2 === 0 ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2 : sorted[Math.floor(sorted.length / 2)];
+                              const variance = exSzSK.reduce((a, b) => a + (b - mean) ** 2, 0) / exSzSK.length;
+                              const sd = Math.sqrt(variance);
+                              if (sd > 0) {
+                                const skew = Math.round((3 * (mean - median)) / sd * 10) / 10;
+                                if (Math.abs(skew) >= 0.5) return <span className="text-[8px] text-fuchsia-400/40 tabular-nums" title={`Pearson skewness: ${skew} across ${exSzSK.length} exchanges`}>{skew} skw</span>;
+                              }
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatCVE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatCVE) {
                             const allCVE: { role: string; content?: string }[] = JSON.parse(chatCVE);

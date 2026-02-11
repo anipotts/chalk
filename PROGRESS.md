@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 224 — Deliberative language detection, inferential badge, skewness words per exchange
+- [x] TranscriptPanel: deliberative language detection — "⚖" in fuchsia-400/30, regex for after careful thought/upon deliberation/having considered/weighing the options/on reflection/after much thought/with due consideration/taking everything into account/all things considered/on second thought
+- [x] ChatOverlay: inferential badge — "inferential" in fuchsia-500/10, detects we can infer/it follows that/this implies/from this we gather/the evidence suggests/it can be deduced/logically speaking/by extension/it stands to reason/drawing from this
+- [x] Home page: skewness of words per exchange — "X skw" in fuchsia-400/40, Pearson skewness (3*(mean-median)/sd) across ≥4 exchanges, shown when |skew| ≥ 0.5
+- [x] Build verification PASSED
+
 ### Wave 223 — Appositional language detection, evaluative badge, CV words per exchange
 - [x] TranscriptPanel: appositional language detection — "≈" in violet-400/30, regex for that is/in other words/namely/i.e./e.g./for instance/for example/such as/to illustrate/to wit
 - [x] ChatOverlay: evaluative badge — "evaluative" in violet-500/10, detects in my assessment/upon evaluation/after weighing/on balance/when assessed/judging by/by any measure/from a critical standpoint/objectively speaking/upon reflection
