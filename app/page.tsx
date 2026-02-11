@@ -911,7 +911,14 @@ export default function Home() {
                             const lastQ = [...msgs].reverse().find((m: { role: string }) => m.role === 'user');
                             if (lastQ) {
                               const preview = lastQ.content.length > 40 ? lastQ.content.slice(0, 40) + '...' : lastQ.content;
-                              return <span className="text-[9px] text-slate-600 truncate" title={lastQ.content}>Q: {preview}</span>;
+                              const lastAI = [...msgs].reverse().find((m: { role: string }) => m.role === 'assistant');
+                              const aiPreview = lastAI ? (lastAI.content.length > 50 ? lastAI.content.slice(0, 50).trim() + '...' : lastAI.content) : null;
+                              return (
+                                <>
+                                  <span className="text-[9px] text-slate-600 truncate" title={lastQ.content}>Q: {preview}</span>
+                                  {aiPreview && <span className="text-[8px] text-slate-700 truncate block max-w-[200px]" title={lastAI.content}>A: {aiPreview}</span>}
+                                </>
+                              );
                             }
                           }
                         } catch { /* ignore */ }

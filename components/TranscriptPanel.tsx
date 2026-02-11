@@ -134,6 +134,16 @@ export function TranscriptPanel({
   const hlActive = highlightColor === 'blue' ? 'bg-blue-500/10 border-l-blue-400' : highlightColor === 'green' ? 'bg-emerald-500/10 border-l-emerald-400' : 'bg-purple-500/10 border-l-purple-400';
   const hlMatch = highlightColor === 'blue' ? 'bg-blue-500/20 border-l-blue-400 ring-1 ring-blue-400/30' : highlightColor === 'green' ? 'bg-emerald-500/20 border-l-emerald-400 ring-1 ring-emerald-400/30' : 'bg-purple-500/20 border-l-purple-400 ring-1 ring-purple-400/30';
   const [compactMode, setCompactMode] = useState(false);
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; offset: number; text: string } | null>(null);
+
+  // Dismiss context menu on click away
+  useEffect(() => {
+    if (!ctxMenu) return;
+    const dismiss = () => setCtxMenu(null);
+    window.addEventListener('click', dismiss);
+    window.addEventListener('scroll', dismiss, true);
+    return () => { window.removeEventListener('click', dismiss); window.removeEventListener('scroll', dismiss, true); };
+  }, [ctxMenu]);
 
   // Load starred segments from localStorage
   useEffect(() => {
@@ -1411,6 +1421,7 @@ export function TranscriptPanel({
                           : 'border-l-2 border-l-transparent'
                   }`}
                   style={isActive ? { animation: 'activeBorderPulse 2s ease-in-out infinite' } : undefined}
+                  onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, offset: seg.offset, text: seg.text }); }}
                 >
                   {/* Key moment indicator dot */}
                   {!compactMode && (() => {
@@ -1702,6 +1713,33 @@ export function TranscriptPanel({
             </svg>
             Jump to current
           </button>
+        </div>
+      )}
+      {/* Right-click context menu */}
+      {ctxMenu && (
+        <div
+          className="fixed z-[100] min-w-[140px] py-1 rounded-lg bg-chalk-surface border border-chalk-border/40 shadow-xl backdrop-blur-sm"
+          style={{ left: ctxMenu.x, top: ctxMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            className="w-full text-left px-3 py-1.5 text-[10px] text-slate-300 hover:bg-white/[0.06] transition-colors"
+            onClick={() => { navigator.clipboard.writeText(ctxMenu.text); setCtxMenu(null); }}
+          >Copy Text</button>
+          <button
+            className="w-full text-left px-3 py-1.5 text-[10px] text-slate-300 hover:bg-white/[0.06] transition-colors"
+            onClick={() => { navigator.clipboard.writeText(`[${formatTimestamp(ctxMenu.offset)}] ${ctxMenu.text}`); setCtxMenu(null); }}
+          >Copy with Timestamp</button>
+          {onAskAbout && (
+            <button
+              className="w-full text-left px-3 py-1.5 text-[10px] text-chalk-accent hover:bg-white/[0.06] transition-colors"
+              onClick={() => { onAskAbout(ctxMenu.offset, ctxMenu.text); setCtxMenu(null); }}
+            >Ask AI About This</button>
+          )}
+          <button
+            className="w-full text-left px-3 py-1.5 text-[10px] text-slate-300 hover:bg-white/[0.06] transition-colors"
+            onClick={() => { onSeek(ctxMenu.offset); setCtxMenu(null); }}
+          >Jump to {formatTimestamp(ctxMenu.offset)}</button>
         </div>
       )}
       </div>

@@ -1156,11 +1156,20 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
               </div>
             )}
 
-            {/* Conversation title from first user question */}
+            {/* Conversation title — updates to latest topic when questions diverge */}
             {messages.length > 0 && (() => {
-              const first = messages.find((m) => m.role === 'user');
-              if (!first) return null;
-              const title = first.content.length > 40 ? first.content.slice(0, 40).trim() + '...' : first.content;
+              const userMsgs = messages.filter((m) => m.role === 'user');
+              if (userMsgs.length === 0) return null;
+              let source = userMsgs[0];
+              if (userMsgs.length >= 3) {
+                const firstWords = new Set(userMsgs[0].content.toLowerCase().split(/\s+/).filter((w) => w.length > 3));
+                const lastWords = userMsgs[userMsgs.length - 1].content.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
+                const overlap = lastWords.filter((w) => firstWords.has(w)).length;
+                if (firstWords.size > 0 && lastWords.length > 0 && overlap / Math.max(firstWords.size, lastWords.length) < 0.3) {
+                  source = userMsgs[userMsgs.length - 1];
+                }
+              }
+              const title = source.content.length > 40 ? source.content.slice(0, 40).trim() + '...' : source.content;
               return (
                 <div className="px-4 py-1 border-b border-chalk-border/10">
                   <span className="text-[10px] text-slate-600 italic truncate block">{title}</span>

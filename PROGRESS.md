@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 99 (Completed)
+- [x] Transcript Segment Right-Click Context Menu — custom context menu with Copy, Timestamp Copy, Ask AI, Jump
+- [x] Chat Conversation Auto-Title Update — title updates to latest topic when questions diverge
+- [x] Home Page Video Card Last AI Preview — show snippet of most recent AI response on cards
+- [x] Build verification PASSED
+
 ## Wave 98 (Completed)
 - [x] Transcript Active Segment Pulse Border — pulsing left border animation on current segment
 - [x] Chat Conversation Export as JSON — JSON download button in export options
