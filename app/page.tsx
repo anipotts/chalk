@@ -1172,6 +1172,19 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const lastVisit = typeof window !== 'undefined' ? parseInt(localStorage.getItem(`chalk-video-lastvisit-${video.id}`) || '0', 10) : 0;
+                          if (lastVisit > 0) {
+                            const ago = Date.now() - lastVisit;
+                            const days = ago / 86400000;
+                            if (days < 1) return <span className="text-[8px] text-green-400/50 font-medium" title="Studied today">active</span>;
+                            if (days < 7) return <span className="text-[8px] text-yellow-400/40" title={`Last studied ${Math.floor(days)} day(s) ago`}>recent</span>;
+                            return <span className="text-[8px] text-slate-600/40" title={`Last studied ${Math.floor(days)} days ago`}>cold</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

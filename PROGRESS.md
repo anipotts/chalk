@@ -886,6 +886,12 @@ Status: RUNNING
 - [x] Home Page Session Duration — live session timer in footer
 - [x] Build verification PASSED
 
+## Wave 129 (Completed)
+- [x] Transcript Segment Cause-Effect Detection — ⟹ icon on segments with causal language (because, therefore, leads to, etc.)
+- [x] Chat Message Multi-Citation Badge — enhanced refs badge with "cross-ref" when timestamps span 2+ minutes of video
+- [x] Home Page Video Card Conversation Recency Score — active/recent/cold badge based on last visit timestamp
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
