@@ -1600,6 +1600,21 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatMRW = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatMRW) {
+                            const allMRW: { role: string; content?: string }[] = JSON.parse(chatMRW);
+                            const aiWc = allMRW.filter(m => m.role === 'assistant' && m.content).map(m => m.content!.split(/\s+/).filter(Boolean).length).sort((a, b) => a - b);
+                            if (aiWc.length >= 2) {
+                              const mid = Math.floor(aiWc.length / 2);
+                              const median = aiWc.length % 2 ? aiWc[mid] : Math.round((aiWc[mid - 1] + aiWc[mid]) / 2);
+                              if (median >= 5) return <span className="text-[8px] text-teal-400/40 tabular-nums" title={`Median AI response: ${median} words`}>{median} w median</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatTEC = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatTEC) {
                             const allTEC: { role: string; content?: string }[] = JSON.parse(chatTEC);
