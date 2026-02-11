@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 168 — Temporal marker detection, generalization badge, average words per question
+- [x] Transcript Segment Temporal Marker Detection — "⏱" indicator when segment contains temporal markers (at this point, previously, later on, going forward, in the meantime)
+- [x] Chat Message Generalization Badge — "generalizes" badge on AI messages containing generalization language (in general, broadly speaking, as a rule, typically)
+- [x] Home Page Video Card Average Words Per Question — "avg Xw/q" badge showing average word count per user question
+- [x] Build verification PASSED
+
 ### Wave 167 — Adversative connector detection, hedging badge, topic diversity
 - [x] Transcript Segment Adversative Connector Detection — "⊗" indicator when segment contains adversative language (however, nevertheless, on the contrary, nonetheless, despite)
 - [x] Chat Message Hedging Badge — "hedges" badge on AI messages containing hedging language (I think, in my opinion, it seems, arguably, I believe)

@@ -1627,6 +1627,21 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatAWQ = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatAWQ) {
+                            const allAWQ: { role: string; content?: string }[] = JSON.parse(chatAWQ);
+                            const userMsgsAWQ = allAWQ.filter(m => m.role === 'user' && m.content);
+                            if (userMsgsAWQ.length >= 2) {
+                              const totalWords = userMsgsAWQ.reduce((sum, m) => sum + m.content!.split(/\s+/).filter(Boolean).length, 0);
+                              const avg = (totalWords / userMsgsAWQ.length).toFixed(1);
+                              return <span className="text-[8px] text-violet-400/40 tabular-nums" title={`${totalWords} total words across ${userMsgsAWQ.length} questions = ${avg} avg`}>avg {avg}w/q</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatQF = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatQF) {
                             const allQF: { role: string; timestamp?: number }[] = JSON.parse(chatQF);
