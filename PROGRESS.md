@@ -514,6 +514,12 @@ Status: RUNNING
 - [x] Home Page Shortcut Hints — Enter/Esc keyboard hints below URL input
 - [x] Build verification PASSED
 
+## Wave 67 (Completed)
+- [x] Transcript Avg Sentence Length — words-per-sentence stat in header
+- [x] Chat Character Counter — live char count with color warning near limit
+- [x] Home Page Study Tips — rotating daily tips based on day of week
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

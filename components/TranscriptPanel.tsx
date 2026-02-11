@@ -818,6 +818,12 @@ export function TranscriptPanel({
               {stats.avgSentenceLength > 0 && (
                 <span className="hidden sm:inline" title={`Average ${stats.avgSentenceLength} words per sentence`}> · ~{stats.avgSentenceLength} w/s</span>
               )}
+              {(() => {
+                const lastSeg = segments[segments.length - 1];
+                const dur = lastSeg.offset + (lastSeg.duration || 0);
+                if (dur < 10) return null;
+                return <span className="hidden sm:inline"> · {formatTimestamp(dur)}</span>;
+              })()}
             </p>
             {sparklinePoints && (
               <svg width="50" height="14" viewBox="0 0 50 14" className="shrink-0 hidden sm:block" aria-label="Word density across video">

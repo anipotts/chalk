@@ -513,6 +513,7 @@ export default function Home() {
             <div className="flex items-center justify-center gap-2 mb-3">
               <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wider">
                 Recent Videos
+                <span className="ml-1 text-[9px] text-slate-600 font-normal normal-case">{recentVideos.length}</span>
               </h3>
               {recentVideos.length > 3 && (
                 <>

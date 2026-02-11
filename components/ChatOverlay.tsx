@@ -326,6 +326,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
   const [chatSearchOpen, setChatSearchOpen] = useState(false);
   const [inputHistoryIdx, setInputHistoryIdx] = useState(-1);
   const [ctxMenu, setCtxMenu] = useState<{ msgId: string; x: number; y: number } | null>(null);
+  const [clearConfirm, setClearConfirm] = useState(false);
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(() => {
     if (!videoId || typeof window === 'undefined') return new Set();
     try {
@@ -982,15 +983,22 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                       </>
                     )}
                     <button
-                      onClick={() => { setMessages([]); setInput(''); saveChatHistory(videoId, []); }}
-                      className="flex items-center gap-1 px-2 py-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors text-[10px]"
+                      onClick={() => {
+                        if (clearConfirm) {
+                          setMessages([]); setInput(''); saveChatHistory(videoId, []); setClearConfirm(false);
+                        } else {
+                          setClearConfirm(true);
+                          setTimeout(() => setClearConfirm(false), 2000);
+                        }
+                      }}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-md transition-colors text-[10px] ${clearConfirm ? 'text-red-400 bg-red-500/10' : 'text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]'}`}
                       aria-label="Clear chat"
                       title="Clear conversation"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
                         <path fillRule="evenodd" d="M5 3.25V4H2.75a.75.75 0 0 0 0 1.5h.3l.815 8.15A1.5 1.5 0 0 0 5.357 15h5.285a1.5 1.5 0 0 0 1.493-1.35l.815-8.15h.3a.75.75 0 0 0 0-1.5H11v-.75A2.25 2.25 0 0 0 8.75 1h-1.5A2.25 2.25 0 0 0 5 3.25Zm2.25-.75a.75.75 0 0 0-.75.75V4h3v-.75a.75.75 0 0 0-.75-.75h-1.5ZM6.05 6a.75.75 0 0 1 .787.713l.275 5.5a.75.75 0 0 1-1.498.075l-.275-5.5A.75.75 0 0 1 6.05 6Zm3.9 0a.75.75 0 0 1 .712.787l-.275 5.5a.75.75 0 0 1-1.498-.075l.275-5.5A.75.75 0 0 1 9.95 6Z" clipRule="evenodd" />
                       </svg>
-                      Clear
+                      {clearConfirm ? 'Confirm?' : 'Clear'}
                     </button>
                   </>
                 )}
