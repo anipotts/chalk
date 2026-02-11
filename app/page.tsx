@@ -1347,6 +1347,20 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatQpm = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          const durQpm = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-duration-${video.id}`) || '0') : 0;
+                          if (chatQpm && durQpm > 60) {
+                            const qCount = JSON.parse(chatQpm).filter((m: { role: string }) => m.role === 'user').length;
+                            if (qCount >= 3) {
+                              const qpm = (qCount / (durQpm / 60)).toFixed(1);
+                              if (parseFloat(qpm) >= 0.5) return <span className="text-[8px] text-violet-400/40 tabular-nums" title={`${qCount} questions across ${Math.round(durQpm / 60)} min`}>{qpm} q/min</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

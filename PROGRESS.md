@@ -970,6 +970,12 @@ Status: RUNNING
 - [x] Home Page Video Card Progress Speed — "N%/visit" badge showing average progress per visit
 - [x] Build verification PASSED
 
+### Wave 143 — Concession language detection, disclaimer badge, questions per minute
+- [x] Transcript Segment Concession Language Detection — "yet" indicator when segment contains concession language (admittedly, to be fair, nevertheless, even so)
+- [x] Chat Message Disclaimer Badge — "disclaimer" badge on AI messages with caveats (keep in mind, caveat, worth mentioning, be aware)
+- [x] Home Page Video Card Questions per Minute — "N q/min" badge showing question frequency relative to video duration
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

@@ -1646,6 +1646,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(first of all|secondly|thirdly|finally|in the beginning|at the end|initially|eventually|subsequently|after that)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-orange-400/30" title="Contains temporal or sequential language">seq</span>
                   )}
+                  {!compactMode && /\b(admittedly|granted|I understand|fair point|to be fair|having said that|nevertheless|nonetheless|even so)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-fuchsia-400/30" title="Contains concession or acknowledgment language">yet</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
