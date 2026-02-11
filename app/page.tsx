@@ -657,6 +657,7 @@ export default function Home() {
                   } catch { /* ignore */ }
                   return (
                     <button key={video.id} onClick={() => handleRecentClick(video)} className="group/card w-full flex items-center gap-2 px-3 py-1 rounded-lg hover:bg-chalk-surface/40 transition-colors text-left relative">
+                      <img src={`https://i.ytimg.com/vi/${video.id}/default.jpg`} alt="" className="w-8 h-6 object-cover rounded shrink-0 bg-chalk-surface" />
                       <span className="text-[11px] text-chalk-text truncate flex-1">{video.title || video.url}</span>
                       {durLabel && <span className="text-[9px] text-slate-600 font-mono tabular-nums shrink-0">{durLabel}</span>}
                       {watchPct > 0.9 && <span className="text-[9px] text-emerald-500 shrink-0">done</span>}

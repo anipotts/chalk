@@ -1390,6 +1390,23 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                             {tmpl}
                           </button>
                         ))}
+                        {/* Retry/regenerate last response */}
+                        <button
+                          onClick={() => {
+                            const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
+                            if (lastUserMsg) {
+                              setMessages((prev) => prev.filter((m) => m.id !== msg.id));
+                              setTimeout(() => submitMessage(lastUserMsg.content), 50);
+                            }
+                          }}
+                          className="px-2 py-0.5 rounded-full text-[9px] text-slate-500 border border-chalk-border/20 hover:text-amber-400 hover:border-amber-400/30 transition-colors flex items-center gap-1"
+                          title="Regenerate response"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5">
+                            <path fillRule="evenodd" d="M13.836 2.477a.75.75 0 0 1 .75.75v3.182a.75.75 0 0 1-.75.75h-3.182a.75.75 0 0 1 0-1.5h1.37l-.84-.841a4.5 4.5 0 0 0-7.08.932.75.75 0 0 1-1.3-.75 6 6 0 0 1 9.44-1.242l.842.84V3.227a.75.75 0 0 1 .75-.75Zm-.911 7.5A.75.75 0 0 1 13.199 11a6 6 0 0 1-9.44 1.241l-.84-.84v1.371a.75.75 0 0 1-1.5 0V9.591a.75.75 0 0 1 .75-.75H5.35a.75.75 0 0 1 0 1.5H3.98l.841.841a4.5 4.5 0 0 0 7.08-.932.75.75 0 0 1 1.025-.273Z" clipRule="evenodd" />
+                          </svg>
+                          Retry
+                        </button>
                       </div>
                     </>
                   )}

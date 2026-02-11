@@ -746,7 +746,7 @@ export function TranscriptPanel({
           {matchCount > 0 && (
             <>
               <span className="text-[10px] text-slate-500 shrink-0 tabular-nums">
-                {searchMatchIndex + 1}/{matchCount}
+                {searchMatchIndex + 1}/{matchCount} match{matchCount !== 1 ? 'es' : ''}
               </span>
               <button
                 onClick={goToPrevMatch}
@@ -769,7 +769,7 @@ export function TranscriptPanel({
             </>
           )}
           {search && !matchCount && (
-            <span className="text-[10px] text-slate-500 shrink-0">0 results</span>
+            <span className="text-[10px] text-slate-500 shrink-0">0 of {segments.length}</span>
           )}
           {starred.size > 0 && (
             <button

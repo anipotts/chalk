@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 71 (Completed)
+- [x] Transcript Search Result Count — enhanced match counter with "matches" label and total context
+- [x] Chat Message Retry — regenerate button on last AI response to resubmit question
+- [x] Home Page Video Thumbnails — tiny thumbnails in list view alongside existing grid thumbnails
+- [x] Build verification PASSED
+
 ## Wave 70 (Completed)
 - [x] Transcript Section Summary Count — question count per chapter in chapters view
 - [x] Chat Input Suggestions — autocomplete dropdown from past questions while typing
