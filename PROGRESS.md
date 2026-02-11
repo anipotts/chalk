@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 202 — Contrastive language detection, pedagogical badge, longest question
+- [x] TranscriptPanel: contrastive language detection — "⊘" in amber-400/30, regex for however/but/although/despite/whereas/instead/on the other hand/nevertheless
+- [x] ChatOverlay: pedagogical badge — "pedagogical" in lime-500/10, detects think of it as/imagine/picture this/consider this/remember that/keep in mind/notice how/pay attention to
+- [x] Home page video card: longest question — "X word max Q" in emerald-400/40, variable chatLQ2, finds longest user message by word count (>=3 msgs, >=8 words)
+- [x] Build verification PASSED
+
 ### Wave 201 — Sequential language detection, summarizing badge, topic shift count
 - [x] TranscriptPanel: sequential language detection — "→" in sky-400/30, regex for first/second/third/next/then/finally/lastly/step
 - [x] ChatOverlay: summarizing badge — "summarizing" in amber-500/10, detects in summary/to summarize/overall/in conclusion/the key point/essentially/in short/to sum up
