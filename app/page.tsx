@@ -1403,6 +1403,20 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatCd = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatCd) {
+                            const aiMsgsCd: { role: string; content: string }[] = JSON.parse(chatCd).filter((m: { role: string; content: string }) => m.role === 'assistant' && m.content);
+                            if (aiMsgsCd.length >= 3) {
+                              const totalCites = aiMsgsCd.reduce((s, m) => s + (m.content.match(/\[\d+:\d{2}\]/g) || []).length, 0);
+                              const avgCite = (totalCites / aiMsgsCd.length).toFixed(1);
+                              if (parseFloat(avgCite) >= 1) return <span className="text-[8px] text-sky-400/40 tabular-nums" title={`${totalCites} timestamp citations across ${aiMsgsCd.length} responses`}>{avgCite} cite/resp</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

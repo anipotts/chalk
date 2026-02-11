@@ -1663,6 +1663,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(coming up|we'll see|later in|stay tuned|in a moment|up next|we'll discuss|we'll cover|we'll explore)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-blue-400/30" title="Previews or teases upcoming content">&rarr;</span>
                   )}
+                  {!compactMode && /\b(to summarize|in summary|to recap|let's review|the takeaway|key points|wrapping up|in conclusion|overall)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-slate-400/30" title="Contains summary or recap language">&Sigma;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

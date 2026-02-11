@@ -994,6 +994,12 @@ Status: RUNNING
 - [x] Home Page Video Card AI Words per Response — "avg Nw/resp" badge showing average AI response length
 - [x] Build verification PASSED
 
+### Wave 147 — Summary/recap detection, teaching badge, citation density
+- [x] Transcript Segment Summary/Recap Detection — "Σ" indicator when segment contains summary language (to summarize, key points, wrapping up)
+- [x] Chat Message Teaching Badge — "teaching" badge on AI messages with explanatory tone (let me teach, the concept is, think about it)
+- [x] Home Page Video Card Timestamp Citation Density — "N cite/resp" badge showing average timestamp citations per AI response
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

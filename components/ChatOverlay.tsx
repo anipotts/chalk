@@ -1669,6 +1669,12 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           );
                           return null;
                         })()}
+                        {msg.role === 'assistant' && msg.content.length > 40 && (() => {
+                          if (/\b(let me teach|here's how|the concept is|to understand|think about it|the idea behind|the principle|fundamentally)\b/i.test(msg.content)) return (
+                            <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[7px] font-medium bg-purple-500/10 text-purple-400/50 border border-purple-500/10" title="Adopts a teaching or explanatory tone">teaching</span>
+                          );
+                          return null;
+                        })()}
                         {msg.role === 'assistant' && msg.content.split(/\s+/).filter(Boolean).length > 100 && (() => {
                           const wc = msg.content.split(/\s+/).filter(Boolean).length;
                           const maxWc = Math.max(...messages.filter(m => m.role === 'assistant' && m.content).map(m => m.content.split(/\s+/).filter(Boolean).length));
