@@ -1792,6 +1792,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(excellent|terrible|outstanding|poor|remarkable|mediocre|impressive|disappointing)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains evaluative language">&#9733;</span>
                   )}
+                  {!compactMode && /\b(should|must|need to|have to|ought to|required|essential|mandatory)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-indigo-400/30" title="Contains prescriptive language">&rarr;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

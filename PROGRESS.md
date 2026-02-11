@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 190 — Prescriptive language detection, clarifying badge, user question range
+- [x] TranscriptPanel: prescriptive language detection — "→" in indigo-400/30, regex for should/must/need to/have to/ought to/required/essential/mandatory
+- [x] ChatOverlay: clarifying badge — "clarifying" in emerald-500/10, detects to clarify/in other words/put simply/what this means/to be clear/specifically/more precisely/let me explain
+- [x] Home page video card: user question range — "X-Y q word range" in cyan-400/40, variable chatQR2, computes min-max word count among user messages (>=2 msgs)
+- [x] Build verification PASSED
+
 ### Wave 189 — Evaluative language detection, analogical badge, AI response range
 - [x] TranscriptPanel: evaluative language detection — "★" in yellow-400/30, regex for excellent/terrible/outstanding/poor/remarkable/mediocre/impressive/disappointing
 - [x] ChatOverlay: analogical badge — "analogical" in teal-500/10, detects like a/similar to/just as/think of it as/analogous/resembles/akin to/comparable to
