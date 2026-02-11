@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 200 — Exemplifying language detection, exploratory badge, conversation balance
+- [x] TranscriptPanel: exemplifying language detection — "eg" in rose-400/30, regex for for example/for instance/such as/like/namely/including/e.g./i.e.
+- [x] ChatOverlay: exploratory badge — "exploratory" in violet-500/10, detects let's explore/let's look at/let's consider/let's examine/diving into/looking at/exploring/delving into
+- [x] Home page video card: conversation balance — "1:N balance" in fuchsia-400/40, variable chatCB, computes ratio of AI words to user words (>=4 msgs, ratio >= 1)
+- [x] Build verification PASSED
+
 ### Wave 199 — Qualifying language detection, reassuring badge, AI vocabulary richness
 - [x] TranscriptPanel: qualifying language detection — "~" in purple-400/30, regex for somewhat/fairly/quite/rather/relatively/slightly/partially/to some extent
 - [x] ChatOverlay: reassuring badge — "reassuring" in cyan-500/10, detects don't worry/no worries/it's okay/perfectly normal/common question/easy to understand/straightforward/simple enough

@@ -1,0 +1,240 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]:
+        - link "Chalk" [ref=e5] [cursor=pointer]:
+          - /url: /
+        - generic [ref=e6]: "|"
+        - generic "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)" [ref=e8]
+        - generic [ref=e9]:
+          - button "Save to collection" [ref=e11] [cursor=pointer]:
+            - img [ref=e12]
+          - button "Keyboard shortcuts" [ref=e15] [cursor=pointer]: "?"
+          - button "Transcript" [ref=e16] [cursor=pointer]
+          - button "Chat" [active] [ref=e17] [cursor=pointer]
+      - region "Video Player - Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)" [ref=e22]:
+        - iframe [ref=e24]:
+          - generic "YouTube Video Player" [ref=f1e3]:
+            - button "Copy link" [ref=f1e7] [cursor=pointer]:
+              - generic [ref=f1e8]:
+                - img
+              - generic [ref=f1e9]: Copy link
+            - link "Watch on www.youtube.com" [ref=f1e11] [cursor=pointer]:
+              - /url: https://www.youtube.com/watch?v=dQw4w9WgXcQ
+              - img
+        - generic [ref=e26]:
+          - generic:
+            - img
+    - generic [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - button "Transcript" [ref=e32] [cursor=pointer]
+            - button "Chapters" [ref=e33] [cursor=pointer]
+          - generic [ref=e35]: AI Transcribed
+        - textbox "Search transcript..." [ref=e37]
+        - paragraph [ref=e38]: ~369 words · ~2 min read
+      - paragraph [ref=e40]: AI-generated transcript — may contain errors
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - button "0:00" [ref=e44] [cursor=pointer]
+          - button "There are no strangers to love, you know the rules, and so do I." [ref=e45] [cursor=pointer]
+          - button "Ask about moment at 0:00" [ref=e46] [cursor=pointer]:
+            - img [ref=e47]
+        - generic [ref=e49]:
+          - button "0:26" [ref=e50] [cursor=pointer]
+          - button "I've no commitments for them to get up." [ref=e51] [cursor=pointer]
+          - button "Ask about moment at 0:26" [ref=e52] [cursor=pointer]:
+            - img [ref=e53]
+        - generic [ref=e55]:
+          - button "0:31" [ref=e56] [cursor=pointer]
+          - button "You won't get this wrong any other guy." [ref=e57] [cursor=pointer]
+          - button "Ask about moment at 0:31" [ref=e58] [cursor=pointer]:
+            - img [ref=e59]
+        - generic [ref=e61]:
+          - button "0:35" [ref=e62] [cursor=pointer]
+          - button "I just want to tell you how I feel like." [ref=e63] [cursor=pointer]
+          - button "Ask about moment at 0:35" [ref=e64] [cursor=pointer]:
+            - img [ref=e65]
+        - generic [ref=e67]:
+          - button "0:40" [ref=e68] [cursor=pointer]
+          - button "Gotta make you understand." [ref=e69] [cursor=pointer]
+          - button "Ask about moment at 0:40" [ref=e70] [cursor=pointer]:
+            - img [ref=e71]
+        - generic [ref=e73]:
+          - button "0:43" [ref=e74] [cursor=pointer]
+          - button "Never gonna give you up." [ref=e75] [cursor=pointer]
+          - button "Ask about moment at 0:43" [ref=e76] [cursor=pointer]:
+            - img [ref=e77]
+        - generic [ref=e79]:
+          - button "0:45" [ref=e80] [cursor=pointer]
+          - button "Never gonna let you down." [ref=e81] [cursor=pointer]
+          - button "Ask about moment at 0:45" [ref=e82] [cursor=pointer]:
+            - img [ref=e83]
+        - generic [ref=e85]:
+          - button "0:47" [ref=e86] [cursor=pointer]
+          - button "Never gonna run around it." [ref=e87] [cursor=pointer]
+          - button "Ask about moment at 0:47" [ref=e88] [cursor=pointer]:
+            - img [ref=e89]
+        - generic [ref=e91]:
+          - button "0:49" [ref=e92] [cursor=pointer]
+          - button "He's hurt you." [ref=e93] [cursor=pointer]
+          - button "Ask about moment at 0:49" [ref=e94] [cursor=pointer]:
+            - img [ref=e95]
+        - generic [ref=e97]:
+          - button "0:51" [ref=e98] [cursor=pointer]
+          - button "Never gonna make you cry." [ref=e99] [cursor=pointer]
+          - button "Ask about moment at 0:51" [ref=e100] [cursor=pointer]:
+            - img [ref=e101]
+        - generic [ref=e103]:
+          - button "0:53" [ref=e104] [cursor=pointer]
+          - button "Never gonna say goodbye." [ref=e105] [cursor=pointer]
+          - button "Ask about moment at 0:53" [ref=e106] [cursor=pointer]:
+            - img [ref=e107]
+        - generic [ref=e109]:
+          - button "0:55" [ref=e110] [cursor=pointer]
+          - button "Never gonna tell the lie and hurt you." [ref=e111] [cursor=pointer]
+          - button "Ask about moment at 0:55" [ref=e112] [cursor=pointer]:
+            - img [ref=e113]
+        - generic [ref=e115]:
+          - button "1:00" [ref=e116] [cursor=pointer]
+          - button "We've known each other for so long." [ref=e117] [cursor=pointer]
+          - button "Ask about moment at 1:00" [ref=e118] [cursor=pointer]:
+            - img [ref=e119]
+        - generic [ref=e121]:
+          - button "1:04" [ref=e122] [cursor=pointer]
+          - button "Your heart's been aching, but you're too shy to say it." [ref=e123] [cursor=pointer]
+          - button "Ask about moment at 1:04" [ref=e124] [cursor=pointer]:
+            - img [ref=e125]
+        - generic [ref=e127]:
+          - button "1:09" [ref=e128] [cursor=pointer]
+          - button "It's as if we've all known what's been going on." [ref=e129] [cursor=pointer]
+          - button "Ask about moment at 1:09" [ref=e130] [cursor=pointer]:
+            - img [ref=e131]
+        - generic [ref=e133]:
+          - button "1:13" [ref=e134] [cursor=pointer]
+          - button "We know the game I'm playing and if you ask me why I feel it." [ref=e135] [cursor=pointer]
+          - button "Ask about moment at 1:13" [ref=e136] [cursor=pointer]:
+            - img [ref=e137]
+        - generic [ref=e139]:
+          - button "1:22" [ref=e140] [cursor=pointer]
+          - button "Don't tell me all too bad to see." [ref=e141] [cursor=pointer]
+          - button "Ask about moment at 1:22" [ref=e142] [cursor=pointer]:
+            - img [ref=e143]
+        - generic [ref=e145]:
+          - button "1:25" [ref=e146] [cursor=pointer]
+          - button "Never gonna give you up." [ref=e147] [cursor=pointer]
+          - button "Ask about moment at 1:25" [ref=e148] [cursor=pointer]:
+            - img [ref=e149]
+        - generic [ref=e151]:
+          - button "1:27" [ref=e152] [cursor=pointer]
+          - button "Never gonna let you down." [ref=e153] [cursor=pointer]
+          - button "Ask about moment at 1:27" [ref=e154] [cursor=pointer]:
+            - img [ref=e155]
+        - generic [ref=e157]:
+          - button "1:29" [ref=e158] [cursor=pointer]
+          - button "Never gonna run around it." [ref=e159] [cursor=pointer]
+          - button "Ask about moment at 1:29" [ref=e160] [cursor=pointer]:
+            - img [ref=e161]
+        - generic [ref=e163]:
+          - button "1:32" [ref=e164] [cursor=pointer]
+          - button "He's hurt you." [ref=e165] [cursor=pointer]
+          - button "Ask about moment at 1:32" [ref=e166] [cursor=pointer]:
+            - img [ref=e167]
+        - generic [ref=e169]:
+          - button "1:34" [ref=e170] [cursor=pointer]
+          - button "Never gonna make you cry." [ref=e171] [cursor=pointer]
+          - button "Ask about moment at 1:34" [ref=e172] [cursor=pointer]:
+            - img [ref=e173]
+        - generic [ref=e175]:
+          - button "1:36" [ref=e176] [cursor=pointer]
+          - button "Never gonna say goodbye." [ref=e177] [cursor=pointer]
+          - button "Ask about moment at 1:36" [ref=e178] [cursor=pointer]:
+            - img [ref=e179]
+        - generic [ref=e181]:
+          - button "1:38" [ref=e182] [cursor=pointer]
+          - button "Never gonna tell the lie and hurt you." [ref=e183] [cursor=pointer]
+          - button "Ask about moment at 1:38" [ref=e184] [cursor=pointer]:
+            - img [ref=e185]
+        - generic [ref=e187]:
+          - button "1:42" [ref=e188] [cursor=pointer]
+          - button "Never gonna give you up." [ref=e189] [cursor=pointer]
+          - button "Ask about moment at 1:42" [ref=e190] [cursor=pointer]:
+            - img [ref=e191]
+        - generic [ref=e193]:
+          - button "1:44" [ref=e194] [cursor=pointer]
+          - button "Never gonna let you down." [ref=e195] [cursor=pointer]
+          - button "Ask about moment at 1:44" [ref=e196] [cursor=pointer]:
+            - img [ref=e197]
+        - generic [ref=e199]:
+          - button "1:46" [ref=e200] [cursor=pointer]
+          - button "Never gonna run around it." [ref=e201] [cursor=pointer]
+          - button "Ask about moment at 1:46" [ref=e202] [cursor=pointer]:
+            - img [ref=e203]
+        - generic [ref=e205]:
+          - button "1:48" [ref=e206] [cursor=pointer]
+          - button "He's hurt you." [ref=e207] [cursor=pointer]
+          - button "Ask about moment at 1:48" [ref=e208] [cursor=pointer]:
+            - img [ref=e209]
+        - generic [ref=e211]:
+          - button "1:50" [ref=e212] [cursor=pointer]
+          - button "Never gonna make you cry, Never gonna sing good night, Never gonna tell the bar and hurt you" [ref=e213] [cursor=pointer]
+          - button "Ask about moment at 1:50" [ref=e214] [cursor=pointer]:
+            - img [ref=e215]
+        - generic [ref=e217]:
+          - button "2:08" [ref=e218] [cursor=pointer]
+          - button "Never gonna give, Never gonna give, Never gonna give, Never gonna give, Never gonna give" [ref=e219] [cursor=pointer]
+          - button "Ask about moment at 2:08" [ref=e220] [cursor=pointer]:
+            - img [ref=e221]
+        - generic [ref=e223]:
+          - button "2:17" [ref=e224] [cursor=pointer]
+          - button "We've known each other for so long, Your heart's been aching but, You're just shy as to say" [ref=e225] [cursor=pointer]
+          - button "Ask about moment at 2:17" [ref=e226] [cursor=pointer]:
+            - img [ref=e227]
+        - generic [ref=e229]:
+          - button "2:25" [ref=e230] [cursor=pointer]
+          - button "It's like we both know what's been going on, We know the game and we're gonna play it" [ref=e231] [cursor=pointer]
+          - button "Ask about moment at 2:25" [ref=e232] [cursor=pointer]:
+            - img [ref=e233]
+        - generic [ref=e235]:
+          - button "2:33" [ref=e236] [cursor=pointer]
+          - button "I just wanna tell you how I feel, I gotta make you understand" [ref=e237] [cursor=pointer]
+          - button "Ask about moment at 2:33" [ref=e238] [cursor=pointer]:
+            - img [ref=e239]
+        - generic [ref=e241]:
+          - button "2:41" [ref=e242] [cursor=pointer]
+          - button "Never gonna give you up, Never gonna let you down, Never gonna run around it, Who's there to?" [ref=e243] [cursor=pointer]
+          - button "Ask about moment at 2:41" [ref=e244] [cursor=pointer]:
+            - img [ref=e245]
+        - generic [ref=e247]:
+          - button "2:49" [ref=e248] [cursor=pointer]
+          - button "Never gonna make you cry, Never gonna sing good night, Never gonna tell the bar and hurt you" [ref=e249] [cursor=pointer]
+          - button "Ask about moment at 2:49" [ref=e250] [cursor=pointer]:
+            - img [ref=e251]
+        - generic [ref=e253]:
+          - button "2:57" [ref=e254] [cursor=pointer]
+          - button "Never gonna give, Never gonna let you down, Never gonna run around it, Who's there to?" [ref=e255] [cursor=pointer]
+          - button "Ask about moment at 2:57" [ref=e256] [cursor=pointer]:
+            - img [ref=e257]
+        - generic [ref=e259]:
+          - button "3:07" [ref=e260] [cursor=pointer]
+          - button "Never gonna make you cry, Never gonna sing good night, Never gonna tell the bar and hurt you" [ref=e261] [cursor=pointer]
+          - button "Ask about moment at 3:07" [ref=e262] [cursor=pointer]:
+            - img [ref=e263]
+        - generic [ref=e265]:
+          - button "3:15" [ref=e266] [cursor=pointer]
+          - button "Never gonna give, Never gonna let you down, Never gonna run around it, Who's there to?" [ref=e267] [cursor=pointer]
+          - button "Ask about moment at 3:15" [ref=e268] [cursor=pointer]:
+            - img [ref=e269]
+        - generic [ref=e271]:
+          - button "3:23" [ref=e272] [cursor=pointer]
+          - button "Never gonna make you cry, Never gonna sing good night, Never gonna tell the bar and hurt you" [ref=e273] [cursor=pointer]
+          - button "Ask about moment at 3:23" [ref=e274] [cursor=pointer]:
+            - img [ref=e275]
+  - button "Open Next.js Dev Tools" [ref=e282] [cursor=pointer]:
+    - img [ref=e283]
+  - alert [ref=e286]
+```
