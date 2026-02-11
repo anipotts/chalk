@@ -1161,6 +1161,17 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const note = typeof window !== 'undefined' ? localStorage.getItem(`chalk-note-${video.id}`) : null;
+                          if (note && note.trim().length > 0) {
+                            const wc = note.trim().split(/\s+/).filter(Boolean).length;
+                            const color = wc >= 100 ? 'text-emerald-400/50' : wc >= 20 ? 'text-slate-400/40' : 'text-slate-600/40';
+                            return <span className={`text-[8px] ${color} tabular-nums`} title={`${wc} words in personal notes`}>{wc}w noted</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

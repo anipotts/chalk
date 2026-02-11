@@ -1539,6 +1539,15 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           );
                           return null;
                         })()}
+                        {msg.role === 'assistant' && msg.content.length > 80 && (() => {
+                          const words = msg.content.split(/\s+/).filter(Boolean);
+                          const techWords = words.filter((w) => w.length >= 8);
+                          const ratio = words.length > 0 ? techWords.length / words.length : 0;
+                          if (ratio >= 0.15 && techWords.length >= 5) return (
+                            <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[7px] font-medium bg-indigo-500/10 text-indigo-400/50 border border-indigo-500/10" title={`Technical density: ${Math.round(ratio * 100)}% long terms (${techWords.length}/${words.length})`}>tech</span>
+                          );
+                          return null;
+                        })()}
                         {msg.role === 'assistant' && (() => {
                           const refs = msg.content.match(/\[\d+:\d{2}\]/g);
                           if (refs && refs.length >= 2) return (

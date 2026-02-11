@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 128 (Completed)
+- [x] Transcript Segment Contrast Detection — "vs" indicator on segments with comparison/contrast language
+- [x] Chat Message Technical Term Density Badge — "tech" badge on AI responses with 15%+ long technical terms
+- [x] Home Page Video Card Note Length Indicator — "Nw noted" badge with brightness scaling by note depth
+- [x] Build verification PASSED
+
 ## Wave 127 (Completed)
 - [x] Transcript Segment Personal Pronoun Detection — "you" indicator on segments with 2+ second-person references
 - [x] Chat Message Step-by-Step Detection Badge — "steps" badge on AI responses with procedural step-by-step instructions
