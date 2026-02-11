@@ -1438,6 +1438,14 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     );
                     return null;
                   })()}
+                  {msg.role === 'user' && msg.content.trim().endsWith('?') && (() => {
+                    const lq = msg.content.toLowerCase();
+                    const type = /\b(what|which|who|where|when)\b/.test(lq) ? 'what' : /\b(why|how come|what caused)\b/.test(lq) ? 'why' : /\b(how|in what way|what steps)\b/.test(lq) ? 'how' : /\b(compare|vs\.?|versus|difference|differ|similarities)\b/.test(lq) ? 'compare' : null;
+                    if (!type) return null;
+                    const colors: Record<string, string> = { what: 'text-sky-400/40', why: 'text-purple-400/40', how: 'text-teal-400/40', compare: 'text-orange-400/40' };
+                    const labels: Record<string, string> = { what: 'Factual question', why: 'Analytical question', how: 'Procedural question', compare: 'Comparative question' };
+                    return <span className={`text-[7px] ${colors[type]} ml-1`} title={labels[type]}>{type}</span>;
+                  })()}
                   {searchActive && matchesSearch && (
                     <div className="absolute left-0 w-0.5 h-full bg-chalk-accent/50 rounded-full" />
                   )}

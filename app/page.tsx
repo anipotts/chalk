@@ -1077,6 +1077,23 @@ export default function Home() {
                         try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
+                            const aiText: string = JSON.parse(chat).filter((m: { role: string; content: string }) => m.role === 'assistant' && m.content).map((m: { content: string }) => m.content.toLowerCase()).join(' ');
+                            const stopWords = new Set(['about','after','again','also','been','before','being','between','both','could','does','doing','during','each','from','further','have','having','here','itself','just','more','most','much','myself','once','only','other','over','same','should','some','such','than','that','their','them','then','there','these','they','this','those','through','under','until','very','what','when','where','which','while','will','with','would','your','into','like','well','really','think','know','right','going','want','make','good','take','come','look','said','were','been','many','then','them','some','time','very','when','long','even','back','made','keep','still','hand','high','last','next','same','work','part','dont','didnt','just','also','than','only','come','than','over','such','cant','tell']);
+                            const freq = new Map<string, number>();
+                            for (const w of aiText.split(/\s+/)) {
+                              if (w.length > 5 && !stopWords.has(w)) freq.set(w, (freq.get(w) || 0) + 1);
+                            }
+                            let topWord = '', topCount = 0;
+                            for (const [w, c] of freq) { if (c > topCount) { topWord = w; topCount = c; } }
+                            if (topCount >= 3) return <span className="text-[8px] text-fuchsia-400/40 truncate" title={`Most used AI word: "${topWord}" (${topCount}x)`}>top: {topWord}</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
+                          const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chat) {
                             const msgs = JSON.parse(chat);
                             const lastQ = [...msgs].reverse().find((m: { role: string }) => m.role === 'user');
                             if (lastQ) {

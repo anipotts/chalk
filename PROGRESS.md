@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 123 (Completed)
+- [x] Transcript Segment Transition Word Detection — arrow "→" indicator on segments starting with logical transitions (however, therefore, etc.)
+- [x] Chat Message Question Type Classification — type label ("what"/"why"/"how"/"compare") on user questions based on question word patterns
+- [x] Home Page Video Card Most Used Word — "top: word" badge showing most frequent significant AI word (3+ occurrences)
+- [x] Build verification PASSED
+
 ## Wave 122 (Completed)
 - [x] Transcript Segment Action Item Detection — checkbox icon on segments with instructions ("you should", "make sure", etc.)
 - [x] Chat Message Timestamp Citation Count — "N refs" badge on AI responses with 2+ timestamp citations
