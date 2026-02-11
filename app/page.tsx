@@ -870,6 +870,13 @@ export default function Home() {
                       )}
                       {(() => {
                         try {
+                          const prog = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-progress-${video.id}`) || '0') : 0;
+                          if (prog > 5) { const m = Math.floor(prog / 60); const s = Math.floor(prog % 60); return <span className="text-[9px] text-slate-600 tabular-nums">at {m}:{s.toString().padStart(2, '0')}</span>; }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

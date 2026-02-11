@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 96 (Completed)
+- [x] Transcript View Tab Count Badges — show segment/chapter counts and notes indicator per tab
+- [x] Chat Quick Clear Input — X button to clear textarea input
+- [x] Home Page Video Card Last Position — show "at M:SS" last watched position on cards
+- [x] Build verification PASSED
+
 ## Wave 95 (Completed)
 - [x] Transcript Notes Character Count — show char count alongside word count
 - [x] Chat Plain Text Copy — TXT button to copy conversation without markdown formatting

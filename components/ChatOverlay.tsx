@@ -1804,6 +1804,12 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                   rows={1}
                   className="flex-1 bg-transparent py-2.5 px-3 text-sm text-chalk-text placeholder:text-slate-500 focus:outline-none disabled:opacity-50 resize-none max-h-24 overflow-y-auto"
                 />
+                {/* Clear input */}
+                {!isStreaming && input.length > 5 && (
+                  <button type="button" onClick={() => { setInput(''); inputRef.current?.focus(); if (inputRef.current) { inputRef.current.style.height = 'auto'; } }} className="p-1 rounded text-slate-600 hover:text-slate-400 transition-colors shrink-0" title="Clear input" aria-label="Clear input">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
+                  </button>
+                )}
                 {/* Word count + character counter */}
                 {!isStreaming && input.length > 0 && (
                   <span className={`text-[9px] tabular-nums mr-1 shrink-0 ${input.length > 450 ? 'text-amber-400' : 'text-slate-600'}`}>
