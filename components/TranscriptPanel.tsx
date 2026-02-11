@@ -636,39 +636,43 @@ export function TranscriptPanel({
           <div className="flex items-center gap-1">
             <button
               onClick={() => setViewMode('transcript')}
-              className={`text-sm font-medium px-1.5 py-0.5 rounded transition-colors ${
+              className={`text-sm font-medium px-1.5 py-0.5 rounded transition-colors flex items-center gap-1 ${
                 viewMode === 'transcript' ? 'text-chalk-text' : 'text-slate-500 hover:text-slate-400'
               }`}
             >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M2 4.5A2.5 2.5 0 0 1 4.5 2h7A2.5 2.5 0 0 1 14 4.5v7a2.5 2.5 0 0 1-2.5 2.5h-7A2.5 2.5 0 0 1 2 11.5v-7ZM4.5 5a.5.5 0 0 0 0 1h7a.5.5 0 0 0 0-1h-7ZM4 8.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5ZM4.5 10a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1h-4Z"/></svg>
               Transcript
             </button>
             {chapters.length > 0 && (
               <button
                 onClick={() => setViewMode('chapters')}
-                className={`text-sm font-medium px-1.5 py-0.5 rounded transition-colors ${
+                className={`text-sm font-medium px-1.5 py-0.5 rounded transition-colors flex items-center gap-1 ${
                   viewMode === 'chapters' ? 'text-chalk-text' : 'text-slate-500 hover:text-slate-400'
                 }`}
               >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path fillRule="evenodd" d="M2.5 3.5A.5.5 0 0 1 3 3h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5ZM2.5 8A.5.5 0 0 1 3 7.5h10a.5.5 0 0 1 0 1H3A.5.5 0 0 1 2.5 8Zm0 4.5A.5.5 0 0 1 3 12h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5Z" clipRule="evenodd"/></svg>
                 Chapters
               </button>
             )}
             {videoId && (
               <button
                 onClick={() => setViewMode('notes')}
-                className={`text-sm font-medium px-1.5 py-0.5 rounded transition-colors ${
+                className={`text-sm font-medium px-1.5 py-0.5 rounded transition-colors flex items-center gap-1 ${
                   viewMode === 'notes' ? 'text-chalk-text' : 'text-slate-500 hover:text-slate-400'
                 }`}
               >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L6.75 6.774a2.75 2.75 0 0 0-.596.892l-.848 2.047a.75.75 0 0 0 .98.98l2.047-.848a2.75 2.75 0 0 0 .892-.596l4.261-4.262a1.75 1.75 0 0 0 0-2.474Z"/><path d="M4.75 3.5c-.69 0-1.25.56-1.25 1.25v6.5c0 .69.56 1.25 1.25 1.25h6.5c.69 0 1.25-.56 1.25-1.25V9A.75.75 0 0 1 14 9v2.25A2.75 2.75 0 0 1 11.25 14h-6.5A2.75 2.75 0 0 1 2 11.25v-6.5A2.75 2.75 0 0 1 4.75 2H7a.75.75 0 0 1 0 1.5H4.75Z"/></svg>
                 Notes
               </button>
             )}
             {segments.length > 20 && (
               <button
                 onClick={() => setViewMode('cloud')}
-                className={`text-sm font-medium px-1.5 py-0.5 rounded transition-colors ${
+                className={`text-sm font-medium px-1.5 py-0.5 rounded transition-colors flex items-center gap-1 ${
                   viewMode === 'cloud' ? 'text-chalk-text' : 'text-slate-500 hover:text-slate-400'
                 }`}
               >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3"><path d="M4 11.5a3.5 3.5 0 0 1-.146-6.993A5.002 5.002 0 0 1 13.5 6a3 3 0 0 1-.687 5.458.75.75 0 1 1-.626-1.364A1.5 1.5 0 0 0 12.5 7.5v-.246a.75.75 0 0 1 .688-.747A3.501 3.501 0 0 0 4 11.5Z"/></svg>
                 Cloud
               </button>
             )}

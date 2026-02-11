@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 90 (Completed)
+- [x] Transcript View Mode Icons — add SVG icons to Transcript/Chapters/Notes/Cloud tabs
+- [x] Chat Header Collapse Toggle — chevron button to hide/show stat badges in header
+- [x] Home Page Footer Year — add "Chalk 2026" copyright text below footer links
+- [x] Build verification PASSED
+
 ## Wave 89 (Completed)
 - [x] Transcript Notes Word Count — show word count below notes textarea
 - [x] Chat Longest User Question — show "Q Xw" badge for longest question in header

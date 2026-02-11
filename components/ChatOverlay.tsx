@@ -346,6 +346,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
   const [expandedMsgs, setExpandedMsgs] = useState<Set<string>>(new Set());
   const [inputSuggestionIdx, setInputSuggestionIdx] = useState(-1);
   const [suggestionsHidden, setSuggestionsHidden] = useState(false);
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -686,7 +687,18 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
               <div className="flex items-center gap-2 text-slate-400">
                 <ChatBubbleIcon />
                 <span className="text-xs font-medium">Ask about this video</span>
-                {messages.length >= 4 && (() => {
+                <button
+                  type="button"
+                  onClick={() => setHeaderCollapsed((c) => !c)}
+                  className="hidden sm:inline-flex items-center justify-center w-4 h-4 rounded text-slate-600 hover:text-slate-400 hover:bg-white/[0.06] transition-colors"
+                  title={headerCollapsed ? 'Show stats' : 'Hide stats'}
+                  aria-label={headerCollapsed ? 'Show header stats' : 'Hide header stats'}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className={`w-2.5 h-2.5 transition-transform ${headerCollapsed ? '-rotate-90' : ''}`}>
+                    <path fillRule="evenodd" d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                {!headerCollapsed && messages.length >= 4 && (() => {
                   const userMsgs = messages.filter((m) => m.role === 'user');
                   const avgLen = userMsgs.reduce((a, m) => a + m.content.length, 0) / Math.max(1, userMsgs.length);
                   const depth = avgLen > 100 ? 'deep' : avgLen > 40 ? 'exploring' : 'starting';
@@ -699,7 +711,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                   );
                 })()}
                 {/* Context window coverage badge */}
-                {segments.length > 0 && (() => {
+                {!headerCollapsed && segments.length > 0 && (() => {
                   const totalDur = segments.length > 0 ? segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0) : 0;
                   if (totalDur <= 0) return null;
                   const winStart = Math.max(0, currentTime - 120);
@@ -717,7 +729,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                   );
                 })()}
                 {/* Pinned count */}
-                {pinnedIds.size > 0 && (
+                {!headerCollapsed && pinnedIds.size > 0 && (
                   <span className="hidden sm:inline-flex items-center gap-0.5 text-[8px] px-1 py-0.5 rounded bg-amber-500/10 text-amber-500/70">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2 h-2">
                       <path d="M10.97 2.22a.75.75 0 0 1 1.06 0l1.75 1.75a.75.75 0 0 1-.177 1.2l-2.032.904-.71.71 1.428 1.428a.75.75 0 0 1-1.06 1.06L9.8 7.844l-3.09 3.091a.75.75 0 0 1-1.06-1.06l3.09-3.091-1.428-1.428a.75.75 0 0 1 1.06-1.06l1.427 1.427.711-.71.904-2.032a.75.75 0 0 1 .177-.511l.398-.45Z" />
@@ -727,7 +739,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                   </span>
                 )}
                 {/* Session stats */}
-                {messages.length >= 2 && (() => {
+                {!headerCollapsed && messages.length >= 2 && (() => {
                   const userCount = messages.filter((m) => m.role === 'user').length;
                   const firstTs = parseInt(messages[0]?.id || '0', 10);
                   const elapsed = firstTs > 0 ? Math.round((Date.now() - firstTs) / 60000) : 0;
@@ -738,14 +750,14 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                     </span>
                   );
                 })()}
-                {savedMsgIds.size > 0 && (
+                {!headerCollapsed && savedMsgIds.size > 0 && (
                   <span className="hidden sm:inline-flex items-center gap-0.5 text-[8px] px-1 py-0.5 rounded bg-white/[0.04] text-amber-500/60 tabular-nums">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2 h-2"><path fillRule="evenodd" d="M11.986 3H12a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h.014A2.25 2.25 0 0 1 6.25 1h3.5a2.25 2.25 0 0 1 2.236 2ZM6.25 2.5a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clipRule="evenodd" /></svg>
                     {savedMsgIds.size}
                   </span>
                 )}
                 {/* Average response time */}
-                {(() => {
+                {!headerCollapsed && (() => {
                   const durations = messages.filter((m) => m.role === 'assistant' && m.responseDuration).map((m) => m.responseDuration!);
                   if (durations.length < 2) return null;
                   const avg = (durations.reduce((a, b) => a + b, 0) / durations.length / 1000).toFixed(1);
@@ -756,7 +768,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                   );
                 })()}
                 {/* Longest response */}
-                {(() => {
+                {!headerCollapsed && (() => {
                   const aiMsgs = messages.filter((m) => m.role === 'assistant' && m.content);
                   if (aiMsgs.length < 3) return null;
                   const maxWords = Math.max(...aiMsgs.map((m) => m.content.split(/\s+/).filter(Boolean).length));
@@ -767,7 +779,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                   );
                 })()}
                 {/* Longest question */}
-                {(() => {
+                {!headerCollapsed && (() => {
                   const userMsgs = messages.filter((m) => m.role === 'user' && m.content);
                   if (userMsgs.length < 3) return null;
                   const maxQ = Math.max(...userMsgs.map((m) => m.content.split(/\s+/).filter(Boolean).length));
@@ -778,7 +790,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                   );
                 })()}
                 {/* Reaction tally */}
-                {messages.length > 0 && (() => {
+                {!headerCollapsed && messages.length > 0 && (() => {
                   let upCount = 0;
                   try {
                     for (const m of messages) {

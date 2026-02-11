@@ -1011,6 +1011,7 @@ export default function Home() {
           Math Visualizer
         </a>
       </div>
+      <p className="text-[9px] text-slate-700 text-center pb-2">Chalk {new Date().getFullYear()}</p>
     </div>
   );
 }
