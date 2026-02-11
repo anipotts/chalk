@@ -1600,6 +1600,37 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatENE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatENE) {
+                            const allENE: { role: string; content?: string }[] = JSON.parse(chatENE);
+                            const exSzEN: number[] = [];
+                            for (let i = 0; i < allENE.length - 1; i++) {
+                              if (allENE[i].role === 'user' && allENE[i + 1]?.role === 'assistant') {
+                                const uw = (allENE[i].content || '').split(/\s+/).filter(Boolean).length;
+                                const aw = (allENE[i + 1].content || '').split(/\s+/).filter(Boolean).length;
+                                exSzEN.push(uw + aw);
+                              }
+                            }
+                            if (exSzEN.length >= 4) {
+                              const maxSz = Math.max(...exSzEN);
+                              const binCount = Math.max(3, Math.ceil(Math.sqrt(exSzEN.length)));
+                              const binWidth = Math.ceil((maxSz + 1) / binCount);
+                              const bins = new Array(binCount).fill(0);
+                              for (const sz of exSzEN) bins[Math.min(Math.floor(sz / binWidth), binCount - 1)]++;
+                              const n = exSzEN.length;
+                              let entropy = 0;
+                              for (const b of bins) {
+                                if (b > 0) { const p = b / n; entropy -= p * Math.log2(p); }
+                              }
+                              const ent = Math.round(entropy * 10) / 10;
+                              if (ent >= 1.0) return <span className="text-[8px] text-amber-400/40 tabular-nums" title={`Shannon entropy: ${ent} bits across ${exSzEN.length} exchanges (${binCount} bins)`}>{ent} ent</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatKRE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatKRE) {
                             const allKRE: { role: string; content?: string }[] = JSON.parse(chatKRE);

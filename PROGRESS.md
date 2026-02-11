@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 226 — Emphatic superlative detection, authoritative badge, entropy words per exchange
+- [x] TranscriptPanel: emphatic superlative detection — "★" in amber-400/30, regex for the most important/the single biggest/the absolute best/by far the greatest/without a doubt the/the ultimate/the one thing/the defining/the paramount/the quintessential
+- [x] ChatOverlay: authoritative badge — "authoritative" in amber-500/10, detects research shows/studies indicate/experts agree/the data confirms/evidence demonstrates/it is well established/scholarly consensus/the literature supports/empirical findings/peer-reviewed research
+- [x] Home page: entropy of words per exchange — "X ent" in amber-400/40, Shannon entropy of binned exchange sizes across ≥4 exchanges, shown when entropy ≥ 1.0
+- [x] Build verification PASSED
+
 ### Wave 225 — Imperative language detection, prescriptive badge, kurtosis words per exchange
 - [x] TranscriptPanel: imperative language detection — "!" in lime-400/30, regex for you must/you need to/it is essential/it is imperative/make sure to/be sure to/don't forget to/always remember/never forget/you should always
 - [x] ChatOverlay: prescriptive badge — "prescriptive" in lime-500/10, detects I recommend/you should consider/the best approach/it would be wise/I suggest/it's advisable/the optimal strategy/you ought to/the preferred method/best practice is

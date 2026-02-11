@@ -1900,6 +1900,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(you must|you need to|it is essential|it is imperative|make sure to|be sure to|don't forget to|always remember|never forget|you should always)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-lime-400/30" title="Contains imperative language">!</span>
                   )}
+                  {!compactMode && /\b(the most important|the single biggest|the absolute best|by far the greatest|without a doubt the|the ultimate|the one thing|the defining|the paramount|the quintessential)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains emphatic superlative">&#9733;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
