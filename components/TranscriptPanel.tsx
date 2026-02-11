@@ -1861,6 +1861,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(on the other hand|having said that|that being said|nevertheless|at the same time|even so|all the same|be that as it may|granted|fair enough)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-teal-400/30" title="Contains conciliatory language">&#9837;</span>
                   )}
+                  {!compactMode && /\b(without a doubt|there's no question|clearly|obviously|undeniably|it's certain that|the fact is|make no mistake|rest assured|beyond dispute)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-violet-400/30" title="Contains assertive language">&#9656;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

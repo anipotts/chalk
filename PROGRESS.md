@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 213 — Assertive language detection, contextual badge, user word ratio
+- [x] TranscriptPanel: assertive language detection — "▸" in violet-400/30, regex for without a doubt/there's no question/clearly/obviously/undeniably/it's certain that/the fact is/make no mistake/rest assured/beyond dispute
+- [x] ChatOverlay: contextual badge — "contextual" in violet-500/10, detects in this context/given that/considering/taking into account/with respect to/in light of/from this perspective/within this framework/under these circumstances/in this regard
+- [x] Home page video card: user word ratio — "X% user" in violet-400/40, variable chatUWR, shows percentage of total words contributed by user
+- [x] Build verification PASSED
+
 ### Wave 212 — Conciliatory language detection, qualifying badge, median response words
 - [x] TranscriptPanel: conciliatory language detection — "♭" in teal-400/30, regex for on the other hand/having said that/that being said/nevertheless/at the same time/even so/all the same/be that as it may/granted/fair enough
 - [x] ChatOverlay: qualifying badge — "qualifying" in teal-500/10, detects to some degree/in a way/sort of/kind of/more or less/up to a point/in certain respects/to an extent/partly/largely
