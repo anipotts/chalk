@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 205 — Comparative language detection, cautionary badge, exclamation density
+- [x] TranscriptPanel: comparative language detection — "≥" in purple-400/30, regex for more than/less than/greater/bigger/smaller/faster/slower/better/worse/compared to/relative to
+- [x] ChatOverlay: cautionary badge — "cautionary" in orange-500/10, detects be careful/watch out/be aware/important to note/don't forget/make sure/be mindful/caution/warning/heads up
+- [x] Home page video card: exclamation density — "X !/msg" in rose-400/40, variable chatEMD, computes average exclamation marks per AI message (>=3 AI msgs, density >= 0.3)
+- [x] Build verification PASSED
+
 ### Wave 204 — Speculative language detection, analytical badge, question mark density
 - [x] TranscriptPanel: speculative language detection — "?" in teal-400/30, regex for maybe/perhaps/possibly/might/could be/presumably/probably/likely/it seems/it appears
 - [x] ChatOverlay: analytical badge — "analytical" in blue-500/10, detects let's break this down/analyzing/analysis/the data shows/looking at the numbers/statistically/the evidence/the results/based on/according to
