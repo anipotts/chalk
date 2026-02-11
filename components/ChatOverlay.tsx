@@ -324,6 +324,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
   const [digestData, setDigestData] = useState<{ takeaways: { text: string; timestamp: number }[] } | null>(null);
   const [chatSearch, setChatSearch] = useState('');
   const [chatSearchOpen, setChatSearchOpen] = useState(false);
+  const [inputHistoryIdx, setInputHistoryIdx] = useState(-1);
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(() => {
     if (!videoId || typeof window === 'undefined') return new Set();
     try {
@@ -1366,7 +1367,22 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
+                      setInputHistoryIdx(-1);
                       handleSubmit();
+                    }
+                    // Input history: ArrowUp/Down to cycle through past questions
+                    const userMsgs = messages.filter((m) => m.role === 'user');
+                    if (e.key === 'ArrowUp' && !input.trim() && userMsgs.length > 0) {
+                      e.preventDefault();
+                      const nextIdx = inputHistoryIdx < userMsgs.length - 1 ? inputHistoryIdx + 1 : inputHistoryIdx;
+                      setInputHistoryIdx(nextIdx);
+                      setInput(userMsgs[userMsgs.length - 1 - nextIdx]?.content || '');
+                    }
+                    if (e.key === 'ArrowDown' && inputHistoryIdx >= 0) {
+                      e.preventDefault();
+                      const nextIdx = inputHistoryIdx - 1;
+                      setInputHistoryIdx(nextIdx);
+                      setInput(nextIdx >= 0 ? (userMsgs[userMsgs.length - 1 - nextIdx]?.content || '') : '');
                     }
                   }}
                   placeholder={isStreaming ? 'Generating response...' : teachBackMode ? 'Explain what you learned...' : (() => {

@@ -430,6 +430,12 @@ Status: RUNNING
 - [x] Home Page Quick Stats — total videos, questions asked, minutes studied summary
 - [x] Build verification PASSED
 
+## Wave 53 (Completed)
+- [x] Question Segment Highlights — "?" badge on transcript segments ending with question marks
+- [x] Chat Input History — ArrowUp/Down cycles through previous questions in empty input
+- [x] Video Card Hover Preview — first user question shown on recent video cards
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

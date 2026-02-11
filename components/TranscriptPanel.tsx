@@ -1125,6 +1125,9 @@ export function TranscriptPanel({
                       );
                     })()}
                   </div>
+                  {seg.text.trim().endsWith('?') && (
+                    <span className="shrink-0 text-[8px] font-bold text-purple-400/50 w-3 text-center" title="Question asked">?</span>
+                  )}
                   {complexityLabel && (
                     <span className={`shrink-0 text-[7px] font-bold uppercase tracking-wider px-1 py-0 rounded ${
                       complexityLabel === 'complex' ? 'bg-rose-500/10 text-rose-400/60' : 'bg-amber-500/10 text-amber-400/50'
