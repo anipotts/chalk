@@ -1031,6 +1031,23 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chat) {
+                            const userMsgs = JSON.parse(chat).filter((m: { role: string }) => m.role === 'user');
+                            if (userMsgs.length >= 2) {
+                              const first = userMsgs[0].content;
+                              const last = userMsgs[userMsgs.length - 1].content;
+                              if (first !== last) {
+                                const fp = first.length > 35 ? first.slice(0, 35) + '...' : first;
+                                return <span className="text-[8px] text-slate-700/50 truncate" title={`First question: ${first}`}>1st: {fp}</span>;
+                              }
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const note = typeof window !== 'undefined' ? localStorage.getItem(`chalk-note-${video.id}`) : null;
                           if (note) return (
                             <span className="text-[9px] text-yellow-400/70 truncate" title={note}>

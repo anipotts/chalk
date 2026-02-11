@@ -1427,6 +1427,17 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                       <div className="flex-1 h-px bg-slate-700/20" />
                     </div>
                   )}
+                  {msg.role === 'user' && turnNum >= 3 && (() => {
+                    const firstQ = messages.find((m) => m.role === 'user');
+                    if (!firstQ || firstQ.id === msg.id) return null;
+                    const firstWords = new Set(firstQ.content.toLowerCase().split(/\s+/).filter((w) => w.length > 4));
+                    const curWords = msg.content.toLowerCase().split(/\s+/).filter((w) => w.length > 4);
+                    const shared = curWords.filter((w) => firstWords.has(w)).length;
+                    if (firstWords.size > 2 && curWords.length > 2 && shared === 0) return (
+                      <p className="text-center text-[7px] text-slate-700/60 py-0.5" title="Your question has shifted from the original topic">~ topic shifted ~</p>
+                    );
+                    return null;
+                  })()}
                   {searchActive && matchesSearch && (
                     <div className="absolute left-0 w-0.5 h-full bg-chalk-accent/50 rounded-full" />
                   )}

@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 117 (Completed)
+- [x] Transcript Segment Time Gap Warning — amber warning style + icon on gaps ≥10 seconds (possible cuts/long pauses)
+- [x] Chat Conversation Topic Drift Indicator — "topic shifted" label when user questions diverge from original topic
+- [x] Home Page Video Card First Question Preview — shows first question as faded preview when different from last question
+- [x] Build verification PASSED
+
 ## Wave 116 (Completed)
 - [x] Transcript Segment Paragraph Break Detection — gradient divider between segments with low word overlap (topic shift)
 - [x] Chat Input Smart Placeholder with Context — shows message count hint when conversation exceeds 20 messages
