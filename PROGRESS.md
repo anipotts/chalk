@@ -934,6 +934,12 @@ Status: RUNNING
 - [x] Home Page Video Card Chat Streak Length — "N-turn streak" badge showing longest consecutive Q&A exchange per video
 - [x] Build verification PASSED
 
+### Wave 137 — Instruction detection, agreement badge, AI model distribution
+- [x] Transcript Segment Instruction Detection — "how" indicator when segment contains instructional language (step one, first you, make sure to, etc.)
+- [x] Chat Message Agreement Badge — "agrees" badge on AI messages validating user's point (you're right, exactly, spot on, etc.)
+- [x] Home Page Video Card AI Model Distribution — "via {model}" badge showing dominant AI model used in conversations
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
