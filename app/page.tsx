@@ -957,6 +957,20 @@ export default function Home() {
           {totalWordsLearned > 0 && (
             <><span>·</span><span>{totalWordsLearned.toLocaleString()} words learned</span></>
           )}
+          {recentVideos.length > 0 && (() => {
+            let totalSec = 0;
+            recentVideos.forEach((v) => {
+              try {
+                const dur = parseFloat(localStorage.getItem(`chalk-duration-${v.id}`) || '0');
+                const pct = parseFloat(localStorage.getItem(`chalk-progress-${v.id}`) || '0');
+                if (dur > 0 && pct > 0) totalSec += dur * Math.min(pct, 1);
+              } catch { /* ignore */ }
+            });
+            if (totalSec < 60) return null;
+            const h = Math.floor(totalSec / 3600);
+            const m = Math.round((totalSec % 3600) / 60);
+            return <><span>·</span><span>{h > 0 ? `${h}h ${m}m` : `${m}m`} studied</span></>;
+          })()}
         </div>
       )}
       <div className="flex-none py-4 flex items-center justify-center gap-4 border-t border-chalk-border/20">

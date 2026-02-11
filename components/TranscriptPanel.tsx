@@ -673,7 +673,10 @@ export function TranscriptPanel({
               </button>
             )}
             {currentTime > 0 && (
-              <span className="text-[10px] font-mono text-slate-600 tabular-nums">{formatTimestamp(currentTime)}</span>
+              <span className="text-[10px] font-mono text-slate-600 tabular-nums">
+                {formatTimestamp(currentTime)}
+                {activeIndex >= 0 && <span className="text-slate-700"> {activeIndex + 1}/{segments.length}</span>}
+              </span>
             )}
           </div>
           <div className="flex items-center gap-2">

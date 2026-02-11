@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 86 (Completed)
+- [x] Transcript Segment Index Display — show "seg X/Y" next to current position timestamp
+- [x] Chat Conversation Density — show avg words per message in conversation stats
+- [x] Home Page Total Study Time — compute and display total watched time from all videos
+- [x] Build verification PASSED
+
 ## Wave 85 (Completed)
 - [x] Transcript Current Position Timestamp — show current video time in header next to tabs
 - [x] Chat Conversation Turn Count — show turn count in conversation stats summary
