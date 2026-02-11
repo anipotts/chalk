@@ -1714,6 +1714,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(on the other hand|in contrast|conversely|nevertheless|however|whereas|unlike|on the contrary)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-red-400/30" title="Contains contrast or opposition language">vs</span>
                   )}
+                  {!compactMode && /\b(first|second|third|fourth|fifth|firstly|secondly|thirdly|next|finally|lastly|step one|step two|step three)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-violet-400/30" title="Contains enumeration or sequencing language">1.</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

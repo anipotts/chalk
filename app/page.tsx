@@ -1615,6 +1615,26 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const streakData = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-streak-${video.id}`) : null;
+                          if (streakData) {
+                            const dates: string[] = JSON.parse(streakData);
+                            if (dates.length >= 2) {
+                              const sorted = [...new Set(dates)].sort();
+                              let maxStreak = 1, cur = 1;
+                              for (let si = 1; si < sorted.length; si++) {
+                                const prev = new Date(sorted[si - 1]);
+                                const next = new Date(sorted[si]);
+                                const diff = (next.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
+                                if (diff <= 1.5) { cur++; maxStreak = Math.max(maxStreak, cur); } else { cur = 1; }
+                              }
+                              if (maxStreak >= 2) return <span className="text-[8px] text-pink-400/40 tabular-nums" title={`Longest consecutive viewing streak: ${maxStreak} days`}>{maxStreak} day streak</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatMed = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatMed) {
                             const aiMsgsMed: { role: string; content: string }[] = JSON.parse(chatMed).filter((m: { role: string; content: string }) => m.role === 'assistant' && m.content);

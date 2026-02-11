@@ -1096,6 +1096,12 @@ Status: RUNNING
 - [x] Home Page Video Card Median Response Length — "med Xw" badge showing median AI response word count
 - [x] Build verification PASSED
 
+### Wave 164 — Enumeration detection, definition badge, longest streak
+- [x] Transcript Segment Enumeration Detection — "1." indicator when segment contains sequencing language (first, second, third, next, finally, lastly)
+- [x] Chat Message Definition Badge — "defines" badge on AI messages containing definitions (is defined as, refers to, means that, also known as)
+- [x] Home Page Video Card Longest Streak — "X day streak" badge showing longest consecutive viewing streak
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
