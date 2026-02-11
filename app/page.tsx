@@ -855,10 +855,10 @@ export default function Home() {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);
-                            const firstQ = msgs.find((m: { role: string }) => m.role === 'user');
-                            if (firstQ) {
-                              const preview = firstQ.content.length > 40 ? firstQ.content.slice(0, 40) + '...' : firstQ.content;
-                              return <span className="text-[9px] text-slate-600 truncate" title={firstQ.content}>Q: {preview}</span>;
+                            const lastQ = [...msgs].reverse().find((m: { role: string }) => m.role === 'user');
+                            if (lastQ) {
+                              const preview = lastQ.content.length > 40 ? lastQ.content.slice(0, 40) + '...' : lastQ.content;
+                              return <span className="text-[9px] text-slate-600 truncate" title={lastQ.content}>Q: {preview}</span>;
                             }
                           }
                         } catch { /* ignore */ }

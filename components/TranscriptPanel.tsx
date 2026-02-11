@@ -675,7 +675,8 @@ export function TranscriptPanel({
             {currentTime > 0 && (
               <span className="text-[10px] font-mono text-slate-600 tabular-nums">
                 {formatTimestamp(currentTime)}
-                {activeIndex >= 0 && <span className="text-slate-700"> {activeIndex + 1}/{segments.length}</span>}
+                {viewMode === 'transcript' && activeIndex >= 0 && <span className="text-slate-700"> {activeIndex + 1}/{segments.length}</span>}
+                {viewMode === 'chapters' && chapters.length > 0 && <span className="text-slate-700"> {chapters.length} ch</span>}
               </span>
             )}
           </div>

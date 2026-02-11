@@ -1554,6 +1554,13 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     <span>avg {Math.round(totalWords / messages.length)}w/msg</span>
                     {firstTs > 0 && (<><span className="text-slate-700">&middot;</span><span>started {agoLabel}</span></>)}
                     {(() => {
+                      const lastTs = parseInt(messages[messages.length - 1]?.id || '0', 10);
+                      if (firstTs <= 0 || lastTs <= firstTs) return null;
+                      const durMin = Math.round((lastTs - firstTs) / 60000);
+                      if (durMin < 1) return null;
+                      return <><span className="text-slate-700">&middot;</span><span>{durMin < 60 ? `${durMin}m` : `${Math.floor(durMin / 60)}h ${durMin % 60}m`} span</span></>;
+                    })()}
+                    {(() => {
                       const ups = messages.filter((m) => m.rating === 'up').length;
                       const downs = messages.filter((m) => m.rating === 'down').length;
                       if (ups + downs === 0) return null;

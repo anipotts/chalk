@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 88 (Completed)
+- [x] Transcript Chapter Count in Header — show "X ch" when in chapters view mode
+- [x] Chat Conversation Duration — show elapsed time from first to last message
+- [x] Home Page Last Question Preview — show most recent chat question on video cards
+- [x] Build verification PASSED
+
 ## Wave 87 (Completed)
 - [x] Transcript Chapter Progress Indicator — thin progress bar per chapter in chapters view
 - [x] Chat Message Count Milestone — show milestone badges at 5, 10, 20, 50, 100 messages
