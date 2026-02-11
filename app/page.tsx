@@ -876,6 +876,12 @@ export default function Home() {
             </div>
           </div>
         )}
+        {recentVideos.length === 0 && (
+          <div className="mt-12 text-center">
+            <p className="text-sm text-slate-600">Paste a YouTube URL above to start learning</p>
+            <p className="text-[10px] text-slate-700 mt-1">Your recent videos will appear here</p>
+          </div>
+        )}
       </div>
 
       {/* Recent activity timeline */}

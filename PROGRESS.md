@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 83 (Completed)
+- [x] Transcript Paragraph Count — display paragraph count at top of paragraph mode view
+- [x] Chat Rating Summary — show up/down vote counts in conversation stats
+- [x] Home Page Empty State — helpful text when no recent videos exist
+- [x] Build verification PASSED
+
 ## Wave 82 (Completed)
 - [x] Transcript Starred Count Badge — show number of starred segments next to filter button
 - [x] Chat First Message Age — show "started Xm ago" in conversation stats summary

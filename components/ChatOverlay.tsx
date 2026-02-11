@@ -1542,6 +1542,12 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     <span className="text-slate-700">&middot;</span>
                     <span>{totalWords.toLocaleString()} words</span>
                     {firstTs > 0 && (<><span className="text-slate-700">&middot;</span><span>started {agoLabel}</span></>)}
+                    {(() => {
+                      const ups = messages.filter((m) => m.rating === 'up').length;
+                      const downs = messages.filter((m) => m.rating === 'down').length;
+                      if (ups + downs === 0) return null;
+                      return (<><span className="text-slate-700">&middot;</span><span>{ups > 0 && `${ups}\u2191`}{ups > 0 && downs > 0 && ' '}{downs > 0 && `${downs}\u2193`}</span></>);
+                    })()}
                   </div>
                 );
               })()}

@@ -1218,6 +1218,7 @@ export function TranscriptPanel({
               if (current.length > 0) paragraphs.push({ startOffset: current[0].offset, segs: current });
               return (
                 <div className="px-3 py-2 space-y-3">
+                  <p className="text-[9px] text-slate-600 text-center">{paragraphs.length} paragraph{paragraphs.length !== 1 ? 's' : ''}</p>
                   {paragraphs.map((para) => {
                     const isParaActive = para.segs.some((s) => segments.indexOf(s) === activeIndex);
                     return (
