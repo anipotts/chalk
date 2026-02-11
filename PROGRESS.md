@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 193 — Conditional language detection, contrastive badge, longest exchange
+- [x] TranscriptPanel: conditional language detection — "⑂" in sky-400/30, regex for if/unless/otherwise/provided that/as long as/in case/whether/depending on
+- [x] ChatOverlay: contrastive badge — "contrastive" in amber-500/10, detects however/on the other hand/nevertheless/conversely/whereas/although/despite/contrary to
+- [x] Home page video card: longest exchange — "max X word exchange" in red-400/40, variable chatME, finds max combined word count of consecutive user+assistant pair (>=2 pairs, >=10 words)
+- [x] Build verification PASSED
+
 ### Wave 192 — Comparative language detection, hypothetical badge, median words per turn
 - [x] TranscriptPanel: comparative language detection — "⇔" in rose-400/30, regex for more than/less than/greater/fewer/better/worse/compared to/in contrast
 - [x] ChatOverlay: hypothetical badge — "hypothetical" in fuchsia-500/10, detects if we/imagine/suppose/what if/hypothetically/in theory/could potentially/assuming
