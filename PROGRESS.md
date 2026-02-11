@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 199 — Qualifying language detection, reassuring badge, AI vocabulary richness
+- [x] TranscriptPanel: qualifying language detection — "~" in purple-400/30, regex for somewhat/fairly/quite/rather/relatively/slightly/partially/to some extent
+- [x] ChatOverlay: reassuring badge — "reassuring" in cyan-500/10, detects don't worry/no worries/it's okay/perfectly normal/common question/easy to understand/straightforward/simple enough
+- [x] Home page video card: AI vocabulary richness — "X AI vocab" in orange-400/40, variable chatAV, counts unique words in AI responses (>=4 msgs, >=30 unique)
+- [x] Build verification PASSED
+
 ### Wave 198 — Additive language detection, corrective badge, user word diversity
 - [x] TranscriptPanel: additive language detection — "+" in lime-400/30, regex for furthermore/moreover/in addition/additionally/also/besides/not only/on top of that
 - [x] ChatOverlay: corrective badge — "corrective" in red-500/10, detects actually/in fact/correction/to clarify/more accurately/to be precise/strictly speaking/let me correct

@@ -1600,6 +1600,20 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatAV = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatAV) {
+                            const allAV: { role: string; content?: string }[] = JSON.parse(chatAV);
+                            const aiMsgs = allAV.filter(m => m.role === 'assistant' && m.content);
+                            if (aiMsgs.length >= 4) {
+                              const allWords = new Set(aiMsgs.flatMap(m => m.content!.toLowerCase().split(/\s+/).filter(Boolean)));
+                              if (allWords.size >= 30) return <span className="text-[8px] text-orange-400/40 tabular-nums" title={`${allWords.size} unique words in AI responses`}>{allWords.size} AI vocab</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatUWD = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatUWD) {
                             const allUWD: { role: string; content?: string }[] = JSON.parse(chatUWD);
