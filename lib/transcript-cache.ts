@@ -47,7 +47,7 @@ function setL1(videoId: string, entry: CachedTranscript): void {
 
 // ─── L2: Supabase cache ──────────────────────────────────────────────────────
 
-const VALID_SOURCES: Set<string> = new Set(['innertube', 'web-scrape', 'yt-dlp', 'groq-whisper', 'local-whisper']);
+const VALID_SOURCES: Set<string> = new Set(['innertube', 'web-scrape', 'yt-dlp', 'caption-extractor', 'groq-whisper', 'local-whisper', 'deepgram']);
 
 /** Validate that cached data has the expected shape. */
 function validateCachedSegments(data: unknown): data is { segments: TranscriptSegment[]; source: TranscriptSource } {
@@ -121,7 +121,7 @@ function setL2(
   const client = getWriteClient();
   if (!client) return;
 
-  const isSTT = source === 'groq-whisper' || source === 'local-whisper';
+  const isSTT = source === 'groq-whisper' || source === 'local-whisper' || source === 'deepgram';
   const ttlDays = isSTT ? 90 : 30;
   const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000).toISOString();
 

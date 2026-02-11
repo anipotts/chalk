@@ -4,8 +4,8 @@
  * For client-safe utils, import from '@/lib/video-utils' instead.
  *
  * Architecture:
- *   Phase 1 — Caption race (Promise.any): Innertube ANDROID + yt-dlp in parallel
- *   Phase 2 — STT cascade (sequential): Groq Whisper → local Whisper
+ *   Phase 1 — Caption race (Promise.any): Innertube ANDROID + web scrape + caption-extractor + yt-dlp
+ *   Phase 2 — STT cascade (sequential): Innertube audio → web scrape audio (Groq/Deepgram) → yt-dlp + Whisper
  */
 
 import { execFile } from 'child_process';
@@ -15,6 +15,7 @@ import { randomBytes } from 'crypto';
 import { readFile, unlink } from 'fs/promises';
 import { withRetry, withTimeout } from './retry';
 import { isGroqAvailable, transcribeWithGroq } from './stt/groq-whisper';
+import { isDeepgramAvailable, transcribeWithDeepgram } from './stt/deepgram';
 
 // Re-export client-safe types and functions so API routes can use them
 export type { TranscriptSegment, TranscriptSource, TranscriptResult } from './video-utils';
@@ -401,14 +402,13 @@ async function fetchTranscriptLocalWhisper(audioPath: string): Promise<Transcrip
 // ─── Audio download helper for STT tiers ───────────────────────────────────────
 
 /**
- * Download audio from YouTube via Innertube streaming URLs (HTTP-only, no yt-dlp needed).
- * Fetches the player response to get adaptive audio stream URLs, then downloads directly.
- * Returns a Buffer of audio data for Groq Whisper. Works on Vercel serverless.
- * Enforces a MAX_AUDIO_BYTES size limit to prevent OOM on serverless.
+ * Download audio from pre-fetched adaptive formats.
+ * Selects smallest audio stream, validates SSRF, downloads with size guard.
  */
-async function downloadAudioHTTP(videoId: string): Promise<Buffer> {
-  const data = await fetchInnertubePlayer(videoId);
-  const formats = data.streamingData?.adaptiveFormats;
+async function downloadAudioFromFormats(
+  formats: NonNullable<InnertubePlayerResponse['streamingData']>['adaptiveFormats'],
+  videoId: string,
+): Promise<Buffer> {
   if (!formats || formats.length === 0) throw new Error('No streaming formats available');
 
   // Find an audio-only stream (prefer mp4a/opus, smallest file)
@@ -469,6 +469,55 @@ async function downloadAudioHTTP(videoId: string): Promise<Buffer> {
 }
 
 /**
+ * Download audio from YouTube via Innertube streaming URLs (HTTP-only, no yt-dlp needed).
+ * Fetches the player response to get adaptive audio stream URLs, then downloads directly.
+ */
+async function downloadAudioHTTP(videoId: string): Promise<Buffer> {
+  const data = await fetchInnertubePlayer(videoId);
+  return downloadAudioFromFormats(data.streamingData?.adaptiveFormats, videoId);
+}
+
+/**
+ * Download audio by scraping the YouTube watch page HTML.
+ * More reliable from datacenter IPs than the Innertube POST because it looks like a browser visit.
+ */
+async function downloadAudioWebScrape(videoId: string): Promise<Buffer> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+
+  let resp;
+  try {
+    resp = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        'Accept-Language': 'en-US,en;q=0.9',
+        Accept: 'text/html,application/xhtml+xml',
+      },
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+
+  if (!resp.ok) throw new Error(`YouTube page fetch failed: ${resp.status}`);
+  const html = await resp.text();
+
+  const playerMatch = html.match(/var\s+ytInitialPlayerResponse\s*=\s*(\{[\s\S]+?\});\s*(?:var|<\/script>)/);
+  if (!playerMatch) throw new Error('Could not find ytInitialPlayerResponse in page HTML');
+
+  let playerData: InnertubePlayerResponse;
+  try {
+    playerData = JSON.parse(playerMatch[1]) as InnertubePlayerResponse;
+  } catch {
+    throw new Error('Failed to parse ytInitialPlayerResponse JSON');
+  }
+
+  const formats = playerData.streamingData?.adaptiveFormats;
+  console.log(`[transcript] web scrape audio: got ${formats?.length ?? 0} formats`);
+  return downloadAudioFromFormats(formats, videoId);
+}
+
+/**
  * Download audio from a YouTube video as WAV (16kHz mono) to a temp file.
  * Uses yt-dlp CLI (not available on Vercel). Use downloadAudioHTTP for serverless.
  */
@@ -490,22 +539,39 @@ export async function downloadAudio(videoId: string): Promise<string> {
 
 interface CaptionRaceResult {
   segments: TranscriptSegment[];
-  source: 'innertube' | 'web-scrape' | 'yt-dlp';
+  source: 'innertube' | 'web-scrape' | 'yt-dlp' | 'caption-extractor';
 }
 
 const INNERTUBE_TIMEOUT = 15_000; // 15s — Innertube is fast when it works
 const WEBSCRAPE_TIMEOUT = 20_000; // 20s — page fetch + caption fetch
+const CAPTION_EXTRACTOR_TIMEOUT = 20_000; // 20s — third-party caption extraction
 const YTDLP_TIMEOUT = 30_000;    // 30s — yt-dlp needs time for JS challenge solving
 const RACE_TIMEOUT = 35_000;     // 35s overall caption race
+
+async function fetchTranscriptCaptionExtractor(videoId: string): Promise<TranscriptSegment[]> {
+  const { getSubtitles } = await import('youtube-caption-extractor');
+  const subtitles = await getSubtitles({ videoID: videoId, lang: 'en' });
+  if (!subtitles || subtitles.length === 0) throw new Error('caption-extractor: no subtitles found');
+  const segments = subtitles.map((s: { start: string; dur: string; text: string }) => ({
+    text: s.text,
+    offset: parseFloat(s.start) || 0,
+    duration: parseFloat(s.dur) || 0,
+  }));
+  if (segments.length === 0) throw new Error('caption-extractor: returned 0 segments');
+  console.log(`[transcript] caption-extractor: got ${segments.length} segments`);
+  return segments;
+}
 
 export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
   // Caption tiers run concurrently — first non-empty result wins.
   // Innertube ANDROID is fast (~1-2s) but YouTube may block from datacenter IPs.
   // Web scrape fetches the watch page HTML — looks like a browser visit, most reliable on Vercel.
+  // caption-extractor uses its own scraping approach — additional redundancy.
   // yt-dlp CLI is slower (~10-15s) but handles most edge cases (NOT available on Vercel).
   const tiers: Array<{ fn: () => Promise<TranscriptSegment[]>; source: CaptionRaceResult['source']; timeout: number }> = [
     { fn: () => fetchTranscriptInnertube(videoId), source: 'innertube', timeout: INNERTUBE_TIMEOUT },
     { fn: () => fetchTranscriptWebScrape(videoId), source: 'web-scrape', timeout: WEBSCRAPE_TIMEOUT },
+    { fn: () => fetchTranscriptCaptionExtractor(videoId), source: 'caption-extractor', timeout: CAPTION_EXTRACTOR_TIMEOUT },
   ];
 
   // Only add yt-dlp tier when NOT on Vercel (binary doesn't exist there)
@@ -533,18 +599,48 @@ export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
 export async function sttCascade(videoId: string): Promise<TranscriptResult> {
   console.log(`[transcript] ${videoId}: all captions failed, starting STT cascade`);
 
-  // Strategy 1: HTTP audio download → Groq Whisper (works on Vercel, no yt-dlp needed)
+  // Strategy 1: Innertube audio download → Groq Whisper (often fails on Vercel datacenter IPs)
   if (isGroqAvailable()) {
     try {
-      console.log(`[transcript] ${videoId}: trying HTTP audio download + Groq Whisper...`);
+      console.log(`[transcript] ${videoId}: trying Innertube audio + Groq Whisper...`);
       const audioBuffer = await downloadAudioHTTP(videoId);
       const segments = await transcribeWithGroq(audioBuffer, `${videoId}.webm`);
       if (segments.length > 0) {
-        console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (HTTP download, ${segments.length} segments)`);
+        console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (Innertube download, ${segments.length} segments)`);
         return { segments, source: 'groq-whisper' };
       }
     } catch (e) {
-      console.warn(`[transcript] ${videoId}: HTTP + Groq Whisper failed:`, e instanceof Error ? e.message : e);
+      console.warn(`[transcript] ${videoId}: Innertube + Groq Whisper failed:`, e instanceof Error ? e.message : e);
+    }
+  }
+
+  // Strategy 1b: Web scrape audio download → Groq Whisper (reliable on Vercel — GET looks like browser)
+  if (isGroqAvailable()) {
+    try {
+      console.log(`[transcript] ${videoId}: trying web scrape audio + Groq Whisper...`);
+      const audioBuffer = await downloadAudioWebScrape(videoId);
+      const segments = await transcribeWithGroq(audioBuffer, `${videoId}.webm`);
+      if (segments.length > 0) {
+        console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (web scrape download, ${segments.length} segments)`);
+        return { segments, source: 'groq-whisper' };
+      }
+    } catch (e) {
+      console.warn(`[transcript] ${videoId}: web scrape + Groq Whisper failed:`, e instanceof Error ? e.message : e);
+    }
+  }
+
+  // Strategy 1c: Web scrape audio download → Deepgram Nova-2 (fallback STT provider)
+  if (isDeepgramAvailable()) {
+    try {
+      console.log(`[transcript] ${videoId}: trying web scrape audio + Deepgram...`);
+      const audioBuffer = await downloadAudioWebScrape(videoId);
+      const segments = await transcribeWithDeepgram(audioBuffer, `${videoId}.webm`);
+      if (segments.length > 0) {
+        console.log(`[transcript] ${videoId}: transcribed via Deepgram (web scrape download, ${segments.length} segments)`);
+        return { segments, source: 'deepgram' };
+      }
+    } catch (e) {
+      console.warn(`[transcript] ${videoId}: web scrape + Deepgram failed:`, e instanceof Error ? e.message : e);
     }
   }
 

@@ -13,8 +13,10 @@ export type TranscriptSource =
   | 'innertube'
   | 'web-scrape'
   | 'yt-dlp'
+  | 'caption-extractor'
   | 'groq-whisper'
-  | 'local-whisper';
+  | 'local-whisper'
+  | 'deepgram';
 
 export interface TranscriptResult {
   segments: TranscriptSegment[];
