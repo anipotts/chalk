@@ -1122,7 +1122,21 @@ export function TranscriptPanel({
         ref={scrollRef}
         onScroll={handleScroll}
         onMouseUp={handleMouseUp}
-        className="h-full overflow-y-auto"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (viewMode !== 'transcript' || !filtered.length) return;
+          if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            const curIdx = filtered.findIndex((s) => segments.indexOf(s) === activeIndex);
+            const nextIdx = e.key === 'ArrowDown' ? Math.min(curIdx + 1, filtered.length - 1) : Math.max(curIdx - 1, 0);
+            onSeek(filtered[nextIdx].offset);
+          }
+          if (e.key === 'Enter' && activeIndex >= 0) {
+            const seg = segments[activeIndex];
+            if (seg) onSeek(seg.offset);
+          }
+        }}
+        className="h-full overflow-y-auto focus:outline-none focus-visible:ring-1 focus-visible:ring-chalk-accent/30 focus-visible:ring-inset"
       >
         {viewMode === 'cloud' && wordCloud.length > 0 ? (
           /* Word cloud view with sparklines */

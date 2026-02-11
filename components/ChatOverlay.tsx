@@ -1462,6 +1462,17 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                             {msg.model === 'opus' ? 'Opus' : msg.model === 'sonnet' ? 'Sonnet' : msg.model === 'haiku' ? 'Haiku' : msg.model}
                           </span>
                         )}
+                        {msg.role === 'assistant' && msg.content.length > 50 && (() => {
+                          const lc = msg.content.toLowerCase();
+                          const pos = /\b(great|excellent|correct|exactly|perfect|well done|absolutely|indeed)\b/.test(lc);
+                          const neg = /\b(unfortunately|however|difficult|complex|wrong|error|mistake|careful)\b/.test(lc);
+                          if (!pos && !neg) return null;
+                          return (
+                            <span className={`inline-block ml-1 mt-0.5 text-[8px] ${pos && !neg ? 'text-emerald-500/60' : neg && !pos ? 'text-amber-500/60' : 'text-slate-600'}`} title={pos && !neg ? 'Positive tone' : neg && !pos ? 'Cautionary tone' : 'Mixed tone'}>
+                              {pos && !neg ? '\u2714' : neg && !pos ? '\u26A0' : '\u2696'}
+                            </span>
+                          );
+                        })()}
                         {msg.role === 'assistant' && msg.content && (
                           <span className="inline-flex items-center gap-0.5 ml-1 mt-0.5">
                             <button onClick={() => setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, rating: m.rating === 'up' ? undefined : 'up' } : m))} className={`p-0.5 rounded transition-colors ${msg.rating === 'up' ? 'text-emerald-400' : 'text-slate-700 hover:text-slate-500'}`} title="Helpful">

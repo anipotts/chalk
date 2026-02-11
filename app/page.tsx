@@ -976,6 +976,17 @@ export default function Home() {
                       <path d="M10.97 2.22a.75.75 0 0 1 1.06 0l1.75 1.75a.75.75 0 0 1-.177 1.206l-2.12 1.06-.818 2.455a.75.75 0 0 1-1.262.308L7.97 7.57 5.03 10.51a.75.75 0 1 1-1.06-1.06L6.91 6.51 5.48 5.08a.75.75 0 0 1 .308-1.262l2.455-.818 1.06-2.12a.75.75 0 0 1 .667-.36Z" />
                     </svg>
                   </span>
+                  {/* Move up/down buttons */}
+                  <span className="absolute bottom-1 right-6 flex items-center gap-0.5 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                    {vidIdx > 0 && (
+                      <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setRecentVideos((prev) => { const arr = [...prev]; const idx = arr.findIndex((v) => v.id === video.id); if (idx > 0) { [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]]; } localStorage.setItem(RECENT_VIDEOS_KEY, JSON.stringify(arr)); return arr; }); }} className="p-0.5 rounded text-slate-700 hover:text-slate-400 hover:bg-white/[0.06] transition-colors" title="Move up">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2 h-2"><path fillRule="evenodd" d="M8 14a.75.75 0 0 1-.75-.75V4.56L4.03 7.78a.75.75 0 0 1-1.06-1.06l4.5-4.5a.75.75 0 0 1 1.06 0l4.5 4.5a.75.75 0 0 1-1.06 1.06L8.75 4.56v8.69A.75.75 0 0 1 8 14Z" clipRule="evenodd" /></svg>
+                      </span>
+                    )}
+                    <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); setRecentVideos((prev) => { const arr = [...prev]; const idx = arr.findIndex((v) => v.id === video.id); if (idx < arr.length - 1) { [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]]; } localStorage.setItem(RECENT_VIDEOS_KEY, JSON.stringify(arr)); return arr; }); }} className="p-0.5 rounded text-slate-700 hover:text-slate-400 hover:bg-white/[0.06] transition-colors" title="Move down">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2 h-2"><path fillRule="evenodd" d="M8 2a.75.75 0 0 1 .75.75v8.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.22 3.22V2.75A.75.75 0 0 1 8 2Z" clipRule="evenodd" /></svg>
+                    </span>
+                  </span>
                   {/* Delete button */}
                   <span
                     role="button"

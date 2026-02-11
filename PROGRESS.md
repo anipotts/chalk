@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 107 (Completed)
+- [x] Transcript Segment Keyboard Navigation — Up/Down arrows to navigate segments, Enter to seek
+- [x] Chat Response Sentiment Badge — tone indicator (check/warning/balance) based on response keywords
+- [x] Home Page Video Card Move Up/Down — reorder buttons to manually sort video cards, persisted to localStorage
+- [x] Build verification PASSED
+
 ## Wave 106 (Completed)
 - [x] Transcript Segment Speaker Color Coding — indigo/emerald left border tint per detected speaker
 - [x] Chat Message Copy as Markdown Note — "Copy as note" context menu option with H2 header and attribution
