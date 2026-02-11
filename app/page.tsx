@@ -438,6 +438,11 @@ export default function Home() {
               <p className="mt-2 text-xs text-red-400 text-center">{error}</p>
             )}
           </form>
+          <p className="text-[9px] text-slate-700 mt-1.5 text-center">
+            Press <kbd className="px-1 py-0 rounded bg-chalk-surface/40 border border-chalk-border/20 text-[8px] font-mono">Enter</kbd> to focus
+            {' · '}
+            <kbd className="px-1 py-0 rounded bg-chalk-surface/40 border border-chalk-border/20 text-[8px] font-mono">Esc</kbd> to blur
+          </p>
 
           {/* Video preview card */}
           {preview && (

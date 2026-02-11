@@ -502,6 +502,12 @@ Status: RUNNING
 - [x] Home Page Activity Timeline — vertical timeline of recent study events
 - [x] Build verification PASSED
 
+## Wave 65 (Completed)
+- [x] Transcript Percentage Jumps — quick 25/50/75% buttons to seek video
+- [x] Chat Message Collapse — long messages truncated with "Show more" toggle
+- [x] Home Page Greeting — dynamic time-of-day greeting with study tip
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

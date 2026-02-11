@@ -1324,7 +1324,12 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                       >Copy text</button>
                       <button
                         className="px-3 py-1.5 text-[11px] text-left text-slate-300 hover:text-chalk-text hover:bg-chalk-accent/15 transition-colors"
-                        onClick={() => { navigator.clipboard.writeText(`> ${msg.content.replace(/\n/g, '\n> ')}`); setCtxMenu(null); }}
+                        onClick={() => {
+                          const quote = `> ${msg.content.replace(/\n/g, '\n> ')}`;
+                          const attr = videoTitle ? `\n\n— *${videoTitle}*` : '';
+                          navigator.clipboard.writeText(quote + attr);
+                          setCtxMenu(null);
+                        }}
                       >Copy as quote</button>
                       <button
                         className="px-3 py-1.5 text-[11px] text-left text-slate-300 hover:text-chalk-text hover:bg-chalk-accent/15 transition-colors"
