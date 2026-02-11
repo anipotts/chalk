@@ -175,12 +175,27 @@ export default function Home() {
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [dailyGoal] = useState(() => getDailyGoal());
   const previewAbort = useRef<AbortController | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setRecentVideos(getRecentVideos());
     setStreak(getStreak());
     setActivity(getActivity());
     setTodayMinutes(getTodayMinutes());
+  }, []);
+
+  // Global keyboard shortcuts: Enter → focus input, Escape → blur
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && document.activeElement !== inputRef.current) {
+        e.preventDefault();
+        inputRef.current?.focus();
+      } else if (e.key === 'Escape' && document.activeElement === inputRef.current) {
+        inputRef.current?.blur();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
   }, []);
 
   // Fetch preview when URL changes
@@ -373,6 +388,7 @@ export default function Home() {
           <form onSubmit={handleSubmit} className="w-full max-w-xl mx-auto">
             <div className="flex items-center gap-2">
               <input
+                ref={inputRef}
                 type="text"
                 value={url}
                 onChange={(e) => { setUrl(e.target.value); setError(''); }}

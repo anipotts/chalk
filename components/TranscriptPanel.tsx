@@ -651,6 +651,25 @@ export function TranscriptPanel({
             {isComplete && segments.length > 0 && (
               <button
                 onClick={() => {
+                  const json = JSON.stringify(segments.map((s) => ({ offset: s.offset, duration: s.duration, text: s.text })), null, 2);
+                  const blob = new Blob([json], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `transcript${videoId ? `-${videoId}` : ''}.json`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                className="p-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
+                aria-label="Export transcript as JSON"
+                title="Download as JSON"
+              >
+                <span className="text-[8px] font-mono font-bold">{'{}'}</span>
+              </button>
+            )}
+            {isComplete && segments.length > 0 && (
+              <button
+                onClick={() => {
                   const text = segments.map((s) => `[${formatTimestamp(s.offset)}] ${s.text}`).join('\n');
                   navigator.clipboard.writeText(text);
                 }}

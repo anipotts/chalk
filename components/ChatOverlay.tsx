@@ -338,6 +338,11 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
   const prevTimeRef = useRef<number>(currentTime);
   const scrolledAtCountRef = useRef<number>(0);
 
+  // Max message content length for relative bars
+  const maxContentLength = useMemo(() => {
+    return Math.max(1, ...messages.filter((m) => m.role === 'assistant').map((m) => m.content.length));
+  }, [messages]);
+
   // Video progress calculation
   const videoDuration = useMemo(() => {
     if (segments.length === 0) return 0;
@@ -1210,6 +1215,7 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     videoId={videoId}
                     pinned={pinnedIds.has(msg.id)}
                     onTogglePin={msg.role === 'assistant' ? () => togglePin(msg.id) : undefined}
+                    maxContentLength={maxContentLength}
                   />
                   {/* Follow-up chips after last assistant message */}
                   {msg.role === 'assistant' && i === messages.length - 1 && !isStreaming && msg.content && (

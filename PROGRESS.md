@@ -448,6 +448,12 @@ Status: RUNNING
 - [x] Footer Study Stats — total study days and best streak in home page footer
 - [x] Build verification PASSED
 
+## Wave 56 (Completed)
+- [x] JSON Transcript Export — JSON export button alongside markdown in transcript panel
+- [x] Chat Message Length Indicator — visual bar showing relative message length per AI response
+- [x] Home Page Keyboard Shortcuts — Enter to focus URL input, Escape to blur
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

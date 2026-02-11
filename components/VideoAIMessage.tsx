@@ -18,6 +18,7 @@ interface VideoAIMessageProps {
   videoId?: string;
   pinned?: boolean;
   onTogglePin?: () => void;
+  maxContentLength?: number;
 }
 
 function SparkleIcon() {
@@ -249,7 +250,7 @@ function ReactionButtons({ messageId }: { messageId?: string }) {
   );
 }
 
-export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingDuration, responseDuration, messageId, onSeek, videoId, pinned, onTogglePin }: VideoAIMessageProps) {
+export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingDuration, responseDuration, messageId, onSeek, videoId, pinned, onTogglePin, maxContentLength }: VideoAIMessageProps) {
   if (role === 'user') {
     return (
       <motion.div
@@ -317,6 +318,13 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
 
         {!isStreaming && !hasContent && !thinking && (
           <p className="text-sm text-slate-500 italic">No response generated.</p>
+        )}
+
+        {/* Message length bar */}
+        {hasContent && !isStreaming && maxContentLength && maxContentLength > 0 && (
+          <div className="h-[2px] rounded-full bg-white/[0.03] mt-1 overflow-hidden">
+            <div className="h-full rounded-full bg-chalk-accent/20" style={{ width: `${Math.min(100, (content.length / maxContentLength) * 100)}%` }} />
+          </div>
         )}
 
         {/* Copy button + reactions + confidence — appears on hover */}
