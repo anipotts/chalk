@@ -1867,6 +1867,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(could be|might be|perhaps|it seems|it appears|my guess is|chances are|presumably|conceivably|it looks like)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-rose-400/30" title="Contains speculative language">&#9671;</span>
                   )}
+                  {!compactMode && /\b(regardless|in any case|be that as it may|no matter what|whatever the case|irrespective of|setting aside|leaving aside|putting aside|aside from that)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-lime-400/30" title="Contains dismissive language">&times;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

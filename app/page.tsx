@@ -1600,6 +1600,24 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatMWE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatMWE) {
+                            const allMWE: { role: string; content?: string }[] = JSON.parse(chatMWE);
+                            let maxEx = 0;
+                            for (let i = 0; i < allMWE.length - 1; i++) {
+                              if (allMWE[i].role === 'user' && allMWE[i + 1]?.role === 'assistant') {
+                                const uw = (allMWE[i].content || '').split(/\s+/).filter(Boolean).length;
+                                const aw = (allMWE[i + 1].content || '').split(/\s+/).filter(Boolean).length;
+                                maxEx = Math.max(maxEx, uw + aw);
+                              }
+                            }
+                            if (maxEx >= 20) return <span className="text-[8px] text-lime-400/40 tabular-nums" title={`Largest exchange: ${maxEx} words`}>{maxEx} w max</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatAWR = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatAWR) {
                             const allAWR: { role: string; content?: string }[] = JSON.parse(chatAWR);

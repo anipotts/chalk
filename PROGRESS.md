@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 215 — Dismissive language detection, illustrative badge, max words exchange
+- [x] TranscriptPanel: dismissive language detection — "×" in lime-400/30, regex for regardless/in any case/be that as it may/no matter what/whatever the case/irrespective of/setting aside/leaving aside/putting aside/aside from that
+- [x] ChatOverlay: illustrative badge — "illustrative" in lime-500/10, detects for instance/as an example/to illustrate/such as/namely/in particular/specifically/to demonstrate/case in point/to give you an idea
+- [x] Home page video card: max words exchange — "X w max" in lime-400/40, variable chatMWE, shows largest combined word count from a single user+AI exchange
+- [x] Build verification PASSED
+
 ### Wave 214 — Speculative language detection, comparative badge, AI word ratio
 - [x] TranscriptPanel: speculative language detection — "◇" in rose-400/30, regex for could be/might be/perhaps/it seems/it appears/my guess is/chances are/presumably/conceivably/it looks like
 - [x] ChatOverlay: comparative badge — "comparative" in rose-500/10, detects compared to/in contrast/on the contrary/whereas/while/unlike/as opposed to/relative to/similarly/just as
