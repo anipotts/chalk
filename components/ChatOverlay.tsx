@@ -1199,6 +1199,7 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     thinking={msg.thinking}
                     thinkingDuration={msg.thinkingDuration}
                     responseDuration={msg.responseDuration}
+                    messageId={msg.id}
                     onSeek={onSeek}
                     videoId={videoId}
                     pinned={pinnedIds.has(msg.id)}

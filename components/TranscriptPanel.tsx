@@ -1227,7 +1227,14 @@ export function TranscriptPanel({
       {/* Reading progress percentage footer */}
       {segments.length > 0 && readingProgress > 0 && viewMode === 'transcript' && (
         <div className="px-3 py-1.5 border-t border-chalk-border/10 flex items-center justify-between">
-          <span className="text-[9px] text-slate-600 tabular-nums">{Math.round(readingProgress * 100)}% covered</span>
+          <span className="text-[9px] text-slate-600 tabular-nums">
+            {Math.round(readingProgress * 100)}% covered
+            {readingProgress > 0.01 && readingProgress < 0.95 && stats && stats.speakingWPM > 0 && (() => {
+              const remainingWords = Math.round(stats.totalWords * (1 - readingProgress));
+              const remainingMin = Math.max(1, Math.round(remainingWords / stats.speakingWPM));
+              return <span className="text-slate-700"> · ~{remainingMin}m left</span>;
+            })()}
+          </span>
           <div className="flex-1 mx-2 h-px bg-chalk-border/10 relative">
             <div className="absolute inset-y-0 left-0 bg-chalk-accent/30" style={{ width: `${readingProgress * 100}%` }} />
           </div>

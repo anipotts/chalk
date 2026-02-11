@@ -346,6 +346,29 @@ export default function Home() {
             </div>
           )}
 
+          {/* Quick stats summary */}
+          {recentVideos.length > 0 && (() => {
+            let totalQs = 0;
+            try {
+              for (const v of recentVideos) {
+                const chat = localStorage.getItem(`chalk-video-chat-${v.id}`);
+                if (chat) {
+                  const msgs = JSON.parse(chat);
+                  totalQs += msgs.filter((m: { role: string }) => m.role === 'user').length;
+                }
+              }
+            } catch { /* ignore */ }
+            const totalMins = Object.values(activity).reduce((a, m) => a + m, 0);
+            if (totalQs === 0 && totalMins === 0) return null;
+            return (
+              <div className="mb-4 flex items-center justify-center gap-3 text-[10px] text-slate-600">
+                <span>{recentVideos.length} video{recentVideos.length !== 1 ? 's' : ''}</span>
+                {totalQs > 0 && <><span className="text-slate-700">·</span><span>{totalQs} question{totalQs !== 1 ? 's' : ''} asked</span></>}
+                {totalMins > 0 && <><span className="text-slate-700">·</span><span>{totalMins}m studied</span></>}
+              </div>
+            );
+          })()}
+
           {/* URL Input */}
           <form onSubmit={handleSubmit} className="w-full max-w-xl mx-auto">
             <div className="flex items-center gap-2">

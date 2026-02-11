@@ -424,6 +424,12 @@ Status: RUNNING
 - [x] Enhanced Transcript Tooltips — richer timestamps tooltips with word count and "Jump to" text
 - [x] Build verification PASSED
 
+## Wave 52 (Completed)
+- [x] Transcript Remaining Time — "~3m left" indicator in footer based on speaking WPM
+- [x] Chat Message Timestamps — relative time ("2m ago") on AI messages on hover
+- [x] Home Page Quick Stats — total videos, questions asked, minutes studied summary
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
