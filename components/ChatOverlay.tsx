@@ -901,6 +901,18 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                     </button>
                     <button
                       onClick={() => {
+                        const data = { video: videoTitle || 'Untitled', exportedAt: new Date().toISOString(), messages: messages.map((m) => ({ role: m.role, content: m.content, ...(m.model ? { model: m.model } : {}) })) };
+                        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `chalk-chat-${Date.now()}.json`; a.click(); URL.revokeObjectURL(a.href);
+                      }}
+                      className="flex items-center gap-1 px-1.5 py-1 rounded-md text-slate-600 hover:text-slate-300 hover:bg-white/[0.06] transition-colors text-[9px]"
+                      aria-label="Export as JSON"
+                      title="Download conversation as JSON"
+                    >
+                      JSON
+                    </button>
+                    <button
+                      onClick={() => {
                         const title = videoTitle || 'Video Chat';
                         const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Chalk - ${title}</title>

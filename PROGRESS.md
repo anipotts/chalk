@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 98 (Completed)
+- [x] Transcript Active Segment Pulse Border — pulsing left border animation on current segment
+- [x] Chat Conversation Export as JSON — JSON download button in export options
+- [x] Home Page Video Card Channel Name — extract and display channel name from title
+- [x] Build verification PASSED
+
 ## Wave 97 (Completed)
 - [x] Transcript Notes Export Button — download notes as .txt file
 - [x] Chat Conversation Word Cloud Badge — show most frequently used word in stats

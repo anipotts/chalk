@@ -1410,6 +1410,7 @@ export function TranscriptPanel({
                           ? 'border-l-2 border-l-yellow-500/60'
                           : 'border-l-2 border-l-transparent'
                   }`}
+                  style={isActive ? { animation: 'activeBorderPulse 2s ease-in-out infinite' } : undefined}
                 >
                   {/* Key moment indicator dot */}
                   {!compactMode && (() => {

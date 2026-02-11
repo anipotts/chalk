@@ -836,6 +836,16 @@ export default function Home() {
                             return <span className={`shrink-0 text-[8px] font-medium px-1 py-0 rounded border ${tag.className}`}>{tag.label}</span>;
                           })()}
                         </div>
+                        {(() => {
+                          const sep = video.title!.lastIndexOf(' - ');
+                          const pipe = video.title!.lastIndexOf(' | ');
+                          const idx = Math.max(sep, pipe);
+                          if (idx > 0 && idx < video.title!.length - 3) {
+                            const channel = video.title!.slice(idx + 3).trim();
+                            if (channel.length > 1 && channel.length < 40) return <span className="text-[9px] text-slate-600 truncate block">{channel}</span>;
+                          }
+                          return null;
+                        })()}
                         <span className="text-[10px] text-slate-500 truncate block">{video.url}</span>
                       </>
                     ) : (

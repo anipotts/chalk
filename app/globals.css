@@ -67,6 +67,11 @@ body {
   100% { width: 100%; }
 }
 
+@keyframes activeBorderPulse {
+  0%, 100% { border-left-color: rgba(124, 207, 252, 0.7); }
+  50% { border-left-color: rgba(124, 207, 252, 0.25); }
+}
+
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
   20% { transform: translateX(-6px); }
