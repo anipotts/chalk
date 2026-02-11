@@ -1525,6 +1525,19 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatAvg = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatAvg) {
+                            const uMsgsAvg: { role: string; content: string }[] = JSON.parse(chatAvg).filter((m: { role: string; content: string }) => m.role === 'user' && m.content);
+                            if (uMsgsAvg.length >= 3) {
+                              const avgLen = Math.round(uMsgsAvg.reduce((s, m) => s + m.content.split(/\s+/).filter(Boolean).length, 0) / uMsgsAvg.length);
+                              if (avgLen >= 5) return <span className="text-[8px] text-fuchsia-400/40 tabular-nums" title={`Average question length: ${avgLen} words across ${uMsgsAvg.length} questions`}>avg {avgLen}w/q</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

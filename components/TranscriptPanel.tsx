@@ -1690,6 +1690,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(subscribe|like this video|hit the bell|leave a comment|share this|check out|click the link|visit our|follow us)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-red-400/30" title="Contains a call to action">cta</span>
                   )}
+                  {!compactMode && /\b(right\?|isn't it\??|don't you think|wouldn't you say|you know what I mean|aren't we|isn't that|doesn't it|won't it|can't we)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-indigo-400/30" title="Contains a rhetorical question">rh?</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

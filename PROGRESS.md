@@ -1048,6 +1048,12 @@ Status: RUNNING
 - [x] Home Page Video Card Watch Completion Status — "completed" or "halfway" badge based on watch progress
 - [x] Build verification PASSED
 
+### Wave 156 — Rhetorical question detection, confidence badge, average question length
+- [x] Transcript Segment Rhetorical Question Detection — "rh?" indicator when segment contains rhetorical questions (right?, isn't it?, don't you think)
+- [x] Chat Message Confidence Badge — "confident" badge on AI messages expressing high confidence (definitely, certainly, absolutely)
+- [x] Home Page Video Card Average Question Length — "avg Xw/q" badge showing average word count per user question
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
