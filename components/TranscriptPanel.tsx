@@ -1759,6 +1759,9 @@ export function TranscriptPanel({
                   {!compactMode && /\([^)]{3,}\)/.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains parenthetical/aside">()</span>
                   )}
+                  {!compactMode && /\b(first|second|third|number one|number two|one,|two,|three,)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-lime-400/30" title="Contains enumeration/listing">1.</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

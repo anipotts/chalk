@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 179 — Enumeration detection, causal badge, last question preview
+- [x] TranscriptPanel: enumeration/listing detection — "1." in lime-400/30, regex for first/second/third/number one etc.
+- [x] ChatOverlay: causal language badge — "causal" in orange-500/10, detects because/therefore/consequently/due to
+- [x] HomePage: last question preview — truncated last user question in zinc-400/40, variable chatLQ
+- [x] Build verification PASSED
+
 ### Wave 178 — Parenthetical detection, comparative badge, first question preview
 - [x] TranscriptPanel: parenthetical/aside detection — "()" in amber-400/30, regex `/\([^)]{3,}\)/`
 - [x] ChatOverlay: comparative language badge — "compares" in teal-500/10, detects more/less/better/worse/similar/compared to
