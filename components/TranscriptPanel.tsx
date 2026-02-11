@@ -1831,6 +1831,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(however|but|although|despite|whereas|instead|on the other hand|nevertheless)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains contrastive language">&#8856;</span>
                   )}
+                  {!compactMode && /\b(absolutely|definitely|certainly|undoubtedly|clearly|obviously|without a doubt|no question)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-red-400/30" title="Contains emphatic language">!</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

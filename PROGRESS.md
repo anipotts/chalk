@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 203 — Emphatic language detection, motivational badge, shortest response
+- [x] TranscriptPanel: emphatic language detection — "!" in red-400/30, regex for absolutely/definitely/certainly/undoubtedly/clearly/obviously/without a doubt/no question
+- [x] ChatOverlay: motivational badge — "motivational" in rose-500/10, detects you can do this/keep going/great job/well done/nice work/you're on track/making progress/getting there/almost there
+- [x] Home page video card: shortest response — "X word min R" in sky-400/40, variable chatSR2, finds shortest AI response by word count (>=3 AI msgs, >=3 words)
+- [x] Build verification PASSED
+
 ### Wave 202 — Contrastive language detection, pedagogical badge, longest question
 - [x] TranscriptPanel: contrastive language detection — "⊘" in amber-400/30, regex for however/but/although/despite/whereas/instead/on the other hand/nevertheless
 - [x] ChatOverlay: pedagogical badge — "pedagogical" in lime-500/10, detects think of it as/imagine/picture this/consider this/remember that/keep in mind/notice how/pay attention to
