@@ -1813,6 +1813,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(very very|really really|so so|much much|again and again|over and over|more and more|time and time)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains emphatic repetition">&#9889;</span>
                   )}
+                  {!compactMode && /\b(previously|earlier|later|afterward|meanwhile|subsequently|eventually|at that point)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-cyan-400/30" title="Contains temporal reference">&#9203;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

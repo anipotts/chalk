@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 197 — Temporal reference detection, appreciative badge, question density
+- [x] TranscriptPanel: temporal reference detection — "⏳" in cyan-400/30, regex for previously/earlier/later/afterward/meanwhile/subsequently/eventually/at that point
+- [x] ChatOverlay: appreciative badge — "appreciative" in emerald-500/10, detects great question/good point/excellent observation/that's interesting/wonderful/fascinating/insightful/astute
+- [x] Home page video card: question density — "X q/exchange" in pink-400/40, variable chatQD, computes average questions per exchange (>=2 exchanges, density >= 1.0)
+- [x] Build verification PASSED
+
 ### Wave 196 — Emphatic repetition detection, instructive badge, exchange word range
 - [x] TranscriptPanel: emphatic repetition detection — "⚡" in yellow-400/30, regex for very very/really really/so so/much much/again and again/over and over/more and more/time and time
 - [x] ChatOverlay: instructive badge — "instructive" in indigo-500/10, detects here's how/follow these steps/the process is/to do this/start by/make sure to/remember to/keep in mind
