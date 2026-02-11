@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 192 — Comparative language detection, hypothetical badge, median words per turn
+- [x] TranscriptPanel: comparative language detection — "⇔" in rose-400/30, regex for more than/less than/greater/fewer/better/worse/compared to/in contrast
+- [x] ChatOverlay: hypothetical badge — "hypothetical" in fuchsia-500/10, detects if we/imagine/suppose/what if/hypothetically/in theory/could potentially/assuming
+- [x] Home page video card: median words per turn — "med X words/turn" in lime-400/40, variable chatMT, computes median word count across all messages (>=4 msgs, median >= 5)
+- [x] Build verification PASSED
+
 ### Wave 191 — Illustrative language detection, summarizing badge, average words per turn
 - [x] TranscriptPanel: illustrative language detection — "◆" in purple-400/30, regex for for example/for instance/such as/illustrate/demonstrate/consider/take for example/case in point
 - [x] ChatOverlay: summarizing badge — "summarizing" in violet-500/10, detects in summary/to sum up/overall/in conclusion/to summarize/the key point/bottom line/all in all
