@@ -891,7 +891,10 @@ export default function Home() {
                         const mins = Math.floor(ago / 60000);
                         const hrs = Math.floor(ago / 3600000);
                         const days = Math.floor(ago / 86400000);
-                        const label = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : hrs < 24 ? `${hrs}h ago` : days < 7 ? `${days}d ago` : `${Math.floor(days / 7)}w ago`;
+                        const label = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : hrs < 24 ? `${hrs}h ago` : (() => {
+                          const d = new Date(video.timestamp);
+                          return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                        })();
                         return (
                           <span className="text-[9px] text-slate-600 tabular-nums">{label}</span>
                         );

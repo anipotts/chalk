@@ -1432,7 +1432,9 @@ export function TranscriptPanel({
                           ? `${hlActive} border-l-2`
                           : starred.has(seg.offset)
                             ? 'border-l-2 border-l-yellow-500/60'
-                            : 'border-l-2 border-l-transparent'
+                            : speakerChanges.size >= 2
+                              ? `border-l-2 ${(() => { let sp = 0; for (let si = 0; si <= segIndex; si++) { if (speakerChanges.has(si)) sp++; } return sp % 2 === 0 ? 'border-l-indigo-500/20' : 'border-l-emerald-500/20'; })()}`
+                              : 'border-l-2 border-l-transparent'
                   }`}
                   style={isActive ? { animation: 'activeBorderPulse 2s ease-in-out infinite' } : recentFade > 0 ? { backgroundColor: `rgba(59, 130, 246, ${recentFade * 0.05})` } : undefined}
                   onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, offset: seg.offset, text: seg.text }); }}

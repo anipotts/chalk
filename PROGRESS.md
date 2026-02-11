@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 106 (Completed)
+- [x] Transcript Segment Speaker Color Coding — indigo/emerald left border tint per detected speaker
+- [x] Chat Message Copy as Markdown Note — "Copy as note" context menu option with H2 header and attribution
+- [x] Home Page Video Card Watch Date — show "Feb 10" date format for videos older than 24 hours
+- [x] Build verification PASSED
+
 ## Wave 105 (Completed)
 - [x] Transcript Segment Time Range Label — show end timestamp (–M:SS) on hover next to segment start time
 - [x] Chat Input Paste URL Detection — small "link" indicator appears when URL is detected in chat input

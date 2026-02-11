@@ -1563,6 +1563,14 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                       >Copy as quote</button>
                       <button
                         className="px-3 py-1.5 text-[11px] text-left text-slate-300 hover:text-chalk-text hover:bg-chalk-accent/15 transition-colors"
+                        onClick={() => {
+                          const note = `## Chalk AI Note\n\n${msg.content}${videoTitle ? `\n\n*From: ${videoTitle}*` : ''}`;
+                          navigator.clipboard.writeText(note);
+                          setCtxMenu(null);
+                        }}
+                      >Copy as note</button>
+                      <button
+                        className="px-3 py-1.5 text-[11px] text-left text-slate-300 hover:text-chalk-text hover:bg-chalk-accent/15 transition-colors"
                         onClick={() => { togglePin(msg.id); setCtxMenu(null); }}
                       >{pinnedIds.has(msg.id) ? 'Unpin' : 'Pin'}</button>
                     </div>
