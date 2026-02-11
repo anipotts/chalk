@@ -1613,6 +1613,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(\w+\s+(is|are|means?|refers?\s+to|defined\s+as|known\s+as)\s+.{5,}|definition\s+of)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-emerald-400/30" title="Contains a definition">def</span>
                   )}
+                  {!compactMode && /\b(what if|imagine|suppose|let's say|hypothetically|in theory|could be|would be|might be)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-orange-400/30" title="Contains hypothetical or conditional language">if</span>
+                  )}
                   {!compactMode && complexityLabel && (
                     <span className={`shrink-0 text-[7px] font-bold uppercase tracking-wider px-1 py-0 rounded ${
                       complexityLabel === 'complex' ? 'bg-rose-500/10 text-rose-400/60' : 'bg-amber-500/10 text-amber-400/50'

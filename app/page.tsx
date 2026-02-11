@@ -1204,6 +1204,19 @@ export default function Home() {
                         try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
+                            const aiMsgs = JSON.parse(chat).filter((m: { role: string; content: string }) => m.role === 'assistant' && m.content);
+                            if (aiMsgs.length >= 2) {
+                              const maxWc = Math.max(...aiMsgs.map((m: { content: string }) => m.content.split(/\s+/).filter(Boolean).length));
+                              if (maxWc >= 50) return <span className="text-[8px] text-violet-400/40 tabular-nums" title={`Longest AI response: ${maxWc} words`}>max {maxWc}w</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
+                          const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chat) {
                             const msgs = JSON.parse(chat);
                             const lastQ = [...msgs].reverse().find((m: { role: string }) => m.role === 'user');
                             if (lastQ) {

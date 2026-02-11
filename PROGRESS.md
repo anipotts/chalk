@@ -898,6 +898,12 @@ Status: RUNNING
 - [x] Home Page Video Card Chat Depth Ratio — deep/dialog/query-heavy badge based on AI-to-user word ratio
 - [x] Build verification PASSED
 
+## Wave 131 (Completed)
+- [x] Transcript Segment Hypothetical Detection — "if" indicator on segments with hypothetical language (what if, imagine, suppose, let's say)
+- [x] Chat Message Clarification Badge — "clarify" badge on AI responses with clarification phrases (to clarify, in other words, put simply)
+- [x] Home Page Video Card Longest AI Response — "max Nw" badge showing word count of longest AI response per video
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
