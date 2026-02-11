@@ -902,6 +902,7 @@ export function TranscriptPanel({
             <span className="text-[10px] text-slate-500 shrink-0">0 of {segments.length}</span>
           )}
           {starred.size > 0 && (
+            <>
             <button
               onClick={() => { setShowStarredOnly((v) => !v); setViewMode('transcript'); }}
               className={`shrink-0 p-1 rounded-md transition-colors ${
@@ -917,6 +918,22 @@ export function TranscriptPanel({
               </svg>
               <span className="text-[8px] tabular-nums">{starred.size}</span>
             </button>
+            {starred.size > 1 && (() => {
+              const starredArr = [...starred].sort((a, b) => a - b);
+              const prevStar = starredArr.filter((i) => i < activeIndex).pop();
+              const nextStar = starredArr.find((i) => i > activeIndex);
+              return (
+                <span className="hidden sm:inline-flex items-center gap-0.5">
+                  <button onClick={() => prevStar !== undefined && onSeek(segments[prevStar].offset)} disabled={prevStar === undefined} className="p-0.5 rounded text-slate-600 hover:text-yellow-400 disabled:opacity-30 disabled:hover:text-slate-600 transition-colors" title="Previous starred" aria-label="Previous starred segment">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5"><path fillRule="evenodd" d="M9.78 4.22a.75.75 0 0 1 0 1.06L7.06 8l2.72 2.72a.75.75 0 1 1-1.06 1.06L5.47 8.53a.75.75 0 0 1 0-1.06l3.25-3.25a.75.75 0 0 1 1.06 0Z" clipRule="evenodd" /></svg>
+                  </button>
+                  <button onClick={() => nextStar !== undefined && onSeek(segments[nextStar].offset)} disabled={nextStar === undefined} className="p-0.5 rounded text-slate-600 hover:text-yellow-400 disabled:opacity-30 disabled:hover:text-slate-600 transition-colors" title="Next starred" aria-label="Next starred segment">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5"><path fillRule="evenodd" d="M6.22 4.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 0 1-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" /></svg>
+                  </button>
+                </span>
+              );
+            })()}
+            </>
           )}
           <button
             onClick={() => setFollowAlong((v) => !v)}

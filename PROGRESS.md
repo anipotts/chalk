@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 93 (Completed)
+- [x] Transcript Starred Segments Quick Nav — prev/next arrows to jump between starred segments
+- [x] Chat Header Message Rate — show messages per minute in conversation stats
+- [x] Home Page Video Card Thumbnail Fallback — placeholder icon when thumbnail fails to load
+- [x] Build verification PASSED
+
 ## Wave 92 (Completed)
 - [x] Transcript Active Segment Text Preview — show truncated current segment text in header
 - [x] Chat Message Timestamp Copy — click relative time to copy exact timestamp
