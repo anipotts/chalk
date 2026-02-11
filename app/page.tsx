@@ -1600,6 +1600,21 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatAQ = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatAQ) {
+                            const allAQ: { role: string; content?: string }[] = JSON.parse(chatAQ);
+                            const userMsgsAQ = allAQ.filter(m => m.role === 'user' && m.content);
+                            if (userMsgsAQ.length >= 2) {
+                              const totalWords = userMsgsAQ.reduce((sum, m) => sum + m.content!.split(/\s+/).filter(Boolean).length, 0);
+                              const avg = Math.round(totalWords / userMsgsAQ.length);
+                              if (avg >= 2) return <span className="text-[8px] text-indigo-400/40 tabular-nums" title={`Average question length: ${avg} words`}>avg {avg} w/q</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatUW = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatUW) {
                             const uMsgsUW: { role: string; content: string }[] = JSON.parse(chatUW).filter((m: { role: string; content: string }) => m.role === 'user' && m.content);
