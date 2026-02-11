@@ -1217,6 +1217,18 @@ export default function Home() {
                         try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
+                            const aiMsgs: { role: string; content: string }[] = JSON.parse(chat).filter((m: { role: string; content: string }) => m.role === 'assistant' && m.content);
+                            const allRefs = new Set<string>();
+                            for (const m of aiMsgs) { const refs = m.content.match(/\[\d+:\d{2}\]/g); if (refs) refs.forEach((r) => allRefs.add(r)); }
+                            if (allRefs.size >= 3) return <span className="text-[8px] text-sky-400/40 tabular-nums" title={`${allRefs.size} unique timestamps cited by AI`}>{allRefs.size} cited</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
+                          const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chat) {
                             const msgs = JSON.parse(chat);
                             const lastQ = [...msgs].reverse().find((m: { role: string }) => m.role === 'user');
                             if (lastQ) {

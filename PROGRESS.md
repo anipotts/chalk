@@ -904,6 +904,12 @@ Status: RUNNING
 - [x] Home Page Video Card Longest AI Response — "max Nw" badge showing word count of longest AI response per video
 - [x] Build verification PASSED
 
+## Wave 132 (Completed)
+- [x] Transcript Segment Conclusion Detection — "end" indicator on segments with concluding language (in conclusion, to wrap up, finally)
+- [x] Chat Message Encouragement Badge — "encourage" badge on AI responses with positive reinforcement (great question, good thinking)
+- [x] Home Page Video Card Unique AI Citations — "N cited" badge showing unique timestamps cited by AI per video
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
