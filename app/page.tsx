@@ -1600,6 +1600,20 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatFRL = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatFRL) {
+                            const allFRL: { role: string; content?: string }[] = JSON.parse(chatFRL);
+                            const firstAI = allFRL.find(m => m.role === 'assistant' && m.content);
+                            if (firstAI && allFRL.length >= 2) {
+                              const wc = firstAI.content!.split(/\s+/).filter(Boolean).length;
+                              if (wc >= 10) return <span className="text-[8px] text-sky-400/40 tabular-nums" title={`First AI response: ${wc} words`}>{wc} w first</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatQCS = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatQCS) {
                             const allQCS: { role: string; content?: string }[] = JSON.parse(chatQCS);

@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 209 — Qualifying language detection, reflective badge, first response latency
+- [x] TranscriptPanel: qualifying language detection — "~" in sky-400/30, regex for in some cases/depending on/it varies/not always/sometimes/to some extent/more or less/roughly/approximately/in certain situations
+- [x] ChatOverlay: reflective badge — "reflective" in sky-500/10, detects looking back/in hindsight/reflecting on/when I think about/it occurs to me/upon reflection/thinking about it/reconsidering/in retrospect/come to realize
+- [x] Home page: first response latency badge — "X w first" in sky-400/40, variable chatFRL, shows word count of first AI response when ≥2 messages and ≥10 words
+- [x] Build verification PASSED
+
 ### Wave 208 — Sequential language detection, persuasive badge, question complexity score
 - [x] TranscriptPanel: sequential language detection — "→" in lime-400/30, regex for first/then/next/after that/followed by/subsequently/finally/lastly/step by step/in sequence
 - [x] ChatOverlay: persuasive badge — "persuasive" in emerald-500/10, detects you'll love/trust me/here's why/the best part/what's great/you won't regret/believe me/honestly/game changer/absolutely
