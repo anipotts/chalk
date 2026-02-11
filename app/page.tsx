@@ -195,6 +195,7 @@ export default function Home() {
   const [activity, setActivity] = useState<Record<string, number>>({});
   const [videoFilter, setVideoFilter] = useState('');
   const [videoSort, setVideoSort] = useState<'date' | 'title' | 'views'>('date');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [dailyGoal] = useState(() => getDailyGoal());
   const previewAbort = useRef<AbortController | null>(null);
@@ -507,6 +508,13 @@ export default function Home() {
                   </div>
                 </>
               )}
+              <button
+                onClick={() => setViewMode((m) => m === 'grid' ? 'list' : 'grid')}
+                className="px-1.5 py-0.5 rounded text-[9px] text-slate-600 hover:text-slate-400 hover:bg-chalk-surface/50 transition-colors"
+                title={viewMode === 'grid' ? 'Switch to list' : 'Switch to grid'}
+              >
+                {viewMode === 'grid' ? 'List' : 'Grid'}
+              </button>
               {recentVideos.length > 1 && (
                 <button
                   onClick={() => { if (confirm('Clear all recent videos?')) { setRecentVideos([]); localStorage.setItem(RECENT_VIDEOS_KEY, '[]'); } }}
@@ -555,7 +563,7 @@ export default function Home() {
                 </div>
               );
             })()}
-            <div className="space-y-1.5">
+            <div className={viewMode === 'grid' ? 'space-y-1.5' : 'space-y-0.5'}>
               {[...recentVideos].sort((a, b) => {
                 if (videoSort === 'title') return (a.title || a.url).localeCompare(b.title || b.url);
                 if (videoSort === 'views') {
@@ -564,7 +572,7 @@ export default function Home() {
                   return vb - va;
                 }
                 return b.timestamp - a.timestamp;
-              }).slice(0, 5).filter((v) => !videoFilter.trim() || (v.title || v.url).toLowerCase().includes(videoFilter.toLowerCase())).map((video) => {
+              }).slice(0, viewMode === 'list' ? 10 : 5).filter((v) => !videoFilter.trim() || (v.title || v.url).toLowerCase().includes(videoFilter.toLowerCase())).map((video) => {
                 // Watch progress bar data
                 let watchPct = 0;
                 try {
@@ -572,6 +580,27 @@ export default function Home() {
                   const dur = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-duration-${video.id}`) || '0') : 0;
                   if (dur > 0 && prog > 0) watchPct = Math.min(1, prog / dur);
                 } catch { /* ignore */ }
+                if (viewMode === 'list') {
+                  const ago = Date.now() - video.timestamp;
+                  const mins = Math.floor(ago / 60000);
+                  const hrs = Math.floor(ago / 3600000);
+                  const days = Math.floor(ago / 86400000);
+                  const agoLabel = mins < 1 ? 'now' : mins < 60 ? `${mins}m` : hrs < 24 ? `${hrs}h` : `${days}d`;
+                  let durLabel = '';
+                  try {
+                    const dur = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-duration-${video.id}`) || '0') : 0;
+                    if (dur > 0) { const m = Math.floor(dur / 60); const s = Math.floor(dur % 60); durLabel = `${m}:${s.toString().padStart(2, '0')}`; }
+                  } catch { /* ignore */ }
+                  return (
+                    <button key={video.id} onClick={() => handleRecentClick(video)} className="group/card w-full flex items-center gap-2 px-3 py-1 rounded-lg hover:bg-chalk-surface/40 transition-colors text-left relative">
+                      <span className="text-[11px] text-chalk-text truncate flex-1">{video.title || video.url}</span>
+                      {durLabel && <span className="text-[9px] text-slate-600 font-mono tabular-nums shrink-0">{durLabel}</span>}
+                      {watchPct > 0.9 && <span className="text-[9px] text-emerald-500 shrink-0">done</span>}
+                      <span className="text-[9px] text-slate-700 tabular-nums shrink-0">{agoLabel}</span>
+                      <span role="button" tabIndex={0} onClick={(e) => { e.stopPropagation(); const updated = recentVideos.filter((v) => v.id !== video.id); setRecentVideos(updated); localStorage.setItem(RECENT_VIDEOS_KEY, JSON.stringify(updated)); }} onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); const updated = recentVideos.filter((v) => v.id !== video.id); setRecentVideos(updated); localStorage.setItem(RECENT_VIDEOS_KEY, JSON.stringify(updated)); } }} className="opacity-0 group-hover/card:opacity-100 p-0.5 rounded text-slate-600 hover:text-red-400 transition-all" title="Remove"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg></span>
+                    </button>
+                  );
+                }
                 return (
                 <button
                   key={video.id}

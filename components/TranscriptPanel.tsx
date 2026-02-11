@@ -1377,6 +1377,45 @@ export function TranscriptPanel({
         );
       })()}
 
+      {/* Speaker time breakdown */}
+      {speakerChanges.size >= 2 && viewMode === 'transcript' && (() => {
+        // Group segments by speaker turns
+        const turns: { start: number; dur: number }[] = [];
+        let tStart = 0;
+        for (let i = 1; i <= segments.length; i++) {
+          if (i === segments.length || speakerChanges.has(i)) {
+            const first = segments[tStart];
+            const last = segments[i - 1];
+            const dur = (last.offset + (last.duration || 0)) - first.offset;
+            turns.push({ start: tStart, dur });
+            tStart = i;
+          }
+        }
+        // Alternate speakers A/B
+        const speakerTime: Record<string, number> = {};
+        turns.forEach((t, i) => {
+          const label = i % 2 === 0 ? 'Speaker A' : 'Speaker B';
+          speakerTime[label] = (speakerTime[label] || 0) + t.dur;
+        });
+        const total = Object.values(speakerTime).reduce((a, b) => a + b, 0);
+        if (total < 30) return null;
+        return (
+          <div className="px-3 py-1 border-t border-chalk-border/10">
+            <div className="flex items-center gap-2 h-2">
+              {Object.entries(speakerTime).map(([name, dur]) => (
+                <div key={name} className="flex items-center gap-1 flex-1 min-w-0">
+                  <div
+                    className={`h-1.5 rounded-full ${name === 'Speaker A' ? 'bg-indigo-500/40' : 'bg-emerald-500/40'}`}
+                    style={{ width: `${Math.round((dur / total) * 100)}%` }}
+                  />
+                  <span className="text-[8px] text-slate-700 shrink-0 tabular-nums">{name.split(' ')[1]} {Math.round((dur / total) * 100)}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* "Jump to current" pill when user scrolls away */}
       {userScrolled && activeIndex >= 0 && viewMode === 'transcript' && (
         <div className="absolute bottom-2 inset-x-0 flex justify-center pointer-events-none">

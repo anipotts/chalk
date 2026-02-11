@@ -1026,6 +1026,18 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
               </div>
             )}
 
+            {/* Conversation title from first user question */}
+            {messages.length > 0 && (() => {
+              const first = messages.find((m) => m.role === 'user');
+              if (!first) return null;
+              const title = first.content.length > 40 ? first.content.slice(0, 40).trim() + '...' : first.content;
+              return (
+                <div className="px-4 py-1 border-b border-chalk-border/10">
+                  <span className="text-[10px] text-slate-600 italic truncate block">{title}</span>
+                </div>
+              );
+            })()}
+
             {/* Messages */}
             <div
               ref={scrollRef}

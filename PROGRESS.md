@@ -478,6 +478,12 @@ Status: RUNNING
 - [x] Home Page Video Sorting — sort recent videos by date, title, or view count
 - [x] Build verification PASSED
 
+## Wave 61 (Completed)
+- [x] Transcript Anchor Links — click segment updates URL hash, page load auto-seeks from hash
+- [x] Chat Typing Indicator — animated bouncing dots while AI prepares response
+- [x] Home Page Clear All — button to clear entire recent video history
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
