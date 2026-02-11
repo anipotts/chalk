@@ -1637,6 +1637,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(because of|as a result|therefore|consequently|leads to|causes|due to|the reason|this means|that's why)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains cause-and-effect language">&#8756;</span>
                   )}
+                  {!compactMode && /\b(\d+\s*%|\d+\s*(million|billion|thousand|percent)|statistics|data shows|according to|survey|study found)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-teal-400/30" title="Contains quantitative data or statistics">#</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

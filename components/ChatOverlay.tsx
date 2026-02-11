@@ -1626,6 +1626,12 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           );
                           return null;
                         })()}
+                        {msg.role === 'assistant' && msg.content.length > 40 && (() => {
+                          if (/\b(in other words|to elaborate|more specifically|to put it another way|what I mean is|to expand on|breaking this down|let me explain)\b/i.test(msg.content)) return (
+                            <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[7px] font-medium bg-rose-500/10 text-rose-400/50 border border-rose-500/10" title="Contains elaboration or expansion">elaboration</span>
+                          );
+                          return null;
+                        })()}
                         {msg.role === 'assistant' && msg.content.split(/\s+/).filter(Boolean).length > 100 && (() => {
                           const wc = msg.content.split(/\s+/).filter(Boolean).length;
                           const maxWc = Math.max(...messages.filter(m => m.role === 'assistant' && m.content).map(m => m.content.split(/\s+/).filter(Boolean).length));

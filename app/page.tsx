@@ -1315,6 +1315,13 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const nt = typeof window !== 'undefined' ? localStorage.getItem(`chalk-note-${video.id}`) : null;
+                          if (nt && nt.length >= 20) return <span className="text-[8px] text-lime-400/40 tabular-nums" title={`Note: ${nt.length} characters`}>{nt.length} ch note</span>;
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

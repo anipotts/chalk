@@ -952,6 +952,12 @@ Status: RUNNING
 - [x] Home Page Video Card Flashcard Count — "N cards" badge showing number of flashcards created for the video
 - [x] Build verification PASSED
 
+### Wave 140 — Quantitative data detection, elaboration badge, note length
+- [x] Transcript Segment Quantitative Data Detection — "#" indicator when segment contains numbers, percentages, or statistics
+- [x] Chat Message Elaboration Badge — "elaboration" badge on AI messages that expand on a point (in other words, to elaborate, breaking this down)
+- [x] Home Page Video Card Note Length — "N ch note" badge showing character count of user notes for the video
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
