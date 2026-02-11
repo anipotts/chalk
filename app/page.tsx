@@ -806,6 +806,9 @@ export default function Home() {
                         } catch { /* ignore */ }
                         return null;
                       })()}
+                      {watchPct > 0 && watchPct <= 0.9 && (
+                        <span className="text-[9px] text-chalk-accent/70 tabular-nums">{Math.round(watchPct * 100)}%</span>
+                      )}
                       {(() => {
                         try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;

@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 77 (Completed)
+- [x] Transcript Question Pulse — visual pulse animation on question segments in followAlong mode
+- [x] Chat Message Bookmark Count — bookmark count badge in chat header
+- [x] Home Page Video Completion Percentage — show % watched on video cards
+- [x] Build verification PASSED
+
 ## Wave 76 (Completed)
 - [x] Transcript Segment Highlight Color — cycle button to switch active segment highlight between blue/green/purple
 - [x] Chat Input Word Limit Warning — subtle warning when input exceeds 200 words

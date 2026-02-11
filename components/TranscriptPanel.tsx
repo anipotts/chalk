@@ -129,6 +129,8 @@ export function TranscriptPanel({
   });
   const fontSizeClass = fontSize === 'lg' ? 'text-sm' : fontSize === 'md' ? 'text-xs' : 'text-[11px]';
   const [highlightColor, setHighlightColor] = useState<'blue' | 'green' | 'purple'>('blue');
+  const [questionPulse, setQuestionPulse] = useState(false);
+  const lastQuestionOffset = useRef<number>(-1);
   const hlActive = highlightColor === 'blue' ? 'bg-blue-500/10 border-l-blue-400' : highlightColor === 'green' ? 'bg-emerald-500/10 border-l-emerald-400' : 'bg-purple-500/10 border-l-purple-400';
   const hlMatch = highlightColor === 'blue' ? 'bg-blue-500/20 border-l-blue-400 ring-1 ring-blue-400/30' : highlightColor === 'green' ? 'bg-emerald-500/20 border-l-emerald-400 ring-1 ring-emerald-400/30' : 'bg-purple-500/20 border-l-purple-400 ring-1 ring-purple-400/30';
   const [compactMode, setCompactMode] = useState(false);
@@ -425,6 +427,18 @@ export function TranscriptPanel({
       activeRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [activeIndex, userScrolled, followAlong]);
+
+  // Detect question segments becoming active in followAlong mode
+  useEffect(() => {
+    if (!followAlong || activeIndex < 0 || activeIndex >= segments.length) return;
+    const seg = segments[activeIndex];
+    if (seg.text.trim().endsWith('?') && lastQuestionOffset.current !== seg.offset) {
+      lastQuestionOffset.current = seg.offset;
+      setQuestionPulse(true);
+      const t = setTimeout(() => setQuestionPulse(false), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [activeIndex, followAlong, segments]);
 
   // Restore scroll position from localStorage on mount
   useEffect(() => {
@@ -1354,7 +1368,7 @@ export function TranscriptPanel({
                     })()}
                   </div>
                   {!compactMode && seg.text.trim().endsWith('?') && (
-                    <span className="shrink-0 text-[8px] font-bold text-purple-400/50 w-3 text-center" title="Question asked">?</span>
+                    <span className={`shrink-0 text-[8px] font-bold w-3 text-center ${isActive && questionPulse ? 'text-purple-300 animate-pulse' : 'text-purple-400/50'}`} title={isActive && questionPulse ? 'Consider this question!' : 'Question asked'}>?</span>
                   )}
                   {!compactMode && complexityLabel && (
                     <span className={`shrink-0 text-[7px] font-bold uppercase tracking-wider px-1 py-0 rounded ${

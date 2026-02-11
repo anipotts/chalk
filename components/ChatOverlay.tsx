@@ -737,6 +737,12 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                     </span>
                   );
                 })()}
+                {savedMsgIds.size > 0 && (
+                  <span className="hidden sm:inline-flex items-center gap-0.5 text-[8px] px-1 py-0.5 rounded bg-white/[0.04] text-amber-500/60 tabular-nums">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2 h-2"><path fillRule="evenodd" d="M11.986 3H12a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h.014A2.25 2.25 0 0 1 6.25 1h3.5a2.25 2.25 0 0 1 2.236 2ZM6.25 2.5a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clipRule="evenodd" /></svg>
+                    {savedMsgIds.size}
+                  </span>
+                )}
                 {/* Reaction tally */}
                 {messages.length > 0 && (() => {
                   let upCount = 0;
