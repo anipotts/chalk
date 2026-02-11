@@ -1600,6 +1600,20 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatMW = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatMW) {
+                            const allMW: { role: string; content?: string }[] = JSON.parse(chatMW);
+                            const aiMsgsMW = allMW.filter(m => m.role === 'assistant' && m.content);
+                            if (aiMsgsMW.length >= 1) {
+                              const maxWords = Math.max(...aiMsgsMW.map(m => m.content!.split(/\s+/).filter(Boolean).length));
+                              if (maxWords >= 10) return <span className="text-[8px] text-amber-400/40 tabular-nums" title={`Longest AI response: ${maxWords} words`}>max {maxWords} ai words</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatAQ = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatAQ) {
                             const allAQ: { role: string; content?: string }[] = JSON.parse(chatAQ);

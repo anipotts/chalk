@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 182 — Conditional language detection, quantitative badge, max AI response words
+- [x] TranscriptPanel: conditional language detection — "if" in purple-400/30, regex for if you/if we/assuming/unless/what if
+- [x] ChatOverlay: quantitative badge — "numeric" in emerald-500/10, detects numbers with %/percent/million/billion/thousand
+- [x] HomePage: max AI response words — "max X ai words" in amber-400/40, variable chatMW
+- [x] Build verification PASSED
+
 ### Wave 181 — Self-reference detection, definitional badge, avg question length
 - [x] TranscriptPanel: self-reference/opinion detection — "I" in cyan-400/30, regex for I think/I believe/in my opinion/personally etc.
 - [x] ChatOverlay: definitional badge — "defines" in sky-500/10, detects is defined as/means that/refers to/known as

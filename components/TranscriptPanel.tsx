@@ -1768,6 +1768,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(I think|I believe|in my opinion|personally|my experience|I feel|I would say)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-cyan-400/30" title="Contains self-reference/opinion">I</span>
                   )}
+                  {!compactMode && /\b(if you|if we|assuming|in case|provided that|unless|suppose|what if)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-purple-400/30" title="Contains conditional language">if</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
