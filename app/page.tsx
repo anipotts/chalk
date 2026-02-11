@@ -1017,6 +1017,17 @@ export default function Home() {
                         try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
+                            const msgs = JSON.parse(chat);
+                            const turns = Math.min(msgs.filter((m: { role: string }) => m.role === 'user').length, msgs.filter((m: { role: string }) => m.role === 'assistant').length);
+                            if (turns >= 4) return <span className="text-[8px] text-pink-400/40 tabular-nums" title={`${turns} complete Q&A exchanges`}>{turns} turns deep</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
+                          const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chat) {
                             const aiMsgs = JSON.parse(chat).filter((m: { role: string; content: string }) => m.role === 'assistant' && m.content);
                             if (aiMsgs.length >= 3) {
                               const avgW = Math.round(aiMsgs.reduce((s: number, m: { content: string }) => s + m.content.split(/\s+/).filter(Boolean).length, 0) / aiMsgs.length);

@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 120 (Completed)
+- [x] Transcript Segment Emphasis Detection — bold "!" marker on segments with ALL CAPS emphasis words
+- [x] Chat Message Example Detection Badge — "ex" badge on AI responses containing example patterns
+- [x] Home Page Video Card Conversation Depth — "N turns deep" badge for videos with 4+ Q&A exchanges
+- [x] Build verification PASSED
+
 ## Wave 119 (Completed)
 - [x] Transcript Segment Quote Indicator — quotation mark icon on segments containing direct quotes
 - [x] Chat Message Definition Detection — "def" badge on AI responses containing definition patterns
