@@ -6,8 +6,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Chalk — AI Math Visualization",
-  description: "Like texting a mathematician. Interactive math visualizations powered by Claude.",
+  title: "Chalk — YouTube Video Learning Assistant",
+  description: "Paste a YouTube URL, pause the video, and ask AI anything about what you're watching.",
 };
 
 export default function RootLayout({
