@@ -766,6 +766,17 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                     </span>
                   );
                 })()}
+                {/* Longest question */}
+                {(() => {
+                  const userMsgs = messages.filter((m) => m.role === 'user' && m.content);
+                  if (userMsgs.length < 3) return null;
+                  const maxQ = Math.max(...userMsgs.map((m) => m.content.split(/\s+/).filter(Boolean).length));
+                  return (
+                    <span className="hidden sm:inline-flex items-center text-[8px] px-1 py-0.5 rounded bg-white/[0.04] text-slate-600 tabular-nums" title={`Longest question: ${maxQ} words`}>
+                      Q {maxQ}w
+                    </span>
+                  );
+                })()}
                 {/* Reaction tally */}
                 {messages.length > 0 && (() => {
                   let upCount = 0;

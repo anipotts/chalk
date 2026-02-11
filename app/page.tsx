@@ -340,7 +340,8 @@ export default function Home() {
           <p className="text-lg text-slate-400 mb-6 max-w-md mx-auto leading-relaxed">
             {(() => {
               const hour = new Date().getHours();
-              const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+              const emoji = hour < 6 ? '\u{1F319}' : hour < 12 ? '\u2600\uFE0F' : hour < 17 ? '\u{1F44B}' : '\u{1F319}';
+              const greeting = hour < 12 ? `Good morning ${emoji}` : hour < 17 ? `Good afternoon ${emoji}` : `Good evening ${emoji}`;
               const tip = hour < 12 ? 'Start your day with a video lesson.' : hour < 17 ? 'Perfect time for focused learning.' : 'Wind down with something interesting.';
               return `${greeting}! ${tip}`;
             })()}

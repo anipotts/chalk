@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 89 (Completed)
+- [x] Transcript Notes Word Count — show word count below notes textarea
+- [x] Chat Longest User Question — show "Q Xw" badge for longest question in header
+- [x] Home Page Greeting Emoji — add contextual emoji (sun/wave/moon) to time-of-day greeting
+- [x] Build verification PASSED
+
 ## Wave 88 (Completed)
 - [x] Transcript Chapter Count in Header — show "X ch" when in chapters view mode
 - [x] Chat Conversation Duration — show elapsed time from first to last message
