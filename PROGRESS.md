@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 112 (Completed)
+- [x] Transcript Segment Vocabulary Level Indicator — "adv"/"acad" badge based on 7+ char word density (>30%/>50%)
+- [x] Chat Input @Mention Feature — typing "@" shows quick command popup (Quiz, Summarize, Explain, Simplify)
+- [x] Home Page Video Card Total AI Words — show total AI response word count (e.g., "1.2kw AI") on cards
+- [x] Build verification PASSED
+
 ## Wave 111 (Completed)
 - [x] Transcript Segment Anchor Highlight from URL Hash — seek and flash-highlight segment when URL contains #t=N
 - [x] Chat Message Quick Quote Reply — quote reply button pre-fills input with "> {text}" blockquote of AI message

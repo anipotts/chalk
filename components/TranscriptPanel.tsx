@@ -1524,7 +1524,7 @@ export function TranscriptPanel({
                     {!compactMode && seg.duration && seg.duration > 0 && (
                       <span className="text-[8px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums" title={`${formatTimestamp(seg.offset)}–${formatTimestamp(seg.offset + seg.duration)}`}>–{formatTimestamp(seg.offset + seg.duration)}</span>
                     )}
-                    {!compactMode && (() => { const wc = seg.text.split(/\s+/).filter(Boolean).length; const readSec = Math.max(1, Math.round(wc / 3.3)); return <span className="text-[7px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums" title={`${wc} words · ~${readSec}s to read`}>{wc}w ~{readSec}s</span>; })()}
+                    {!compactMode && (() => { const ws = seg.text.split(/\s+/).filter(Boolean); const wc = ws.length; const readSec = Math.max(1, Math.round(wc / 3.3)); const longPct = wc > 0 ? ws.filter(w => w.length >= 7).length / wc : 0; const lvl = longPct > 0.5 ? 'acad' : longPct > 0.3 ? 'adv' : null; return <span className="text-[7px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums" title={`${wc} words · ~${readSec}s to read${lvl ? ` · ${lvl === 'acad' ? 'academic' : 'advanced'} vocabulary` : ''}`}>{wc}w ~{readSec}s{lvl && <span className={lvl === 'acad' ? 'text-violet-500/50' : 'text-amber-500/50'}> {lvl}</span>}</span>; })()}
                     {!compactMode && segDensities.size > 0 && (() => {
                       const d = segDensities.get(segIndex) || 0;
                       if (d < 0.15) return null;

@@ -967,6 +967,17 @@ export default function Home() {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);
+                            const aiWords = msgs.filter((m: { role: string }) => m.role === 'assistant').reduce((sum: number, m: { content: string }) => sum + m.content.split(/\s+/).filter(Boolean).length, 0);
+                            if (aiWords > 50) return <span className="text-[8px] text-emerald-400/40 tabular-nums" title={`${aiWords} words from AI responses`}>{aiWords > 999 ? `${(aiWords / 1000).toFixed(1)}k` : aiWords}w AI</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
+                          const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chat) {
+                            const msgs = JSON.parse(chat);
                             const lastQ = [...msgs].reverse().find((m: { role: string }) => m.role === 'user');
                             if (lastQ) {
                               const preview = lastQ.content.length > 40 ? lastQ.content.slice(0, 40) + '...' : lastQ.content;

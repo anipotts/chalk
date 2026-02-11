@@ -1908,6 +1908,18 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     ))}
                   </div>
                 )}
+                {input.endsWith('@') && !isStreaming && (
+                  <div className="absolute bottom-full left-0 mb-1 flex gap-1 z-20 animate-in fade-in slide-in-from-bottom-1 duration-100">
+                    {[
+                      { key: 'quiz', label: 'Quiz me', prompt: 'Quiz me on what we just covered' },
+                      { key: 'summary', label: 'Summarize', prompt: 'Summarize the key points so far' },
+                      { key: 'explain', label: 'Explain', prompt: 'Explain this section in detail' },
+                      { key: 'simplify', label: 'Simplify', prompt: 'Can you explain that more simply?' },
+                    ].map((cmd) => (
+                      <button key={cmd.key} onClick={() => setInput(cmd.prompt)} className="px-1.5 py-0.5 rounded text-[9px] bg-chalk-surface border border-chalk-border/40 text-slate-400 hover:text-chalk-text hover:border-chalk-accent/40 transition-colors">{cmd.label}</button>
+                    ))}
+                  </div>
+                )}
                 <textarea
                   ref={inputRef}
                   value={input}
