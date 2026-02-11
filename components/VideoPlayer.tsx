@@ -2,7 +2,9 @@
 
 import { useRef, useEffect, useCallback } from 'react';
 import { MediaPlayer, MediaProvider, type MediaPlayerInstance } from '@vidstack/react';
-import '@vidstack/react/player/styles/base.css';
+import { DefaultVideoLayout, defaultLayoutIcons } from '@vidstack/react/player/layouts/default';
+import '@vidstack/react/player/styles/default/theme.css';
+import '@vidstack/react/player/styles/default/layouts/video.css';
 
 interface VideoPlayerProps {
   videoId: string;
@@ -72,6 +74,7 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
     <MediaPlayer
       ref={player}
       src={`youtube/${videoId}`}
+      autoPlay
       aspectRatio="16/9"
       crossOrigin
       onPause={() => onPause?.()}
@@ -86,6 +89,7 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
       className="w-full rounded-xl overflow-hidden bg-black"
     >
       <MediaProvider />
+      <DefaultVideoLayout icons={defaultLayoutIcons} />
     </MediaPlayer>
   );
 }

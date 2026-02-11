@@ -9,14 +9,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-Chalk is a single-page Next.js 16 app. User types a math question → API streams back explanation text + a JSON visualization spec → client renders interactive 2D/3D plots, LaTeX, and text.
+Chalk is a Next.js 16 app with two features: a **YouTube Video Learning Assistant** (primary, at `/watch?v={id}`) and a **Math Visualizer** (secondary, at `/math`). The landing page (`/`) is a YouTube URL input.
 
-### Data Flow
+### Video Assistant Data Flow
+
+1. **Landing page** (`app/page.tsx`) — user pastes YouTube URL → extracts video ID → navigates to `/watch?v={id}`
+2. **Watch page** (`app/watch/page.tsx`) — loads Vidstack player + fetches transcript via `/api/transcript`
+3. **Pause → Chat** — `ChatOverlay` fades in (framer-motion). User types question → sends to `/api/video-chat` with message + transcript segments + current timestamp
+4. **API route** (`app/api/video-chat/route.ts`) — builds sliding-window transcript context (2 min before, 1 min after current position) → streams response. Opus gets reasoning + `\x1E` separator protocol (same as math route).
+5. **Timestamp citations** — AI responds with `[M:SS]` references. `parseTimestampLinks()` converts these to clickable `TimestampLink` pills that seek the video.
+6. **Resume** — user presses play → chat overlay fades out
+
+### Math Visualizer Data Flow
 
 1. **User input** → `ChatInterface.tsx` sends prompt + model choice + history to `/api/generate`
 2. **API route** (`app/api/generate/route.ts`) selects model (Opus/Sonnet/Haiku), streams response. For Opus: reasoning tokens stream first, then `\x1E` separator, then text+JSON. For others: plain text stream.
-3. **Client parsing** → `parseStreamContent()` in ChatInterface splits reasoning from text, then splits text from JSON. JSON is detected by `{"root"` marker.
+3. **Client parsing** → `splitReasoningFromText()` splits on `\x1E`, then `parseStreamContent()` detects JSON by `{"root"` marker.
 4. **Rendering** → `ChatMessage.tsx` calls `renderElement()` which recursively walks the flat `ChalkSpec` element map and renders each element type.
+
+### Client/Server Code Boundary
+
+This is the most important architectural constraint:
+
+- **`lib/video-utils.ts`** — client-safe utilities (extractVideoId, parseTimestampLinks, formatTimestamp, buildVideoContext). Safe to import from any component.
+- **`lib/transcript.ts`** — server-only transcript fetching. Imports `youtube-transcript` and `youtube-dl-exec` (uses `child_process`). **NEVER import from client components** — will break the build.
+
+The same pattern applies to all Node.js-dependent code: keep it in API routes or server-only lib files.
+
+### Streaming Protocol
+
+Both `/api/generate` and `/api/video-chat` use the same streaming protocol:
+- **Opus mode**: reasoning tokens → `\x1E` (record separator) → text content. Client uses `splitReasoningFromText()` to separate.
+- **Fast mode** (Sonnet/Haiku): plain text via `toTextStreamResponse()`. No reasoning, no separator.
 
 ### Visualization Spec Format (ChalkSpec)
 
@@ -29,7 +53,7 @@ Element types: `vizContainer`, `plot2d`, `plot3d`, `latex`, `textBlock`. Schemas
 
 ### Model Selection
 
-User can pick Auto/Opus/Sonnet/Haiku via `ModelSelector.tsx`. Auto uses `lib/router.ts` to classify queries as fast/deep/creative. The `model` param is sent to the API route which resolves it. Only Opus gets adaptive thinking (reasoning tokens + `\x1E` separator protocol).
+User can pick Auto/Opus/Sonnet/Haiku via `ModelSelector.tsx`. Auto uses `lib/router.ts` to classify queries as fast/deep/creative. Only Opus gets adaptive thinking (reasoning tokens + `\x1E` separator). Video chat defaults to Sonnet.
 
 ### Expression Engine
 
@@ -39,18 +63,26 @@ User can pick Auto/Opus/Sonnet/Haiku via `ModelSelector.tsx`. Auto uses `lib/rou
 
 `ThreeDSurface.tsx` uses React Three Fiber. It is dynamically imported with `ssr: false` in ChatMessage.tsx. The surface is built as a BufferGeometry with indexed triangles and vertex colors (height-mapped gradient).
 
+### Video Player
+
+`VideoPlayer.tsx` uses `@vidstack/react` v1.12.13 with YouTube provider. Must be dynamically imported with `ssr: false`. Keyboard shortcuts: Space/K (play/pause), J/L (±10s), arrows (±5s), F (fullscreen), C (toggle chat).
+
 ### Persistence
 
-- `lib/conversations.ts` — dual localStorage (instant) + Supabase (durable) persistence
+- `lib/conversations.ts` — dual localStorage (instant) + Supabase (durable) persistence for math conversations
 - `lib/supabase.ts` — share URLs via `visualizations` table, conversations via `conversations` table
 - `lib/demo-cache.ts` — pre-cached golden specs for 4 demo prompts, matched by fuzzy keyword
+- Recent videos stored in localStorage (`chalk-recent-videos`)
 
 ### System Prompts
 
-`lib/prompts.ts` has three prompts: `CHALK_DEEP_SYSTEM_PROMPT` (Opus), `FAST_SYSTEM_PROMPT` (Haiku/Sonnet), `CREATIVE_SYSTEM_PROMPT` (prefix for creative queries). The prompts instruct Claude to output explanation text first, then a raw JSON spec starting with `{"root"` on its own line.
+- `lib/prompts.ts` — three math prompts: `CHALK_DEEP_SYSTEM_PROMPT` (Opus), `FAST_SYSTEM_PROMPT` (Haiku/Sonnet), `CREATIVE_SYSTEM_PROMPT` (prefix for creative queries). Instruct Claude to output text first, then JSON starting with `{"root"`.
+- `lib/prompts/video-assistant.ts` — `VIDEO_ASSISTANT_SYSTEM_PROMPT` instructs Claude to cite timestamps as `[M:SS]`, keep answers concise (2-4 sentences), and reference specific video moments. `buildVideoSystemPrompt()` interpolates transcript context window + current position.
 
 ## Key Conventions
 
+- `@vidstack/react@1.12.13` is required for React 19 peer dep compatibility
+- React 19: `useRef` requires explicit initial value (`useRef<T>(null)` or `useRef<T>(undefined)`)
 - All viz components must be wrapped in `SafeVizWrapper` (ErrorBoundary + Suspense)
 - plot2d expressions use mathjs syntax with variable `x` (e.g., `"sin(x)"`, `"x^2"`)
 - plot3d expressions use mathjs syntax with variables `x` and `y` (e.g., `"sin(sqrt(x^2 + y^2))"`)

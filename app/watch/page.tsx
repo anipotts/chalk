@@ -24,9 +24,11 @@ function WatchContent() {
   const [currentTime, setCurrentTime] = useState(0);
   const [isPaused, setIsPaused] = useState(true);
   const [chatVisible, setChatVisible] = useState(false);
-  const [showTranscript, setShowTranscript] = useState(true);
+  const [showTranscript, setShowTranscript] = useState(false);
 
   const playerRef = useRef<MediaPlayerInstance>(null);
+
+  const hasTranscript = segments.length > 0;
 
   // Fetch transcript on mount
   useEffect(() => {
@@ -47,7 +49,9 @@ function WatchContent() {
         return res.json();
       })
       .then((data) => {
-        setSegments(data.segments || []);
+        const segs = data.segments || [];
+        setSegments(segs);
+        if (segs.length > 0) setShowTranscript(true);
       })
       .catch((err) => {
         setTranscriptError(err.message);
@@ -107,11 +111,14 @@ function WatchContent() {
           <span className="text-xs text-slate-400 truncate">Video Assistant</span>
           <div className="ml-auto flex items-center gap-2">
             <button
-              onClick={() => setShowTranscript((prev) => !prev)}
+              onClick={() => hasTranscript && setShowTranscript((prev) => !prev)}
+              disabled={!hasTranscript && !transcriptLoading}
               className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${
-                showTranscript
-                  ? 'bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30'
-                  : 'text-slate-400 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30'
+                !hasTranscript && !transcriptLoading
+                  ? 'text-slate-600 bg-chalk-surface/30 border border-chalk-border/20 cursor-not-allowed'
+                  : showTranscript
+                    ? 'bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30'
+                    : 'text-slate-400 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30'
               }`}
             >
               Transcript
@@ -167,8 +174,8 @@ function WatchContent() {
       </div>
 
       {/* Transcript sidebar (desktop) */}
-      {showTranscript && (
-        <div className="hidden lg:flex w-80 shrink-0">
+      {showTranscript && hasTranscript && (
+        <div className="hidden lg:block w-80 shrink-0 h-full overflow-hidden">
           <TranscriptPanel
             segments={segments}
             currentTime={currentTime}
