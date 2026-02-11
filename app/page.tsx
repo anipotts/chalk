@@ -1600,6 +1600,24 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatMNE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatMNE) {
+                            const allMNE: { role: string; content?: string }[] = JSON.parse(chatMNE);
+                            let minEx = Infinity;
+                            for (let i = 0; i < allMNE.length - 1; i++) {
+                              if (allMNE[i].role === 'user' && allMNE[i + 1]?.role === 'assistant') {
+                                const uw = (allMNE[i].content || '').split(/\s+/).filter(Boolean).length;
+                                const aw = (allMNE[i + 1].content || '').split(/\s+/).filter(Boolean).length;
+                                minEx = Math.min(minEx, uw + aw);
+                              }
+                            }
+                            if (minEx < Infinity && minEx >= 3) return <span className="text-[8px] text-sky-400/40 tabular-nums" title={`Smallest exchange: ${minEx} words`}>{minEx} w min</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatMWE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatMWE) {
                             const allMWE: { role: string; content?: string }[] = JSON.parse(chatMWE);

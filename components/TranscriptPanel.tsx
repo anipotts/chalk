@@ -1870,6 +1870,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(regardless|in any case|be that as it may|no matter what|whatever the case|irrespective of|setting aside|leaving aside|putting aside|aside from that)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-lime-400/30" title="Contains dismissive language">&times;</span>
                   )}
+                  {!compactMode && /\b(better than|worse than|superior|inferior|the best|the worst|outstanding|mediocre|excellent|terrible)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains evaluative language">&#9733;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

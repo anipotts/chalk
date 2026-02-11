@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 216 — Evaluative language detection, definitive badge, min words exchange
+- [x] TranscriptPanel: evaluative language detection — "★" in sky-400/30, regex for better than/worse than/superior/inferior/the best/the worst/outstanding/mediocre/excellent/terrible
+- [x] ChatOverlay: definitive badge — "definitive" in sky-500/10, detects the answer is/the solution is/definitively/conclusively/without exception/invariably/in every case/across the board/universally/categorically
+- [x] HomePage: min words in exchange badge — "X w min" in sky-400/40, variable chatMNE, shows smallest user+assistant exchange word count
+- [x] Build verification PASSED
+
 ### Wave 215 — Dismissive language detection, illustrative badge, max words exchange
 - [x] TranscriptPanel: dismissive language detection — "×" in lime-400/30, regex for regardless/in any case/be that as it may/no matter what/whatever the case/irrespective of/setting aside/leaving aside/putting aside/aside from that
 - [x] ChatOverlay: illustrative badge — "illustrative" in lime-500/10, detects for instance/as an example/to illustrate/such as/namely/in particular/specifically/to demonstrate/case in point/to give you an idea
