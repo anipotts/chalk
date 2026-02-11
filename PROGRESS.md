@@ -946,6 +946,12 @@ Status: RUNNING
 - [x] Home Page Video Card Bookmark to Duration Ratio — "N bm/10m" badge showing bookmarks per 10 minutes of video
 - [x] Build verification PASSED
 
+### Wave 139 — Cause-effect detection, hypothesis badge, flashcard count
+- [x] Transcript Segment Cause-Effect Detection — "∴" indicator when segment contains causal language (because of, therefore, leads to, as a result)
+- [x] Chat Message Hypothesis Badge — "hypothesis" badge on AI messages with speculative language (might be, possibly, I suspect, one possibility)
+- [x] Home Page Video Card Flashcard Count — "N cards" badge showing number of flashcards created for the video
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

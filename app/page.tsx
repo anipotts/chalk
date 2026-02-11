@@ -1305,6 +1305,16 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const fc = typeof window !== 'undefined' ? localStorage.getItem(`chalk-flashcards-${video.id}`) : null;
+                          if (fc) {
+                            const cards = JSON.parse(fc);
+                            if (Array.isArray(cards) && cards.length >= 2) return <span className="text-[8px] text-yellow-400/40 tabular-nums" title={`${cards.length} flashcards created`}>{cards.length} cards</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

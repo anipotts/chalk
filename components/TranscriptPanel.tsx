@@ -1634,6 +1634,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(once upon|story|let me tell you|back when|remember when|there was a time|years ago|in my experience)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains narrative or storytelling language">story</span>
                   )}
+                  {!compactMode && /\b(because of|as a result|therefore|consequently|leads to|causes|due to|the reason|this means|that's why)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains cause-and-effect language">&#8756;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
