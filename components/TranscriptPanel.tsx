@@ -1575,6 +1575,14 @@ export function TranscriptPanel({
                   {!compactMode && /^(however|furthermore|in contrast|on the other hand|to summarize|in conclusion|therefore|consequently|meanwhile|nevertheless)\b/i.test(seg.text.trim()) && (
                     <span className="shrink-0 text-[7px] text-indigo-400/40" title="Logical transition">→</span>
                   )}
+                  {!compactMode && i < filtered.length - 1 && (() => {
+                    if (!/\?\s*$/.test(seg.text)) return null;
+                    const next = filtered[i + 1];
+                    const gap = next.offset - (seg.offset + (seg.duration || 0));
+                    if (gap > 3) return null;
+                    if (/\?\s*$/.test(next.text)) return null;
+                    return <span className="shrink-0 text-[7px] text-rose-400/30" title="Rhetorical question — speaker answers it next">?!</span>;
+                  })()}
                   {!compactMode && complexityLabel && (
                     <span className={`shrink-0 text-[7px] font-bold uppercase tracking-wider px-1 py-0 rounded ${
                       complexityLabel === 'complex' ? 'bg-rose-500/10 text-rose-400/60' : 'bg-amber-500/10 text-amber-400/50'

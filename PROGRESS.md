@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 124 (Completed)
+- [x] Transcript Segment Rhetorical Question Detection — "?!" indicator on segments with questions immediately answered by the speaker
+- [x] Chat Message Analogy Detection Badge — "analogy" badge on AI responses containing metaphors or analogies
+- [x] Home Page Video Card Question Types Summary — "mostly what/why/how" or "mixed Qs" badge from question pattern analysis
+- [x] Build verification PASSED
+
 ## Wave 123 (Completed)
 - [x] Transcript Segment Transition Word Detection — arrow "→" indicator on segments starting with logical transitions (however, therefore, etc.)
 - [x] Chat Message Question Type Classification — type label ("what"/"why"/"how"/"compare") on user questions based on question word patterns

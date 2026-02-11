@@ -1512,6 +1512,12 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           );
                           return null;
                         })()}
+                        {msg.role === 'assistant' && msg.content.length > 60 && (() => {
+                          if (/\b(think of it as|it's like|similar to|just as .{3,30} so too|analogy|metaphor|picture this|imagine .{3,20} as)\b/i.test(msg.content)) return (
+                            <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[7px] font-medium bg-violet-500/10 text-violet-400/50 border border-violet-500/10" title="Contains an analogy or metaphor">analogy</span>
+                          );
+                          return null;
+                        })()}
                         {msg.role === 'assistant' && msg.content.length > 80 && (() => {
                           if (/^(\d+\.|[-*•])\s/m.test(msg.content)) return (
                             <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[7px] font-medium bg-amber-500/10 text-amber-400/50 border border-amber-500/10" title="Contains a structured list">list</span>

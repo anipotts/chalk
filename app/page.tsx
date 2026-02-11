@@ -1094,6 +1094,29 @@ export default function Home() {
                         try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
+                            const userQs: string[] = JSON.parse(chat).filter((m: { role: string; content: string }) => m.role === 'user' && m.content.trim().endsWith('?')).map((m: { content: string }) => m.content.toLowerCase());
+                            if (userQs.length >= 2) {
+                              const counts: Record<string, number> = { what: 0, why: 0, how: 0, compare: 0 };
+                              for (const q of userQs) {
+                                if (/\b(what|which|who|where|when)\b/.test(q)) counts.what++;
+                                else if (/\b(why|how come|what caused)\b/.test(q)) counts.why++;
+                                else if (/\b(how|in what way|what steps)\b/.test(q)) counts.how++;
+                                else if (/\b(compare|vs\.?|versus|difference|differ)\b/.test(q)) counts.compare++;
+                              }
+                              const top = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+                              if (top[0][1] > 0) {
+                                const label = top[0][1] > top[1][1] ? `mostly ${top[0][0]}` : 'mixed Qs';
+                                return <span className="text-[8px] text-lime-400/40" title={`Question types: what(${counts.what}) why(${counts.why}) how(${counts.how}) compare(${counts.compare})`}>{label}</span>;
+                              }
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
+                          const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chat) {
                             const msgs = JSON.parse(chat);
                             const lastQ = [...msgs].reverse().find((m: { role: string }) => m.role === 'user');
                             if (lastQ) {
