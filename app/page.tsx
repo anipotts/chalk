@@ -1600,6 +1600,26 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatER = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatER) {
+                            const allER: { role: string; content?: string }[] = JSON.parse(chatER);
+                            const exchangeWcs: number[] = [];
+                            for (let ei = 0; ei < allER.length - 1; ei++) {
+                              if (allER[ei].role === 'user' && allER[ei + 1]?.role === 'assistant' && allER[ei].content && allER[ei + 1].content) {
+                                exchangeWcs.push(allER[ei].content!.split(/\s+/).filter(Boolean).length + allER[ei + 1].content!.split(/\s+/).filter(Boolean).length);
+                              }
+                            }
+                            if (exchangeWcs.length >= 2) {
+                              const minE = Math.min(...exchangeWcs);
+                              const maxE = Math.max(...exchangeWcs);
+                              if (maxE > minE) return <span className="text-[8px] text-amber-400/40 tabular-nums" title={`Exchange word range: ${minE}-${maxE}`}>{minE}-{maxE} word/exchange</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatEC = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatEC) {
                             const allEC: { role: string; content?: string }[] = JSON.parse(chatEC);

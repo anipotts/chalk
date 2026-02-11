@@ -1810,6 +1810,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(admittedly|granted|of course|naturally|true|indeed|certainly|no doubt)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-orange-400/30" title="Contains concessive language">&#8776;</span>
                   )}
+                  {!compactMode && /\b(very very|really really|so so|much much|again and again|over and over|more and more|time and time)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains emphatic repetition">&#9889;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

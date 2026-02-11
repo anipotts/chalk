@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 196 — Emphatic repetition detection, instructive badge, exchange word range
+- [x] TranscriptPanel: emphatic repetition detection — "⚡" in yellow-400/30, regex for very very/really really/so so/much much/again and again/over and over/more and more/time and time
+- [x] ChatOverlay: instructive badge — "instructive" in indigo-500/10, detects here's how/follow these steps/the process is/to do this/start by/make sure to/remember to/keep in mind
+- [x] Home page video card: exchange word range — "X-Y word/exchange" in amber-400/40, variable chatER, computes min-max combined word count of user+assistant pairs (>=2 pairs)
+- [x] Build verification PASSED
+
 ### Wave 195 — Concessive language detection, advisory badge, exchange count
 - [x] TranscriptPanel: concessive language detection — "≈" in orange-400/30, regex for admittedly/granted/of course/naturally/true/indeed/certainly/no doubt
 - [x] ChatOverlay: advisory badge — "advisory" in rose-500/10, detects I recommend/I suggest/you should consider/it would be wise/my advice/best practice/tip/pro tip
