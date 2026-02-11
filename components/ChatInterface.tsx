@@ -316,12 +316,16 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="flex h-screen bg-chalk-bg">
+    <div className="flex h-[100dvh] bg-chalk-bg">
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30 lg:hidden"
           onClick={() => setSidebarOpen(false)}
+          role="button"
+          tabIndex={0}
+          aria-label="Close sidebar"
+          onKeyDown={(e) => { if (e.key === 'Escape' || e.key === 'Enter') setSidebarOpen(false); }}
         />
       )}
 
@@ -347,7 +351,8 @@ export function ChatInterface() {
         <div className="flex-none flex items-center gap-3 px-4 sm:px-6 py-3 border-b border-chalk-border/30 bg-chalk-bg/80 backdrop-blur-md">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden p-1.5 rounded-lg hover:bg-chalk-surface text-slate-400 hover:text-chalk-text transition-colors"
+            aria-label="Toggle sidebar"
+            className="lg:hidden p-2.5 -ml-1 rounded-lg hover:bg-chalk-surface text-slate-400 hover:text-chalk-text transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
               <path fillRule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75Zm0 10.5a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75ZM2 10a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 2 10Z" clipRule="evenodd" />
@@ -436,13 +441,15 @@ export function ChatInterface() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask me anything about math..."
+                aria-label="Math question input"
                 disabled={isStreaming}
                 className="flex-1 px-4 py-3 rounded-full bg-chalk-surface border border-chalk-border/40 text-chalk-text placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-chalk-accent/50 focus:border-transparent disabled:opacity-50 transition-all"
               />
               <button
                 type="submit"
                 disabled={isStreaming || !input.trim()}
-                className="p-3 rounded-full bg-chalk-accent text-white hover:bg-blue-600 disabled:opacity-30 disabled:hover:bg-chalk-accent transition-colors"
+                aria-label="Send message"
+                className="p-3 rounded-full bg-chalk-accent text-white hover:bg-blue-600 disabled:opacity-30 disabled:hover:bg-chalk-accent transition-colors shrink-0"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

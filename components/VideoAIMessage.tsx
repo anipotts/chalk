@@ -55,8 +55,8 @@ function renderContentWithTimestamps(content: string, onSeek?: (seconds: number)
 export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingDuration, onSeek }: VideoAIMessageProps) {
   if (role === 'user') {
     return (
-      <div className="flex justify-end mb-3">
-        <div className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-br-md bg-blue-500 text-white text-sm leading-relaxed break-words">
+      <div className="flex justify-end">
+        <div className="max-w-[75%] px-3 py-2 rounded-lg rounded-br-sm bg-chalk-accent/90 text-white text-sm leading-relaxed break-words">
           {content}
         </div>
       </div>
@@ -67,48 +67,46 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
   const showTypingDots = isStreaming && !hasContent && !thinking;
 
   return (
-    <div className="flex justify-start mb-3">
-      <div className="max-w-[95%] w-full min-w-0">
-        <div className="bg-chalk-surface/50 rounded-2xl rounded-bl-md p-3.5 backdrop-blur-sm border border-chalk-border/30">
-          <AnimatePresence mode="wait">
-            {showTypingDots && (
-              <motion.div
-                key="typing"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center gap-1.5 py-1"
-              >
-                <span className="typing-dot w-2 h-2 bg-slate-400 rounded-full" />
-                <span className="typing-dot w-2 h-2 bg-slate-400 rounded-full" />
-                <span className="typing-dot w-2 h-2 bg-slate-400 rounded-full" />
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {hasContent && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
-              <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-                {renderContentWithTimestamps(content, onSeek)}
-                {isStreaming && (
-                  <span className="inline-block w-0.5 h-4 bg-chalk-accent/70 animate-pulse ml-0.5 align-middle" />
-                )}
-              </p>
+    <div className="flex justify-start">
+      <div className="max-w-[90%] min-w-0">
+        <AnimatePresence mode="wait">
+          {showTypingDots && (
+            <motion.div
+              key="typing"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center gap-1.5 py-1.5"
+            >
+              <span className="typing-dot w-1.5 h-1.5 bg-slate-400 rounded-full" />
+              <span className="typing-dot w-1.5 h-1.5 bg-slate-400 rounded-full" />
+              <span className="typing-dot w-1.5 h-1.5 bg-slate-400 rounded-full" />
             </motion.div>
           )}
+        </AnimatePresence>
 
-          {!isStreaming && !hasContent && !thinking && (
-            <p className="text-sm text-slate-500 italic">No response generated.</p>
-          )}
+        {hasContent && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+            <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
+              {renderContentWithTimestamps(content, onSeek)}
+              {isStreaming && (
+                <span className="inline-block w-0.5 h-4 bg-chalk-accent/70 animate-pulse ml-0.5 align-middle" />
+              )}
+            </p>
+          </motion.div>
+        )}
 
-          {thinking && (
-            <ReasoningPanel
-              thinking={thinking}
-              thinkingDuration={thinkingDuration}
-              isStreaming={isStreaming && !hasContent}
-            />
-          )}
-        </div>
+        {!isStreaming && !hasContent && !thinking && (
+          <p className="text-sm text-slate-500 italic">No response generated.</p>
+        )}
+
+        {thinking && (
+          <ReasoningPanel
+            thinking={thinking}
+            thinkingDuration={thinkingDuration}
+            isStreaming={isStreaming && !hasContent}
+          />
+        )}
       </div>
     </div>
   );

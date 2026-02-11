@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
+import { useState, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { TranscriptPanel } from '@/components/TranscriptPanel';
 import { ChatOverlay } from '@/components/ChatOverlay';
-import type { TranscriptSegment } from '@/lib/video-utils';
+import { useTranscriptStream } from '@/hooks/useTranscriptStream';
 import type { MediaPlayerInstance } from '@vidstack/react';
 
 // Dynamic import to avoid SSR issues with vidstack
@@ -18,48 +18,25 @@ function WatchContent() {
   const searchParams = useSearchParams();
   const videoId = searchParams.get('v') || '';
 
-  const [segments, setSegments] = useState<TranscriptSegment[]>([]);
-  const [transcriptLoading, setTranscriptLoading] = useState(true);
-  const [transcriptError, setTranscriptError] = useState('');
+  const { segments, status, statusMessage, error, method, progress } = useTranscriptStream(videoId || null);
+
   const [currentTime, setCurrentTime] = useState(0);
   const [isPaused, setIsPaused] = useState(true);
   const [chatVisible, setChatVisible] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
+  const [transcriptAutoOpened, setTranscriptAutoOpened] = useState(false);
 
   const playerRef = useRef<MediaPlayerInstance>(null);
 
-  const hasTranscript = segments.length > 0;
+  const hasSegments = segments.length > 0;
+  const isLoadingTranscript = status === 'connecting' || status === 'extracting' || status === 'downloading' || status === 'transcribing';
+  const transcriptAvailable = hasSegments || isLoadingTranscript;
 
-  // Fetch transcript on mount
-  useEffect(() => {
-    if (!videoId) return;
-    setTranscriptLoading(true);
-    setTranscriptError('');
-
-    fetch('/api/transcript', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ videoId }),
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({ error: 'Failed to fetch transcript' }));
-          throw new Error(data.error || 'Failed to fetch transcript');
-        }
-        return res.json();
-      })
-      .then((data) => {
-        const segs = data.segments || [];
-        setSegments(segs);
-        if (segs.length > 0) setShowTranscript(true);
-      })
-      .catch((err) => {
-        setTranscriptError(err.message);
-      })
-      .finally(() => {
-        setTranscriptLoading(false);
-      });
-  }, [videoId]);
+  // Auto-open sidebar when first segment arrives
+  if (hasSegments && !transcriptAutoOpened) {
+    setShowTranscript(true);
+    setTranscriptAutoOpened(true);
+  }
 
   // Show chat on pause, hide on play
   const handlePause = useCallback(() => {
@@ -99,7 +76,7 @@ function WatchContent() {
   }
 
   return (
-    <div className="flex h-screen bg-chalk-bg overflow-hidden">
+    <div className="flex h-[100dvh] bg-chalk-bg overflow-hidden">
       {/* Main area: video + chat overlay */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar */}
@@ -107,14 +84,14 @@ function WatchContent() {
           <a href="/" className="text-lg font-semibold text-chalk-text hover:text-chalk-accent transition-colors">
             Chalk
           </a>
-          <span className="text-slate-600">|</span>
-          <span className="text-xs text-slate-400 truncate">Video Assistant</span>
-          <div className="ml-auto flex items-center gap-2">
+          <span className="text-slate-600 hidden sm:inline">|</span>
+          <span className="text-xs text-slate-400 truncate hidden sm:inline">Video Assistant</span>
+          <div className="ml-auto flex items-center gap-1.5">
             <button
-              onClick={() => hasTranscript && setShowTranscript((prev) => !prev)}
-              disabled={!hasTranscript && !transcriptLoading}
+              onClick={() => transcriptAvailable && setShowTranscript((prev) => !prev)}
+              disabled={!transcriptAvailable && status !== 'error'}
               className={`px-2.5 py-1 rounded-lg text-xs transition-colors ${
-                !hasTranscript && !transcriptLoading
+                !transcriptAvailable && status !== 'error'
                   ? 'text-slate-600 bg-chalk-surface/30 border border-chalk-border/20 cursor-not-allowed'
                   : showTranscript
                     ? 'bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30'
@@ -136,31 +113,42 @@ function WatchContent() {
           </div>
         </div>
 
-        {/* Video + overlay container */}
-        <div className="flex-1 relative min-h-0">
-          <div className="h-full flex items-start justify-center p-4 overflow-y-auto">
-            <div className="w-full max-w-5xl">
-              <VideoPlayer
-                videoId={videoId}
-                onPause={handlePause}
-                onPlay={handlePlay}
-                onTimeUpdate={handleTimeUpdate}
-                playerRef={playerRef}
-              />
-
-              {/* Paused indicator */}
-              {isPaused && !chatVisible && (
-                <div className="mt-3 text-center">
-                  <button
-                    onClick={toggleChat}
-                    className="text-xs text-slate-500 hover:text-chalk-accent transition-colors"
-                  >
-                    Press C or click to open chat
-                  </button>
-                </div>
-              )}
+        {/* Video + transcript (mobile) + chat overlay */}
+        <div className="flex-1 relative min-h-0 flex flex-col">
+          {/* Video area — shrinks when transcript panel is open on mobile */}
+          <div className={`${
+            showTranscript && transcriptAvailable ? 'shrink-0 max-h-[55%] lg:max-h-none lg:flex-1' : 'flex-1'
+          } overflow-hidden min-h-0`}>
+            <div className="flex items-start justify-center p-2 sm:p-4 h-full">
+              <div className="w-full max-w-5xl">
+                <VideoPlayer
+                  videoId={videoId}
+                  onPause={handlePause}
+                  onPlay={handlePlay}
+                  onTimeUpdate={handleTimeUpdate}
+                  playerRef={playerRef}
+                />
+              </div>
             </div>
           </div>
+
+          {/* Mobile inline transcript — separate flex section, visible without scrolling */}
+          {showTranscript && (hasSegments || isLoadingTranscript) && (
+            <div className="lg:hidden flex-1 min-h-0 overflow-hidden">
+              <TranscriptPanel
+                segments={segments}
+                currentTime={currentTime}
+                onSeek={handleSeek}
+                status={status}
+                statusMessage={statusMessage}
+                method={method}
+                progress={progress}
+                error={error || undefined}
+                variant="inline"
+                onClose={() => setShowTranscript(false)}
+              />
+            </div>
+          )}
 
           {/* Chat overlay */}
           <ChatOverlay
@@ -173,15 +161,18 @@ function WatchContent() {
         </div>
       </div>
 
-      {/* Transcript sidebar (desktop) */}
-      {showTranscript && hasTranscript && (
+      {/* Transcript sidebar (desktop only) */}
+      {showTranscript && (
         <div className="hidden lg:block w-80 shrink-0 h-full overflow-hidden">
           <TranscriptPanel
             segments={segments}
             currentTime={currentTime}
             onSeek={handleSeek}
-            loading={transcriptLoading}
-            error={transcriptError}
+            status={status}
+            statusMessage={statusMessage}
+            method={method}
+            progress={progress}
+            error={error || undefined}
           />
         </div>
       )}

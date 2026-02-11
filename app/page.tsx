@@ -56,7 +56,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-chalk-bg flex flex-col">
+    <div className="min-h-[100dvh] bg-chalk-bg flex flex-col">
       {/* Hero */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-16">
         <div className="text-center max-w-2xl mx-auto">

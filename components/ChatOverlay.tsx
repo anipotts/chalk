@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { VideoAIMessage } from './VideoAIMessage';
 import { ModelSelector, type ModelChoice } from './ModelSelector';
 import { splitReasoningFromText } from '@/lib/stream-parser';
+import { formatTimestamp } from '@/lib/video-utils';
 import type { TranscriptSegment } from '@/lib/video-utils';
 
 interface ChatMessage {
@@ -22,6 +23,41 @@ interface ChatOverlayProps {
   videoTitle?: string;
   onSeek: (seconds: number) => void;
   onToggle?: () => void;
+}
+
+function SuggestionChips({
+  currentTime,
+  onSelect,
+}: {
+  currentTime: number;
+  onSelect: (text: string) => void;
+}) {
+  const timestamp = formatTimestamp(currentTime);
+  const suggestions = [
+    'Summarize what was just covered',
+    `Explain what's happening at ${timestamp}`,
+    'Quiz me on this section',
+  ];
+
+  return (
+    <div className="flex flex-col items-center justify-center py-4 px-4 gap-2.5">
+      <span className="text-[11px] text-slate-500 font-medium tracking-wide uppercase">
+        Try asking
+      </span>
+      <div className="flex flex-wrap items-center justify-center gap-1.5">
+        {suggestions.map((text) => (
+          <button
+            key={text}
+            type="button"
+            onClick={() => onSelect(text)}
+            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-white/[0.06] text-slate-400 border border-white/[0.06] hover:bg-white/[0.10] hover:text-slate-300 hover:border-white/[0.10] transition-all duration-150 cursor-pointer"
+          >
+            {text}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function ChatOverlay({ visible, segments, currentTime, videoTitle, onSeek, onToggle }: ChatOverlayProps) {
@@ -71,9 +107,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoTitle, onSeek
     return () => document.removeEventListener('keydown', handleKey);
   }, [onToggle]);
 
-  const handleSubmit = async (e?: React.FormEvent) => {
-    e?.preventDefault();
-    const prompt = input.trim();
+  const submitMessage = useCallback(async (prompt: string) => {
     if (!prompt || isStreaming) return;
 
     abortRef.current?.abort();
@@ -175,47 +209,52 @@ export function ChatOverlay({ visible, segments, currentTime, videoTitle, onSeek
     } finally {
       setIsStreaming(false);
     }
+  }, [isStreaming, messages, currentTime, segments, selectedModel, videoTitle, scrollToBottom]);
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const prompt = input.trim();
+    await submitMessage(prompt);
+  };
+
+  const handleSuggestionSelect = (text: string) => {
+    submitMessage(text);
   };
 
   return (
     <AnimatePresence>
       {visible && (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="absolute inset-x-0 bottom-0 z-20 flex flex-col max-h-[60%] pointer-events-auto"
+          transition={{ type: 'spring', damping: 28, stiffness: 320, mass: 0.8 }}
+          className="absolute inset-x-0 bottom-0 z-20 flex items-end justify-center pointer-events-none px-0 sm:px-3 pb-0 sm:pb-3"
         >
-          {/* Gradient backdrop */}
-          <div className="absolute inset-0 bg-gradient-to-t from-chalk-bg via-chalk-bg/95 to-transparent rounded-t-2xl" />
+          {/* Glass panel */}
+          <div className="w-full max-w-5xl pointer-events-auto flex flex-col max-h-[50vh] max-h-[50dvh] sm:rounded-xl rounded-t-xl bg-slate-900/80 backdrop-blur-xl border border-white/[0.08] shadow-[0_-4px_24px_rgba(0,0,0,0.35)] overflow-hidden">
 
-          {/* Chat content */}
-          <div className="relative flex flex-col flex-1 min-h-0 px-4 pt-4 pb-3">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium text-chalk-text">Ask about this video</h3>
-                <span className="text-[10px] text-slate-500 bg-chalk-surface/50 px-2 py-0.5 rounded-full">
-                  Press C to toggle
-                </span>
-              </div>
+            {/* Header row */}
+            <div className="flex items-center justify-between px-3 sm:px-4 pt-2.5 pb-1">
+              <span className="text-xs font-medium text-slate-400">Ask about this video</span>
               <button
                 onClick={onToggle}
-                className="p-1 rounded-lg text-slate-400 hover:text-chalk-text hover:bg-chalk-surface/50 transition-colors"
+                className="p-1.5 -mr-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
+                aria-label="Close chat"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5">
                   <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
                 </svg>
               </button>
             </div>
 
             {/* Messages */}
-            <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 mb-3 space-y-1">
+            <div ref={scrollRef} className="flex-1 overflow-y-auto min-h-0 px-4 py-2 space-y-3">
               {messages.length === 0 && (
-                <p className="text-xs text-slate-500 text-center py-4">
-                  Ask a question about what you&apos;re watching...
-                </p>
+                <SuggestionChips
+                  currentTime={currentTime}
+                  onSelect={handleSuggestionSelect}
+                />
               )}
               {messages.map((msg) => (
                 <VideoAIMessage
@@ -230,12 +269,12 @@ export function ChatOverlay({ visible, segments, currentTime, videoTitle, onSeek
               ))}
             </div>
 
-            {/* Input */}
-            <div>
-              <div className="flex items-center mb-2">
-                <ModelSelector value={selectedModel} onChange={setSelectedModel} disabled={isStreaming} />
-              </div>
-              <form onSubmit={handleSubmit} className="flex items-center gap-2">
+            {/* Input area */}
+            <form onSubmit={handleSubmit} className="flex items-center gap-2 px-3 sm:px-4 pb-2.5 pb-safe pt-1.5">
+              <div className="flex-1 flex items-center gap-0 rounded-lg bg-white/[0.06] border border-white/[0.08] focus-within:border-chalk-accent/40 focus-within:bg-white/[0.08] transition-all duration-200">
+                <div className="pl-1.5 shrink-0">
+                  <ModelSelector value={selectedModel} onChange={setSelectedModel} disabled={isStreaming} />
+                </div>
                 <input
                   ref={inputRef}
                   type="text"
@@ -243,19 +282,21 @@ export function ChatOverlay({ visible, segments, currentTime, videoTitle, onSeek
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask about the video..."
                   disabled={isStreaming}
-                  className="flex-1 px-4 py-2.5 rounded-full bg-chalk-surface border border-chalk-border/40 text-chalk-text placeholder:text-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-chalk-accent/50 focus:border-transparent disabled:opacity-50 transition-all"
+                  aria-label="Video question input"
+                  className="flex-1 bg-transparent py-2 px-2.5 text-sm text-chalk-text placeholder:text-slate-500 focus:outline-none disabled:opacity-50"
                 />
-                <button
-                  type="submit"
-                  disabled={isStreaming || !input.trim()}
-                  className="p-2.5 rounded-full bg-chalk-accent text-white hover:bg-blue-600 disabled:opacity-30 disabled:hover:bg-chalk-accent transition-colors"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                    <path d="M3.105 2.288a.75.75 0 0 0-.826.95l1.414 4.926A1.5 1.5 0 0 0 5.135 9.25h6.115a.75.75 0 0 1 0 1.5H5.135a1.5 1.5 0 0 0-1.442 1.086l-1.414 4.926a.75.75 0 0 0 .826.95 28.896 28.896 0 0 0 15.293-7.155.75.75 0 0 0 0-1.114A28.897 28.897 0 0 0 3.105 2.288Z" />
-                  </svg>
-                </button>
-              </form>
-            </div>
+              </div>
+              <button
+                type="submit"
+                disabled={isStreaming || !input.trim()}
+                className="p-2 rounded-lg bg-chalk-accent text-white hover:bg-blue-500 disabled:opacity-0 disabled:scale-90 transition-all duration-200 shrink-0"
+                aria-label="Send message"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                  <path d="M3.105 2.288a.75.75 0 0 0-.826.95l1.414 4.926A1.5 1.5 0 0 0 5.135 9.25h6.115a.75.75 0 0 1 0 1.5H5.135a1.5 1.5 0 0 0-1.442 1.086l-1.414 4.926a.75.75 0 0 0 .826.95 28.896 28.896 0 0 0 15.293-7.155.75.75 0 0 0 0-1.114A28.897 28.897 0 0 0 3.105 2.288Z" />
+                </svg>
+              </button>
+            </form>
           </div>
         </motion.div>
       )}

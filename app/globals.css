@@ -13,7 +13,19 @@
 html,
 body {
   height: 100%;
+  height: 100dvh;
   overflow: hidden;
+  /* iOS safe area support */
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Safe area padding utilities for iOS notch/home indicator */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Scrollbar styling */
