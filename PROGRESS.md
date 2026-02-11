@@ -508,6 +508,12 @@ Status: RUNNING
 - [x] Home Page Greeting — dynamic time-of-day greeting with study tip
 - [x] Build verification PASSED
 
+## Wave 66 (Completed)
+- [x] Transcript Unique Words Count — vocabulary richness stat in header
+- [x] Chat Quote Copy — includes video title attribution in blockquote
+- [x] Home Page Shortcut Hints — Enter/Esc keyboard hints below URL input
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

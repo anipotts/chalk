@@ -270,7 +270,9 @@ export function TranscriptPanel({
     const avgSegDuration = segments.reduce((a, s) => a + (s.duration || 0), 0) / segments.length;
     const allWords = segments.flatMap((s) => s.text.toLowerCase().split(/\s+/).filter((w) => w.length > 2));
     const uniqueWords = new Set(allWords).size;
-    return { totalWords, readMinutes, speakingWPM, avgSegDuration, uniqueWords };
+    const totalSentences = segments.reduce((c, s) => c + (s.text.match(/[.!?]+/g) || []).length, 0);
+    const avgSentenceLength = totalSentences > 0 ? Math.round(totalWords / totalSentences) : 0;
+    return { totalWords, readMinutes, speakingWPM, avgSegDuration, uniqueWords, avgSentenceLength };
   }, [segments]);
 
   // Per-segment word density (normalized 0-1 relative to max)
@@ -812,6 +814,9 @@ export function TranscriptPanel({
               )}
               {stats.uniqueWords > 0 && (
                 <span className="hidden sm:inline" title={`${stats.uniqueWords} unique words out of ${stats.totalWords}`}> · {stats.uniqueWords} unique</span>
+              )}
+              {stats.avgSentenceLength > 0 && (
+                <span className="hidden sm:inline" title={`Average ${stats.avgSentenceLength} words per sentence`}> · ~{stats.avgSentenceLength} w/s</span>
               )}
             </p>
             {sparklinePoints && (

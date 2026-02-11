@@ -295,6 +295,19 @@ export default function Home() {
             })()}
           </p>
 
+          {/* Daily study tip */}
+          <p className="text-[10px] text-slate-600 italic mb-4 max-w-sm mx-auto">
+            {[
+              'Pause frequently to reflect on what you just learned.',
+              'Try explaining a concept back to the AI in your own words.',
+              'Bookmark key moments so you can revisit them later.',
+              'Ask "why" questions to deepen understanding.',
+              'Take notes alongside the video for better retention.',
+              'Review your study streak to stay motivated.',
+              'Compare what you learned today with yesterday.',
+            ][new Date().getDay()]}
+          </p>
+
           {/* Study streak + daily goal + heatmap */}
           {(streak.currentStreak > 0 || todayMinutes > 0) && (
             <div className="mb-6 flex flex-col items-center gap-3">

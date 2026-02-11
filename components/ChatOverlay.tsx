@@ -1558,13 +1558,12 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                   rows={1}
                   className="flex-1 bg-transparent py-2.5 px-3 text-sm text-chalk-text placeholder:text-slate-500 focus:outline-none disabled:opacity-50 resize-none max-h-24 overflow-y-auto"
                 />
-                {/* Word count indicator */}
-                {!isStreaming && (() => {
-                  const wc = input.trim().split(/\s+/).filter(Boolean).length;
-                  return wc > 10 ? (
-                    <span className="text-[9px] text-slate-600 tabular-nums mr-1 shrink-0">{wc}w</span>
-                  ) : null;
-                })()}
+                {/* Word count + character counter */}
+                {!isStreaming && input.length > 0 && (
+                  <span className={`text-[9px] tabular-nums mr-1 shrink-0 ${input.length > 450 ? 'text-amber-400' : 'text-slate-600'}`}>
+                    {input.length > 10 ? `${input.trim().split(/\s+/).filter(Boolean).length}w · ` : ''}{input.length}/500
+                  </span>
+                )}
                 {isStreaming ? (
                   <button
                     type="button"
