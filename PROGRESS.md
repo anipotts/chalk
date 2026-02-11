@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 220 — Imperative language detection, elaborative badge, std dev words per exchange
+- [x] TranscriptPanel: imperative language detection — "!" in teal-400/30, regex for you must/do this now/stop doing/start doing/go ahead and/make sure you/don't forget to/always do/never do/take action
+- [x] ChatOverlay: elaborative badge — "elaborative" in teal-500/10, detects to elaborate/in other words/that is to say/put simply/more specifically/to clarify/what I mean is/to be precise/to put it another way/essentially
+- [x] Home page: std dev of words per exchange — "X w σ" in teal-400/40, variable chatSDE, requires ≥3 exchanges and σ ≥3
+- [x] Build verification PASSED
+
 ### Wave 219 — Hypothetical language detection, conditional badge, max words per exchange
 - [x] TranscriptPanel: hypothetical language detection — "⟡" in lime-400/30, regex for hypothetically/what if/suppose that/imagine if/in theory/theoretically/assuming that/if we assume/let's say/for the sake of argument
 - [x] ChatOverlay: conditional badge — "conditional" in lime-500/10, detects if and only if/provided that/on the condition/as long as/unless otherwise/in the event that/contingent upon/depending on whether/should it happen/were it the case

@@ -1882,6 +1882,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(hypothetically|what if|suppose that|imagine if|in theory|theoretically|assuming that|if we assume|let's say|for the sake of argument)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-lime-400/30" title="Contains hypothetical language">&#10065;</span>
                   )}
+                  {!compactMode && /\b(you must|do this now|stop doing|start doing|go ahead and|make sure you|don't forget to|always do|never do|take action)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-teal-400/30" title="Contains imperative language">!</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

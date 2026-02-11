@@ -1600,6 +1600,29 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatSDE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatSDE) {
+                            const allSDE: { role: string; content?: string }[] = JSON.parse(chatSDE);
+                            const exSzSD: number[] = [];
+                            for (let i = 0; i < allSDE.length - 1; i++) {
+                              if (allSDE[i].role === 'user' && allSDE[i + 1]?.role === 'assistant') {
+                                const uw = (allSDE[i].content || '').split(/\s+/).filter(Boolean).length;
+                                const aw = (allSDE[i + 1].content || '').split(/\s+/).filter(Boolean).length;
+                                exSzSD.push(uw + aw);
+                              }
+                            }
+                            if (exSzSD.length >= 3) {
+                              const mean = exSzSD.reduce((a, b) => a + b, 0) / exSzSD.length;
+                              const variance = exSzSD.reduce((a, b) => a + (b - mean) ** 2, 0) / exSzSD.length;
+                              const sd = Math.round(Math.sqrt(variance));
+                              if (sd >= 3) return <span className="text-[8px] text-teal-400/40 tabular-nums" title={`Std dev of exchange size: ${sd} words across ${exSzSD.length} exchanges`}>{sd} w &#963;</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatMXE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatMXE) {
                             const allMXE: { role: string; content?: string }[] = JSON.parse(chatMXE);
