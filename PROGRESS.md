@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 127 (Completed)
+- [x] Transcript Segment Personal Pronoun Detection — "you" indicator on segments with 2+ second-person references
+- [x] Chat Message Step-by-Step Detection Badge — "steps" badge on AI responses with procedural step-by-step instructions
+- [x] Home Page Video Card Flashcard Count Growth — "+N cards" badge with growth indicator when flashcards exceed bookmarks
+- [x] Build verification PASSED
+
 ## Wave 126 (Completed)
 - [x] Transcript Segment Enumeration Detection — "1." icon on segments with enumeration patterns (first, second, step 1, etc.)
 - [x] Chat Message Caveat Detection Badge — "caveat" badge on AI responses with disclaimers ("keep in mind", "note that", etc.)

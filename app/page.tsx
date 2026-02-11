@@ -1146,6 +1146,21 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const fc = typeof window !== 'undefined' ? localStorage.getItem(`chalk-flashcards-${video.id}`) : null;
+                          if (fc) {
+                            const cards = JSON.parse(fc);
+                            if (cards.length >= 2) {
+                              const bm = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-bookmarks-${video.id}`) : null;
+                              const bmCount = bm ? JSON.parse(bm).length : 0;
+                              const growth = cards.length > bmCount;
+                              return <span className={`text-[8px] tabular-nums ${growth ? 'text-green-400/40' : 'text-slate-500/40'}`} title={`${cards.length} flashcards${growth ? ' (more than bookmarks!)' : ''}`}>{growth ? '+' : ''}{cards.length} cards</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

@@ -1599,6 +1599,11 @@ export function TranscriptPanel({
                   {!compactMode && /\b(first(ly)?|second(ly)?|third(ly)?|fourth|fifth|number (one|two|three|four|five)|step [1-5])\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-blue-400/30 font-mono" title="Speaker is enumerating items">1.</span>
                   )}
+                  {!compactMode && (() => {
+                    const matches = seg.text.match(/\b(you|your|you're|you'll|you've|yourself)\b/gi);
+                    if (!matches || matches.length < 2) return null;
+                    return <span className="shrink-0 text-[7px] text-pink-400/30" title={`Direct address — ${matches.length} second-person references`}>you</span>;
+                  })()}
                   {!compactMode && complexityLabel && (
                     <span className={`shrink-0 text-[7px] font-bold uppercase tracking-wider px-1 py-0 rounded ${
                       complexityLabel === 'complex' ? 'bg-rose-500/10 text-rose-400/60' : 'bg-amber-500/10 text-amber-400/50'

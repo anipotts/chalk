@@ -1531,6 +1531,9 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           return null;
                         })()}
                         {msg.role === 'assistant' && msg.content.length > 80 && (() => {
+                          if (/\b(step \d|first,? .{5,30}(then|next)|follow these steps|step-by-step)\b/i.test(msg.content) && /^(\d+\.|[-*•])\s/m.test(msg.content)) return (
+                            <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[7px] font-medium bg-teal-500/10 text-teal-400/50 border border-teal-500/10" title="Contains step-by-step instructions">steps</span>
+                          );
                           if (/^(\d+\.|[-*•])\s/m.test(msg.content)) return (
                             <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[7px] font-medium bg-amber-500/10 text-amber-400/50 border border-amber-500/10" title="Contains a structured list">list</span>
                           );
