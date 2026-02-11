@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 214 — Speculative language detection, comparative badge, AI word ratio
+- [x] TranscriptPanel: speculative language detection — "◇" in rose-400/30, regex for could be/might be/perhaps/it seems/it appears/my guess is/chances are/presumably/conceivably/it looks like
+- [x] ChatOverlay: comparative badge — "comparative" in rose-500/10, detects compared to/in contrast/on the contrary/whereas/while/unlike/as opposed to/relative to/similarly/just as
+- [x] Home page video card: AI word ratio — "X% ai" in rose-400/40, variable chatAWR, shows percentage of total words from AI responses
+- [x] Build verification PASSED
+
 ### Wave 213 — Assertive language detection, contextual badge, user word ratio
 - [x] TranscriptPanel: assertive language detection — "▸" in violet-400/30, regex for without a doubt/there's no question/clearly/obviously/undeniably/it's certain that/the fact is/make no mistake/rest assured/beyond dispute
 - [x] ChatOverlay: contextual badge — "contextual" in violet-500/10, detects in this context/given that/considering/taking into account/with respect to/in light of/from this perspective/within this framework/under these circumstances/in this regard
