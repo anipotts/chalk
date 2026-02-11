@@ -1600,6 +1600,21 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatUW = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatUW) {
+                            const uMsgsUW: { role: string; content: string }[] = JSON.parse(chatUW).filter((m: { role: string; content: string }) => m.role === 'user' && m.content);
+                            if (uMsgsUW.length >= 2) {
+                              const stops = new Set(['the','a','an','is','are','was','were','be','been','do','does','did','have','has','had','will','would','could','should','can','may','might','shall','it','its','this','that','these','those','i','me','my','we','our','you','your','he','she','they','them','their','in','on','at','to','for','of','with','and','or','but','not','no','if','so','what','how','why','when','where','who','which']);
+                              const allWords = uMsgsUW.flatMap(m => m.content.toLowerCase().split(/\s+/).filter(w => w.length > 2 && !stops.has(w)));
+                              const uniqueW = new Set(allWords).size;
+                              if (uniqueW >= 8) return <span className="text-[8px] text-emerald-400/40 tabular-nums" title={`${uniqueW} unique content words across ${uMsgsUW.length} questions`}>{uniqueW} unique words</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatRatio = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatRatio) {
                             const allRatio: { role: string }[] = JSON.parse(chatRatio);

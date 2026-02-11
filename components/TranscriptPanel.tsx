@@ -1708,6 +1708,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(to some extent|in some ways|partially|somewhat|kind of|sort of|more or less|roughly|arguably|in a way)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-neutral-400/30" title="Contains qualifying or hedging language">~q</span>
                   )}
+                  {!compactMode && /\b(very very|really really|so so|again and again|over and over|more and more|bigger and bigger|better and better)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains repetition for emphasis">2x</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

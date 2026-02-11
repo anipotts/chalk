@@ -1084,6 +1084,12 @@ Status: RUNNING
 - [x] Home Page Video Card Average AI Words — "avg Xw/a" badge showing average AI response word count
 - [x] Build verification PASSED
 
+### Wave 162 — Repetition emphasis detection, summary badge, unique question words
+- [x] Transcript Segment Repetition Emphasis Detection — "2x" indicator when segment contains word repetition for emphasis (very very, again and again, over and over)
+- [x] Chat Message Summary Badge — "summary" badge on AI messages that summarize content (in summary, to summarize, the key takeaway)
+- [x] Home Page Video Card Unique Question Words — "X unique words" badge showing unique non-stopword words across questions
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
