@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 184 — Exclamation detection, conditional badge, AI response variance
+- [x] TranscriptPanel: exclamation/emphasis detection — "!" in red-400/30, regex for exclamation marks
+- [x] ChatOverlay: conditional badge — "conditional" in purple-500/10, detects if...then/would...if/assuming that/depending on
+- [x] HomePage: AI response word count variance — "±X words" in pink-400/40, variable chatRV (std dev)
+- [x] Build verification PASSED
+
 ### Wave 183 — Temporal reference detection, procedural badge, min AI response words
 - [x] TranscriptPanel: temporal reference detection — "⏰" in pink-400/30, regex for yesterday/today/tomorrow/last week/recently etc.
 - [x] ChatOverlay: procedural badge — "how-to" in lime-500/10, detects step 1/first step/start by/begin with/next step

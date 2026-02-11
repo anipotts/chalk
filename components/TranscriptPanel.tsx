@@ -1774,6 +1774,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(yesterday|today|tomorrow|last week|next week|last year|next year|recently|currently|right now|at the time)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-pink-400/30" title="Contains temporal reference">&#9200;</span>
                   )}
+                  {!compactMode && /!/.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-red-400/30" title="Contains exclamation/emphasis">!</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
