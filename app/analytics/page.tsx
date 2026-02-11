@@ -21,6 +21,8 @@ async function fetchAnalytics(): Promise<AnalyticsData> {
   };
 
   try {
+    if (!supabase) return empty;
+
     // Fetch all events
     const { data: events, error } = await supabase
       .from('video_analytics')

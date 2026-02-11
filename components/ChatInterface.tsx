@@ -44,7 +44,7 @@ function fromConvMessages(msgs: ConversationMessage[]): Message[] {
     id: m.id,
     role: m.role,
     content: m.content,
-    spec: m.spec ?? null,
+    spec: (m.spec && typeof m.spec === 'object' && 'root' in m.spec ? m.spec : null) as ChalkSpec | null,
     thinking: m.thinking,
     thinkingDuration: m.thinkingDuration,
   }));

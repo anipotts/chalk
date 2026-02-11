@@ -51,12 +51,16 @@ export async function POST(req: Request) {
     ? (isCreative ? CREATIVE_SYSTEM_PROMPT : '') + CHALK_DEEP_SYSTEM_PROMPT
     : FAST_SYSTEM_PROMPT;
 
-  // Build messages array from history for multi-turn
+  // Build messages array from history for multi-turn (cap at 20 to limit cost)
+  const MAX_HISTORY = 20;
   const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
 
   if (history && Array.isArray(history)) {
-    for (const msg of history) {
-      messages.push({ role: msg.role, content: msg.content });
+    const trimmed = history.slice(-MAX_HISTORY);
+    for (const msg of trimmed) {
+      if (msg.role === 'user' || msg.role === 'assistant') {
+        messages.push({ role: msg.role, content: String(msg.content).slice(0, 4000) });
+      }
     }
   } else {
     messages.push({ role: 'user', content: prompt });
@@ -86,26 +90,33 @@ export async function POST(req: Request) {
     async start(controller) {
       let reasoningSent = false;
 
-      for await (const chunk of result.fullStream) {
-        if (chunk.type === 'reasoning-delta') {
-          controller.enqueue(encoder.encode(chunk.text));
-        } else if (chunk.type === 'reasoning-end') {
-          if (!reasoningSent) {
-            controller.enqueue(encoder.encode('\x1E'));
-            reasoningSent = true;
+      try {
+        for await (const chunk of result.fullStream) {
+          if (chunk.type === 'reasoning-delta') {
+            controller.enqueue(encoder.encode(chunk.text));
+          } else if (chunk.type === 'reasoning-end') {
+            if (!reasoningSent) {
+              controller.enqueue(encoder.encode('\x1E'));
+              reasoningSent = true;
+            }
+          } else if (chunk.type === 'text-delta') {
+            if (!reasoningSent) {
+              controller.enqueue(encoder.encode('\x1E'));
+              reasoningSent = true;
+            }
+            controller.enqueue(encoder.encode(chunk.text));
           }
-        } else if (chunk.type === 'text-delta') {
-          if (!reasoningSent) {
-            controller.enqueue(encoder.encode('\x1E'));
-            reasoningSent = true;
-          }
-          controller.enqueue(encoder.encode(chunk.text));
         }
-      }
 
-      // If no text was sent (reasoning-only edge case), still close cleanly
-      if (!reasoningSent) {
-        controller.enqueue(encoder.encode('\x1E'));
+        if (!reasoningSent) {
+          controller.enqueue(encoder.encode('\x1E'));
+        }
+      } catch (err) {
+        console.error('Stream error:', err instanceof Error ? err.message : err);
+        if (!reasoningSent) {
+          controller.enqueue(encoder.encode('\x1E'));
+        }
+        controller.enqueue(encoder.encode('\n\n[An error occurred while generating the response.]'));
       }
       controller.close();
     },

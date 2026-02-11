@@ -28,6 +28,9 @@ export async function POST(req: Request) {
   if (segments && !Array.isArray(segments)) {
     return Response.json({ error: 'Invalid segments format' }, { status: 400 });
   }
+  if (segments && segments.length > 5000) {
+    return Response.json({ error: 'Too many segments (max 5000)' }, { status: 400 });
+  }
 
   // Resolve model
   let resolvedModel: 'opus' | 'sonnet' | 'haiku';
@@ -84,7 +87,7 @@ export async function POST(req: Request) {
     strict: '\n\nAdopt a direct, no-nonsense teaching style. Be concise and challenging. Point out gaps in understanding directly. Push the user to think deeper. No fluff.',
     socratic: '\n\nAdopt the Socratic method. Instead of giving direct answers, guide the user with probing questions. Help them discover answers themselves. Only reveal answers if they are truly stuck.',
   };
-  if (personality && PERSONALITY_PROMPTS[personality]) {
+  if (typeof personality === 'string' && PERSONALITY_PROMPTS[personality]) {
     systemPrompt += PERSONALITY_PROMPTS[personality];
   }
 
@@ -125,25 +128,33 @@ export async function POST(req: Request) {
     async start(controller) {
       let reasoningSent = false;
 
-      for await (const chunk of result.fullStream) {
-        if (chunk.type === 'reasoning-delta') {
-          controller.enqueue(encoder.encode(chunk.text));
-        } else if (chunk.type === 'reasoning-end') {
-          if (!reasoningSent) {
-            controller.enqueue(encoder.encode('\x1E'));
-            reasoningSent = true;
+      try {
+        for await (const chunk of result.fullStream) {
+          if (chunk.type === 'reasoning-delta') {
+            controller.enqueue(encoder.encode(chunk.text));
+          } else if (chunk.type === 'reasoning-end') {
+            if (!reasoningSent) {
+              controller.enqueue(encoder.encode('\x1E'));
+              reasoningSent = true;
+            }
+          } else if (chunk.type === 'text-delta') {
+            if (!reasoningSent) {
+              controller.enqueue(encoder.encode('\x1E'));
+              reasoningSent = true;
+            }
+            controller.enqueue(encoder.encode(chunk.text));
           }
-        } else if (chunk.type === 'text-delta') {
-          if (!reasoningSent) {
-            controller.enqueue(encoder.encode('\x1E'));
-            reasoningSent = true;
-          }
-          controller.enqueue(encoder.encode(chunk.text));
         }
-      }
 
-      if (!reasoningSent) {
-        controller.enqueue(encoder.encode('\x1E'));
+        if (!reasoningSent) {
+          controller.enqueue(encoder.encode('\x1E'));
+        }
+      } catch (err) {
+        console.error('Stream error:', err instanceof Error ? err.message : err);
+        if (!reasoningSent) {
+          controller.enqueue(encoder.encode('\x1E'));
+        }
+        controller.enqueue(encoder.encode('\n\n[An error occurred while generating the response.]'));
       }
       controller.close();
     },

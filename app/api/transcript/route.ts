@@ -28,7 +28,10 @@ export async function POST(req: Request) {
   // Check cache hierarchy (L1 memory → L2 Supabase)
   const cached = await getCachedTranscript(videoId);
   if (cached && cached.segments.length > 0) {
-    return Response.json({ segments: cached.segments, source: cached.source });
+    return Response.json(
+      { segments: cached.segments, source: cached.source },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
   }
 
   // Fetch from source (Phase 1 caption race → Phase 2 STT cascade)
@@ -40,7 +43,10 @@ export async function POST(req: Request) {
       setCachedTranscript(videoId, segments, result.source);
     }
 
-    return Response.json({ segments, source: result.source });
+    return Response.json(
+      { segments, source: result.source },
+      { headers: { 'Cache-Control': 'no-store' } },
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to fetch transcript';
     return Response.json({ error: message }, { status: 500 });

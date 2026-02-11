@@ -44,4 +44,5 @@ supabase/.temp/
 .env.local
 .env.development.local
 .env.test.local
-.env.production.localtest-results/
+.env.production.local
+test-results/

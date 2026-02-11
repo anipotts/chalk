@@ -37,9 +37,9 @@ export function exprToSurfaceFn(expr: string): (x: number, y: number) => number 
   return (x: number, y: number) => {
     try {
       const result = fn({ x, y });
-      return isFinite(result) ? result : 0;
+      return isFinite(result) ? result : NaN;
     } catch {
-      return 0;
+      return NaN;
     }
   };
 }

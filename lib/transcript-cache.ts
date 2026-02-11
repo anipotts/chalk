@@ -1,11 +1,8 @@
 /**
  * Three-tier transcript cache:
- *   L1 — In-memory Map (30-min TTL, zero latency)
- *   L2 — Supabase `transcripts` table (30–90 day TTL, ~100ms)
+ *   L1 — In-memory Map (30-min TTL, zero latency, local dev optimization)
+ *   L2 — Supabase `transcripts` table (30-90 day TTL, ~100ms)
  *   L3 — Fetch from source (seconds to minutes)
- *
- * Follows the dual-write pattern from lib/conversations.ts:
- * memory instant + Supabase durable, fire-and-forget.
  */
 
 import { supabase } from './supabase';
@@ -19,6 +16,8 @@ export interface CachedTranscript {
 }
 
 // ─── L1: In-memory cache (bounded LRU) ───────────────────────────────────────
+// Note: On Vercel serverless, L1 resets each cold start. This is primarily
+// useful for local dev and warm container reuse.
 
 const L1_TTL = 30 * 60 * 1000; // 30 minutes
 const MAX_L1_ENTRIES = 50;
@@ -39,7 +38,6 @@ function getL1(videoId: string): CachedTranscript | null {
 }
 
 function setL1(videoId: string, entry: CachedTranscript): void {
-  // Evict oldest entries if at capacity
   if (memoryCache.size >= MAX_L1_ENTRIES && !memoryCache.has(videoId)) {
     const oldest = memoryCache.keys().next().value;
     if (oldest !== undefined) memoryCache.delete(oldest);
@@ -49,7 +47,36 @@ function setL1(videoId: string, entry: CachedTranscript): void {
 
 // ─── L2: Supabase cache ──────────────────────────────────────────────────────
 
+const VALID_SOURCES: Set<string> = new Set(['innertube', 'web-scrape', 'yt-dlp', 'groq-whisper', 'local-whisper']);
+
+/** Validate that cached data has the expected shape. */
+function validateCachedSegments(data: unknown): data is { segments: TranscriptSegment[]; source: TranscriptSource } {
+  if (!data || typeof data !== 'object') return false;
+  const d = data as Record<string, unknown>;
+  if (!Array.isArray(d.segments)) return false;
+  if (typeof d.source !== 'string' || !VALID_SOURCES.has(d.source)) return false;
+  // Spot-check first segment
+  if (d.segments.length > 0) {
+    const first = d.segments[0];
+    if (typeof first.text !== 'string' || typeof first.offset !== 'number') return false;
+  }
+  return true;
+}
+
+function getWriteClient() {
+  // Prefer service role for writes to bypass RLS
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (url && serviceKey) {
+    // Dynamic import to avoid circular dependency
+    const { createClient } = require('@supabase/supabase-js');
+    return createClient(url, serviceKey);
+  }
+  return supabase;
+}
+
 async function getL2(videoId: string): Promise<CachedTranscript | null> {
+  if (!supabase) return null;
   try {
     const { data, error } = await supabase
       .from('transcripts')
@@ -61,8 +88,16 @@ async function getL2(videoId: string): Promise<CachedTranscript | null> {
 
     // Check expiry
     if (data.expires_at && new Date(data.expires_at).getTime() < Date.now()) {
-      // Expired — delete async and return null
-      supabase.from('transcripts').delete().eq('video_id', videoId).then(() => {});
+      const client = getWriteClient();
+      if (client) {
+        client.from('transcripts').delete().eq('video_id', videoId).then(() => {});
+      }
+      return null;
+    }
+
+    // Validate shape
+    if (!validateCachedSegments(data)) {
+      console.warn(`[transcript-cache] Invalid cached data shape for ${videoId}`);
       return null;
     }
 
@@ -83,6 +118,9 @@ function setL2(
   source: TranscriptSource,
   videoTitle?: string,
 ): void {
+  const client = getWriteClient();
+  if (!client) return;
+
   const isSTT = source === 'groq-whisper' || source === 'local-whisper';
   const ttlDays = isSTT ? 90 : 30;
   const expiresAt = new Date(Date.now() + ttlDays * 24 * 60 * 60 * 1000).toISOString();
@@ -90,8 +128,7 @@ function setL2(
   const lastSeg = segments[segments.length - 1];
   const durationSeconds = lastSeg ? lastSeg.offset + (lastSeg.duration || 0) : 0;
 
-  // Fire-and-forget upsert (same pattern as lib/conversations.ts)
-  supabase
+  client
     .from('transcripts')
     .upsert({
       video_id: videoId,
@@ -103,26 +140,19 @@ function setL2(
       fetched_at: new Date().toISOString(),
       expires_at: expiresAt,
     })
-    .then(({ error }) => {
+    .then(({ error }: { error: { message: string } | null }) => {
       if (error) console.warn('[transcript-cache] Supabase upsert error:', error.message);
     });
 }
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
-/**
- * Check L1 (memory) then L2 (Supabase) for a cached transcript.
- * Promotes L2 hits into L1 for subsequent zero-latency reads.
- */
 export async function getCachedTranscript(videoId: string): Promise<CachedTranscript | null> {
-  // L1 check
   const l1 = getL1(videoId);
   if (l1) return l1;
 
-  // L2 check
   const l2 = await getL2(videoId);
   if (l2) {
-    // Promote to L1
     setL1(videoId, l2);
     return l2;
   }
@@ -130,9 +160,6 @@ export async function getCachedTranscript(videoId: string): Promise<CachedTransc
   return null;
 }
 
-/**
- * Write transcript to both L1 (instant) and L2 (durable, fire-and-forget).
- */
 export function setCachedTranscript(
   videoId: string,
   segments: TranscriptSegment[],
@@ -146,9 +173,6 @@ export function setCachedTranscript(
     fetchedAt: Date.now(),
   };
 
-  // L1 — instant
   setL1(videoId, entry);
-
-  // L2 — fire-and-forget
   setL2(videoId, segments, source, videoTitle);
 }

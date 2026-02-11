@@ -29,12 +29,18 @@ export function isGroqAvailable(): boolean {
  * @param audioBuffer - Raw audio file bytes (WAV/MP3/etc.)
  * @param filename - Filename hint for the API (e.g., "audio.wav")
  */
+const MAX_GROQ_BYTES = 25 * 1024 * 1024; // 25MB Groq limit
+
 export async function transcribeWithGroq(
   audioBuffer: Buffer,
   filename: string = 'audio.wav',
 ): Promise<TranscriptSegment[]> {
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) throw new Error('GROQ_API_KEY is not set');
+
+  if (audioBuffer.length > MAX_GROQ_BYTES) {
+    throw new Error(`Audio too large for Groq (${Math.round(audioBuffer.length / 1024 / 1024)}MB, max 25MB)`);
+  }
 
   const formData = new FormData();
   formData.append('file', new Blob([new Uint8Array(audioBuffer)]), filename);

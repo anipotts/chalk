@@ -11,6 +11,7 @@ export interface TranscriptSegment {
 
 export type TranscriptSource =
   | 'innertube'
+  | 'web-scrape'
   | 'yt-dlp'
   | 'groq-whisper'
   | 'local-whisper';
@@ -31,9 +32,14 @@ export function extractVideoId(input: string): string | null {
 
   try {
     const url = new URL(input);
-    // youtube.com/watch?v=ID
     if (url.hostname.includes('youtube.com')) {
-      return url.searchParams.get('v');
+      // youtube.com/watch?v=ID
+      const v = url.searchParams.get('v');
+      if (v) return v;
+      // youtube.com/shorts/ID or youtube.com/embed/ID or youtube.com/v/ID
+      const pathMatch = url.pathname.match(/^\/(shorts|embed|v)\/([a-zA-Z0-9_-]{11})/);
+      if (pathMatch) return pathMatch[2];
+      return null;
     }
     // youtu.be/ID
     if (url.hostname === 'youtu.be') {
@@ -84,28 +90,3 @@ export function formatTimestamp(seconds: number): string {
   return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
-/**
- * Build a sliding window of transcript context around the current timestamp.
- */
-export function buildVideoContext(
-  segments: TranscriptSegment[],
-  currentTime: number,
-  opts?: { windowBefore?: number; windowAfter?: number }
-): string {
-  const windowBefore = opts?.windowBefore ?? 120;
-  const windowAfter = opts?.windowAfter ?? 60;
-  const startTime = Math.max(0, currentTime - windowBefore);
-  const endTime = currentTime + windowAfter;
-
-  const relevant = segments.filter(
-    (s) => s.offset >= startTime && s.offset <= endTime
-  );
-
-  if (relevant.length === 0) {
-    return '(No transcript available for this portion of the video)';
-  }
-
-  return relevant
-    .map((s) => `[${formatTimestamp(s.offset)}] ${s.text}`)
-    .join('\n');
-}

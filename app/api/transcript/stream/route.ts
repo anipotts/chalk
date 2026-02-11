@@ -52,7 +52,12 @@ export async function GET(req: Request) {
       }, 10_000);
 
       function send(event: string, data: unknown) {
-        controller.enqueue(encoder.encode(sseEvent(event, data)));
+        if (abortSignal.aborted) return;
+        try {
+          controller.enqueue(encoder.encode(sseEvent(event, data)));
+        } catch {
+          // Stream already closed
+        }
       }
 
       try {
@@ -148,7 +153,6 @@ export async function GET(req: Request) {
     headers: {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
     },
   });
 }

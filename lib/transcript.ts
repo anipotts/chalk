@@ -18,9 +18,19 @@ import { isGroqAvailable, transcribeWithGroq } from './stt/groq-whisper';
 
 // Re-export client-safe types and functions so API routes can use them
 export type { TranscriptSegment, TranscriptSource, TranscriptResult } from './video-utils';
-export { formatTimestamp, buildVideoContext, parseTimestampLinks, extractVideoId } from './video-utils';
+export { formatTimestamp, parseTimestampLinks, extractVideoId } from './video-utils';
+// buildVideoContext was removed — video-chat now sends full transcript with priority markers
 
 import type { TranscriptSegment, TranscriptResult } from './video-utils';
+
+// ─── Constants ──────────────────────────────────────────────────────────────
+
+const IS_VERCEL = !!process.env.VERCEL;
+const INNERTUBE_KEY = process.env.YOUTUBE_INNERTUBE_KEY || 'AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w';
+const INNERTUBE_CLIENT_VERSION = process.env.YOUTUBE_CLIENT_VERSION || '19.44.38';
+const MAX_AUDIO_BYTES = 25 * 1024 * 1024; // 25MB — Groq's Whisper limit
+const ALLOWED_CAPTION_HOSTS = ['www.youtube.com', 'youtube.com', 'www.google.com'];
+const ALLOWED_AUDIO_HOSTS = ['rr', 'redirector.googlevideo.com']; // googlevideo CDN uses rr*.googlevideo.com
 
 // ─── Innertube types ───────────────────────────────────────────────────────────
 
@@ -65,20 +75,77 @@ function parseTimedTextXml(xml: string): TranscriptSegment[] {
   while ((match = regex.exec(xml)) !== null) {
     const offset = parseInt(match[1], 10) / 1000;
     const duration = match[2] ? parseInt(match[2], 10) / 1000 : 0;
-    // Decode HTML entities
+    // Decode HTML entities (comprehensive)
     const text = match[3]
       .replace(/<[^>]+>/g, '') // strip inner tags
-      .replace(/&#39;/g, "'")
+      .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+      .replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)))
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&mdash;/g, '\u2014')
+      .replace(/&ndash;/g, '\u2013')
+      .replace(/&hellip;/g, '\u2026')
+      .replace(/&lsquo;/g, '\u2018')
+      .replace(/&rsquo;/g, '\u2019')
+      .replace(/&ldquo;/g, '\u201C')
+      .replace(/&rdquo;/g, '\u201D')
       .trim();
     if (text) {
       segments.push({ text, offset, duration });
     }
   }
   return segments;
+}
+
+// ─── Shared: Innertube player request ─────────────────────────────────────────
+
+async function fetchInnertubePlayer(videoId: string): Promise<InnertubePlayerResponse> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  try {
+    const resp = await fetch(`https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_KEY}&prettyPrint=false`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': `com.google.android.youtube/${INNERTUBE_CLIENT_VERSION} (Linux; U; Android 14)`,
+        'X-YouTube-Client-Name': '3',
+        'X-YouTube-Client-Version': INNERTUBE_CLIENT_VERSION,
+      },
+      body: JSON.stringify({
+        videoId,
+        context: {
+          client: {
+            clientName: 'ANDROID',
+            clientVersion: INNERTUBE_CLIENT_VERSION,
+            androidSdkVersion: 34,
+            hl: 'en',
+            gl: 'US',
+          },
+        },
+      }),
+      signal: controller.signal,
+    });
+    if (!resp.ok) throw new Error(`Innertube request failed: ${resp.status}`);
+    return (await resp.json()) as InnertubePlayerResponse;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/** Validate that a URL points to a known YouTube/Google domain (SSRF prevention). */
+function isAllowedYouTubeUrl(urlStr: string, allowedPrefixes: string[]): boolean {
+  try {
+    const u = new URL(urlStr);
+    return allowedPrefixes.some((prefix) =>
+      u.hostname === prefix || u.hostname.endsWith(`.${prefix}`) || u.hostname.endsWith('.googlevideo.com')
+    );
+  } catch {
+    return false;
+  }
 }
 
 // ─── Tier 1: Innertube API (ANDROID client) ─────────────────────────────────────
@@ -88,40 +155,7 @@ function parseTimedTextXml(xml: string): TranscriptSegment[] {
 // instead of JSON3 (the fmt param is ignored). We parse the XML directly.
 
 async function fetchTranscriptInnertube(videoId: string): Promise<TranscriptSegment[]> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
-
-  let resp;
-  try {
-    resp = await fetch('https://www.youtube.com/youtubei/v1/player?key=AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w&prettyPrint=false', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'com.google.android.youtube/19.44.38 (Linux; U; Android 14)',
-        'X-YouTube-Client-Name': '3',
-        'X-YouTube-Client-Version': '19.44.38',
-      },
-      body: JSON.stringify({
-        videoId,
-        context: {
-          client: {
-            clientName: 'ANDROID',
-            clientVersion: '19.44.38',
-            androidSdkVersion: 34,
-            hl: 'en',
-            gl: 'US',
-          },
-        },
-      }),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timeout);
-  }
-
-  if (!resp.ok) throw new Error(`Innertube request failed: ${resp.status}`);
-
-  const data = (await resp.json()) as InnertubePlayerResponse;
+  const data = await fetchInnertubePlayer(videoId);
   const tracks = data.captions?.playerCaptionsTracklistRenderer?.captionTracks;
   if (!tracks || tracks.length === 0) throw new Error('No caption tracks found');
 
@@ -129,6 +163,11 @@ async function fetchTranscriptInnertube(videoId: string): Promise<TranscriptSegm
   const enTracks = tracks.filter((t) => t.languageCode.startsWith('en'));
   const manual = enTracks.find((t) => t.kind !== 'asr');
   const track = manual || enTracks[0] || tracks[0];
+
+  // SSRF check: ensure caption URL points to YouTube/Google
+  if (!isAllowedYouTubeUrl(track.baseUrl, ALLOWED_CAPTION_HOSTS)) {
+    throw new Error('Caption URL points to unexpected host');
+  }
 
   // Fetch captions (ANDROID client returns XML timedtext regardless of fmt param)
   const captionController = new AbortController();
@@ -271,7 +310,7 @@ async function fetchTranscriptYtDlp(videoId: string): Promise<TranscriptSegment[
       '--sub-format', 'json3',
       '--skip-download',
       '-o', tempBase,
-    ]);
+    ], 30_000); // 30s for subtitle extraction
 
     // yt-dlp writes the sub file as <output>.en.json3
     const raw = await readFile(expectedSubFile, 'utf-8');
@@ -306,9 +345,9 @@ interface WhisperOutput {
   segments: WhisperSegment[];
 }
 
-function execFilePromise(cmd: string, args: string[]): Promise<{ stdout: string; stderr: string }> {
+function execFilePromise(cmd: string, args: string[], timeoutMs = 60_000): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    execFile(cmd, args, { timeout: 300_000 }, (err, stdout, stderr) => {
+    execFile(cmd, args, { timeout: timeoutMs }, (err, stdout, stderr) => {
       if (err) reject(err);
       else resolve({ stdout, stderr });
     });
@@ -340,7 +379,7 @@ async function fetchTranscriptLocalWhisper(audioPath: string): Promise<Transcrip
       '--output_format', 'json',
       '--language', 'en',
       '--output_dir', tmpdir(),
-    ]);
+    ], 180_000); // 3 min for Whisper transcription
 
     const raw = await readFile(jsonPath, 'utf-8');
     const data = JSON.parse(raw) as WhisperOutput;
@@ -365,43 +404,10 @@ async function fetchTranscriptLocalWhisper(audioPath: string): Promise<Transcrip
  * Download audio from YouTube via Innertube streaming URLs (HTTP-only, no yt-dlp needed).
  * Fetches the player response to get adaptive audio stream URLs, then downloads directly.
  * Returns a Buffer of audio data for Groq Whisper. Works on Vercel serverless.
+ * Enforces a MAX_AUDIO_BYTES size limit to prevent OOM on serverless.
  */
 async function downloadAudioHTTP(videoId: string): Promise<Buffer> {
-  // Get player response with streaming data
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
-
-  let resp;
-  try {
-    resp = await fetch('https://www.youtube.com/youtubei/v1/player?key=AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w&prettyPrint=false', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'com.google.android.youtube/19.44.38 (Linux; U; Android 14)',
-        'X-YouTube-Client-Name': '3',
-        'X-YouTube-Client-Version': '19.44.38',
-      },
-      body: JSON.stringify({
-        videoId,
-        context: {
-          client: {
-            clientName: 'ANDROID',
-            clientVersion: '19.44.38',
-            androidSdkVersion: 34,
-            hl: 'en',
-            gl: 'US',
-          },
-        },
-      }),
-      signal: controller.signal,
-    });
-  } finally {
-    clearTimeout(timeout);
-  }
-
-  if (!resp.ok) throw new Error(`Innertube player request failed: ${resp.status}`);
-
-  const data = (await resp.json()) as InnertubePlayerResponse;
+  const data = await fetchInnertubePlayer(videoId);
   const formats = data.streamingData?.adaptiveFormats;
   if (!formats || formats.length === 0) throw new Error('No streaming formats available');
 
@@ -412,17 +418,51 @@ async function downloadAudioHTTP(videoId: string): Promise<Buffer> {
 
   if (audioFormats.length === 0) throw new Error('No audio streams with direct URLs');
 
-  const audioUrl = audioFormats[0].url!;
-  console.log(`[transcript] downloading audio via HTTP (itag ${audioFormats[0].itag}, ~${Math.round(parseInt(audioFormats[0].contentLength || '0') / 1024)}KB)`);
+  const chosen = audioFormats[0];
+  const audioUrl = chosen.url!;
 
-  // Download the audio stream
+  // SSRF check: ensure audio URL points to Google CDN
+  if (!isAllowedYouTubeUrl(audioUrl, ALLOWED_AUDIO_HOSTS)) {
+    throw new Error('Audio URL points to unexpected host');
+  }
+
+  // Pre-check size from metadata
+  const declaredSize = parseInt(chosen.contentLength || '0');
+  if (declaredSize > MAX_AUDIO_BYTES) {
+    throw new Error(`Audio too large (${Math.round(declaredSize / 1024 / 1024)}MB, max ${MAX_AUDIO_BYTES / 1024 / 1024}MB)`);
+  }
+
+  console.log(`[transcript] downloading audio via HTTP (itag ${chosen.itag}, ~${Math.round(declaredSize / 1024)}KB)`);
+
+  // Download the audio stream with size enforcement
   const audioController = new AbortController();
-  const audioTimeout = setTimeout(() => audioController.abort(), 120000); // 2 min for audio download
+  const audioTimeout = setTimeout(() => audioController.abort(), 120000);
   try {
     const audioResp = await fetch(audioUrl, { signal: audioController.signal });
     if (!audioResp.ok) throw new Error(`Audio download failed: ${audioResp.status}`);
-    const arrayBuffer = await audioResp.arrayBuffer();
-    return Buffer.from(arrayBuffer);
+
+    // Check Content-Length header
+    const contentLength = parseInt(audioResp.headers.get('content-length') || '0');
+    if (contentLength > MAX_AUDIO_BYTES) {
+      throw new Error(`Audio too large (${Math.round(contentLength / 1024 / 1024)}MB, max ${MAX_AUDIO_BYTES / 1024 / 1024}MB)`);
+    }
+
+    // Stream with size guard
+    const reader = audioResp.body?.getReader();
+    if (!reader) throw new Error('No response body');
+    const chunks: Uint8Array[] = [];
+    let totalSize = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalSize += value.byteLength;
+      if (totalSize > MAX_AUDIO_BYTES) {
+        reader.cancel();
+        throw new Error(`Audio exceeded ${MAX_AUDIO_BYTES / 1024 / 1024}MB during download`);
+      }
+      chunks.push(value);
+    }
+    return Buffer.concat(chunks);
   } finally {
     clearTimeout(audioTimeout);
   }
@@ -448,11 +488,9 @@ export async function downloadAudio(videoId: string): Promise<string> {
 
 // ─── Phase 1: Caption race ─────────────────────────────────────────────────────
 
-type CaptionTier = 'innertube' | 'yt-dlp';
-
 interface CaptionRaceResult {
   segments: TranscriptSegment[];
-  source: CaptionTier;
+  source: 'innertube' | 'web-scrape' | 'yt-dlp';
 }
 
 const INNERTUBE_TIMEOUT = 15_000; // 15s — Innertube is fast when it works
@@ -461,15 +499,19 @@ const YTDLP_TIMEOUT = 30_000;    // 30s — yt-dlp needs time for JS challenge s
 const RACE_TIMEOUT = 35_000;     // 35s overall caption race
 
 export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
-  // Three caption tiers run concurrently — first non-empty result wins.
+  // Caption tiers run concurrently — first non-empty result wins.
   // Innertube ANDROID is fast (~1-2s) but YouTube may block from datacenter IPs.
   // Web scrape fetches the watch page HTML — looks like a browser visit, most reliable on Vercel.
-  // yt-dlp CLI is slower (~10-15s) but handles most edge cases (not available on Vercel).
-  const tiers: Array<{ fn: () => Promise<TranscriptSegment[]>; source: CaptionTier; timeout: number }> = [
+  // yt-dlp CLI is slower (~10-15s) but handles most edge cases (NOT available on Vercel).
+  const tiers: Array<{ fn: () => Promise<TranscriptSegment[]>; source: CaptionRaceResult['source']; timeout: number }> = [
     { fn: () => fetchTranscriptInnertube(videoId), source: 'innertube', timeout: INNERTUBE_TIMEOUT },
-    { fn: () => fetchTranscriptWebScrape(videoId), source: 'innertube', timeout: WEBSCRAPE_TIMEOUT },
-    { fn: () => fetchTranscriptYtDlp(videoId), source: 'yt-dlp', timeout: YTDLP_TIMEOUT },
+    { fn: () => fetchTranscriptWebScrape(videoId), source: 'web-scrape', timeout: WEBSCRAPE_TIMEOUT },
   ];
+
+  // Only add yt-dlp tier when NOT on Vercel (binary doesn't exist there)
+  if (!IS_VERCEL) {
+    tiers.push({ fn: () => fetchTranscriptYtDlp(videoId), source: 'yt-dlp', timeout: YTDLP_TIMEOUT });
+  }
 
   const raceEntries = tiers.map(({ fn, source, timeout }) =>
     withTimeout(
@@ -506,7 +548,11 @@ export async function sttCascade(videoId: string): Promise<TranscriptResult> {
     }
   }
 
-  // Strategy 2: yt-dlp audio download → Groq or local Whisper (works locally, not on Vercel)
+  // Strategy 2: yt-dlp audio download → Groq or local Whisper (works locally, NOT on Vercel)
+  if (IS_VERCEL) {
+    throw new Error('All STT tiers failed (yt-dlp not available on Vercel)');
+  }
+
   let audioPath: string | null = null;
   try {
     audioPath = await downloadAudio(videoId);

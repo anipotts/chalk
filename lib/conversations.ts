@@ -12,10 +12,12 @@ export interface ConversationMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  spec?: any;
+  spec?: unknown;
   thinking?: string;
   thinkingDuration?: number;
 }
+
+const MAX_MESSAGES_PER_CONVERSATION = 200;
 
 // ---------------------------------------------------------------------------
 // localStorage cache — fast reads, synced from Supabase on mount
@@ -26,7 +28,10 @@ function getCached(): Conversation[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed;
   } catch {
     return [];
   }
@@ -35,8 +40,8 @@ function getCached(): Conversation[] {
 function saveCache(conversations: Conversation[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
-  } catch {
-    // localStorage full or unavailable — ignore
+  } catch (e) {
+    console.warn('localStorage write failed:', e instanceof Error ? e.message : e);
   }
 }
 
@@ -48,30 +53,39 @@ function toSupabaseRow(conv: Conversation) {
   return {
     id: conv.id,
     title: conv.title,
-    messages: conv.messages,
+    messages: conv.messages.slice(-MAX_MESSAGES_PER_CONVERSATION),
     created_at: new Date(conv.createdAt).toISOString(),
     updated_at: new Date(conv.updatedAt).toISOString(),
   };
 }
 
-function fromSupabaseRow(row: any): Conversation {
+function fromSupabaseRow(row: Record<string, unknown>): Conversation {
   return {
-    id: row.id,
-    title: row.title,
-    messages: row.messages || [],
-    createdAt: new Date(row.created_at).getTime(),
-    updatedAt: new Date(row.updated_at).getTime(),
+    id: String(row.id || ''),
+    title: String(row.title || ''),
+    messages: Array.isArray(row.messages) ? row.messages : [],
+    createdAt: new Date(String(row.created_at)).getTime(),
+    updatedAt: new Date(String(row.updated_at)).getTime(),
   };
+}
+
+/** Generate a collision-resistant ID using Web Crypto API (browser + Node compatible) */
+function generateId(): string {
+  const bytes = new Uint8Array(8);
+  if (typeof globalThis.crypto?.getRandomValues === 'function') {
+    globalThis.crypto.getRandomValues(bytes);
+  } else {
+    // Fallback for old environments
+    for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+  }
+  // Convert to base64url-safe string
+  return Array.from(bytes, (b) => b.toString(36)).join('').slice(0, 12);
 }
 
 // ---------------------------------------------------------------------------
 // Public API — synchronous for immediate reads (localStorage), async for writes
 // ---------------------------------------------------------------------------
 
-/**
- * List conversations — reads from localStorage cache for instant response.
- * Call `syncConversations()` on mount to hydrate cache from Supabase.
- */
 export function listConversations(): Conversation[] {
   return getCached().sort((a, b) => b.updatedAt - a.updatedAt);
 }
@@ -82,24 +96,24 @@ export function getConversation(id: string): Conversation | null {
 
 export function createConversation(firstMessage: string): Conversation {
   const conv: Conversation = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    id: generateId(),
     title: firstMessage.slice(0, 60) + (firstMessage.length > 60 ? '...' : ''),
     messages: [],
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
-  // Update localStorage cache immediately
   const all = getCached();
   all.push(conv);
   saveCache(all);
 
-  // Persist to Supabase async (fire and forget)
-  supabase
-    .from('conversations')
-    .insert(toSupabaseRow(conv))
-    .then(({ error }) => {
-      if (error) console.warn('Supabase insert error:', error.message);
-    });
+  if (supabase) {
+    supabase
+      .from('conversations')
+      .insert(toSupabaseRow(conv))
+      .then(({ error }) => {
+        if (error) console.warn('Supabase insert error:', error.message);
+      });
+  }
 
   return conv;
 }
@@ -112,18 +126,21 @@ export function updateConversation(
   const idx = all.findIndex((c) => c.id === id);
   if (idx === -1) return null;
   if (updates.title !== undefined) all[idx].title = updates.title;
-  if (updates.messages !== undefined) all[idx].messages = updates.messages;
+  if (updates.messages !== undefined) {
+    all[idx].messages = updates.messages.slice(-MAX_MESSAGES_PER_CONVERSATION);
+  }
   all[idx].updatedAt = Date.now();
   saveCache(all);
 
-  // Persist to Supabase async
-  const row = toSupabaseRow(all[idx]);
-  supabase
-    .from('conversations')
-    .upsert(row)
-    .then(({ error }) => {
-      if (error) console.warn('Supabase upsert error:', error.message);
-    });
+  if (supabase) {
+    const row = toSupabaseRow(all[idx]);
+    supabase
+      .from('conversations')
+      .upsert(row)
+      .then(({ error }) => {
+        if (error) console.warn('Supabase upsert error:', error.message);
+      });
+  }
 
   return all[idx];
 }
@@ -134,29 +151,32 @@ export function deleteConversation(id: string): boolean {
   if (filtered.length === all.length) return false;
   saveCache(filtered);
 
-  // Delete from Supabase async
-  supabase
-    .from('conversations')
-    .delete()
-    .eq('id', id)
-    .then(({ error }) => {
-      if (error) console.warn('Supabase delete error:', error.message);
-    });
+  if (supabase) {
+    supabase
+      .from('conversations')
+      .delete()
+      .eq('id', id)
+      .then(({ error }) => {
+        if (error) console.warn('Supabase delete error:', error.message);
+      });
+  }
 
   return true;
 }
 
 /**
  * Sync conversations from Supabase into localStorage cache.
- * Call this on mount to hydrate. Merges remote data with any local-only entries.
+ * Merges by updatedAt timestamp — newest version wins.
  */
 export async function syncConversations(): Promise<Conversation[]> {
+  if (!supabase) return getCached();
+
   try {
     const { data, error } = await supabase
       .from('conversations')
       .select('*')
       .order('updated_at', { ascending: false })
-      .limit(100);
+      .limit(200);
 
     if (error) {
       console.warn('Supabase sync error:', error.message);
@@ -166,26 +186,37 @@ export async function syncConversations(): Promise<Conversation[]> {
     const remote = (data || []).map(fromSupabaseRow);
     const local = getCached();
 
-    // Merge: use remote as source of truth, but keep any local-only entries
-    // that haven't been synced yet (e.g. created offline)
-    const remoteIds = new Set(remote.map((c) => c.id));
-    const localOnly = local.filter((c) => !remoteIds.has(c.id));
-
-    // Push any local-only entries to Supabase
-    for (const conv of localOnly) {
-      supabase
-        .from('conversations')
-        .upsert(toSupabaseRow(conv))
-        .then(({ error: e }) => {
-          if (e) console.warn('Supabase sync push error:', e.message);
-        });
+    // Build merged map — newest version wins by updatedAt
+    const merged = new Map<string, Conversation>();
+    for (const conv of remote) merged.set(conv.id, conv);
+    for (const conv of local) {
+      const existing = merged.get(conv.id);
+      if (!existing || conv.updatedAt > existing.updatedAt) {
+        merged.set(conv.id, conv);
+        // Push local-newer entries to Supabase
+        if (existing && conv.updatedAt > existing.updatedAt) {
+          supabase
+            .from('conversations')
+            .upsert(toSupabaseRow(conv))
+            .then(({ error: e }) => {
+              if (e) console.warn('Supabase sync push error:', e.message);
+            });
+        }
+      }
+      // If local-only (not in remote), push to Supabase
+      if (!existing) {
+        supabase
+          .from('conversations')
+          .upsert(toSupabaseRow(conv))
+          .then(({ error: e }) => {
+            if (e) console.warn('Supabase sync push error:', e.message);
+          });
+      }
     }
 
-    const merged = [...remote, ...localOnly].sort(
-      (a, b) => b.updatedAt - a.updatedAt,
-    );
-    saveCache(merged);
-    return merged;
+    const result = Array.from(merged.values()).sort((a, b) => b.updatedAt - a.updatedAt);
+    saveCache(result);
+    return result;
   } catch {
     return getCached();
   }

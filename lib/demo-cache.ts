@@ -216,7 +216,7 @@ export function getDemoCacheEntry(prompt: string): DemoCacheEntry | null {
   if (/sin.*cos.*tan|trig.*trinity/i.test(lower)) {
     return DEMO_CACHE['sin-cos-tan'];
   }
-  if (lower.includes('gaussian') && lower.includes('3d') || lower.includes('bell') && lower.includes('surface')) {
+  if ((lower.includes('gaussian') && lower.includes('3d')) || (lower.includes('bell') && lower.includes('surface'))) {
     return DEMO_CACHE['gaussian-bell'];
   }
 
