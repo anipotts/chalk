@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 169 — Exemplification detection, concession badge, longest silence
+- [x] Transcript Segment Exemplification Detection — "eg" indicator when segment contains exemplification language (for example, for instance, such as, namely, to illustrate)
+- [x] Chat Message Concession Badge — "concedes" badge on AI messages containing concession language (admittedly, granted, to be fair, I concede, fair enough)
+- [x] Home Page Video Card Longest Silence — "Xm gap" badge showing longest gap between user questions
+- [x] Build verification PASSED
+
 ### Wave 168 — Temporal marker detection, generalization badge, average words per question
 - [x] Transcript Segment Temporal Marker Detection — "⏱" indicator when segment contains temporal markers (at this point, previously, later on, going forward, in the meantime)
 - [x] Chat Message Generalization Badge — "generalizes" badge on AI messages containing generalization language (in general, broadly speaking, as a rule, typically)

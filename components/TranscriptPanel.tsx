@@ -1729,6 +1729,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(at this point|previously|later on|going forward|in the meantime|shortly after|by then|up until now)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-orange-400/30" title="Contains temporal marker language">&#x23F1;</span>
                   )}
+                  {!compactMode && /\b(for example|for instance|such as|namely|to illustrate|as an example|like for instance|consider this)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-indigo-400/30" title="Contains exemplification language">eg</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

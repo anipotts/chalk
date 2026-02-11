@@ -1642,6 +1642,22 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatLS = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatLS) {
+                            const allLS: { role: string; timestamp?: number }[] = JSON.parse(chatLS);
+                            const userTS = allLS.filter(m => m.role === 'user' && m.timestamp).map(m => m.timestamp!).sort((a, b) => a - b);
+                            if (userTS.length >= 2) {
+                              let maxGap = 0;
+                              for (let gi = 1; gi < userTS.length; gi++) maxGap = Math.max(maxGap, userTS[gi] - userTS[gi - 1]);
+                              const gapMin = Math.round(maxGap / (1000 * 60));
+                              if (gapMin >= 5) return <span className="text-[8px] text-rose-400/40 tabular-nums" title={`Longest gap between questions: ${gapMin} minutes`}>{gapMin}m gap</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatQF = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatQF) {
                             const allQF: { role: string; timestamp?: number }[] = JSON.parse(chatQF);
