@@ -1732,6 +1732,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(for example|for instance|such as|namely|to illustrate|as an example|like for instance|consider this)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-indigo-400/30" title="Contains exemplification language">eg</span>
                   )}
+                  {!compactMode && /\b(in summary|to sum up|overall|all in all|in conclusion|to summarize|in short)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains summarization language">&#x03A3;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

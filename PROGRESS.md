@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 170 — Summarization language detection, qualification badge, question complexity
+- [x] Transcript Segment Summarization Language Detection — "Σ" indicator when segment contains summarization language (in summary, to sum up, overall, all in all, in conclusion, to summarize)
+- [x] Chat Message Qualification Badge — "qualifies" badge on AI messages containing qualification language (to some extent, in certain cases, under specific conditions, depending on)
+- [x] Home Page Video Card Question Complexity — "X complexity" badge showing average question complexity score (word count * unique ratio)
+- [x] Build verification PASSED
+
 ### Wave 169 — Exemplification detection, concession badge, longest silence
 - [x] Transcript Segment Exemplification Detection — "eg" indicator when segment contains exemplification language (for example, for instance, such as, namely, to illustrate)
 - [x] Chat Message Concession Badge — "concedes" badge on AI messages containing concession language (admittedly, granted, to be fair, I concede, fair enough)
