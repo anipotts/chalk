@@ -1024,6 +1024,12 @@ Status: RUNNING
 - [x] Home Page Video Card Shortest AI Response — "min Nw" badge showing the shortest AI response word count
 - [x] Build verification PASSED
 
+### Wave 152 — Technical term detection, recap badge, question word frequency
+- [x] Transcript Segment Technical Term Detection — "tech" indicator when segment contains technical jargon (algorithm, framework, architecture, deployment)
+- [x] Chat Message Recap Badge — "recap" badge on AI messages summarizing discussion (to recap, we've covered, the main points)
+- [x] Home Page Video Card Question Word Frequency — most common non-trivial word in user questions shown in quotes
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

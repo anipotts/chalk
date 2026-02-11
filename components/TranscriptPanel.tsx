@@ -1678,6 +1678,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(what I mean is|to clarify|let me be clear|in other words|put differently|that is to say|to be specific|meaning that)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-violet-400/30" title="Contains clarification language">clr</span>
                   )}
+                  {!compactMode && /\b(algorithm|protocol|framework|architecture|implementation|optimization|infrastructure|deployment|middleware|abstraction)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-green-400/30" title="Contains technical terminology">tech</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

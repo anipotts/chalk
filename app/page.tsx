@@ -1477,6 +1477,22 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatWf = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatWf) {
+                            const uMsgsWf: { role: string; content: string }[] = JSON.parse(chatWf).filter((m: { role: string; content: string }) => m.role === 'user' && m.content);
+                            if (uMsgsWf.length >= 3) {
+                              const stop = new Set(['about','their','there','these','those','which','would','could','should','after','before','while','where','other','being','doing','having','getting','going','making','taking','using','saying','asking','telling']);
+                              const freq: Record<string, number> = {};
+                              for (const m of uMsgsWf) for (const w of m.content.toLowerCase().split(/\s+/).filter(w => w.length > 4 && !stop.has(w))) freq[w] = (freq[w] || 0) + 1;
+                              const top = Object.entries(freq).sort((a, b) => b[1] - a[1])[0];
+                              if (top && top[1] >= 3) return <span className="text-[8px] text-emerald-400/40" title={`"${top[0]}" appears ${top[1]} times in questions`}>&ldquo;{top[0]}&rdquo;</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);
