@@ -1508,7 +1508,7 @@ export function TranscriptPanel({
                     {!compactMode && seg.duration && seg.duration > 0 && (
                       <span className="text-[8px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums" title={`${formatTimestamp(seg.offset)}–${formatTimestamp(seg.offset + seg.duration)}`}>–{formatTimestamp(seg.offset + seg.duration)}</span>
                     )}
-                    {!compactMode && <span className="text-[7px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums">{seg.text.split(/\s+/).filter(Boolean).length}w</span>}
+                    {!compactMode && (() => { const wc = seg.text.split(/\s+/).filter(Boolean).length; const readSec = Math.max(1, Math.round(wc / 3.3)); return <span className="text-[7px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums" title={`${wc} words · ~${readSec}s to read`}>{wc}w ~{readSec}s</span>; })()}
                     {!compactMode && segDensities.size > 0 && (() => {
                       const d = segDensities.get(segIndex) || 0;
                       if (d < 0.15) return null;

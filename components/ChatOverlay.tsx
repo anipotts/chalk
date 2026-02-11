@@ -1577,6 +1577,15 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           <path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 12.5v-9ZM5.5 5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5ZM5 8.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5ZM5.5 10.5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3Z" />
                         </svg>
                       </button>
+                      <button
+                        onClick={() => { setInput('Can you explain that more simply?'); }}
+                        className="p-0.5 rounded opacity-0 group-hover/msg:opacity-100 transition-opacity text-slate-600 hover:text-amber-400"
+                        title="Ask to simplify"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                          <path d="M8 1a.75.75 0 0 1 .75.75v1.5a3.75 3.75 0 0 1-3 3.675v1.325h1.5a.75.75 0 0 1 0 1.5h-1.5v3.5a.75.75 0 0 1-1.5 0v-3.5H2.75a.75.75 0 0 1 0-1.5h1.5V6.925a3.75 3.75 0 0 1-3-3.675V1.75A.75.75 0 0 1 2 1a.75.75 0 0 1 .75.75v1.5a2.25 2.25 0 0 0 4.5 0v-1.5A.75.75 0 0 1 8 1Z" />
+                        </svg>
+                      </button>
                     </div>
                   )}
                   {/* Context menu for assistant messages */}

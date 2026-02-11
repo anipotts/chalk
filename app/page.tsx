@@ -936,6 +936,19 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const hasNotes = typeof window !== 'undefined' && !!localStorage.getItem(`chalk-note-${video.id}`);
+                          if (!hasNotes) return null;
+                          return (
+                            <span className="text-[8px] text-sky-400/50 flex items-center gap-0.5" title="Has notes">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2 h-2"><path d="M13.488 2.513a1.75 1.75 0 0 0-2.475 0L3.22 10.306a1 1 0 0 0-.26.447l-.78 3.126a.5.5 0 0 0 .6.6l3.126-.78a1 1 0 0 0 .447-.26l7.793-7.793a1.75 1.75 0 0 0 0-2.475l-.658-.658Z" /></svg>
+                              notes
+                            </span>
+                          );
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

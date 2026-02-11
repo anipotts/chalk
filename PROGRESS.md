@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 110 (Completed)
+- [x] Transcript Segment Estimated Reading Time — show "~Xs" reading estimate (at ~200 WPM) next to word count on hover
+- [x] Chat Message Quick Explain — "Simplify" button in action bar pre-fills input with clarification request
+- [x] Home Page Video Card Notes Indicator — pencil icon + "notes" label on cards with saved notes
+- [x] Build verification PASSED
+
 ## Wave 109 (Completed)
 - [x] Transcript Segment Reading Progress Dots — green/muted dot per segment tracking playback history via ref
 - [x] Chat Message Copy Count — copy count badge ("Nx") appears on messages copied 2+ times via ref tracker
