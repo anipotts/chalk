@@ -797,6 +797,9 @@ export default function Home() {
                       {(() => {
                         try {
                           const visits = typeof window !== 'undefined' ? parseInt(localStorage.getItem(`chalk-visits-${video.id}`) || '0', 10) : 0;
+                          if (visits >= 3) return (
+                            <span className="text-[9px] text-orange-400/80 tabular-nums" title={`${visits} visits — on a streak!`}>🔥 {visits}x</span>
+                          );
                           if (visits > 1) return (
                             <span className="text-[9px] text-slate-600 tabular-nums">{visits}x watched</span>
                           );

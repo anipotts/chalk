@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 76 (Completed)
+- [x] Transcript Segment Highlight Color — cycle button to switch active segment highlight between blue/green/purple
+- [x] Chat Input Word Limit Warning — subtle warning when input exceeds 200 words
+- [x] Home Page Video Streak Badge — fire emoji on video cards visited 3+ times
+- [x] Build verification PASSED
+
 ## Wave 75 (Completed)
 - [x] Transcript Search History — dropdown of recent search terms when input is focused and empty
 - [x] Chat Response Rating — thumbs up/down buttons on each AI message with toggle highlight

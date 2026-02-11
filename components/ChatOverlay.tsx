@@ -1735,6 +1735,9 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                 )}
               </div>
             </form>
+            {input.trim().split(/\s+/).filter(Boolean).length > 200 && (
+              <p className="px-4 py-1 text-[9px] text-amber-400/70">Long message ({input.trim().split(/\s+/).filter(Boolean).length} words) — consider being more concise</p>
+            )}
           </div>
         </motion.div>
       )}

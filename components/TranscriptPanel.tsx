@@ -128,6 +128,9 @@ export function TranscriptPanel({
     return (localStorage.getItem('chalk-transcript-font') as 'sm' | 'md' | 'lg') || 'sm';
   });
   const fontSizeClass = fontSize === 'lg' ? 'text-sm' : fontSize === 'md' ? 'text-xs' : 'text-[11px]';
+  const [highlightColor, setHighlightColor] = useState<'blue' | 'green' | 'purple'>('blue');
+  const hlActive = highlightColor === 'blue' ? 'bg-blue-500/10 border-l-blue-400' : highlightColor === 'green' ? 'bg-emerald-500/10 border-l-emerald-400' : 'bg-purple-500/10 border-l-purple-400';
+  const hlMatch = highlightColor === 'blue' ? 'bg-blue-500/20 border-l-blue-400 ring-1 ring-blue-400/30' : highlightColor === 'green' ? 'bg-emerald-500/20 border-l-emerald-400 ring-1 ring-emerald-400/30' : 'bg-purple-500/20 border-l-purple-400 ring-1 ring-purple-400/30';
   const [compactMode, setCompactMode] = useState(false);
 
   // Load starred segments from localStorage
@@ -686,6 +689,15 @@ export function TranscriptPanel({
               >
                 {compactMode ? '|||' : '| |'}
               </button>
+            )}
+            {viewMode === 'transcript' && (
+              <button
+                onClick={() => setHighlightColor((c) => c === 'blue' ? 'green' : c === 'green' ? 'purple' : 'blue')}
+                className={`w-3 h-3 rounded-full border transition-colors ${
+                  highlightColor === 'blue' ? 'bg-blue-400/60 border-blue-400/40' : highlightColor === 'green' ? 'bg-emerald-400/60 border-emerald-400/40' : 'bg-purple-400/60 border-purple-400/40'
+                }`}
+                title={`Highlight: ${highlightColor}`}
+              />
             )}
             {lang && isComplete && (
               <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-slate-500/15 text-slate-400 border border-slate-500/20">
@@ -1284,9 +1296,9 @@ export function TranscriptPanel({
                   }}
                   className={`group/seg w-full flex items-start ${compactMode ? 'gap-1 px-2 py-0.5' : 'gap-2 px-3 py-2'} transition-all hover:bg-chalk-surface/60 animate-in fade-in duration-300 ${difficultyHeat} ${
                     isCurrentMatch
-                      ? 'bg-chalk-accent/20 border-l-2 border-l-chalk-accent ring-1 ring-chalk-accent/30'
+                      ? `${hlMatch} border-l-2`
                       : isActive
-                        ? 'bg-chalk-accent/10 border-l-2 border-l-chalk-accent'
+                        ? `${hlActive} border-l-2`
                         : starred.has(seg.offset)
                           ? 'border-l-2 border-l-yellow-500/60'
                           : 'border-l-2 border-l-transparent'
