@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 125 (Completed)
+- [x] Transcript Segment Repetition Detection — repeat arrow icon on segments echoing phrases from recent segments (3+ word match)
+- [x] Chat Message Summary Detection Badge — "summary" badge on AI responses with summarization patterns
+- [x] Home Page Video Card Average Response Time — "~Ns avg" badge from AI response timing data
+- [x] Build verification PASSED
+
 ## Wave 124 (Completed)
 - [x] Transcript Segment Rhetorical Question Detection — "?!" indicator on segments with questions immediately answered by the speaker
 - [x] Chat Message Analogy Detection Badge — "analogy" badge on AI responses containing metaphors or analogies

@@ -1518,6 +1518,12 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           );
                           return null;
                         })()}
+                        {msg.role === 'assistant' && msg.content.length > 60 && (() => {
+                          if (/\b(in summary|to sum up|the key points? (are|is)|overall,|the main takeaway|to summarize|in short|bottom line)\b/i.test(msg.content)) return (
+                            <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[7px] font-medium bg-cyan-500/10 text-cyan-400/50 border border-cyan-500/10" title="Contains a summary">summary</span>
+                          );
+                          return null;
+                        })()}
                         {msg.role === 'assistant' && msg.content.length > 80 && (() => {
                           if (/^(\d+\.|[-*•])\s/m.test(msg.content)) return (
                             <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[7px] font-medium bg-amber-500/10 text-amber-400/50 border border-amber-500/10" title="Contains a structured list">list</span>

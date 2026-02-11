@@ -1583,6 +1583,19 @@ export function TranscriptPanel({
                     if (/\?\s*$/.test(next.text)) return null;
                     return <span className="shrink-0 text-[7px] text-rose-400/30" title="Rhetorical question — speaker answers it next">?!</span>;
                   })()}
+                  {!compactMode && i > 0 && (() => {
+                    const curWords = seg.text.toLowerCase().split(/\s+/);
+                    if (curWords.length < 4) return null;
+                    const lookback = Math.max(0, i - 10);
+                    for (let j = lookback; j < i; j++) {
+                      const prevWords = filtered[j].text.toLowerCase().split(/\s+/);
+                      for (let k = 0; k <= prevWords.length - 3; k++) {
+                        const phrase = prevWords.slice(k, k + 3).join(' ');
+                        if (seg.text.toLowerCase().includes(phrase)) return <span className="shrink-0 text-[7px] text-amber-400/30" title={`Repeats phrase from segment ${j + 1}: "${phrase}"`}>&#8634;</span>;
+                      }
+                    }
+                    return null;
+                  })()}
                   {!compactMode && complexityLabel && (
                     <span className={`shrink-0 text-[7px] font-bold uppercase tracking-wider px-1 py-0 rounded ${
                       complexityLabel === 'complex' ? 'bg-rose-500/10 text-rose-400/60' : 'bg-amber-500/10 text-amber-400/50'
