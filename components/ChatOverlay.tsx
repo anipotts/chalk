@@ -1586,6 +1586,15 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           <path d="M8 1a.75.75 0 0 1 .75.75v1.5a3.75 3.75 0 0 1-3 3.675v1.325h1.5a.75.75 0 0 1 0 1.5h-1.5v3.5a.75.75 0 0 1-1.5 0v-3.5H2.75a.75.75 0 0 1 0-1.5h1.5V6.925a3.75 3.75 0 0 1-3-3.675V1.75A.75.75 0 0 1 2 1a.75.75 0 0 1 .75.75v1.5a2.25 2.25 0 0 0 4.5 0v-1.5A.75.75 0 0 1 8 1Z" />
                         </svg>
                       </button>
+                      <button
+                        onClick={() => { const quote = msg.content.length > 100 ? msg.content.slice(0, 97) + '...' : msg.content; setInput(`> ${quote}\n\n`); }}
+                        className="p-0.5 rounded opacity-0 group-hover/msg:opacity-100 transition-opacity text-slate-600 hover:text-cyan-400"
+                        title="Quote reply"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                          <path d="M3.3 12.04a.75.75 0 0 1-1.1-1.02L5.17 8 2.2 4.98a.75.75 0 0 1 1.1-1.02l3.5 3.56a.75.75 0 0 1 0 1.02l-3.5 3.5ZM8.75 12a.75.75 0 0 1 0-1.5h4.5a.75.75 0 0 1 0 1.5h-4.5Z" />
+                        </svg>
+                      </button>
                     </div>
                   )}
                   {/* Context menu for assistant messages */}

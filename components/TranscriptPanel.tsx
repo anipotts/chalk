@@ -469,6 +469,22 @@ export function TranscriptPanel({
     } catch { /* ignore */ }
   }, [videoId]);
 
+  // Seek to timestamp from URL hash on mount (e.g., #t=120)
+  const [hashFlash, setHashFlash] = useState<number | null>(null);
+  useEffect(() => {
+    try {
+      const hash = window.location.hash;
+      const match = hash.match(/^#t=(\d+)/);
+      if (match && segments.length > 0) {
+        const t = parseInt(match[1], 10);
+        onSeek(t);
+        setHashFlash(t);
+        const timer = setTimeout(() => setHashFlash(null), 2000);
+        return () => clearTimeout(timer);
+      }
+    } catch { /* ignore */ }
+  }, [segments.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Detect manual scroll → pause auto-scroll for 5 seconds + save position
   const scrollSaveTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const handleScroll = useCallback(() => {
@@ -1453,7 +1469,7 @@ export function TranscriptPanel({
                               ? `border-l-2 ${(() => { let sp = 0; for (let si = 0; si <= segIndex; si++) { if (speakerChanges.has(si)) sp++; } return sp % 2 === 0 ? 'border-l-indigo-500/20' : 'border-l-emerald-500/20'; })()}`
                               : 'border-l-2 border-l-transparent'
                   }`}
-                  style={isActive ? { animation: 'activeBorderPulse 2s ease-in-out infinite' } : recentFade > 0 ? { backgroundColor: `rgba(59, 130, 246, ${recentFade * 0.05})` } : undefined}
+                  style={isActive ? { animation: 'activeBorderPulse 2s ease-in-out infinite' } : hashFlash !== null && Math.abs(seg.offset - hashFlash) < 2 ? { backgroundColor: 'rgba(59, 130, 246, 0.15)', transition: 'background-color 2s ease-out' } : recentFade > 0 ? { backgroundColor: `rgba(59, 130, 246, ${recentFade * 0.05})` } : undefined}
                   onContextMenu={(e) => { e.preventDefault(); setCtxMenu({ x: e.clientX, y: e.clientY, offset: seg.offset, text: seg.text }); }}
                   onClick={(e) => {
                     if (e.shiftKey && lastClickedIdx.current >= 0) {

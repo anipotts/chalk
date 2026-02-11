@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 111 (Completed)
+- [x] Transcript Segment Anchor Highlight from URL Hash — seek and flash-highlight segment when URL contains #t=N
+- [x] Chat Message Quick Quote Reply — quote reply button pre-fills input with "> {text}" blockquote of AI message
+- [x] Home Page Video Card Bookmarks Count — bookmark icon + count badge on cards with saved bookmarks
+- [x] Build verification PASSED
+
 ## Wave 110 (Completed)
 - [x] Transcript Segment Estimated Reading Time — show "~Xs" reading estimate (at ~200 WPM) next to word count on hover
 - [x] Chat Message Quick Explain — "Simplify" button in action bar pre-fills input with clarification request

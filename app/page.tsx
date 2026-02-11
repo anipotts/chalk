@@ -949,6 +949,21 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const bm = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-bookmarks-${video.id}`) : null;
+                          if (bm) {
+                            const bookmarks = JSON.parse(bm);
+                            if (bookmarks.length > 0) return (
+                              <span className="text-[8px] text-amber-400/50 flex items-center gap-0.5 tabular-nums" title={`${bookmarks.length} bookmark${bookmarks.length > 1 ? 's' : ''}`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2 h-2"><path d="M3.5 2A1.5 1.5 0 0 0 2 3.5v9.793a.5.5 0 0 0 .854.353L8 8.5l5.146 5.146a.5.5 0 0 0 .854-.353V3.5A1.5 1.5 0 0 0 12.5 2h-9Z" /></svg>
+                                {bookmarks.length}
+                              </span>
+                            );
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);
