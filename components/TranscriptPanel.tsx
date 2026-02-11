@@ -1771,6 +1771,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(if you|if we|assuming|in case|provided that|unless|suppose|what if)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-purple-400/30" title="Contains conditional language">if</span>
                   )}
+                  {!compactMode && /\b(yesterday|today|tomorrow|last week|next week|last year|next year|recently|currently|right now|at the time)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-pink-400/30" title="Contains temporal reference">&#9200;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 183 — Temporal reference detection, procedural badge, min AI response words
+- [x] TranscriptPanel: temporal reference detection — "⏰" in pink-400/30, regex for yesterday/today/tomorrow/last week/recently etc.
+- [x] ChatOverlay: procedural badge — "how-to" in lime-500/10, detects step 1/first step/start by/begin with/next step
+- [x] HomePage: min AI response words — "min X ai words" in teal-400/40, variable chatMN
+- [x] Build verification PASSED
+
 ### Wave 182 — Conditional language detection, quantitative badge, max AI response words
 - [x] TranscriptPanel: conditional language detection — "if" in purple-400/30, regex for if you/if we/assuming/unless/what if
 - [x] ChatOverlay: quantitative badge — "numeric" in emerald-500/10, detects numbers with %/percent/million/billion/thousand
