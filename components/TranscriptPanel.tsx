@@ -1675,6 +1675,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(number one|number two|point one|point two|first thing|second thing|reason one|reason two|item one|item two)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-cyan-400/30" title="Contains enumerated list items">1.</span>
                   )}
+                  {!compactMode && /\b(what I mean is|to clarify|let me be clear|in other words|put differently|that is to say|to be specific|meaning that)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-violet-400/30" title="Contains clarification language">clr</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

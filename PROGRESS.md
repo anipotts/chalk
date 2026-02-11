@@ -1018,6 +1018,12 @@ Status: RUNNING
 - [x] Home Page Video Card First vs Last Question Similarity — "topic shift" or "focused" badge showing question topic evolution
 - [x] Build verification PASSED
 
+### Wave 151 — Clarification detection, action item badge, shortest AI response
+- [x] Transcript Segment Clarification Detection — "clr" indicator when segment contains clarification language (to clarify, let me be clear, in other words)
+- [x] Chat Message Action Item Badge — "action" badge on AI messages suggesting actions (you should, I recommend, consider)
+- [x] Home Page Video Card Shortest AI Response — "min Nw" badge showing the shortest AI response word count
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
