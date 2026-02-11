@@ -782,8 +782,9 @@ export default function Home() {
                         if (dur <= 0) return null;
                         const mins = Math.floor(dur / 60);
                         const secs = Math.floor(dur % 60);
+                        const durColor = mins < 10 ? 'text-emerald-300' : mins < 30 ? 'text-amber-300' : 'text-red-300';
                         return (
-                          <span className="absolute bottom-0.5 right-0.5 px-1 py-0 rounded text-[8px] font-mono font-medium bg-black/70 text-white/80">
+                          <span className={`absolute bottom-0.5 right-0.5 px-1 py-0 rounded text-[8px] font-mono font-medium bg-black/70 ${durColor}`}>
                             {mins}:{secs.toString().padStart(2, '0')}
                           </span>
                         );

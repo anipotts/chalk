@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 91 (Completed)
+- [x] Transcript Follow-Along LIVE Badge — pulsing "LIVE" indicator when follow-along mode is active
+- [x] Chat Input Submit Hint — show "Enter to send" hint below input when typing
+- [x] Home Page Video Card Duration Color — green/amber/red duration badge based on video length
+- [x] Build verification PASSED
+
 ## Wave 90 (Completed)
 - [x] Transcript View Mode Icons — add SVG icons to Transcript/Chapters/Notes/Cloud tabs
 - [x] Chat Header Collapse Toggle — chevron button to hide/show stat badges in header
