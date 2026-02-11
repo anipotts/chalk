@@ -1693,6 +1693,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(right\?|isn't it\??|don't you think|wouldn't you say|you know what I mean|aren't we|isn't that|doesn't it|won't it|can't we)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-indigo-400/30" title="Contains a rhetorical question">rh?</span>
                   )}
+                  {!compactMode && /\b(by the way|as a side note|on a tangent|incidentally|off topic|side note|parenthetically|as an aside|digression)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-stone-400/30" title="Contains a parenthetical remark or aside">()</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

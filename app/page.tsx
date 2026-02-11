@@ -1538,6 +1538,26 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatDiv = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatDiv) {
+                            const uMsgsDiv: { role: string; content: string }[] = JSON.parse(chatDiv).filter((m: { role: string; content: string }) => m.role === 'user' && m.content);
+                            if (uMsgsDiv.length >= 3) {
+                              const qTypes = new Set<string>();
+                              const allText = uMsgsDiv.map(m => m.content.toLowerCase()).join(' ');
+                              if (/\bwho\b/.test(allText)) qTypes.add('who');
+                              if (/\bwhat\b/.test(allText)) qTypes.add('what');
+                              if (/\bwhere\b/.test(allText)) qTypes.add('where');
+                              if (/\bwhen\b/.test(allText)) qTypes.add('when');
+                              if (/\bwhy\b/.test(allText)) qTypes.add('why');
+                              if (/\bhow\b/.test(allText)) qTypes.add('how');
+                              if (qTypes.size >= 3) return <span className="text-[8px] text-violet-400/40 tabular-nums" title={`Question types used: ${[...qTypes].join(', ')}`}>{qTypes.size} q-types</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

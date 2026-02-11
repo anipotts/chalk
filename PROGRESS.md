@@ -1054,6 +1054,12 @@ Status: RUNNING
 - [x] Home Page Video Card Average Question Length — "avg Xw/q" badge showing average word count per user question
 - [x] Build verification PASSED
 
+### Wave 157 — Parenthetical/aside detection, precision badge, question diversity
+- [x] Transcript Segment Parenthetical/Aside Detection — "()" indicator when segment contains aside language (by the way, side note, tangent)
+- [x] Chat Message Precision Badge — "precise" badge on AI messages using exact/precise language (specifically, precisely, to be exact)
+- [x] Home Page Video Card Question Diversity — "X q-types" badge showing how many question types (who/what/where/when/why/how) used
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
