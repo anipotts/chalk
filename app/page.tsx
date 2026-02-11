@@ -1615,6 +1615,25 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatQF = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatQF) {
+                            const allQF: { role: string; timestamp?: number }[] = JSON.parse(chatQF);
+                            const userMsgsQF = allQF.filter(m => m.role === 'user' && m.timestamp);
+                            if (userMsgsQF.length >= 3) {
+                              const first = userMsgsQF[0].timestamp!;
+                              const last = userMsgsQF[userMsgsQF.length - 1].timestamp!;
+                              const mins = (last - first) / (1000 * 60);
+                              if (mins >= 1) {
+                                const qpm = (userMsgsQF.length / mins).toFixed(1);
+                                return <span className="text-[8px] text-teal-400/40 tabular-nums" title={`${userMsgsQF.length} questions over ${Math.round(mins)} min = ${qpm} q/min`}>{qpm}q/min</span>;
+                              }
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatAge = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatAge) {
                             const allAge: { role: string; timestamp?: number }[] = JSON.parse(chatAge);

@@ -1108,6 +1108,12 @@ Status: RUNNING
 - [x] Home Page Video Card First Question Age — "asked Xd ago" badge showing days since first chat question
 - [x] Build verification PASSED
 
+### Wave 166 — Additive connector detection, speculation badge, question frequency
+- [x] Transcript Segment Additive Connector Detection — "+" indicator when segment contains additive connectors (furthermore, moreover, in addition, additionally, besides)
+- [x] Chat Message Speculation Badge — "speculates" badge on AI messages containing speculative language (it's possible that, potentially, might be, perhaps)
+- [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

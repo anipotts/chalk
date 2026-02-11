@@ -1720,6 +1720,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(because|therefore|as a result|consequently|due to|thus|hence|so that|for this reason|this means)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains causal connector language">∴</span>
                   )}
+                  {!compactMode && /\b(furthermore|moreover|in addition|additionally|besides|what's more|on top of that|not only that)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-green-400/30" title="Contains additive connector language">+</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
