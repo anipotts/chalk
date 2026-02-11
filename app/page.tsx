@@ -1263,6 +1263,21 @@ export default function Home() {
                         try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
+                            const allMsgs: { role: string; content: string }[] = JSON.parse(chat);
+                            let maxStreak = 0, cur = 0;
+                            for (let k = 0; k < allMsgs.length - 1; k++) {
+                              if (allMsgs[k].role === 'user' && allMsgs[k + 1]?.role === 'assistant') { cur++; k++; } else { maxStreak = Math.max(maxStreak, cur); cur = 0; }
+                            }
+                            maxStreak = Math.max(maxStreak, cur);
+                            if (maxStreak >= 3) return <span className="text-[8px] text-emerald-400/40 tabular-nums" title={`Longest consecutive Q&A exchange: ${maxStreak} turns`}>{maxStreak}-turn streak</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
+                          const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chat) {
                             const msgs = JSON.parse(chat);
                             const lastQ = [...msgs].reverse().find((m: { role: string }) => m.role === 'user');
                             if (lastQ) {

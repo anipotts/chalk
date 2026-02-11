@@ -928,6 +928,12 @@ Status: RUNNING
 - [x] Home Page Video Card Average Question Length — "avg Nw/q" badge showing average user question word count per video
 - [x] Build verification PASSED
 
+### Wave 136 — Emphasis detection, multi-part badge, chat streak length
+- [x] Transcript Segment Emphasis Detection — "!" indicator when segment contains emphatic language (absolutely, crucial, essential, key point, vital)
+- [x] Chat Message Multi-Part Answer Badge — "multi-part" badge on AI messages with numbered lists or ordered sections (3+ parts)
+- [x] Home Page Video Card Chat Streak Length — "N-turn streak" badge showing longest consecutive Q&A exchange per video
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
