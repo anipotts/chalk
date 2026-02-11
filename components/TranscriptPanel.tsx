@@ -1702,6 +1702,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(love|hate|excited|frustrated|passionate|thrilled|devastating|amazing|incredible|heartbreaking|furious|ecstatic)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-pink-400/30" title="Contains emotional or expressive language">&hearts;</span>
                   )}
+                  {!compactMode && /\b(like a|as if|metaphorically|figuratively|in a sense|so to speak|as though|resembles|akin to|analogous)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains metaphor or figurative language">~</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

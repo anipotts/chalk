@@ -1072,6 +1072,12 @@ Status: RUNNING
 - [x] Home Page Video Card Most Active Day — "peak: Mon" badge showing which day of the week has most visits
 - [x] Build verification PASSED
 
+### Wave 160 — Metaphor detection, example badge, response ratio
+- [x] Transcript Segment Metaphor Detection — "~" indicator when segment contains figurative language (like a, as if, metaphorically, so to speak)
+- [x] Chat Message Example Badge — "examples" badge on AI messages providing examples (for example, for instance, such as, e.g.)
+- [x] Home Page Video Card Response Ratio — "X:1 ratio" badge showing AI-to-user message ratio
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

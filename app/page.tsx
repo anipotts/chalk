@@ -1587,6 +1587,21 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatRatio = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatRatio) {
+                            const allRatio: { role: string }[] = JSON.parse(chatRatio);
+                            const userCount = allRatio.filter(m => m.role === 'user').length;
+                            const aiCount = allRatio.filter(m => m.role === 'assistant').length;
+                            if (userCount >= 2 && aiCount >= 2) {
+                              const ratio = (aiCount / userCount).toFixed(1);
+                              return <span className="text-[8px] text-rose-400/40 tabular-nums" title={`Response ratio: ${aiCount} AI / ${userCount} user = ${ratio}:1`}>{ratio}:1 ratio</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);
