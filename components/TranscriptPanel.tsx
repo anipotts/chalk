@@ -1362,6 +1362,7 @@ export function TranscriptPanel({
               const wasRecentlyActive = !isActive && recentTs && (Date.now() - recentTs) < 10000;
               const recentFade = wasRecentlyActive ? Math.max(0, 1 - (Date.now() - recentTs!) / 10000) : 0;
               const isCurrentMatch = search.trim() && i === searchMatchIndex;
+              const isSearchMatch = search.trim() && seg.text.toLowerCase().includes(search.toLowerCase());
               const highlightedText = search.trim() ? highlightMatch(seg.text, search) : highlightKeyTerms(seg.text, keyTerms, termMeta);
               const showSpeakerDivider = !search.trim() && speakerChanges.has(segIndex) && i > 0;
               const topicLabel = !search.trim() && topicBoundaries.get(segIndex);
@@ -1437,7 +1438,7 @@ export function TranscriptPanel({
                     if (isActive) (activeRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
                     if (search.trim() && el) matchRefs.current.set(i, el);
                   }}
-                  className={`group/seg w-full flex items-start ${compactMode ? 'gap-1 px-2 py-0.5' : 'gap-2 px-3 py-2'} transition-all hover:bg-chalk-surface/60 animate-in fade-in duration-300 ${difficultyHeat} ${
+                  className={`group/seg w-full flex items-start ${compactMode ? 'gap-1 px-2 py-0.5' : 'gap-2 px-3 py-2'} transition-all ${isSearchMatch && !isCurrentMatch ? 'hover:bg-chalk-accent/10 bg-chalk-accent/[0.03]' : 'hover:bg-chalk-surface/60'} animate-in fade-in duration-300 ${difficultyHeat} ${
                     selectRange && i >= selectRange.start && i <= selectRange.end
                       ? 'bg-cyan-500/10 border-l-2 border-l-cyan-400'
                       : isCurrentMatch

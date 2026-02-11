@@ -825,6 +825,9 @@ export default function Home() {
                         <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" strokeWidth="2" className="text-chalk-accent" strokeDasharray={`${watchPct * 50.27} 50.27`} strokeLinecap="round" transform="rotate(-90 10 10)" />
                       </svg>
                     )}
+                    <span className="absolute bottom-0.5 left-0.5 flex items-center gap-0.5 px-0.5 py-0 rounded bg-black/60">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" className="w-2 h-2" fill="none"><rect x="1" y="3.5" width="14" height="9" rx="2" fill="#FF0000"/><polygon points="6.5,5.5 11,8 6.5,10.5" fill="white"/></svg>
+                    </span>
                     {(() => {
                       try {
                         const dur = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-duration-${video.id}`) || '0') : 0;

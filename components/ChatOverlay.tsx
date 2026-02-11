@@ -1550,6 +1550,28 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           <path d="M12 6a2 2 0 1 0-1.994-1.842L5.724 6.29a2 2 0 1 0 0 3.42l4.282 2.132a2 2 0 1 0 .666-1.342L6.39 8.368a2.037 2.037 0 0 0 0-.736l4.282-2.132A1.993 1.993 0 0 0 12 6Z" />
                         </svg>
                       </button>
+                      <button
+                        onClick={(e) => {
+                          const prevUser = messages.slice(0, messages.indexOf(msg)).reverse().find((m) => m.role === 'user');
+                          const front = prevUser ? prevUser.content : 'Question';
+                          const back = msg.content.length > 200 ? msg.content.slice(0, 197) + '...' : msg.content;
+                          const key = videoId ? `chalk-quick-flashcards-${videoId}` : 'chalk-quick-flashcards';
+                          try {
+                            const cards = JSON.parse(localStorage.getItem(key) || '[]');
+                            cards.push({ front, back, created: Date.now() });
+                            localStorage.setItem(key, JSON.stringify(cards));
+                          } catch { /* ignore */ }
+                          const btn = e.currentTarget;
+                          btn.dataset.saved = 'true';
+                          setTimeout(() => { btn.dataset.saved = ''; }, 1200);
+                        }}
+                        className="p-0.5 rounded opacity-0 group-hover/msg:opacity-100 transition-opacity text-slate-600 hover:text-violet-400 data-[saved=true]:text-violet-400"
+                        title="Save as flashcard"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                          <path d="M2 3.5A1.5 1.5 0 0 1 3.5 2h9A1.5 1.5 0 0 1 14 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 12.5v-9ZM5.5 5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5ZM5 8.5a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5a.5.5 0 0 1-.5-.5ZM5.5 10.5a.5.5 0 0 0 0 1h3a.5.5 0 0 0 0-1h-3Z" />
+                        </svg>
+                      </button>
                     </div>
                   )}
                   {/* Context menu for assistant messages */}

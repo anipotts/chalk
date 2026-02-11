@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 108 (Completed)
+- [x] Transcript Segment Search Match Preview — search-matching segments get subtle accent tint on hover
+- [x] Chat Message Quick Flashcard — one-click flashcard icon saves Q&A pair to localStorage
+- [x] Home Page Video Card Source Badge — tiny YouTube play icon on thumbnail bottom-left
+- [x] Build verification PASSED
+
 ## Wave 107 (Completed)
 - [x] Transcript Segment Keyboard Navigation — Up/Down arrows to navigate segments, Enter to seek
 - [x] Chat Response Sentiment Badge — tone indicator (check/warning/balance) based on response keywords
