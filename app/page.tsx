@@ -1291,6 +1291,20 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const bm = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-bookmarks-${video.id}`) : null;
+                          const dur = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-duration-${video.id}`) || '0') : 0;
+                          if (bm && dur > 60) {
+                            const bmCount = JSON.parse(bm).length;
+                            if (bmCount >= 2) {
+                              const per10 = (bmCount / (dur / 600)).toFixed(1);
+                              return <span className="text-[8px] text-pink-400/40 tabular-nums" title={`${bmCount} bookmarks across ${Math.round(dur / 60)} min — ${per10} per 10 min`}>{per10} bm/10m</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

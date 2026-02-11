@@ -940,6 +940,12 @@ Status: RUNNING
 - [x] Home Page Video Card AI Model Distribution — "via {model}" badge showing dominant AI model used in conversations
 - [x] Build verification PASSED
 
+### Wave 138 — Narrative detection, redirect badge, bookmark density
+- [x] Transcript Segment Narrative Detection — "story" indicator when segment contains storytelling language (once upon, let me tell you, years ago, etc.)
+- [x] Chat Message Redirect Badge — "redirect" badge on AI messages that refocus the conversation (getting back to, the key takeaway, let's focus on)
+- [x] Home Page Video Card Bookmark to Duration Ratio — "N bm/10m" badge showing bookmarks per 10 minutes of video
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

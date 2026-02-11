@@ -1631,6 +1631,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(step one|first you|then you|next step|in order to|make sure to|you need to|start by|begin with)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-lime-400/30" title="Contains instructional language">how</span>
                   )}
+                  {!compactMode && /\b(once upon|story|let me tell you|back when|remember when|there was a time|years ago|in my experience)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains narrative or storytelling language">story</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
