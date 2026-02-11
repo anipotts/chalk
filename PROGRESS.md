@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 219 — Hypothetical language detection, conditional badge, max words per exchange
+- [x] TranscriptPanel: hypothetical language detection — "⟡" in lime-400/30, regex for hypothetically/what if/suppose that/imagine if/in theory/theoretically/assuming that/if we assume/let's say/for the sake of argument
+- [x] ChatOverlay: conditional badge — "conditional" in lime-500/10, detects if and only if/provided that/on the condition/as long as/unless otherwise/in the event that/contingent upon/depending on whether/should it happen/were it the case
+- [x] Home page: max words per exchange — "X w max" in lime-400/40, variable chatMXE, requires ≥2 exchanges and max ≥10
+- [x] Build verification PASSED
+
 ### Wave 218 — Anecdotal language detection, enumerative badge, median words per exchange
 - [x] TranscriptPanel: anecdotal language detection — "◆" in amber-400/30, regex for I remember when/back in the day/there was a time/one time/story goes/true story/fun fact/believe it or not/interestingly enough/funny enough
 - [x] ChatOverlay: enumerative badge — "enumerative" in amber-500/10, detects first of all/secondly/thirdly/in addition/furthermore/moreover/lastly/finally/to begin with/on top of that

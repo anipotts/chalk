@@ -1600,6 +1600,27 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatMXE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatMXE) {
+                            const allMXE: { role: string; content?: string }[] = JSON.parse(chatMXE);
+                            const exSzMX: number[] = [];
+                            for (let i = 0; i < allMXE.length - 1; i++) {
+                              if (allMXE[i].role === 'user' && allMXE[i + 1]?.role === 'assistant') {
+                                const uw = (allMXE[i].content || '').split(/\s+/).filter(Boolean).length;
+                                const aw = (allMXE[i + 1].content || '').split(/\s+/).filter(Boolean).length;
+                                exSzMX.push(uw + aw);
+                              }
+                            }
+                            if (exSzMX.length >= 2) {
+                              const mx = Math.max(...exSzMX);
+                              if (mx >= 10) return <span className="text-[8px] text-lime-400/40 tabular-nums" title={`Max exchange: ${mx} words across ${exSzMX.length} exchanges`}>{mx} w max</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatMDE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatMDE) {
                             const allMDE: { role: string; content?: string }[] = JSON.parse(chatMDE);
