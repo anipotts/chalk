@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 194 — Causal connector detection, definitive badge, shortest exchange
+- [x] TranscriptPanel: causal connector detection — "∴" in teal-400/30, regex for because/therefore/consequently/as a result/due to/hence/thus/so that
+- [x] ChatOverlay: definitive badge — "definitive" in blue-500/10, detects definitely/certainly/absolutely/undoubtedly/without question/clearly/unquestionably/indisputably
+- [x] Home page video card: shortest exchange — "min X word exchange" in violet-400/40, variable chatSE, finds min combined word count of consecutive user+assistant pair (>=2 pairs, min >= 5)
+- [x] Build verification PASSED
+
 ### Wave 193 — Conditional language detection, contrastive badge, longest exchange
 - [x] TranscriptPanel: conditional language detection — "⑂" in sky-400/30, regex for if/unless/otherwise/provided that/as long as/in case/whether/depending on
 - [x] ChatOverlay: contrastive badge — "contrastive" in amber-500/10, detects however/on the other hand/nevertheless/conversely/whereas/although/despite/contrary to

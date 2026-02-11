@@ -1600,6 +1600,25 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatSE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatSE) {
+                            const allSE: { role: string; content?: string }[] = JSON.parse(chatSE);
+                            let minExchange = Infinity;
+                            let pairCount = 0;
+                            for (let ei = 0; ei < allSE.length - 1; ei++) {
+                              if (allSE[ei].role === 'user' && allSE[ei + 1]?.role === 'assistant' && allSE[ei].content && allSE[ei + 1].content) {
+                                pairCount++;
+                                const combined = allSE[ei].content!.split(/\s+/).filter(Boolean).length + allSE[ei + 1].content!.split(/\s+/).filter(Boolean).length;
+                                if (combined < minExchange) minExchange = combined;
+                              }
+                            }
+                            if (pairCount >= 2 && minExchange >= 5 && minExchange < Infinity) return <span className="text-[8px] text-violet-400/40 tabular-nums" title={`Shortest exchange: ${minExchange} words`}>min {minExchange} word exchange</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatME = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatME) {
                             const allME: { role: string; content?: string }[] = JSON.parse(chatME);

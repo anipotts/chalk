@@ -1804,6 +1804,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(if|unless|otherwise|provided that|as long as|in case|whether|depending on)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains conditional language">&#9282;</span>
                   )}
+                  {!compactMode && /\b(because|therefore|consequently|as a result|due to|hence|thus|so that)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-teal-400/30" title="Contains causal connector">&#8756;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
