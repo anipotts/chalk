@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 185 — Causal language detection, comparative badge, median AI response words
+- [x] TranscriptPanel: causal language detection — "∴" in orange-400/30, regex for because/therefore/as a result/consequently/due to/leads to/caused by/so that
+- [x] ChatOverlay: comparative badge — "compares" in amber-500/10, detects compared to/versus/on the other hand/in contrast/whereas/differ from/similar to
+- [x] HomePage: median AI response words — "med X ai words" in cyan-400/40, variable chatMD
+- [x] Build verification PASSED
+
 ### Wave 184 — Exclamation detection, conditional badge, AI response variance
 - [x] TranscriptPanel: exclamation/emphasis detection — "!" in red-400/30, regex for exclamation marks
 - [x] ChatOverlay: conditional badge — "conditional" in purple-500/10, detects if...then/would...if/assuming that/depending on
