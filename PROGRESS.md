@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 206 — Definitive language detection, conversational badge, words per exchange
+- [x] TranscriptPanel: definitive language detection — "■" in cyan-400/30, regex for always/never/every time/without exception/invariably/constantly/guaranteed/100 percent/no doubt
+- [x] ChatOverlay: conversational badge — "conversational" in teal-500/10, detects by the way/speaking of/that reminds me/on that note/interestingly/funny you mention/come to think/you know what/fun fact/side note
+- [x] Home page video card: avg words per exchange — "X w/exchange" in cyan-400/40, variable chatWPE, computes average words per user+AI pair (>=3 exchanges, avg >= 20)
+- [x] Build verification PASSED
+
 ### Wave 205 — Comparative language detection, cautionary badge, exclamation density
 - [x] TranscriptPanel: comparative language detection — "≥" in purple-400/30, regex for more than/less than/greater/bigger/smaller/faster/slower/better/worse/compared to/relative to
 - [x] ChatOverlay: cautionary badge — "cautionary" in orange-500/10, detects be careful/watch out/be aware/important to note/don't forget/make sure/be mindful/caution/warning/heads up

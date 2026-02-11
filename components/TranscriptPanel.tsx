@@ -1840,6 +1840,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(more than|less than|greater|bigger|smaller|faster|slower|better|worse|compared to|relative to)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-purple-400/30" title="Contains comparative language">&ge;</span>
                   )}
+                  {!compactMode && /\b(always|never|every time|without exception|invariably|constantly|guaranteed|100 percent|no doubt)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-cyan-400/30" title="Contains definitive language">&#9632;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

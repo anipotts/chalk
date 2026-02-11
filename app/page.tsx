@@ -1600,6 +1600,27 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatWPE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatWPE) {
+                            const allWPE: { role: string; content?: string }[] = JSON.parse(chatWPE);
+                            const pairs: number[] = [];
+                            for (let pi = 0; pi < allWPE.length - 1; pi++) {
+                              if (allWPE[pi].role === 'user' && allWPE[pi + 1]?.role === 'assistant' && allWPE[pi].content && allWPE[pi + 1].content) {
+                                const uW = allWPE[pi].content!.split(/\s+/).filter(Boolean).length;
+                                const aW = allWPE[pi + 1].content!.split(/\s+/).filter(Boolean).length;
+                                pairs.push(uW + aW);
+                              }
+                            }
+                            if (pairs.length >= 3) {
+                              const avg = Math.round(pairs.reduce((s, v) => s + v, 0) / pairs.length);
+                              if (avg >= 20) return <span className="text-[8px] text-cyan-400/40 tabular-nums" title={`${avg} avg words per exchange`}>{avg} w/exchange</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatEMD = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatEMD) {
                             const allEMD: { role: string; content?: string }[] = JSON.parse(chatEMD);
