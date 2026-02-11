@@ -1660,6 +1660,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(like a|similar to|think of it as|imagine|picture this|it's as if|just like|the same way|analogy|metaphor)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-emerald-400/30" title="Contains analogy or metaphorical language">~</span>
                   )}
+                  {!compactMode && /\b(coming up|we'll see|later in|stay tuned|in a moment|up next|we'll discuss|we'll cover|we'll explore)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-blue-400/30" title="Previews or teases upcoming content">&rarr;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

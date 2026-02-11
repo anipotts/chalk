@@ -988,6 +988,12 @@ Status: RUNNING
 - [x] Home Page Video Card Unique Words in Questions — "N unique words" badge showing vocabulary diversity in user questions
 - [x] Build verification PASSED
 
+### Wave 146 — Preview/teaser detection, encouragement badge, AI words per response
+- [x] Transcript Segment Preview/Teaser Detection — "→" indicator when segment previews upcoming content (coming up, stay tuned, up next)
+- [x] Chat Message Encouragement Badge — "encouraging" badge on AI messages with positive reinforcement (great question, excellent point, nice catch)
+- [x] Home Page Video Card AI Words per Response — "avg Nw/resp" badge showing average AI response length
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

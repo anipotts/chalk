@@ -1390,6 +1390,19 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatWpr = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatWpr) {
+                            const aiMsgsWpr: { role: string; content: string }[] = JSON.parse(chatWpr).filter((m: { role: string; content: string }) => m.role === 'assistant' && m.content);
+                            if (aiMsgsWpr.length >= 3) {
+                              const avgWpr = Math.round(aiMsgsWpr.reduce((s, m) => s + m.content.split(/\s+/).filter(Boolean).length, 0) / aiMsgsWpr.length);
+                              if (avgWpr >= 15) return <span className="text-[8px] text-rose-400/40 tabular-nums" title={`Average ${avgWpr} words per AI response across ${aiMsgsWpr.length} responses`}>avg {avgWpr}w/resp</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);
