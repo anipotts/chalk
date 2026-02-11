@@ -770,6 +770,45 @@ export default function Home() {
         )}
       </div>
 
+      {/* Recent activity timeline */}
+      {recentVideos.length > 0 && (() => {
+        const events: { label: string; time: number; icon: string }[] = [];
+        recentVideos.slice(0, 5).forEach((v) => {
+          events.push({ label: `Watched "${(v.title || v.id).slice(0, 30)}"`, time: v.timestamp, icon: 'play' });
+          try {
+            const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${v.id}`) : null;
+            if (chat) {
+              const count = JSON.parse(chat).length;
+              if (count > 0) events.push({ label: `${count} questions on "${(v.title || v.id).slice(0, 20)}"`, time: v.timestamp + 1, icon: 'chat' });
+            }
+          } catch { /* ignore */ }
+        });
+        events.sort((a, b) => b.time - a.time);
+        const recent = events.slice(0, 4);
+        if (recent.length < 2) return null;
+        return (
+          <div className="w-full max-w-xl mx-auto mt-6 relative z-10">
+            <h4 className="text-[9px] text-slate-600 uppercase tracking-wider text-center mb-2">Recent Activity</h4>
+            <div className="space-y-0 pl-4 border-l border-chalk-border/15">
+              {recent.map((ev, i) => {
+                const ago = Date.now() - ev.time;
+                const mins = Math.floor(ago / 60000);
+                const hrs = Math.floor(ago / 3600000);
+                const days = Math.floor(ago / 86400000);
+                const agoLabel = mins < 1 ? 'just now' : mins < 60 ? `${mins}m ago` : hrs < 24 ? `${hrs}h ago` : `${days}d ago`;
+                return (
+                  <div key={i} className="flex items-center gap-2 py-1 relative">
+                    <div className="absolute -left-[17px] w-2 h-2 rounded-full bg-chalk-surface border border-chalk-border/30" />
+                    <span className="text-[10px] text-slate-500 truncate flex-1">{ev.label}</span>
+                    <span className="text-[9px] text-slate-700 tabular-nums shrink-0">{agoLabel}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Footer links */}
       {streak.totalDays > 0 && (
         <div className="flex items-center justify-center gap-3 py-2 text-[10px] text-slate-700">

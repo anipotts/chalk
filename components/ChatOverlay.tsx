@@ -1316,7 +1316,20 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                   )}
                   {/* Follow-up chips after last assistant message */}
                   {msg.role === 'assistant' && i === messages.length - 1 && !isStreaming && msg.content && (
-                    <FollowUpChips onSelect={handleSuggestionSelect} lastResponse={msg.content} />
+                    <>
+                      <FollowUpChips onSelect={handleSuggestionSelect} lastResponse={msg.content} />
+                      <div className="flex items-center gap-1 mt-1 flex-wrap">
+                        {['Tell me more', 'Give an example', 'Simplify this'].map((tmpl) => (
+                          <button
+                            key={tmpl}
+                            onClick={() => submitMessage(tmpl)}
+                            className="px-2 py-0.5 rounded-full text-[9px] text-slate-500 border border-chalk-border/20 hover:text-chalk-accent hover:border-chalk-accent/30 transition-colors"
+                          >
+                            {tmpl}
+                          </button>
+                        ))}
+                      </div>
+                    </>
                   )}
                 </div>
                 );

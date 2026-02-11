@@ -117,6 +117,7 @@ export function TranscriptPanel({
   const [starred, setStarred] = useState<Set<number>>(new Set());
   const [showStarredOnly, setShowStarredOnly] = useState(false);
   const [paragraphMode, setParagraphMode] = useState(false);
+  const [showLineNumbers, setShowLineNumbers] = useState(false);
 
   // Load starred segments from localStorage
   useEffect(() => {
@@ -621,6 +622,15 @@ export function TranscriptPanel({
                 title={paragraphMode ? 'Switch to segment view' : 'Switch to paragraph view'}
               >
                 {paragraphMode ? 'Segments' : 'Paragraphs'}
+              </button>
+            )}
+            {viewMode === 'transcript' && !paragraphMode && segments.length > 5 && (
+              <button
+                onClick={() => setShowLineNumbers((v) => !v)}
+                className={`px-1 py-0.5 rounded text-[10px] font-mono font-medium transition-colors ${showLineNumbers ? 'text-chalk-accent bg-chalk-accent/15' : 'text-slate-500 hover:text-slate-400'}`}
+                title={showLineNumbers ? 'Hide line numbers' : 'Show line numbers'}
+              >
+                #
               </button>
             )}
             {lang && isComplete && (
@@ -1209,6 +1219,9 @@ export function TranscriptPanel({
                       />
                     ) : <div className="shrink-0 w-1" />;
                   })()}
+                  {showLineNumbers && (
+                    <span className="shrink-0 w-5 text-[8px] text-slate-700 tabular-nums text-right pt-0.5 select-none">{segIndex + 1}</span>
+                  )}
                   <div className="shrink-0 flex flex-col items-center gap-0.5">
                     <button
                       onClick={() => { onSeek(seg.offset); try { window.history.replaceState(null, '', `#t=${Math.round(seg.offset)}`); } catch {} }}

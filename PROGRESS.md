@@ -484,6 +484,18 @@ Status: RUNNING
 - [x] Home Page Clear All — button to clear entire recent video history
 - [x] Build verification PASSED
 
+## Wave 62 (Completed)
+- [x] Transcript Speaker Statistics — speaking time breakdown per detected speaker with bars
+- [x] Chat Conversation Title — auto-generated title from first user question
+- [x] Home Page Grid/List Toggle — switch between card grid and compact list view
+- [x] Build verification PASSED
+
+## Wave 63 (Completed)
+- [x] Transcript Silence Markers — visual dashed-line pauses for 3+ second gaps
+- [x] Chat Message Bookmark — save individual AI messages to localStorage
+- [x] Home Page Category Filter — filter videos by detected topic tag chips
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
