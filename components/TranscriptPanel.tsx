@@ -1783,6 +1783,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(although|even though|despite|in spite of|nevertheless|nonetheless|granted|admittedly)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-slate-400/30" title="Contains concessive language">~</span>
                   )}
+                  {!compactMode && /\b(additionally|furthermore|moreover|in addition|on top of that|not only)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-green-400/30" title="Contains additive language">+</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

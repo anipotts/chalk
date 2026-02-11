@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 187 — Additive language detection, emphasis badge, longest user message
+- [x] TranscriptPanel: additive language detection — "+" in green-400/30, regex for additionally/furthermore/moreover/in addition/on top of that/not only
+- [x] ChatOverlay: emphasis badge — "emphasis" in fuchsia-500/10, detects importantly/crucially/significantly/notably/especially/particularly/above all/most importantly
+- [x] Home page video card: longest user message — "max X q words" in lime-400/40, variable chatLM, finds max word count among user messages
+- [x] Build verification PASSED
+
 ### Wave 186 — Concessive language detection, hypothetical badge, user question diversity
 - [x] TranscriptPanel: concessive language detection — "~" in slate-400/30, regex for although/even though/despite/nevertheless/nonetheless/granted/admittedly
 - [x] ChatOverlay: hypothetical badge — "hypothetical" in rose-500/10, detects imagine/suppose/what if/hypothetically/in theory/theoretically
