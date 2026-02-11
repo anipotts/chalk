@@ -983,7 +983,13 @@ export function TranscriptPanel({
                         {ch.label}
                       </span>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[9px] text-slate-600">{Math.round(durSec / 60)}m · {segCount} segments</span>
+                        <span className="text-[9px] text-slate-600">
+                          {Math.round(durSec / 60)}m · {segCount} seg
+                          {(() => {
+                            const uniqueWords = new Set(chapterText.replace(/[^a-z\s]/g, '').split(/\s+/).filter((w) => w.length > 4));
+                            return uniqueWords.size > 5 ? ` · ${uniqueWords.size} terms` : '';
+                          })()}
+                        </span>
                       </div>
                       {subtopics.length > 0 && (
                         <div className="flex gap-1 mt-1 flex-wrap">

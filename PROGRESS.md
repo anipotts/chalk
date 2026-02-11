@@ -442,6 +442,12 @@ Status: RUNNING
 - [x] Video Card Chat Count — chat bubble icon + message count on home page cards
 - [x] Build verification PASSED
 
+## Wave 55 (Completed)
+- [x] Chapter Vocabulary Density — unique term count per chapter in chapters view
+- [x] Live Thinking Timer — real-time elapsed seconds counter while AI thinks
+- [x] Footer Study Stats — total study days and best streak in home page footer
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

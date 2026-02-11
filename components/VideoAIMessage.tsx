@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TimestampLink } from './TimestampLink';
 import { ReasoningPanel } from './ReasoningPanel';
@@ -158,6 +158,16 @@ function renderRichContent(content: string, onSeek?: (seconds: number) => void, 
   return blocks;
 }
 
+function ThinkingTimer() {
+  const startRef = useRef(Date.now());
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setElapsed(Date.now() - startRef.current), 100);
+    return () => clearInterval(id);
+  }, []);
+  return <span className="text-[9px] text-slate-600 tabular-nums ml-1">{(elapsed / 1000).toFixed(1)}s</span>;
+}
+
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
 
@@ -283,6 +293,7 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
               <span className="typing-dot w-1.5 h-1.5 bg-slate-400 rounded-full" />
               <span className="typing-dot w-1.5 h-1.5 bg-slate-400 rounded-full" />
               <span className="typing-dot w-1.5 h-1.5 bg-slate-400 rounded-full" />
+              <ThinkingTimer />
             </motion.div>
           )}
         </AnimatePresence>

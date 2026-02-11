@@ -623,6 +623,12 @@ export default function Home() {
       </div>
 
       {/* Footer links */}
+      {streak.totalDays > 0 && (
+        <div className="flex items-center justify-center gap-3 py-2 text-[10px] text-slate-700">
+          <span>{streak.totalDays} total study day{streak.totalDays !== 1 ? 's' : ''}</span>
+          {streak.longestStreak > 1 && <><span>·</span><span>{streak.longestStreak} day best streak</span></>}
+        </div>
+      )}
       <div className="flex-none py-4 flex items-center justify-center gap-4 border-t border-chalk-border/20">
         <a href="/history" className="text-xs text-slate-500 hover:text-slate-400 transition-colors">
           Study History
