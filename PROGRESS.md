@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 115 (Completed)
+- [x] Transcript Segment Hot Seek Indicator — repeat count badge turns orange at 3+ seeks with "hot segment" tooltip
+- [x] Chat Message Word Density Bar — hover-revealed bar below AI messages >100 words showing relative length vs longest
+- [x] Home Page Video Card Question Count — show "N Qs" badge for videos with 2+ user questions
+- [x] Build verification PASSED
+
 ## Wave 114 (Completed)
 - [x] Transcript Segment Shared Badge — green dot on segments whose timestamp was copied via double-click
 - [x] Chat Message AI Model Name Tooltip — hover model badge shows full name ("Claude Opus — deep reasoning model")

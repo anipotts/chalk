@@ -1474,6 +1474,16 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                             </span>
                           );
                         })()}
+                        {msg.role === 'assistant' && msg.content.split(/\s+/).filter(Boolean).length > 100 && (() => {
+                          const wc = msg.content.split(/\s+/).filter(Boolean).length;
+                          const maxWc = Math.max(...messages.filter(m => m.role === 'assistant' && m.content).map(m => m.content.split(/\s+/).filter(Boolean).length));
+                          const pct = maxWc > 0 ? Math.round((wc / maxWc) * 100) : 0;
+                          return (
+                            <div className="w-full h-0.5 mt-1 rounded-full bg-white/[0.03] overflow-hidden opacity-0 group-hover/msg:opacity-100 transition-opacity" title={`${wc} words (${pct}% of longest)`}>
+                              <div className="h-full rounded-full bg-chalk-accent/20" style={{ width: `${pct}%` }} />
+                            </div>
+                          );
+                        })()}
                         {msg.role === 'assistant' && msg.content && (
                           <span className="inline-flex items-center gap-0.5 ml-1 mt-0.5">
                             <button onClick={() => setMessages((prev) => prev.map((m) => m.id === msg.id ? { ...m, rating: m.rating === 'up' ? undefined : 'up' } : m))} className={`p-0.5 rounded transition-colors ${msg.rating === 'up' ? 'text-emerald-400' : 'text-slate-700 hover:text-slate-500'}`} title="Helpful">

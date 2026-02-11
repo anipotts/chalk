@@ -1488,7 +1488,7 @@ export function TranscriptPanel({
                   {!compactMode && (
                     <div className="shrink-0 flex flex-col items-center gap-0.5">
                       <div className={`w-1 h-1 rounded-full mt-2 ${playedSegments.current.has(segIndex) ? 'bg-emerald-500/50' : 'bg-slate-700/30'}`} title={playedSegments.current.has(segIndex) ? 'Played' : 'Not yet played'} />
-                      {(seekCounts.current.get(segIndex) || 0) >= 2 && <span className="text-[6px] text-sky-400/40 tabular-nums leading-none" title={`Seeked ${seekCounts.current.get(segIndex)} times`}>{seekCounts.current.get(segIndex)}x</span>}
+                      {(seekCounts.current.get(segIndex) || 0) >= 2 && <span className={`text-[6px] tabular-nums leading-none ${(seekCounts.current.get(segIndex) || 0) >= 3 ? 'text-orange-400/60' : 'text-sky-400/40'}`} title={`Seeked ${seekCounts.current.get(segIndex)} times${(seekCounts.current.get(segIndex) || 0) >= 3 ? ' — hot segment!' : ''}`}>{seekCounts.current.get(segIndex)}x</span>}
                     </div>
                   )}
                   {/* Key moment indicator dot */}
