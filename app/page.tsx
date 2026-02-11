@@ -200,6 +200,7 @@ export default function Home() {
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [dailyGoal] = useState(() => getDailyGoal());
   const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [selectedVideoIdx, setSelectedVideoIdx] = useState(-1);
   const previewAbort = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -216,19 +217,32 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  // Global keyboard shortcuts: Enter → focus input, Escape → blur
+  // Global keyboard shortcuts: Enter → focus input or open selected, Escape → blur, arrows → navigate videos
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Enter' && document.activeElement !== inputRef.current) {
+      const isInput = document.activeElement === inputRef.current;
+      if (e.key === 'Escape' && isInput) {
+        inputRef.current?.blur();
+        return;
+      }
+      if (isInput) return; // Don't interfere with input typing
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedVideoIdx((prev) => Math.min(prev + 1, recentVideos.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedVideoIdx((prev) => Math.max(prev - 1, -1));
+      } else if (e.key === 'Enter' && selectedVideoIdx >= 0 && selectedVideoIdx < recentVideos.length) {
+        e.preventDefault();
+        handleRecentClick(recentVideos[selectedVideoIdx]);
+      } else if (e.key === 'Enter') {
         e.preventDefault();
         inputRef.current?.focus();
-      } else if (e.key === 'Escape' && document.activeElement === inputRef.current) {
-        inputRef.current?.blur();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
+  }, [recentVideos, selectedVideoIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch preview when URL changes
   useEffect(() => {
@@ -636,7 +650,7 @@ export default function Home() {
                   if (videoFilter.trim() && !(v.title || v.url).toLowerCase().includes(videoFilter.toLowerCase())) return false;
                   if (categoryFilter) { const tag = getTopicTag(v.title); if (!tag || tag.label !== categoryFilter) return false; }
                   return true;
-                }).map((video) => {
+                }).map((video, vidIdx) => {
                 // Watch progress bar data
                 let watchPct = 0;
                 try {
@@ -656,7 +670,7 @@ export default function Home() {
                     if (dur > 0) { const m = Math.floor(dur / 60); const s = Math.floor(dur % 60); durLabel = `${m}:${s.toString().padStart(2, '0')}`; }
                   } catch { /* ignore */ }
                   return (
-                    <button key={video.id} onClick={() => handleRecentClick(video)} className="group/card w-full flex items-center gap-2 px-3 py-1 rounded-lg hover:bg-chalk-surface/40 transition-colors text-left relative">
+                    <button key={video.id} onClick={() => handleRecentClick(video)} className={`group/card w-full flex items-center gap-2 px-3 py-1 rounded-lg hover:bg-chalk-surface/40 transition-colors text-left relative ${vidIdx === selectedVideoIdx ? 'ring-1 ring-chalk-accent/50 bg-chalk-surface/30' : ''}`}>
                       <img src={`https://i.ytimg.com/vi/${video.id}/default.jpg`} alt="" className="w-8 h-6 object-cover rounded shrink-0 bg-chalk-surface" />
                       <span className="text-[11px] text-chalk-text truncate flex-1">{video.title || video.url}</span>
                       {durLabel && <span className="text-[9px] text-slate-600 font-mono tabular-nums shrink-0">{durLabel}</span>}
@@ -670,7 +684,7 @@ export default function Home() {
                 <button
                   key={video.id}
                   onClick={() => handleRecentClick(video)}
-                  className="group/card w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-chalk-surface/30 border border-chalk-border/20 hover:bg-chalk-surface/50 hover:border-chalk-border/40 transition-all text-left relative overflow-hidden"
+                  className={`group/card w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-chalk-surface/30 border hover:bg-chalk-surface/50 hover:border-chalk-border/40 transition-all text-left relative overflow-hidden ${vidIdx === selectedVideoIdx ? 'border-chalk-accent/50 ring-1 ring-chalk-accent/30' : 'border-chalk-border/20'}`}
                 >
                   {/* Watch progress bar */}
                   {watchPct > 0 && (

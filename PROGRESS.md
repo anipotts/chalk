@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 72 (Completed)
+- [x] Transcript Scroll Position Memory — remember and restore scroll position per video in localStorage
+- [x] Chat Empty State Enhancement — video thumbnail + title card in empty chat overlay
+- [x] Home Page Keyboard Navigation — arrow keys to navigate video list with visual selection highlight
+- [x] Build verification PASSED
+
 ## Wave 71 (Completed)
 - [x] Transcript Search Result Count — enhanced match counter with "matches" label and total context
 - [x] Chat Message Retry — regenerate button on last AI response to resubmit question

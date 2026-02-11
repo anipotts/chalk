@@ -1248,6 +1248,20 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
 
               {messages.length === 0 && (
                 <>
+                  {/* Video context card */}
+                  {videoId && (
+                    <div className="flex items-center gap-3 px-4 pt-3">
+                      <img
+                        src={`https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`}
+                        alt=""
+                        className="w-16 h-9 object-cover rounded-md bg-chalk-surface shrink-0"
+                      />
+                      <div className="min-w-0">
+                        {videoTitle && <p className="text-[11px] text-chalk-text truncate font-medium">{videoTitle}</p>}
+                        <p className="text-[9px] text-slate-600">{segments.length > 0 ? `${segments.length} segments` : 'No transcript'}</p>
+                      </div>
+                    </div>
+                  )}
                   {(() => {
                     const hour = new Date().getHours();
                     const greeting = hour < 6 ? 'Late night study grind!' : hour < 12 ? 'Good morning study session!' : hour < 17 ? 'Afternoon learning!' : hour < 21 ? 'Evening study time!' : 'Night owl session!';

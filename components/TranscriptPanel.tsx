@@ -412,12 +412,29 @@ export function TranscriptPanel({
     }
   }, [activeIndex, userScrolled, followAlong]);
 
-  // Detect manual scroll → pause auto-scroll for 5 seconds
+  // Restore scroll position from localStorage on mount
+  useEffect(() => {
+    if (!videoId || !scrollRef.current) return;
+    try {
+      const saved = localStorage.getItem(`chalk-transcript-scroll-${videoId}`);
+      if (saved) scrollRef.current.scrollTop = parseFloat(saved);
+    } catch { /* ignore */ }
+  }, [videoId]);
+
+  // Detect manual scroll → pause auto-scroll for 5 seconds + save position
+  const scrollSaveTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const handleScroll = useCallback(() => {
     setUserScrolled(true);
     if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
     scrollTimeout.current = setTimeout(() => setUserScrolled(false), 5000);
-  }, []);
+    // Debounced save of scroll position
+    if (videoId && scrollRef.current) {
+      if (scrollSaveTimeout.current) clearTimeout(scrollSaveTimeout.current);
+      scrollSaveTimeout.current = setTimeout(() => {
+        try { localStorage.setItem(`chalk-transcript-scroll-${videoId}`, String(scrollRef.current?.scrollTop || 0)); } catch { /* ignore */ }
+      }, 500);
+    }
+  }, [videoId]);
 
   // Filter segments by search and starred filter (memoized)
   const filtered = useMemo(() => {
