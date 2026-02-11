@@ -1066,6 +1066,12 @@ Status: RUNNING
 - [x] Home Page Video Card Chat Session Duration — "~Xm chat" badge estimating chat session length from message count
 - [x] Build verification PASSED
 
+### Wave 159 — Emotional language detection, correction badge, most active day
+- [x] Transcript Segment Emotional Language Detection — "♥" indicator when segment contains emotional language (love, hate, excited, passionate, thrilling)
+- [x] Chat Message Correction Badge — "corrected" badge on AI messages containing self-corrections (actually, let me correct, I should clarify)
+- [x] Home Page Video Card Most Active Day — "peak: Mon" badge showing which day of the week has most visits
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

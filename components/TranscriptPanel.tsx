@@ -1699,6 +1699,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(look at|notice how|remember|consider|think about|pay attention|make sure|keep in mind|observe|note that)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-rose-400/30" title="Contains imperative/command language">!</span>
                   )}
+                  {!compactMode && /\b(love|hate|excited|frustrated|passionate|thrilled|devastating|amazing|incredible|heartbreaking|furious|ecstatic)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-pink-400/30" title="Contains emotional or expressive language">&hearts;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

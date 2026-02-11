@@ -1571,6 +1571,22 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const streakData = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-streak-${video.id}`) : null;
+                          if (streakData) {
+                            const dates: string[] = JSON.parse(streakData);
+                            if (dates.length >= 3) {
+                              const dayFreq: Record<string, number> = {};
+                              const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                              for (const d of dates) { const day = dayNames[new Date(d).getDay()]; dayFreq[day] = (dayFreq[day] || 0) + 1; }
+                              const peak = Object.entries(dayFreq).sort((a, b) => b[1] - a[1])[0];
+                              if (peak && peak[1] >= 2) return <span className="text-[8px] text-cyan-400/40" title={`Most active day: ${peak[0]} (${peak[1]} visits)`}>peak: {peak[0]}</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);
