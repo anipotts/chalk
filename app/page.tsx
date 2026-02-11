@@ -931,7 +931,10 @@ export default function Home() {
                           const fc = typeof window !== 'undefined' ? localStorage.getItem(`chalk-quick-flashcards-${video.id}`) : null;
                           if (fc) {
                             const cards = JSON.parse(fc);
-                            if (cards.length > 0) return <span className="text-[8px] text-violet-400/60 tabular-nums" title={`${cards.length} flashcard${cards.length > 1 ? 's' : ''} saved`}>{cards.length} card{cards.length > 1 ? 's' : ''}</span>;
+                            if (cards.length > 0) {
+                              const due = cards.some((c: { created: number }) => Date.now() - c.created > 86400000);
+                              return <><span className="text-[8px] text-violet-400/60 tabular-nums" title={`${cards.length} flashcard${cards.length > 1 ? 's' : ''} saved`}>{cards.length} card{cards.length > 1 ? 's' : ''}</span>{due && <span className="text-[7px] text-orange-400/50" title="Flashcards created 24h+ ago — time to review!">review due</span>}</>;
+                            }
                           }
                         } catch { /* ignore */ }
                         return null;

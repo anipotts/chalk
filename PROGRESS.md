@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 114 (Completed)
+- [x] Transcript Segment Shared Badge — green dot on segments whose timestamp was copied via double-click
+- [x] Chat Message AI Model Name Tooltip — hover model badge shows full name ("Claude Opus — deep reasoning model")
+- [x] Home Page Video Card Flashcard Review Due — "review due" indicator on cards with flashcards older than 24h
+- [x] Build verification PASSED
+
 ## Wave 113 (Completed)
 - [x] Transcript Segment Repeat Count Indicator — "Nx" badge below reading progress dot for segments seeked 2+ times
 - [x] Chat Response Character Count — show "Xc" character count on AI messages >200 chars in action bar

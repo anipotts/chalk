@@ -1459,7 +1459,7 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           </button>
                         )}
                         {msg.role === 'assistant' && msg.model && msg.content && (
-                          <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[8px] font-medium bg-white/[0.04] text-slate-600 border border-white/[0.06]">
+                          <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[8px] font-medium bg-white/[0.04] text-slate-600 border border-white/[0.06]" title={msg.model === 'opus' ? 'Claude Opus — deep reasoning model' : msg.model === 'sonnet' ? 'Claude Sonnet — balanced model' : msg.model === 'haiku' ? 'Claude Haiku — fast model' : msg.model}>
                             {msg.model === 'opus' ? 'Opus' : msg.model === 'sonnet' ? 'Sonnet' : msg.model === 'haiku' ? 'Haiku' : msg.model}
                           </span>
                         )}

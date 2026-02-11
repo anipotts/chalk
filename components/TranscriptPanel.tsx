@@ -198,6 +198,7 @@ export function TranscriptPanel({
   const [selCopied, setSelCopied] = useState(false);
   const playedSegments = useRef<Set<number>>(new Set());
   const seekCounts = useRef<Map<number, number>>(new Map());
+  const sharedSegments = useRef<Set<number>>(new Set());
 
   // Auto-generate chapters from segments
   const chapters = useMemo(() => generateChapters(segments), [segments]);
@@ -1505,6 +1506,9 @@ export function TranscriptPanel({
                       />
                     ) : <div className="shrink-0 w-1" />;
                   })()}
+                  {!compactMode && sharedSegments.current.has(segIndex) && (
+                    <div className="shrink-0 w-1 h-1 rounded-full mt-2 bg-emerald-400/50" title="Shared" />
+                  )}
                   {showLineNumbers && (
                     <span className="shrink-0 w-5 text-[8px] text-slate-700 tabular-nums text-right pt-0.5 select-none">{segIndex + 1}</span>
                   )}
@@ -1513,6 +1517,7 @@ export function TranscriptPanel({
                       onClick={() => { onSeek(seg.offset); seekCounts.current.set(segIndex, (seekCounts.current.get(segIndex) || 0) + 1); try { window.history.replaceState(null, '', `#t=${Math.round(seg.offset)}`); } catch {} }}
                       onDoubleClick={(e) => {
                         e.stopPropagation();
+                        sharedSegments.current.add(segIndex);
                         const ts = formatTimestamp(seg.offset);
                         navigator.clipboard.writeText(ts).then(() => {
                           const btn = e.currentTarget;
