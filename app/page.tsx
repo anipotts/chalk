@@ -1558,6 +1558,19 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatDur = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatDur) {
+                            const allMsgsDur = JSON.parse(chatDur);
+                            if (allMsgsDur.length >= 4) {
+                              const estMinutes = Math.round(allMsgsDur.length * 5 / 60);
+                              if (estMinutes >= 1) return <span className="text-[8px] text-lime-400/40 tabular-nums" title={`Estimated ${estMinutes} min chat session (${allMsgsDur.length} messages)`}>~{estMinutes}m chat</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

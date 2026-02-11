@@ -1060,6 +1060,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Diversity — "X q-types" badge showing how many question types (who/what/where/when/why/how) used
 - [x] Build verification PASSED
 
+### Wave 158 — Imperative mood detection, structured badge, chat session duration
+- [x] Transcript Segment Imperative Mood Detection — "!" indicator when segment contains command language (look at, notice, remember, consider)
+- [x] Chat Message Structured Badge — "structured" badge on AI messages containing 3+ list items or numbered points
+- [x] Home Page Video Card Chat Session Duration — "~Xm chat" badge estimating chat session length from message count
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
