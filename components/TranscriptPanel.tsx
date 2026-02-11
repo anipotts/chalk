@@ -168,6 +168,27 @@ export function TranscriptPanel({
       .map(([word, count]) => ({ word, count }));
   }, [segments]);
 
+  // Word timeline data: for each cloud word, compute an 8-bucket distribution across video
+  const wordTimelines = useMemo(() => {
+    if (wordCloud.length === 0 || segments.length === 0) return new Map<string, number[]>();
+    const totalDur = segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0);
+    if (totalDur <= 0) return new Map<string, number[]>();
+    const buckets = 8;
+    const bucketDur = totalDur / buckets;
+    const result = new Map<string, number[]>();
+    for (const { word } of wordCloud) {
+      const timeline = Array(buckets).fill(0) as number[];
+      for (const seg of segments) {
+        if (seg.text.toLowerCase().includes(word)) {
+          const b = Math.min(buckets - 1, Math.floor(seg.offset / bucketDur));
+          timeline[b]++;
+        }
+      }
+      result.set(word, timeline);
+    }
+    return result;
+  }, [wordCloud, segments]);
+
   // Key terms for auto-highlighting (top 12 meaningful words) with metadata
   const keyTerms = useMemo(() => {
     if (wordCloud.length === 0) return new Set<string>();
@@ -800,22 +821,42 @@ export function TranscriptPanel({
         className="h-full overflow-y-auto"
       >
         {viewMode === 'cloud' && wordCloud.length > 0 ? (
-          /* Word cloud view */
+          /* Word cloud view with sparklines */
           <div className="h-full flex flex-wrap items-center justify-center gap-2 p-4 content-center">
             {wordCloud.map(({ word, count }, i) => {
               const maxCount = wordCloud[0]?.count || 1;
               const size = 0.6 + (count / maxCount) * 1.2; // 0.6rem to 1.8rem
               const opacity = 0.4 + (count / maxCount) * 0.6;
               const colors = ['text-blue-400', 'text-purple-400', 'text-emerald-400', 'text-amber-400', 'text-rose-400', 'text-cyan-400'];
+              const strokeColors = ['#60a5fa', '#a78bfa', '#34d399', '#fbbf24', '#fb7185', '#22d3ee'];
+              const timeline = wordTimelines.get(word);
+              const timelineMax = timeline ? Math.max(...timeline, 1) : 1;
               return (
                 <button
                   key={word}
                   onClick={() => { setSearch(word); setViewMode('transcript'); }}
-                  className={`${colors[i % colors.length]} hover:opacity-100 transition-all cursor-pointer hover:scale-110`}
+                  className={`${colors[i % colors.length]} hover:opacity-100 transition-all cursor-pointer hover:scale-110 group/word relative`}
                   style={{ fontSize: `${size}rem`, opacity, lineHeight: 1.2 }}
                   title={`"${word}" appears ${count} times`}
                 >
                   {word}
+                  {timeline && (
+                    <svg
+                      width="32" height="8"
+                      viewBox="0 0 32 8"
+                      className="absolute -bottom-2 left-1/2 -translate-x-1/2 opacity-0 group-hover/word:opacity-80 transition-opacity"
+                    >
+                      <polyline
+                        points={timeline.map((v, j) => `${(j / 7) * 32},${8 - (v / timelineMax) * 7}`).join(' ')}
+                        fill="none"
+                        stroke={strokeColors[i % strokeColors.length]}
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        opacity="0.7"
+                      />
+                    </svg>
+                  )}
                 </button>
               );
             })}

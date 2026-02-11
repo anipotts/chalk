@@ -263,6 +263,12 @@ Status: RUNNING
 - [x] Speaking pace stats (words per minute) in transcript panel header
 - [x] Build verification PASSED
 
+## Wave 47 (Completed)
+- [x] Chat Keyboard Shortcuts — Ctrl+F opens chat search, Ctrl+P pins last AI response, Escape closes search bar
+- [x] Transcript Word Timeline — sparkline showing temporal distribution per word in cloud view (8-bucket chart on hover)
+- [x] Quick Recap button in chat input bar — sends "recap last 2 minutes" prompt with proper timestamp range
+- [x] Build verification PASSED
+
 ## Wave 46 (Completed)
 - [x] Chat Message Search — search bar with match count, non-matching messages dimmed to 25% opacity
 - [x] Transcript Sentence Complexity — "!" badge on complex segments, "~" on technical segments (based on long-word ratio)

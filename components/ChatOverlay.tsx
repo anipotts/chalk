@@ -417,26 +417,6 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
     setIsScrolledUp(scrollHeight - scrollTop - clientHeight > 60);
   }, []);
 
-  // Keyboard: C to toggle chat, Escape to close
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') {
-        if (e.key === 'Escape') {
-          (e.target as HTMLElement).blur();
-          onToggle?.();
-        }
-        return;
-      }
-      if (e.key === 'c') {
-        e.preventDefault();
-        onToggle?.();
-      }
-    }
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
-  }, [onToggle]);
-
   const handleStop = useCallback(() => {
     abortRef.current?.abort();
   }, []);
@@ -575,6 +555,41 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
       return next;
     });
   }, [videoId]);
+
+  // Keyboard: C to toggle chat, Escape to close, Ctrl+F to search, Ctrl+P to pin
+  useEffect(() => {
+    if (!visible) return;
+    function handleKey(e: KeyboardEvent) {
+      // Ctrl+F — open chat search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f' && messages.length > 2) {
+        e.preventDefault();
+        setChatSearchOpen(true);
+        return;
+      }
+      // Ctrl+P — pin last AI response
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault();
+        const lastAI = [...messages].reverse().find((m) => m.role === 'assistant');
+        if (lastAI) togglePin(lastAI.id);
+        return;
+      }
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') {
+        if (e.key === 'Escape') {
+          if (chatSearchOpen) { setChatSearchOpen(false); setChatSearch(''); return; }
+          (e.target as HTMLElement).blur();
+          onToggle?.();
+        }
+        return;
+      }
+      if (e.key === 'c') {
+        e.preventDefault();
+        onToggle?.();
+      }
+    }
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [onToggle, visible, messages, togglePin, chatSearchOpen]);
 
   return (
     <AnimatePresence>
@@ -1286,6 +1301,20 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                       ))}
                     </div>
                   </div>
+                  {segments.length > 0 && !isStreaming && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const start = Math.max(0, currentTime - 120);
+                        const end = currentTime;
+                        submitMessage(`Give me a quick recap of what was discussed in the last 2 minutes (from [${formatTimestamp(start)}] to [${formatTimestamp(end)}]).`);
+                      }}
+                      className="px-1.5 py-0.5 rounded-md text-[10px] font-bold text-slate-500 hover:text-slate-400 hover:bg-white/[0.06] transition-all duration-150"
+                      title="Quick recap of last 2 minutes"
+                    >
+                      Recap
+                    </button>
+                  )}
                 </div>
                 <textarea
                   ref={inputRef}
