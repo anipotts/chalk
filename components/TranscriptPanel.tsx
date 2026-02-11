@@ -1741,6 +1741,9 @@ export function TranscriptPanel({
                   {!compactMode && /\([^)]{3,}\)/.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-slate-400/30" title="Contains parenthetical content">()</span>
                   )}
+                  {!compactMode && /"[^"]{3,}"/.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-emerald-400/30" title="Contains direct quotation">&#x201C;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

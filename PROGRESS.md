@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 173 — Quotation detection, emphasis badge, AI citation count
+- [x] TranscriptPanel: quotation detection indicator — `"` (&#x201C;) in emerald-400/30, regex `/"[^"]{3,}"/`
+- [x] ChatOverlay: emphasis badge — "emphasizes" in red-500/10, detects importance/emphasis language
+- [x] HomePage: AI citation count badge — "X cites" in sky-400/40, counts `[M:SS]` timestamp citations (variable `chatCC`)
+- [x] Build verification PASSED
+
 ### Wave 172 — Parenthetical content detection, restatement badge, question repetition
 - [x] Transcript Segment Parenthetical Content Detection — "()" indicator when segment contains parenthetical content (text in parentheses)
 - [x] Chat Message Restatement Badge — "restates" badge on AI messages containing restatement language (in other words, that is to say, put differently, essentially)

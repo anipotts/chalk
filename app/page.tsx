@@ -1642,6 +1642,17 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatCC = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatCC) {
+                            const allCC: { role: string; content?: string }[] = JSON.parse(chatCC);
+                            const citeCount = allCC.filter(m => m.role === 'assistant' && m.content).reduce((sum, m) => sum + (m.content!.match(/\[\d+:\d{2}\]/g) || []).length, 0);
+                            if (citeCount >= 1) return <span className="text-[8px] text-sky-400/40 tabular-nums" title={`${citeCount} timestamp citations in AI responses`}>{citeCount} cites</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatQR = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatQR) {
                             const allQR: { role: string; content?: string }[] = JSON.parse(chatQR);
