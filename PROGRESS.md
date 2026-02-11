@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 191 — Illustrative language detection, summarizing badge, average words per turn
+- [x] TranscriptPanel: illustrative language detection — "◆" in purple-400/30, regex for for example/for instance/such as/illustrate/demonstrate/consider/take for example/case in point
+- [x] ChatOverlay: summarizing badge — "summarizing" in violet-500/10, detects in summary/to sum up/overall/in conclusion/to summarize/the key point/bottom line/all in all
+- [x] Home page video card: average words per turn — "avg X words/turn" in emerald-400/40, variable chatWT, computes average word count across all messages (>=4 msgs, avg >= 5)
+- [x] Build verification PASSED
+
 ### Wave 190 — Prescriptive language detection, clarifying badge, user question range
 - [x] TranscriptPanel: prescriptive language detection — "→" in indigo-400/30, regex for should/must/need to/have to/ought to/required/essential/mandatory
 - [x] ChatOverlay: clarifying badge — "clarifying" in emerald-500/10, detects to clarify/in other words/put simply/what this means/to be clear/specifically/more precisely/let me explain

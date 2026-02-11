@@ -1795,6 +1795,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(should|must|need to|have to|ought to|required|essential|mandatory)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-indigo-400/30" title="Contains prescriptive language">&rarr;</span>
                   )}
+                  {!compactMode && /\b(for example|for instance|such as|illustrate|demonstrate|consider|take for example|case in point)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-purple-400/30" title="Contains illustrative language">&#9670;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

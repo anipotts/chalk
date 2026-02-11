@@ -1600,6 +1600,21 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatWT = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatWT) {
+                            const allWT: { role: string; content?: string }[] = JSON.parse(chatWT);
+                            const msgsWT = allWT.filter(m => m.content);
+                            if (msgsWT.length >= 4) {
+                              const totalWords = msgsWT.reduce((sum, m) => sum + m.content!.split(/\s+/).filter(Boolean).length, 0);
+                              const avgPerTurn = Math.round(totalWords / msgsWT.length);
+                              if (avgPerTurn >= 5) return <span className="text-[8px] text-emerald-400/40 tabular-nums" title={`Average words per turn: ${avgPerTurn}`}>avg {avgPerTurn} words/turn</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatQR2 = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatQR2) {
                             const allQR2: { role: string; content?: string }[] = JSON.parse(chatQR2);
