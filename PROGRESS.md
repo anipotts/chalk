@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 222 — Parenthetical language detection, speculative badge, IQR words per exchange
+- [x] TranscriptPanel: parenthetical language detection — "( )" in sky-400/30, regex for as a side note/parenthetically/by the way/incidentally/on a related note/as an aside/speaking of which/it's worth noting/tangentially/side note
+- [x] ChatOverlay: speculative badge — "speculative" in sky-500/10, detects it's possible that/one could argue/perhaps it's the case/it might be that/speculatively/there's reason to think/it's conceivable/one might speculate/there's a chance/it's plausible
+- [x] Home page: IQR words per exchange badge — "X w IQR" in sky-400/40, computes interquartile range of exchange sizes across ≥4 exchanges (variable chatIQE)
+- [x] Build verification PASSED
+
 ### Wave 221 — Correlative language detection, concessive badge, exchange range ratio
 - [x] TranscriptPanel: correlative language detection — "↔" in rose-400/30, regex for not only…but also/both…and/either…or/neither…nor/the more…the more/whether or not/as much as/just as…so/on one hand…on the other/correspondingly
 - [x] ChatOverlay: concessive badge — "concessive" in rose-500/10, detects although/even though/despite the fact/granted that/while it is true/admittedly/I concede/notwithstanding/be that as it may/all the same

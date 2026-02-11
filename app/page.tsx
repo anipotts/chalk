@@ -1600,6 +1600,30 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatIQE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatIQE) {
+                            const allIQE: { role: string; content?: string }[] = JSON.parse(chatIQE);
+                            const exSzIQ: number[] = [];
+                            for (let i = 0; i < allIQE.length - 1; i++) {
+                              if (allIQE[i].role === 'user' && allIQE[i + 1]?.role === 'assistant') {
+                                const uw = (allIQE[i].content || '').split(/\s+/).filter(Boolean).length;
+                                const aw = (allIQE[i + 1].content || '').split(/\s+/).filter(Boolean).length;
+                                exSzIQ.push(uw + aw);
+                              }
+                            }
+                            if (exSzIQ.length >= 4) {
+                              const sorted = [...exSzIQ].sort((a, b) => a - b);
+                              const q1 = sorted[Math.floor(sorted.length * 0.25)];
+                              const q3 = sorted[Math.floor(sorted.length * 0.75)];
+                              const iqr = q3 - q1;
+                              if (iqr >= 5) return <span className="text-[8px] text-sky-400/40 tabular-nums" title={`IQR of exchange size: ${iqr} words (Q1=${q1}, Q3=${q3}) across ${exSzIQ.length} exchanges`}>{iqr} w IQR</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatRSE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatRSE) {
                             const allRSE: { role: string; content?: string }[] = JSON.parse(chatRSE);
