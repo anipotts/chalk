@@ -196,6 +196,7 @@ export default function Home() {
   const [videoFilter, setVideoFilter] = useState('');
   const [videoSort, setVideoSort] = useState<'date' | 'title' | 'views'>('date');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [todayMinutes, setTodayMinutes] = useState(0);
   const [dailyGoal] = useState(() => getDailyGoal());
   const previewAbort = useRef<AbortController | null>(null);
@@ -525,6 +526,20 @@ export default function Home() {
                 </button>
               )}
             </div>
+            {/* Category filter chips */}
+            {(() => {
+              const categories = new Set<string>();
+              recentVideos.forEach((v) => { const tag = getTopicTag(v.title); if (tag) categories.add(tag.label); });
+              if (categories.size < 2) return null;
+              return (
+                <div className="flex items-center gap-1 mb-2 flex-wrap">
+                  <button onClick={() => setCategoryFilter(null)} className={`px-1.5 py-0.5 rounded text-[9px] transition-colors ${!categoryFilter ? 'text-chalk-accent bg-chalk-accent/10' : 'text-slate-600 hover:text-slate-400'}`}>All</button>
+                  {[...categories].map((cat) => (
+                    <button key={cat} onClick={() => setCategoryFilter(categoryFilter === cat ? null : cat)} className={`px-1.5 py-0.5 rounded text-[9px] transition-colors ${categoryFilter === cat ? 'text-chalk-accent bg-chalk-accent/10' : 'text-slate-600 hover:text-slate-400'}`}>{cat}</button>
+                  ))}
+                </div>
+              );
+            })()}
             {/* Time spent breakdown bar */}
             {(() => {
               const timeData = recentVideos.slice(0, 5).map((v) => {
@@ -572,7 +587,11 @@ export default function Home() {
                   return vb - va;
                 }
                 return b.timestamp - a.timestamp;
-              }).slice(0, viewMode === 'list' ? 10 : 5).filter((v) => !videoFilter.trim() || (v.title || v.url).toLowerCase().includes(videoFilter.toLowerCase())).map((video) => {
+              }).slice(0, viewMode === 'list' ? 10 : 5).filter((v) => {
+                  if (videoFilter.trim() && !(v.title || v.url).toLowerCase().includes(videoFilter.toLowerCase())) return false;
+                  if (categoryFilter) { const tag = getTopicTag(v.title); if (!tag || tag.label !== categoryFilter) return false; }
+                  return true;
+                }).map((video) => {
                 // Watch progress bar data
                 let watchPct = 0;
                 try {

@@ -1164,6 +1164,19 @@ export function TranscriptPanel({
                     </div>
                   );
                 })()}
+                {/* Silence marker for gaps >= 3 seconds */}
+                {i > 0 && !showSpeakerDivider && !search.trim() && (() => {
+                  const prevSeg = filtered[i - 1];
+                  const gap = seg.offset - (prevSeg.offset + (prevSeg.duration || 0));
+                  if (gap < 3) return null;
+                  return (
+                    <div className="flex items-center gap-2 px-3 py-0.5 my-0.5">
+                      <div className="flex-1 border-t border-dashed border-slate-700/30" />
+                      <span className="text-[8px] text-slate-700 tabular-nums">{gap.toFixed(0)}s pause</span>
+                      <div className="flex-1 border-t border-dashed border-slate-700/30" />
+                    </div>
+                  );
+                })()}
                 <div
                   key={`${seg.offset}-${i}`}
                   data-seg-offset={seg.offset}

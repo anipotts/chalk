@@ -333,6 +333,13 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
       return stored ? new Set(JSON.parse(stored)) : new Set();
     } catch { return new Set(); }
   });
+  const [savedMsgIds, setSavedMsgIds] = useState<Set<string>>(() => {
+    if (!videoId || typeof window === 'undefined') return new Set();
+    try {
+      const stored = localStorage.getItem(`chalk-saved-msgs-${videoId}`);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch { return new Set(); }
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -569,6 +576,18 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
       else next.add(msgId);
       if (videoId) {
         try { localStorage.setItem(`chalk-pinned-${videoId}`, JSON.stringify([...next])); } catch { /* ignore */ }
+      }
+      return next;
+    });
+  }, [videoId]);
+
+  const toggleSave = useCallback((msgId: string) => {
+    setSavedMsgIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(msgId)) next.delete(msgId);
+      else next.add(msgId);
+      if (videoId) {
+        try { localStorage.setItem(`chalk-saved-msgs-${videoId}`, JSON.stringify([...next])); } catch { /* ignore */ }
       }
       return next;
     });
@@ -1237,7 +1256,7 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                 return (
                 <div
                   key={msg.id}
-                  className={`relative ${searchActive && !matchesSearch ? 'opacity-25 transition-opacity duration-200' : 'transition-opacity duration-200'}`}
+                  className={`relative group/msg ${searchActive && !matchesSearch ? 'opacity-25 transition-opacity duration-200' : 'transition-opacity duration-200'}`}
                   onContextMenu={(e) => {
                     if (msg.role !== 'assistant' || !msg.content) return;
                     e.preventDefault();
@@ -1262,6 +1281,18 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     onTogglePin={msg.role === 'assistant' ? () => togglePin(msg.id) : undefined}
                     maxContentLength={maxContentLength}
                   />
+                  {/* Save/bookmark icon */}
+                  {msg.role === 'assistant' && msg.content && (
+                    <button
+                      onClick={() => toggleSave(msg.id)}
+                      className={`absolute top-1 right-1 p-0.5 rounded opacity-0 group-hover/msg:opacity-100 transition-opacity ${savedMsgIds.has(msg.id) ? '!opacity-100 text-yellow-400' : 'text-slate-600 hover:text-yellow-400'}`}
+                      title={savedMsgIds.has(msg.id) ? 'Unsave message' : 'Save message'}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                        <path fillRule="evenodd" d="M11.986 3H12a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h.014A2.25 2.25 0 0 1 6.25 1h3.5a2.25 2.25 0 0 1 2.236 2ZM6.25 2.5a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  )}
                   {/* Context menu for assistant messages */}
                   {ctxMenu && ctxMenu.msgId === msg.id && msg.role === 'assistant' && (
                     <div
