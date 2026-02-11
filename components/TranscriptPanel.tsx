@@ -1747,6 +1747,9 @@ export function TranscriptPanel({
                   {!compactMode && /\.{3}|…/.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-violet-400/30" title="Contains ellipsis or trailing off">&hellip;</span>
                   )}
+                  {!compactMode && /\b(do|make|try|remember|note|consider|look at|watch|listen|notice|think about)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-rose-400/30" title="Contains imperative/instruction">!</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

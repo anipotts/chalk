@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 175 — Imperative sentence detection, temporal reference badge, Q/A ratio
+- [x] TranscriptPanel: imperative sentence detection — "!" in rose-400/30, detects commands/instructions
+- [x] ChatOverlay: temporal reference badge — "temporal" in cyan-500/10, detects time references
+- [x] HomePage: question-to-answer ratio badge — "X:Y Q/A" in indigo-400/40 (variable `chatQA`)
+- [x] Build verification PASSED
+
 ### Wave 174 — Ellipsis detection, hedging badge, average response length
 - [x] TranscriptPanel: ellipsis/trailing off detection — `…` (&hellip;) in violet-400/30, regex `/\.{3}|…/`
 - [x] ChatOverlay: hedging badge — "hedges" in yellow-500/10, detects hedging/uncertain language

@@ -1642,6 +1642,18 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatQA = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatQA) {
+                            const allQA: { role: string; content?: string }[] = JSON.parse(chatQA);
+                            const userCount = allQA.filter(m => m.role === 'user').length;
+                            const aiCount = allQA.filter(m => m.role === 'assistant').length;
+                            if (userCount >= 1 && aiCount >= 1) return <span className="text-[8px] text-indigo-400/40 tabular-nums" title={`${userCount} questions, ${aiCount} answers`}>{userCount}:{aiCount} Q/A</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatAW = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatAW) {
                             const allAW: { role: string; content?: string }[] = JSON.parse(chatAW);
