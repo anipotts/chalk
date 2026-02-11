@@ -1560,6 +1560,9 @@ export function TranscriptPanel({
                   {!compactMode && seg.text.trim().endsWith('?') && (
                     <span className={`shrink-0 text-[8px] font-bold w-3 text-center ${isActive && questionPulse ? 'text-purple-300 animate-pulse' : 'text-purple-400/50'}`} title={isActive && questionPulse ? 'Consider this question!' : 'Question asked'}>?</span>
                   )}
+                  {!compactMode && /[""\u201C\u201D]/.test(seg.text) && (
+                    <span className="shrink-0 text-[8px] text-sky-400/30 font-serif" title="Contains a direct quote">&ldquo;</span>
+                  )}
                   {!compactMode && complexityLabel && (
                     <span className={`shrink-0 text-[7px] font-bold uppercase tracking-wider px-1 py-0 rounded ${
                       complexityLabel === 'complex' ? 'bg-rose-500/10 text-rose-400/60' : 'bg-amber-500/10 text-amber-400/50'

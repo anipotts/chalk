@@ -1031,6 +1031,19 @@ export default function Home() {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);
+                            const userWords = new Set<string>(msgs.filter((m: { role: string }) => m.role === 'user').map((m: { content: string }) => m.content.toLowerCase()).join(' ').split(/\s+/).filter((w: string) => w.length > 6));
+                            const aiWords: string[] = msgs.filter((m: { role: string }) => m.role === 'assistant').map((m: { content: string }) => m.content.toLowerCase()).join(' ').split(/\s+/).filter((w: string) => w.length > 6);
+                            const topics = [...new Set<string>(aiWords)].filter((w) => !userWords.has(w));
+                            if (topics.length >= 3) return <span className="text-[8px] text-emerald-400/40 tabular-nums" title={`${topics.length} unique topic words in AI responses`}>{Math.min(topics.length, 99)} topics</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
+                          const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chat) {
+                            const msgs = JSON.parse(chat);
                             const lastQ = [...msgs].reverse().find((m: { role: string }) => m.role === 'user');
                             if (lastQ) {
                               const preview = lastQ.content.length > 40 ? lastQ.content.slice(0, 40) + '...' : lastQ.content;

@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 119 (Completed)
+- [x] Transcript Segment Quote Indicator — quotation mark icon on segments containing direct quotes
+- [x] Chat Message Definition Detection — "def" badge on AI responses containing definition patterns
+- [x] Home Page Video Card Unique Topics Count — "N topics" badge showing unique AI-introduced topic words
+- [x] Build verification PASSED
+
 ## Wave 118 (Completed)
 - [x] Transcript Segment Vocabulary Diversity Score — "div" label on segments with >80% unique words
 - [x] Chat Message Corrective Badge — "corrective" badge on AI responses containing corrections/clarifications
