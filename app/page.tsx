@@ -1600,6 +1600,20 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatLRL = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatLRL) {
+                            const allLRL: { role: string; content?: string }[] = JSON.parse(chatLRL);
+                            const aiMsgs = allLRL.filter(m => m.role === 'assistant' && m.content);
+                            if (aiMsgs.length >= 1 && allLRL.length >= 2) {
+                              const wc = aiMsgs[aiMsgs.length - 1].content!.split(/\s+/).filter(Boolean).length;
+                              if (wc >= 10) return <span className="text-[8px] text-rose-400/40 tabular-nums" title={`Last AI response: ${wc} words`}>{wc} w last</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatFRL = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatFRL) {
                             const allFRL: { role: string; content?: string }[] = JSON.parse(chatFRL);

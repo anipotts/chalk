@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 210 — Emphatic language detection, directive badge, last response length
+- [x] TranscriptPanel: emphatic language detection — "!" in red-400/30, regex for absolutely/incredible/amazing/unbelievable/mind-blowing/extraordinary/phenomenal/spectacular/outstanding/remarkable
+- [x] ChatOverlay: directive badge — "directive" in rose-500/10, detects make sure you/don't forget to/always remember/keep in mind/pay attention to/focus on/prioritize/start with/begin by/the key is
+- [x] Home page video card: last response length — "X w last" in rose-400/40, variable chatLRL
+- [x] Build verification PASSED
+
 ### Wave 209 — Qualifying language detection, reflective badge, first response latency
 - [x] TranscriptPanel: qualifying language detection — "~" in sky-400/30, regex for in some cases/depending on/it varies/not always/sometimes/to some extent/more or less/roughly/approximately/in certain situations
 - [x] ChatOverlay: reflective badge — "reflective" in sky-500/10, detects looking back/in hindsight/reflecting on/when I think about/it occurs to me/upon reflection/thinking about it/reconsidering/in retrospect/come to realize
