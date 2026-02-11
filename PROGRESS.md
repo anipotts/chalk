@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 204 — Speculative language detection, analytical badge, question mark density
+- [x] TranscriptPanel: speculative language detection — "?" in teal-400/30, regex for maybe/perhaps/possibly/might/could be/presumably/probably/likely/it seems/it appears
+- [x] ChatOverlay: analytical badge — "analytical" in blue-500/10, detects let's break this down/analyzing/analysis/the data shows/looking at the numbers/statistically/the evidence/the results/based on/according to
+- [x] Home page video card: question mark density — "X ?/msg" in violet-400/40, variable chatQMD, computes average question marks per user message (>=3 user msgs, density >= 0.5)
+- [x] Build verification PASSED
+
 ### Wave 203 — Emphatic language detection, motivational badge, shortest response
 - [x] TranscriptPanel: emphatic language detection — "!" in red-400/30, regex for absolutely/definitely/certainly/undoubtedly/clearly/obviously/without a doubt/no question
 - [x] ChatOverlay: motivational badge — "motivational" in rose-500/10, detects you can do this/keep going/great job/well done/nice work/you're on track/making progress/getting there/almost there

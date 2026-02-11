@@ -1600,6 +1600,21 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatQMD = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatQMD) {
+                            const allQMD: { role: string; content?: string }[] = JSON.parse(chatQMD);
+                            const userMsgs = allQMD.filter(m => m.role === 'user' && m.content);
+                            if (userMsgs.length >= 3) {
+                              const totalQMs = userMsgs.reduce((s, m) => s + (m.content!.match(/\?/g) || []).length, 0);
+                              const density = Math.round((totalQMs / userMsgs.length) * 10) / 10;
+                              if (density >= 0.5) return <span className="text-[8px] text-violet-400/40 tabular-nums" title={`${density} question marks per message`}>{density} ?/msg</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatSR2 = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatSR2) {
                             const allSR2: { role: string; content?: string }[] = JSON.parse(chatSR2);
