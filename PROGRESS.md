@@ -412,6 +412,12 @@ Status: RUNNING
 - [x] Last Watched Indicator — relative time labels (e.g. "3h ago") on home page cards
 - [x] Build verification PASSED
 
+## Wave 50 (Completed)
+- [x] Transcript Auto-Chapters — vocabulary overlap detection between windows inserts topic shift dividers
+- [x] Chat Word Count — tiny "23w" indicator near send button when input > 10 words
+- [x] Video Duration Badge — formatted duration overlay on thumbnails in recent videos
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

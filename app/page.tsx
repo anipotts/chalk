@@ -502,6 +502,19 @@ export default function Home() {
                         </svg>
                       </div>
                     )}
+                    {(() => {
+                      try {
+                        const dur = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-duration-${video.id}`) || '0') : 0;
+                        if (dur <= 0) return null;
+                        const mins = Math.floor(dur / 60);
+                        const secs = Math.floor(dur % 60);
+                        return (
+                          <span className="absolute bottom-0.5 right-0.5 px-1 py-0 rounded text-[8px] font-mono font-medium bg-black/70 text-white/80">
+                            {mins}:{secs.toString().padStart(2, '0')}
+                          </span>
+                        );
+                      } catch { return null; }
+                    })()}
                   </div>
                   <div className="min-w-0 flex-1">
                     {video.title ? (

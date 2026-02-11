@@ -264,6 +264,32 @@ export function TranscriptPanel({
     return densities;
   }, [segments]);
 
+  // Topic boundary detection: vocabulary overlap between windows of segments
+  const topicBoundaries = useMemo(() => {
+    if (segments.length < 20) return new Map<number, string>();
+    const windowSize = 5;
+    const boundaries = new Map<number, string>();
+    for (let i = windowSize; i < segments.length - windowSize; i++) {
+      const before = segments.slice(i - windowSize, i).map((s) => s.text.toLowerCase()).join(' ');
+      const after = segments.slice(i, i + windowSize).map((s) => s.text.toLowerCase()).join(' ');
+      const beforeWords = new Set(before.replace(/[^a-z\s]/g, '').split(/\s+/).filter((w) => w.length > 4));
+      const afterWords = new Set(after.replace(/[^a-z\s]/g, '').split(/\s+/).filter((w) => w.length > 4));
+      if (beforeWords.size < 3 || afterWords.size < 3) continue;
+      const overlap = [...beforeWords].filter((w) => afterWords.has(w)).length;
+      const similarity = overlap / Math.min(beforeWords.size, afterWords.size);
+      if (similarity < 0.15) {
+        // Low overlap = topic shift. Extract top keyword from upcoming window.
+        const freq = new Map<string, number>();
+        for (const w of afterWords) freq.set(w, (freq.get(w) || 0) + 1);
+        const topWord = [...freq.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+        boundaries.set(i, topWord);
+        // Skip ahead to avoid multiple boundaries in a row
+        i += windowSize;
+      }
+    }
+    return boundaries;
+  }, [segments]);
+
   // Load notes from Supabase
   useEffect(() => {
     if (videoId) {
@@ -972,6 +998,7 @@ export function TranscriptPanel({
               const isCurrentMatch = search.trim() && i === searchMatchIndex;
               const highlightedText = search.trim() ? highlightMatch(seg.text, search) : highlightKeyTerms(seg.text, keyTerms, termMeta);
               const showSpeakerDivider = !search.trim() && speakerChanges.has(segIndex) && i > 0;
+              const topicLabel = !search.trim() && topicBoundaries.get(segIndex);
 
               // Chapter boundary inline summary card
               const chapterAtSeg = !search.trim() && chapters.find((ch) => ch.offset === seg.offset);
@@ -999,6 +1026,13 @@ export function TranscriptPanel({
                       <span className="text-[9px] text-slate-600 font-mono">{formatTimestamp(chapterAtSeg.offset)}</span>
                     </div>
                     <p className="text-[10px] text-slate-500 mt-0.5 line-clamp-1">{chapterAtSeg.label}</p>
+                  </div>
+                )}
+                {topicLabel && !showSpeakerDivider && i > 0 && (
+                  <div className="flex items-center gap-2 px-3 py-1 my-0.5">
+                    <div className="flex-1 h-px bg-sky-500/15" />
+                    <span className="text-[8px] font-medium text-sky-400/50 uppercase tracking-wider">{topicLabel}</span>
+                    <div className="flex-1 h-px bg-sky-500/15" />
                   </div>
                 )}
                 {showSpeakerDivider && (() => {
