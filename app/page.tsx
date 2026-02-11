@@ -457,6 +457,20 @@ export default function Home() {
             <kbd className="px-1 py-0 rounded bg-chalk-surface/40 border border-chalk-border/20 text-[8px] font-mono">Esc</kbd> to blur
           </p>
 
+          {/* Quick actions */}
+          <div className="flex items-center justify-center gap-3 mt-3">
+            {[
+              { href: '/history', label: 'History' },
+              { href: '/collections', label: 'Collections' },
+              { href: '/compare', label: 'Compare' },
+              { href: '/math', label: 'Math Viz' },
+            ].map((a) => (
+              <a key={a.href} href={a.href} className="text-[10px] text-slate-600 hover:text-slate-400 transition-colors">
+                {a.label}
+              </a>
+            ))}
+          </div>
+
           {/* Video preview card */}
           {preview && (
             <div className="mt-4 w-full max-w-xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-200">

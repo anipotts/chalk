@@ -1258,6 +1258,7 @@ export function TranscriptPanel({
                     {seg.duration && seg.duration > 0 && (
                       <span className="text-[8px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums">({Math.round(seg.duration)}s)</span>
                     )}
+                    <span className="text-[7px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums">{seg.text.split(/\s+/).filter(Boolean).length}w</span>
                     {segDensities.size > 0 && (() => {
                       const d = segDensities.get(segIndex) || 0;
                       if (d < 0.15) return null;

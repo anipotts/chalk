@@ -520,6 +520,12 @@ Status: RUNNING
 - [x] Home Page Study Tips — rotating daily tips based on day of week
 - [x] Build verification PASSED
 
+## Wave 68 (Completed)
+- [x] Transcript Total Duration — formatted video duration in header stats
+- [x] Chat Clear Confirmation — two-step confirm before clearing messages
+- [x] Home Page Video Count Badge — total count next to "Recent Videos"
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

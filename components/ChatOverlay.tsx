@@ -1307,17 +1307,34 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                       </>
                     );
                   })()}
-                  {/* Save/bookmark icon */}
+                  {/* Copy + Save icons */}
                   {msg.role === 'assistant' && msg.content && (
-                    <button
-                      onClick={() => toggleSave(msg.id)}
-                      className={`absolute top-1 right-1 p-0.5 rounded opacity-0 group-hover/msg:opacity-100 transition-opacity ${savedMsgIds.has(msg.id) ? '!opacity-100 text-yellow-400' : 'text-slate-600 hover:text-yellow-400'}`}
-                      title={savedMsgIds.has(msg.id) ? 'Unsave message' : 'Save message'}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-                        <path fillRule="evenodd" d="M11.986 3H12a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h.014A2.25 2.25 0 0 1 6.25 1h3.5a2.25 2.25 0 0 1 2.236 2ZM6.25 2.5a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clipRule="evenodd" />
-                      </svg>
-                    </button>
+                    <div className="absolute top-1 right-1 flex items-center gap-0.5">
+                      <button
+                        onClick={(e) => {
+                          navigator.clipboard.writeText(msg.content);
+                          const btn = e.currentTarget;
+                          btn.dataset.copied = 'true';
+                          setTimeout(() => { btn.dataset.copied = ''; }, 1200);
+                        }}
+                        className="p-0.5 rounded opacity-0 group-hover/msg:opacity-100 transition-opacity text-slate-600 hover:text-slate-300 data-[copied=true]:text-emerald-400"
+                        title="Copy message"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                          <path d="M5.5 3.5A1.5 1.5 0 0 1 7 2h2.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 1 .439 1.061V9.5A1.5 1.5 0 0 1 12 11V8.621a3 3 0 0 0-.879-2.121L9 4.379A3 3 0 0 0 6.879 3.5H5.5Z" />
+                          <path d="M4 5a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 4 14h5a1.5 1.5 0 0 0 1.5-1.5V8.621a1.5 1.5 0 0 0-.44-1.06L7.94 5.439A1.5 1.5 0 0 0 6.878 5H4Z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => toggleSave(msg.id)}
+                        className={`p-0.5 rounded opacity-0 group-hover/msg:opacity-100 transition-opacity ${savedMsgIds.has(msg.id) ? '!opacity-100 text-yellow-400' : 'text-slate-600 hover:text-yellow-400'}`}
+                        title={savedMsgIds.has(msg.id) ? 'Unsave message' : 'Save message'}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                          <path fillRule="evenodd" d="M11.986 3H12a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h.014A2.25 2.25 0 0 1 6.25 1h3.5a2.25 2.25 0 0 1 2.236 2ZM6.25 2.5a.75.75 0 0 0 0 1.5h3.5a.75.75 0 0 0 0-1.5h-3.5Z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
                   )}
                   {/* Context menu for assistant messages */}
                   {ctxMenu && ctxMenu.msgId === msg.id && msg.role === 'assistant' && (
