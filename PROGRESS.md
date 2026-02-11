@@ -466,6 +466,12 @@ Status: RUNNING
 - [x] Home Page Video Filter — search/filter recent videos by title keyword
 - [x] Build verification PASSED
 
+## Wave 59 (Completed)
+- [x] WPM Sparkline — SVG sparkline in transcript footer showing words-per-minute over time
+- [x] Chat Clipboard Export — "Copy" button copies entire conversation as markdown
+- [x] Video Card Delete — hover X button removes video from recent history
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

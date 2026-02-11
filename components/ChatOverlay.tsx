@@ -775,6 +775,21 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
                     </button>
                     <button
                       onClick={() => {
+                        const md = messages.map((m) => `**${m.role === 'user' ? 'You' : 'AI'}:** ${m.content}`).join('\n\n');
+                        navigator.clipboard.writeText(md);
+                      }}
+                      className="flex items-center gap-1 px-2 py-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors text-[10px]"
+                      aria-label="Copy chat"
+                      title="Copy conversation to clipboard"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                        <path d="M5.5 3.5A1.5 1.5 0 0 1 7 2h2.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 1 .439 1.061V12.5A1.5 1.5 0 0 1 12 14h-5a1.5 1.5 0 0 1-1.5-1.5v-9Z" />
+                        <path d="M3.5 5.75A.75.75 0 0 1 4.25 5h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 1 3.5 5.75ZM4.25 8a.75.75 0 0 0 0 1.5h.5a.75.75 0 0 0 0-1.5h-.5Z" />
+                      </svg>
+                      Copy
+                    </button>
+                    <button
+                      onClick={() => {
                         const title = videoTitle || 'Video Chat';
                         const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Chalk - ${title}</title>

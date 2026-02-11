@@ -549,7 +549,7 @@ export default function Home() {
                 <button
                   key={video.id}
                   onClick={() => handleRecentClick(video)}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-chalk-surface/30 border border-chalk-border/20 hover:bg-chalk-surface/50 hover:border-chalk-border/40 transition-all text-left relative overflow-hidden"
+                  className="group/card w-full flex items-center gap-3 px-4 py-2.5 rounded-xl bg-chalk-surface/30 border border-chalk-border/20 hover:bg-chalk-surface/50 hover:border-chalk-border/40 transition-all text-left relative overflow-hidden"
                 >
                   {/* Watch progress bar */}
                   {watchPct > 0 && (
@@ -670,6 +670,23 @@ export default function Home() {
                       })()}
                     </div>
                   </div>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const updated = recentVideos.filter((v) => v.id !== video.id);
+                      setRecentVideos(updated);
+                      localStorage.setItem(RECENT_VIDEOS_KEY, JSON.stringify(updated));
+                    }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); const updated = recentVideos.filter((v) => v.id !== video.id); setRecentVideos(updated); localStorage.setItem(RECENT_VIDEOS_KEY, JSON.stringify(updated)); } }}
+                    className="absolute top-1.5 right-1.5 opacity-0 group-hover/card:opacity-100 p-0.5 rounded text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                    title="Remove from history"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+                      <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
+                    </svg>
+                  </span>
                 </button>
               );
               })}

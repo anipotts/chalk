@@ -1343,6 +1343,37 @@ export function TranscriptPanel({
         </div>
       )}
 
+      {/* WPM sparkline */}
+      {segments.length > 20 && viewMode === 'transcript' && (() => {
+        const windowSec = 30;
+        const totalDur = segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0);
+        if (totalDur < 60) return null;
+        const buckets: number[] = [];
+        for (let t = 0; t < totalDur; t += windowSec) {
+          const words = segments
+            .filter((s) => s.offset >= t && s.offset < t + windowSec)
+            .reduce((sum, s) => sum + s.text.split(/\s+/).length, 0);
+          buckets.push(Math.round((words / windowSec) * 60));
+        }
+        if (buckets.length < 3) return null;
+        const max = Math.max(...buckets, 1);
+        const w = 200;
+        const h = 16;
+        const points = buckets.map((v, i) => `${(i / (buckets.length - 1)) * w},${h - (v / max) * h}`).join(' ');
+        const currentBucket = Math.min(Math.floor(currentTime / windowSec), buckets.length - 1);
+        const curX = (currentBucket / (buckets.length - 1)) * w;
+        return (
+          <div className="px-3 py-1 border-t border-chalk-border/10 flex items-center gap-2">
+            <span className="text-[8px] text-slate-700 shrink-0">WPM</span>
+            <svg viewBox={`0 0 ${w} ${h}`} className="flex-1 h-4" preserveAspectRatio="none">
+              <polyline points={points} fill="none" stroke="rgba(99,102,241,0.3)" strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+              <line x1={curX} y1={0} x2={curX} y2={h} stroke="rgba(99,102,241,0.5)" strokeWidth="1" vectorEffect="non-scaling-stroke" />
+            </svg>
+            <span className="text-[8px] text-slate-700 tabular-nums shrink-0">{buckets[currentBucket] ?? 0}</span>
+          </div>
+        );
+      })()}
+
       {/* "Jump to current" pill when user scrolls away */}
       {userScrolled && activeIndex >= 0 && viewMode === 'transcript' && (
         <div className="absolute bottom-2 inset-x-0 flex justify-center pointer-events-none">
