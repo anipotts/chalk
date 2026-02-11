@@ -1361,6 +1361,22 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatMom = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatMom) {
+                            const uMsgs = JSON.parse(chatMom).filter((m: { role: string }) => m.role === 'user');
+                            if (uMsgs.length >= 6) {
+                              const half = Math.floor(uMsgs.length / 2);
+                              const firstHalf = half;
+                              const secondHalf = uMsgs.length - half;
+                              if (secondHalf > firstHalf) return <span className="text-[8px] text-green-400/40" title={`${firstHalf} questions in first half, ${secondHalf} in second half`}>&uarr; momentum</span>;
+                              if (firstHalf > secondHalf) return <span className="text-[8px] text-red-400/40" title={`${firstHalf} questions in first half, ${secondHalf} in second half`}>&darr; momentum</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

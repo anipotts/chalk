@@ -1650,6 +1650,14 @@ export function TranscriptPanel({
                     <span className="shrink-0 text-[7px] text-fuchsia-400/30" title="Contains concession or acknowledgment language">yet</span>
                   )}
                   {!compactMode && (() => {
+                    const words = seg.text.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+                    const freq: Record<string, number> = {};
+                    for (const w of words) freq[w] = (freq[w] || 0) + 1;
+                    const maxRep = Math.max(0, ...Object.values(freq));
+                    if (maxRep >= 3) return <span className="shrink-0 text-[7px] text-red-400/30 tabular-nums" title={`Word repeated ${maxRep} times in segment`}>&times;{maxRep}</span>;
+                    return null;
+                  })()}
+                  {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
                     if (i > 0 && hasQ(filtered[i - 1])) return null;

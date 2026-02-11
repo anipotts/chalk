@@ -976,6 +976,12 @@ Status: RUNNING
 - [x] Home Page Video Card Questions per Minute — "N q/min" badge showing question frequency relative to video duration
 - [x] Build verification PASSED
 
+### Wave 144 — Repetition emphasis detection, question count badge, conversation momentum
+- [x] Transcript Segment Emphasis Via Repetition Detection — "×N" indicator when a word (>3 chars) is repeated 3+ times in a segment
+- [x] Chat Message Question Count Badge — "N Qs" badge on user messages containing 2+ question marks
+- [x] Home Page Video Card Conversation Momentum — "↑ momentum" or "↓ momentum" showing whether questions accelerate or decelerate
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
