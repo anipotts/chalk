@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 126 (Completed)
+- [x] Transcript Segment Enumeration Detection — "1." icon on segments with enumeration patterns (first, second, step 1, etc.)
+- [x] Chat Message Caveat Detection Badge — "caveat" badge on AI responses with disclaimers ("keep in mind", "note that", etc.)
+- [x] Home Page Video Card Bookmark Density — "N bm/min" badge showing bookmark frequency across video span
+- [x] Build verification PASSED
+
 ## Wave 125 (Completed)
 - [x] Transcript Segment Repetition Detection — repeat arrow icon on segments echoing phrases from recent segments (3+ word match)
 - [x] Chat Message Summary Detection Badge — "summary" badge on AI responses with summarization patterns

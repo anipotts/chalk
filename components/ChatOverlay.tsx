@@ -1524,6 +1524,12 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                           );
                           return null;
                         })()}
+                        {msg.role === 'assistant' && msg.content.length > 60 && (() => {
+                          if (/\b(keep in mind|note that|be aware|important to note|one caveat|disclaimer|worth noting|bear in mind)\b/i.test(msg.content)) return (
+                            <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[7px] font-medium bg-yellow-500/10 text-yellow-400/50 border border-yellow-500/10" title="Contains a caveat or disclaimer">caveat</span>
+                          );
+                          return null;
+                        })()}
                         {msg.role === 'assistant' && msg.content.length > 80 && (() => {
                           if (/^(\d+\.|[-*•])\s/m.test(msg.content)) return (
                             <span className="inline-block ml-1 mt-0.5 px-1 py-px rounded text-[7px] font-medium bg-amber-500/10 text-amber-400/50 border border-amber-500/10" title="Contains a structured list">list</span>

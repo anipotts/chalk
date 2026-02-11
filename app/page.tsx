@@ -1129,6 +1129,23 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const bm = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-bookmarks-${video.id}`) : null;
+                          if (bm) {
+                            const bookmarks: { time: number }[] = JSON.parse(bm);
+                            if (bookmarks.length >= 3) {
+                              const times = bookmarks.map((b) => b.time).filter(Boolean).sort((a, b) => a - b);
+                              const span = times.length >= 2 ? (times[times.length - 1] - times[0]) / 60 : 0;
+                              if (span >= 1) {
+                                const density = (bookmarks.length / span).toFixed(1);
+                                return <span className="text-[8px] text-orange-400/40 tabular-nums" title={`${bookmarks.length} bookmarks across ${Math.round(span)}min — ${density}/min density`}>{density} bm/min</span>;
+                              }
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);
