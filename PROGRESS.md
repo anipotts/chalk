@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 207 — Advisory language detection, illustrative badge, response growth ratio
+- [x] TranscriptPanel: advisory language detection — "▸" in amber-400/30, regex for you should/I recommend/I suggest/my advice/it's best to/try to/aim for/consider doing/make it a habit/pro tip
+- [x] ChatOverlay: illustrative badge — "illustrative" in purple-500/10, detects for instance/to illustrate/picture this/as an example/like when/such as/take for example/here's a case/imagine if/say for instance
+- [x] Home page: response growth ratio badge — "Xx growth" in amber-400/40, variable chatRGR, shows ratio of last AI response length to first when ≥1.5x and ≥4 messages
+- [x] Build verification PASSED
+
 ### Wave 206 — Definitive language detection, conversational badge, words per exchange
 - [x] TranscriptPanel: definitive language detection — "■" in cyan-400/30, regex for always/never/every time/without exception/invariably/constantly/guaranteed/100 percent/no doubt
 - [x] ChatOverlay: conversational badge — "conversational" in teal-500/10, detects by the way/speaking of/that reminds me/on that note/interestingly/funny you mention/come to think/you know what/fun fact/side note
