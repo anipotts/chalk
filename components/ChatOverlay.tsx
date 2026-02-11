@@ -345,6 +345,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
   });
   const [expandedMsgs, setExpandedMsgs] = useState<Set<string>>(new Set());
   const [inputSuggestionIdx, setInputSuggestionIdx] = useState(-1);
+  const [suggestionsHidden, setSuggestionsHidden] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -1649,7 +1650,7 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                   )}
                 </div>
                 {/* Autocomplete suggestions from past questions */}
-                {inputSuggestions.length > 0 && (
+                {inputSuggestions.length > 0 && !suggestionsHidden && (
                   <div className="flex flex-col border-b border-white/[0.06]">
                     {inputSuggestions.map((sug, i) => (
                       <button
@@ -1669,6 +1670,7 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                   onChange={(e) => {
                     setInput(e.target.value);
                     setInputSuggestionIdx(-1);
+                    setSuggestionsHidden(false);
                     // Auto-resize
                     e.target.style.height = 'auto';
                     e.target.style.height = Math.min(e.target.scrollHeight, 96) + 'px';
@@ -1694,6 +1696,7 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                       }
                       if (e.key === 'Escape') {
                         setInputSuggestionIdx(-1);
+                        setSuggestionsHidden(true);
                         return;
                       }
                     }

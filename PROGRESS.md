@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 81 (Completed)
+- [x] Transcript Segment Double-Click to Ask — double-click segment to ask AI about it
+- [x] Chat Input Autocomplete Dismiss — Escape hides autocomplete suggestions
+- [x] Home Page Video Card Ripple — active:scale-[0.98] press feedback on cards
+- [x] Build verification PASSED
+
 ## Wave 80 (Completed)
 - [x] Transcript Segment Hover Time Tooltip — show "Xm Xs into video" on segment hover
 - [x] Chat Longest Response Badge — show max word count badge in chat header

@@ -1389,6 +1389,7 @@ export function TranscriptPanel({
                   )}
                   <button
                     onClick={() => onSeek(seg.offset)}
+                    onDoubleClick={(e) => { e.preventDefault(); if (onAskAbout) onAskAbout(seg.offset, seg.text); }}
                     onMouseDown={(e) => {
                       const btn = e.currentTarget;
                       const timer = setTimeout(() => {
