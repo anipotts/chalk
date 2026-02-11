@@ -1480,6 +1480,21 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                   </button>
                 </motion.div>
               )}
+              {/* Conversation stats summary */}
+              {messages.length >= 3 && !isStreaming && (() => {
+                const userCount = messages.filter((m) => m.role === 'user').length;
+                const aiCount = messages.filter((m) => m.role === 'assistant' && m.content).length;
+                const totalWords = messages.filter((m) => m.role === 'assistant').reduce((sum, m) => sum + m.content.split(/\s+/).filter(Boolean).length, 0);
+                return (
+                  <div className="flex items-center justify-center gap-3 py-1.5 text-[9px] text-slate-600">
+                    <span>{userCount} question{userCount !== 1 ? 's' : ''}</span>
+                    <span className="text-slate-700">&middot;</span>
+                    <span>{aiCount} answer{aiCount !== 1 ? 's' : ''}</span>
+                    <span className="text-slate-700">&middot;</span>
+                    <span>{totalWords.toLocaleString()} words</span>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Scroll-to-bottom pill */}

@@ -722,6 +722,12 @@ export default function Home() {
                         </svg>
                       </div>
                     )}
+                    {watchPct > 0 && watchPct <= 0.9 && (
+                      <svg className="absolute -top-1 -left-1 w-4 h-4" viewBox="0 0 20 20">
+                        <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" strokeWidth="2" className="text-white/10" />
+                        <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" strokeWidth="2" className="text-chalk-accent" strokeDasharray={`${watchPct * 50.27} 50.27`} strokeLinecap="round" transform="rotate(-90 10 10)" />
+                      </svg>
+                    )}
                     {(() => {
                       try {
                         const dur = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-duration-${video.id}`) || '0') : 0;

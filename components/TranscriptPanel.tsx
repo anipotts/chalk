@@ -123,6 +123,7 @@ export function TranscriptPanel({
     return (localStorage.getItem('chalk-transcript-font') as 'sm' | 'md' | 'lg') || 'sm';
   });
   const fontSizeClass = fontSize === 'lg' ? 'text-sm' : fontSize === 'md' ? 'text-xs' : 'text-[11px]';
+  const [compactMode, setCompactMode] = useState(false);
 
   // Load starred segments from localStorage
   useEffect(() => {
@@ -670,6 +671,15 @@ export function TranscriptPanel({
                 title={`Font size: ${fontSize === 'sm' ? 'Small' : fontSize === 'md' ? 'Medium' : 'Large'}`}
               >
                 A{fontSize === 'sm' ? '-' : fontSize === 'md' ? '' : '+'}
+              </button>
+            )}
+            {viewMode === 'transcript' && !paragraphMode && (
+              <button
+                onClick={() => setCompactMode((v) => !v)}
+                className={`px-1 py-0.5 rounded text-[10px] font-medium transition-colors ${compactMode ? 'text-chalk-accent bg-chalk-accent/15' : 'text-slate-500 hover:text-slate-400'}`}
+                title={compactMode ? 'Normal spacing' : 'Compact mode'}
+              >
+                {compactMode ? '|||' : '| |'}
               </button>
             )}
             {lang && isComplete && (
@@ -1249,7 +1259,7 @@ export function TranscriptPanel({
                     if (isActive) (activeRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
                     if (search.trim() && el) matchRefs.current.set(i, el);
                   }}
-                  className={`group/seg w-full flex items-start gap-2 px-3 py-2 transition-all hover:bg-chalk-surface/60 animate-in fade-in duration-300 ${difficultyHeat} ${
+                  className={`group/seg w-full flex items-start ${compactMode ? 'gap-1 px-2 py-0.5' : 'gap-2 px-3 py-2'} transition-all hover:bg-chalk-surface/60 animate-in fade-in duration-300 ${difficultyHeat} ${
                     isCurrentMatch
                       ? 'bg-chalk-accent/20 border-l-2 border-l-chalk-accent ring-1 ring-chalk-accent/30'
                       : isActive
@@ -1260,7 +1270,7 @@ export function TranscriptPanel({
                   }`}
                 >
                   {/* Key moment indicator dot */}
-                  {(() => {
+                  {!compactMode && (() => {
                     const words = seg.text.split(/\s+/).length;
                     const hasQuestion = seg.text.includes('?');
                     const hasCue = /\b(important|key|remember|note|crucial|essential|main|summary|conclusion|therefore|however|but)\b/i.test(seg.text);
@@ -1294,11 +1304,11 @@ export function TranscriptPanel({
                     >
                       {formatTimestamp(seg.offset)}
                     </button>
-                    {seg.duration && seg.duration > 0 && (
+                    {!compactMode && seg.duration && seg.duration > 0 && (
                       <span className="text-[8px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums">({Math.round(seg.duration)}s)</span>
                     )}
-                    <span className="text-[7px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums">{seg.text.split(/\s+/).filter(Boolean).length}w</span>
-                    {segDensities.size > 0 && (() => {
+                    {!compactMode && <span className="text-[7px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums">{seg.text.split(/\s+/).filter(Boolean).length}w</span>}
+                    {!compactMode && segDensities.size > 0 && (() => {
                       const d = segDensities.get(segIndex) || 0;
                       if (d < 0.15) return null;
                       return (
@@ -1308,10 +1318,10 @@ export function TranscriptPanel({
                       );
                     })()}
                   </div>
-                  {seg.text.trim().endsWith('?') && (
+                  {!compactMode && seg.text.trim().endsWith('?') && (
                     <span className="shrink-0 text-[8px] font-bold text-purple-400/50 w-3 text-center" title="Question asked">?</span>
                   )}
-                  {complexityLabel && (
+                  {!compactMode && complexityLabel && (
                     <span className={`shrink-0 text-[7px] font-bold uppercase tracking-wider px-1 py-0 rounded ${
                       complexityLabel === 'complex' ? 'bg-rose-500/10 text-rose-400/60' : 'bg-amber-500/10 text-amber-400/50'
                     }`} title={`${longWordCount} long words (${Math.round(longWordRatio * 100)}%)`}>

@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 74 (Completed)
+- [x] Transcript Compact Mode — toggle compact view with reduced spacing, hidden decorations (dots, stats, complexity)
+- [x] Chat Conversation Stats Summary — inline stats showing question/answer count and total word count
+- [x] Home Page Video Progress Ring — SVG circular progress indicator on video card thumbnails
+- [x] Build verification PASSED
+
 ## Wave 73 (Completed)
 - [x] Transcript Font Size Toggle — A-/A/A+ button to cycle small/medium/large text, persisted in localStorage
 - [x] Chat Model Badge — shows which AI model (Opus/Sonnet/Haiku) generated each response
