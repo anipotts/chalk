@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 211 — Hypothetical language detection, enumerative badge, total exchange count
+- [x] TranscriptPanel: hypothetical language detection — "?" in amber-400/30, regex for what if/imagine/suppose/hypothetically/in theory/could potentially/might possibly/let's say/assuming/picture this
+- [x] ChatOverlay: enumerative badge — "enumerative" in amber-500/10, detects first/second/third/number one/number two/to begin with/for starters/additionally/furthermore/in addition
+- [x] Home page video card: total exchange count — "X exchanges" in amber-400/40, variable chatTEC
+- [x] Build verification PASSED
+
 ### Wave 210 — Emphatic language detection, directive badge, last response length
 - [x] TranscriptPanel: emphatic language detection — "!" in red-400/30, regex for absolutely/incredible/amazing/unbelievable/mind-blowing/extraordinary/phenomenal/spectacular/outstanding/remarkable
 - [x] ChatOverlay: directive badge — "directive" in rose-500/10, detects make sure you/don't forget to/always remember/keep in mind/pay attention to/focus on/prioritize/start with/begin by/the key is

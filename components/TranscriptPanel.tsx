@@ -1855,6 +1855,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(absolutely|incredible|amazing|unbelievable|mind-blowing|extraordinary|phenomenal|spectacular|outstanding|remarkable)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-red-400/30" title="Contains emphatic language">!</span>
                   )}
+                  {!compactMode && /\b(what if|imagine|suppose|hypothetically|in theory|could potentially|might possibly|let's say|assuming|picture this)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-amber-400/30" title="Contains hypothetical language">?</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
