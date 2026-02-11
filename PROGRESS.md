@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 225 — Imperative language detection, prescriptive badge, kurtosis words per exchange
+- [x] TranscriptPanel: imperative language detection — "!" in lime-400/30, regex for you must/you need to/it is essential/it is imperative/make sure to/be sure to/don't forget to/always remember/never forget/you should always
+- [x] ChatOverlay: prescriptive badge — "prescriptive" in lime-500/10, detects I recommend/you should consider/the best approach/it would be wise/I suggest/it's advisable/the optimal strategy/you ought to/the preferred method/best practice is
+- [x] Home page: kurtosis of words per exchange — "X krt" in lime-400/40, excess kurtosis (m4/sd^4 - 3) across ≥4 exchanges, shown when |kurt| ≥ 1
+- [x] Build verification PASSED
+
 ### Wave 224 — Deliberative language detection, inferential badge, skewness words per exchange
 - [x] TranscriptPanel: deliberative language detection — "⚖" in fuchsia-400/30, regex for after careful thought/upon deliberation/having considered/weighing the options/on reflection/after much thought/with due consideration/taking everything into account/all things considered/on second thought
 - [x] ChatOverlay: inferential badge — "inferential" in fuchsia-500/10, detects we can infer/it follows that/this implies/from this we gather/the evidence suggests/it can be deduced/logically speaking/by extension/it stands to reason/drawing from this

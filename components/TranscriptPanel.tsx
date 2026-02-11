@@ -1897,6 +1897,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(after careful thought|upon deliberation|having considered|weighing the options|on reflection|after much thought|with due consideration|taking everything into account|all things considered|on second thought)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-fuchsia-400/30" title="Contains deliberative language">&#9878;</span>
                   )}
+                  {!compactMode && /\b(you must|you need to|it is essential|it is imperative|make sure to|be sure to|don't forget to|always remember|never forget|you should always)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-lime-400/30" title="Contains imperative language">!</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

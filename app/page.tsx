@@ -1600,6 +1600,33 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatKRE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatKRE) {
+                            const allKRE: { role: string; content?: string }[] = JSON.parse(chatKRE);
+                            const exSzKR: number[] = [];
+                            for (let i = 0; i < allKRE.length - 1; i++) {
+                              if (allKRE[i].role === 'user' && allKRE[i + 1]?.role === 'assistant') {
+                                const uw = (allKRE[i].content || '').split(/\s+/).filter(Boolean).length;
+                                const aw = (allKRE[i + 1].content || '').split(/\s+/).filter(Boolean).length;
+                                exSzKR.push(uw + aw);
+                              }
+                            }
+                            if (exSzKR.length >= 4) {
+                              const mean = exSzKR.reduce((a, b) => a + b, 0) / exSzKR.length;
+                              const variance = exSzKR.reduce((a, b) => a + (b - mean) ** 2, 0) / exSzKR.length;
+                              const sd = Math.sqrt(variance);
+                              if (sd > 0) {
+                                const m4 = exSzKR.reduce((a, b) => a + ((b - mean) / sd) ** 4, 0) / exSzKR.length;
+                                const kurt = Math.round((m4 - 3) * 10) / 10;
+                                if (Math.abs(kurt) >= 1) return <span className="text-[8px] text-lime-400/40 tabular-nums" title={`Excess kurtosis: ${kurt} across ${exSzKR.length} exchanges`}>{kurt} krt</span>;
+                              }
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatSKE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatSKE) {
                             const allSKE: { role: string; content?: string }[] = JSON.parse(chatSKE);
