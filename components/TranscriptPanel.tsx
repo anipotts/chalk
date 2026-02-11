@@ -1891,6 +1891,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(as a side note|parenthetically|by the way|incidentally|on a related note|as an aside|speaking of which|it's worth noting|tangentially|side note)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains parenthetical language">( )</span>
                   )}
+                  {!compactMode && /\b(that is|in other words|namely|i\.e\.|e\.g\.|for instance|for example|such as|to illustrate|to wit)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-violet-400/30" title="Contains appositional language">&#8776;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

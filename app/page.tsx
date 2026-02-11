@@ -1600,6 +1600,31 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatCVE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatCVE) {
+                            const allCVE: { role: string; content?: string }[] = JSON.parse(chatCVE);
+                            const exSzCV: number[] = [];
+                            for (let i = 0; i < allCVE.length - 1; i++) {
+                              if (allCVE[i].role === 'user' && allCVE[i + 1]?.role === 'assistant') {
+                                const uw = (allCVE[i].content || '').split(/\s+/).filter(Boolean).length;
+                                const aw = (allCVE[i + 1].content || '').split(/\s+/).filter(Boolean).length;
+                                exSzCV.push(uw + aw);
+                              }
+                            }
+                            if (exSzCV.length >= 3) {
+                              const mean = exSzCV.reduce((a, b) => a + b, 0) / exSzCV.length;
+                              if (mean > 0) {
+                                const variance = exSzCV.reduce((a, b) => a + (b - mean) ** 2, 0) / exSzCV.length;
+                                const cv = Math.round((Math.sqrt(variance) / mean) * 100);
+                                if (cv >= 10) return <span className="text-[8px] text-violet-400/40 tabular-nums" title={`Coefficient of variation: ${cv}% across ${exSzCV.length} exchanges`}>{cv}% CV</span>;
+                              }
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatIQE = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatIQE) {
                             const allIQE: { role: string; content?: string }[] = JSON.parse(chatIQE);

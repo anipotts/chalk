@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 223 — Appositional language detection, evaluative badge, CV words per exchange
+- [x] TranscriptPanel: appositional language detection — "≈" in violet-400/30, regex for that is/in other words/namely/i.e./e.g./for instance/for example/such as/to illustrate/to wit
+- [x] ChatOverlay: evaluative badge — "evaluative" in violet-500/10, detects in my assessment/upon evaluation/after weighing/on balance/when assessed/judging by/by any measure/from a critical standpoint/objectively speaking/upon reflection
+- [x] Home page: CV words per exchange badge — "X% CV" in violet-400/40, computes coefficient of variation of exchange sizes across ≥3 exchanges (variable chatCVE)
+- [x] Build verification PASSED
+
 ### Wave 222 — Parenthetical language detection, speculative badge, IQR words per exchange
 - [x] TranscriptPanel: parenthetical language detection — "( )" in sky-400/30, regex for as a side note/parenthetically/by the way/incidentally/on a related note/as an aside/speaking of which/it's worth noting/tangentially/side note
 - [x] ChatOverlay: speculative badge — "speculative" in sky-500/10, detects it's possible that/one could argue/perhaps it's the case/it might be that/speculatively/there's reason to think/it's conceivable/one might speculate/there's a chance/it's plausible
