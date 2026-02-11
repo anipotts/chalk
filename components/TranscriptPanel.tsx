@@ -1735,6 +1735,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(in summary|to sum up|overall|all in all|in conclusion|to summarize|in short)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-sky-400/30" title="Contains summarization language">&#x03A3;</span>
                   )}
+                  {!compactMode && /\b[A-Z]{3,}\b/.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains capitalized emphasis">CAP</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

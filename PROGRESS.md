@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 171 — Capitalization emphasis detection, enumeration badge, response vocabulary
+- [x] Transcript Segment Emphasis via Capitalization Detection — "CAP" indicator when segment contains ALL CAPS words (3+ letters)
+- [x] Chat Message Enumeration Badge — "enumerates" badge on AI messages containing enumeration language (first, second, third, firstly, lastly, moreover)
+- [x] Home Page Video Card Response Vocabulary — "X vocab" badge showing unique word count in AI responses
+- [x] Build verification PASSED
+
 ### Wave 170 — Summarization language detection, qualification badge, question complexity
 - [x] Transcript Segment Summarization Language Detection — "Σ" indicator when segment contains summarization language (in summary, to sum up, overall, all in all, in conclusion, to summarize)
 - [x] Chat Message Qualification Badge — "qualifies" badge on AI messages containing qualification language (to some extent, in certain cases, under specific conditions, depending on)

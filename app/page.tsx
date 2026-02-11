@@ -1642,6 +1642,18 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatRV = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatRV) {
+                            const allRV: { role: string; content?: string }[] = JSON.parse(chatRV);
+                            const aiWords = allRV.filter(m => m.role === 'assistant' && m.content).flatMap(m => m.content!.toLowerCase().split(/\s+/).filter(w => w.length >= 3));
+                            const uniqueVocab = new Set(aiWords).size;
+                            if (uniqueVocab >= 20) return <span className="text-[8px] text-teal-400/40 tabular-nums" title={`${uniqueVocab} unique words in AI responses`}>{uniqueVocab} vocab</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatQC = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatQC) {
                             const allQC: { role: string; content?: string }[] = JSON.parse(chatQC);
