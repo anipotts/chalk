@@ -1780,6 +1780,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(because|therefore|as a result|consequently|due to|leads to|caused by|so that)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-orange-400/30" title="Contains causal language">&#8756;</span>
                   )}
+                  {!compactMode && /\b(although|even though|despite|in spite of|nevertheless|nonetheless|granted|admittedly)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-slate-400/30" title="Contains concessive language">~</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;

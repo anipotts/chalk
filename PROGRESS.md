@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 186 — Concessive language detection, hypothetical badge, user question diversity
+- [x] TranscriptPanel: concessive language detection — "~" in slate-400/30, regex for although/even though/despite/nevertheless/nonetheless/granted/admittedly
+- [x] ChatOverlay: hypothetical badge — "hypothetical" in rose-500/10, detects imagine/suppose/what if/hypothetically/in theory/theoretically
+- [x] HomePage: user question diversity — "X unique q words" in violet-400/40, variable chatUQ
+- [x] Build verification PASSED
+
 ### Wave 185 — Causal language detection, comparative badge, median AI response words
 - [x] TranscriptPanel: causal language detection — "∴" in orange-400/30, regex for because/therefore/as a result/consequently/due to/leads to/caused by/so that
 - [x] ChatOverlay: comparative badge — "compares" in amber-500/10, detects compared to/versus/on the other hand/in contrast/whereas/differ from/similar to

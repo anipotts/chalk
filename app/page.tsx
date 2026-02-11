@@ -1600,6 +1600,21 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatUQ = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatUQ) {
+                            const allUQ: { role: string; content?: string }[] = JSON.parse(chatUQ);
+                            const userMsgsUQ = allUQ.filter(m => m.role === 'user' && m.content);
+                            if (userMsgsUQ.length >= 2) {
+                              const allWords = userMsgsUQ.flatMap(m => m.content!.toLowerCase().split(/\s+/).filter(w => w.length >= 3));
+                              const uniqueCount = new Set(allWords).size;
+                              if (uniqueCount >= 10) return <span className="text-[8px] text-violet-400/40 tabular-nums" title={`Unique question words: ${uniqueCount}`}>{uniqueCount} unique q words</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatMD = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatMD) {
                             const allMD: { role: string; content?: string }[] = JSON.parse(chatMD);
