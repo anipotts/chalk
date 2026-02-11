@@ -158,6 +158,27 @@ function fetchAndSaveTitle(videoId: string) {
     .catch(() => {});
 }
 
+const TOPIC_TAGS: [RegExp, string, string][] = [
+  [/\b(math|calculus|algebra|geometry|trig|equation|integral)\b/i, 'Math', 'text-blue-400 bg-blue-500/10 border-blue-500/20'],
+  [/\b(physic|quantum|relativity|newton|force|energy)\b/i, 'Physics', 'text-violet-400 bg-violet-500/10 border-violet-500/20'],
+  [/\b(chemistry|molecule|atom|reaction|element)\b/i, 'Chemistry', 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'],
+  [/\b(biology|cell|dna|evolution|organism|gene)\b/i, 'Biology', 'text-green-400 bg-green-500/10 border-green-500/20'],
+  [/\b(history|ancient|war|empire|revolution|century)\b/i, 'History', 'text-amber-400 bg-amber-500/10 border-amber-500/20'],
+  [/\b(code|program|javascript|python|develop|software|api|react|algorithm)\b/i, 'Coding', 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20'],
+  [/\b(music|song|guitar|piano|melody|rhythm)\b/i, 'Music', 'text-pink-400 bg-pink-500/10 border-pink-500/20'],
+  [/\b(cook|recipe|food|kitchen|bak)\b/i, 'Cooking', 'text-orange-400 bg-orange-500/10 border-orange-500/20'],
+  [/\b(business|market|invest|econom|startup|finance)\b/i, 'Business', 'text-teal-400 bg-teal-500/10 border-teal-500/20'],
+  [/\b(science|research|experiment|study|data)\b/i, 'Science', 'text-indigo-400 bg-indigo-500/10 border-indigo-500/20'],
+];
+
+function getTopicTag(title?: string): { label: string; className: string } | null {
+  if (!title) return null;
+  for (const [pattern, label, cls] of TOPIC_TAGS) {
+    if (pattern.test(title)) return { label, className: cls };
+  }
+  return null;
+}
+
 interface VideoPreview {
   id: string;
   title: string;
@@ -558,7 +579,14 @@ export default function Home() {
                   <div className="min-w-0 flex-1">
                     {video.title ? (
                       <>
-                        <span className="text-xs text-chalk-text truncate block">{video.title}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-chalk-text truncate">{video.title}</span>
+                          {(() => {
+                            const tag = getTopicTag(video.title);
+                            if (!tag) return null;
+                            return <span className={`shrink-0 text-[8px] font-medium px-1 py-0 rounded border ${tag.className}`}>{tag.label}</span>;
+                          })()}
+                        </div>
                         <span className="text-[10px] text-slate-500 truncate block">{video.url}</span>
                       </>
                     ) : (

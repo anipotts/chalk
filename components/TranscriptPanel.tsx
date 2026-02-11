@@ -159,6 +159,7 @@ export function TranscriptPanel({
   const matchRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const scrollTimeout = useRef<ReturnType<typeof setTimeout>>(undefined);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [selCopied, setSelCopied] = useState(false);
 
   // Auto-generate chapters from segments
   const chapters = useMemo(() => generateChapters(segments), [segments]);
@@ -345,7 +346,7 @@ export function TranscriptPanel({
   }, [currentTime, notes, handleNotesChange]);
 
   // Text selection actions
-  const [selectionToolbar, setSelectionToolbar] = useState<{ text: string; x: number; y: number } | null>(null);
+  const [selectionToolbar, setSelectionToolbar] = useState<{ text: string; x: number; y: number; segOffset?: number } | null>(null);
 
   const handleMouseUp = useCallback(() => {
     const sel = window.getSelection();
@@ -354,11 +355,15 @@ export function TranscriptPanel({
       const range = sel!.getRangeAt(0);
       const rect = range.getBoundingClientRect();
       const containerRect = scrollRef.current.getBoundingClientRect();
+      const segEl = range.startContainer.parentElement?.closest('[data-seg-offset]') as HTMLElement | null;
+      const segOffset = segEl ? parseFloat(segEl.dataset.segOffset || '0') : undefined;
       setSelectionToolbar({
         text,
         x: rect.left + rect.width / 2 - containerRect.left,
         y: rect.top - containerRect.top - 8,
+        segOffset,
       });
+      setSelCopied(false);
     } else {
       setSelectionToolbar(null);
     }
@@ -842,6 +847,21 @@ export function TranscriptPanel({
           >
             Explain
           </button>
+          <div className="w-px h-3 bg-chalk-border/30" />
+          <button
+            onMouseDown={(e) => {
+              e.preventDefault();
+              const ts = selectionToolbar.segOffset != null ? formatTimestamp(selectionToolbar.segOffset) : '';
+              const prefix = ts ? `[${ts}] ` : '';
+              navigator.clipboard.writeText(`${prefix}${selectionToolbar.text}`);
+              setSelCopied(true);
+              setTimeout(() => { setSelectionToolbar(null); setSelCopied(false); }, 800);
+              window.getSelection()?.removeAllRanges();
+            }}
+            className="px-2 py-1 rounded-md text-[10px] font-medium text-slate-300 hover:text-chalk-text hover:bg-chalk-accent/15 transition-colors"
+          >
+            {selCopied ? 'Copied!' : 'Copy'}
+          </button>
         </div>
       )}
       <div className="relative h-full">
@@ -1094,6 +1114,7 @@ export function TranscriptPanel({
                 })()}
                 <div
                   key={`${seg.offset}-${i}`}
+                  data-seg-offset={seg.offset}
                   ref={(el) => {
                     if (isActive) (activeRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
                     if (search.trim() && el) matchRefs.current.set(i, el);

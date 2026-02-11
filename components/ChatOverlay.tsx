@@ -337,6 +337,7 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
   const abortRef = useRef<AbortController | null>(null);
   const prevTimeRef = useRef<number>(currentTime);
   const scrolledAtCountRef = useRef<number>(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
   // Max message content length for relative bars
   const maxContentLength = useMemo(() => {
@@ -427,6 +428,8 @@ export function ChatOverlay({ visible, segments, currentTime, videoId, videoTitl
       scrolledAtCountRef.current = messages.length;
     }
     setIsScrolledUp(scrolledUp);
+    const maxScroll = scrollHeight - clientHeight;
+    setScrollProgress(maxScroll > 0 ? scrollTop / maxScroll : 0);
   }, [isScrolledUp, messages.length]);
 
   const handleStop = useCallback(() => {
@@ -997,6 +1000,13 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     {messages.filter((m) => m.content.toLowerCase().includes(chatSearch.toLowerCase())).length} matches
                   </span>
                 )}
+              </div>
+            )}
+
+            {/* Scroll progress bar */}
+            {messages.length > 2 && scrollProgress > 0 && scrollProgress < 1 && (
+              <div className="h-[2px] bg-white/[0.03] shrink-0">
+                <div className="h-full bg-chalk-accent/30 transition-[width] duration-100" style={{ width: `${Math.round(scrollProgress * 100)}%` }} />
               </div>
             )}
 

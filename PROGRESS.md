@@ -454,6 +454,12 @@ Status: RUNNING
 - [x] Home Page Keyboard Shortcuts — Enter to focus URL input, Escape to blur
 - [x] Build verification PASSED
 
+## Wave 57 (Completed)
+- [x] Transcript Selection Copy — "Copy" button in selection toolbar with [M:SS] prefix
+- [x] Chat Scroll Progress Bar — 2px progress bar at top of chat messages area
+- [x] Video Card Topic Tags — keyword-based topic pill (Math, Coding, etc.) on home cards
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
