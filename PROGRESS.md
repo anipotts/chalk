@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 167 — Adversative connector detection, hedging badge, topic diversity
+- [x] Transcript Segment Adversative Connector Detection — "⊗" indicator when segment contains adversative language (however, nevertheless, on the contrary, nonetheless, despite)
+- [x] Chat Message Hedging Badge — "hedges" badge on AI messages containing hedging language (I think, in my opinion, it seems, arguably, I believe)
+- [x] Home Page Video Card Topic Diversity — "X topics" badge showing unique topic words across user questions
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

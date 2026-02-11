@@ -1615,6 +1615,18 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatTD = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatTD) {
+                            const allTD: { role: string; content?: string }[] = JSON.parse(chatTD);
+                            const userWords = allTD.filter(m => m.role === 'user' && m.content).flatMap(m => m.content!.toLowerCase().split(/\s+/).filter(w => w.length >= 5));
+                            const uniqueTopics = new Set(userWords).size;
+                            if (uniqueTopics >= 3) return <span className="text-[8px] text-lime-400/40 tabular-nums" title={`${uniqueTopics} unique topic words across questions`}>{uniqueTopics} topics</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatQF = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatQF) {
                             const allQF: { role: string; timestamp?: number }[] = JSON.parse(chatQF);

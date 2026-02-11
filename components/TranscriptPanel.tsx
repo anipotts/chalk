@@ -1723,6 +1723,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(furthermore|moreover|in addition|additionally|besides|what's more|on top of that|not only that)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-green-400/30" title="Contains additive connector language">+</span>
                   )}
+                  {!compactMode && /\b(however|nevertheless|on the contrary|nonetheless|despite|in spite of|even so|yet)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-red-400/30" title="Contains adversative connector language">&#x2297;</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
