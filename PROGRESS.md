@@ -1114,6 +1114,12 @@ Status: RUNNING
 - [x] Home Page Video Card Question Frequency — "Xq/min" badge showing questions per minute rate
 - [x] Build verification PASSED
 
+### Wave 177 — Contrast/contradiction detection, instructional badge, shortest question
+- [x] TranscriptPanel: contrast/contradiction detection — "vs" in pink-400/30, regex for but/however/although/whereas etc.
+- [x] ChatOverlay: instructional language badge — "instructs" in emerald-500/10, detects guidance like you should/try to/make sure
+- [x] HomePage: shortest question badge — "X min q-words" in slate-400/40, variable chatSQ
+- [x] Build verification PASSED
+
 ### Wave 176 — Numerical reference detection, conditional badge, max question length
 - [x] TranscriptPanel: numerical reference detection — "#" in blue-400/30, regex `/\b(\d{4}|\d+%|\$\d+|\d+\.\d+)\b/`
 - [x] ChatOverlay: conditional language badge — "conditional" in purple-500/10, detects if/unless/assuming language

@@ -1642,6 +1642,20 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const chatSQ = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
+                          if (chatSQ) {
+                            const allSQ: { role: string; content?: string }[] = JSON.parse(chatSQ);
+                            const userMsgsSQ = allSQ.filter(m => m.role === 'user' && m.content);
+                            if (userMsgsSQ.length >= 2) {
+                              const minWords = Math.min(...userMsgsSQ.map(m => m.content!.split(/\s+/).filter(Boolean).length));
+                              return <span className="text-[8px] text-slate-400/40 tabular-nums" title={`Shortest question: ${minWords} words`}>{minWords} min q-words</span>;
+                            }
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chatMQ = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chatMQ) {
                             const allMQ: { role: string; content?: string }[] = JSON.parse(chatMQ);
