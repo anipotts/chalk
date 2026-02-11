@@ -1036,6 +1036,12 @@ Status: RUNNING
 - [x] Home Page Video Card Total Bookmarks — "N bm" badge showing total bookmark count for the video
 - [x] Build verification PASSED
 
+### Wave 154 — Humor detection, empathy badge, total stars
+- [x] Transcript Segment Humor/Levity Detection — "lol" indicator when segment contains humor (just kidding, joke, funny, hilarious)
+- [x] Chat Message Empathy Badge — "empathetic" badge on AI messages showing understanding (I understand, that makes sense, valid concern)
+- [x] Home Page Video Card Total Stars — "N stars" badge showing total starred segment count
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals
