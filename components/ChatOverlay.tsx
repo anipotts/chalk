@@ -1388,6 +1388,8 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                 const searchActive = chatSearch.trim().length > 0;
                 const matchesSearch = searchActive && msg.content.toLowerCase().includes(chatSearch.toLowerCase());
                 const milestone = [5, 10, 20, 50, 100].includes(i + 1) ? i + 1 : 0;
+                const turnNum = msg.role === 'user' ? messages.slice(0, i + 1).filter((m) => m.role === 'user').length : 0;
+                const showDepth = turnNum > 0 && turnNum % 5 === 0;
                 return (
                 <div
                   key={msg.id}
@@ -1401,6 +1403,13 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                 >
                   {milestone > 0 && (
                     <p className="text-center text-[8px] text-slate-600 py-1">{milestone} messages</p>
+                  )}
+                  {showDepth && (
+                    <div className="flex items-center gap-1.5 px-2 py-0.5">
+                      <div className="flex-1 h-px bg-slate-700/20" />
+                      <span className="text-[7px] text-slate-700 tabular-nums">Turn {turnNum}</span>
+                      <div className="flex-1 h-px bg-slate-700/20" />
+                    </div>
                   )}
                   {searchActive && matchesSearch && (
                     <div className="absolute left-0 w-0.5 h-full bg-chalk-accent/50 rounded-full" />

@@ -1523,7 +1523,17 @@ export function TranscriptPanel({
                     </svg>
                   </button>
                   {starred.has(seg.offset) && segNotes[seg.offset] && editingSegNote !== seg.offset && (
-                    <span className="text-[8px] text-yellow-400/50 truncate max-w-[60px] shrink-0">{segNotes[seg.offset]}</span>
+                    <span
+                      className="text-[8px] text-yellow-400/50 truncate max-w-[60px] shrink-0 cursor-pointer hover:text-yellow-400/80"
+                      onClick={(e) => { e.stopPropagation(); setEditingSegNote(seg.offset); }}
+                      title="Click to edit note"
+                    >{segNotes[seg.offset]}</span>
+                  )}
+                  {starred.has(seg.offset) && !segNotes[seg.offset] && editingSegNote !== seg.offset && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditingSegNote(seg.offset); }}
+                      className="opacity-0 group-hover/seg:opacity-100 text-[7px] text-yellow-500/40 hover:text-yellow-400/70 shrink-0 transition-opacity"
+                    >+note</button>
                   )}
                   {editingSegNote === seg.offset && (
                     <input

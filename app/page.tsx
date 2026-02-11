@@ -354,7 +354,7 @@ export default function Home() {
           }
         `}</style>
         <div className="text-center max-w-2xl mx-auto relative z-10">
-          <h1 className="text-4xl sm:text-5xl font-bold text-chalk-text mb-3 tracking-tight">
+          <h1 className="text-4xl sm:text-5xl font-bold text-chalk-text mb-3 tracking-tight shimmer-text">
             Chalk
           </h1>
           <p className="text-lg text-slate-400 mb-6 max-w-md mx-auto leading-relaxed">

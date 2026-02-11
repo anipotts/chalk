@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 100 (Completed) -- MILESTONE!
+- [x] Transcript Bookmark Quick Notes — inline "+note" button and click-to-edit on starred segments
+- [x] Chat Thread Depth Indicator — "Turn N" dividers every 5 user questions
+- [x] Home Page Shimmer Text Celebration — wave 100 shimmer animation on Chalk heading
+- [x] Build verification PASSED
+
 ## Wave 99 (Completed)
 - [x] Transcript Segment Right-Click Context Menu — custom context menu with Copy, Timestamp Copy, Ask AI, Jump
 - [x] Chat Conversation Auto-Title Update — title updates to latest topic when questions diverge

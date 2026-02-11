@@ -80,6 +80,20 @@ body {
   80% { transform: translateX(4px); }
 }
 
+@keyframes shimmerText {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.shimmer-text {
+  background: linear-gradient(90deg, #94a3b8 0%, #e2e8f0 25%, #f8fafc 50%, #e2e8f0 75%, #94a3b8 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmerText 3s linear 1;
+}
+
 .typing-dot:nth-child(2) {
   animation-delay: 0.2s;
 }
