@@ -1513,6 +1513,18 @@ export default function Home() {
                       })()}
                       {(() => {
                         try {
+                          const progWc = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-progress-${video.id}`) || '0') : 0;
+                          const durWc = typeof window !== 'undefined' ? parseFloat(localStorage.getItem(`chalk-duration-${video.id}`) || '0') : 0;
+                          if (durWc > 60 && progWc > 0) {
+                            const ratio = progWc / durWc;
+                            if (ratio >= 0.9) return <span className="text-[8px] text-green-400/40" title={`Watched ${Math.round(ratio * 100)}% of video`}>completed</span>;
+                            if (ratio >= 0.5) return <span className="text-[8px] text-yellow-400/40" title={`Watched ${Math.round(ratio * 100)}% of video`}>halfway</span>;
+                          }
+                        } catch { /* ignore */ }
+                        return null;
+                      })()}
+                      {(() => {
+                        try {
                           const chat = typeof window !== 'undefined' ? localStorage.getItem(`chalk-video-chat-${video.id}`) : null;
                           if (chat) {
                             const msgs = JSON.parse(chat);

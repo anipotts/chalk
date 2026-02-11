@@ -1042,6 +1042,12 @@ Status: RUNNING
 - [x] Home Page Video Card Total Stars — "N stars" badge showing total starred segment count
 - [x] Build verification PASSED
 
+### Wave 155 — Call-to-action detection, uncertainty badge, watch completion status
+- [x] Transcript Segment Call-to-Action Detection — "cta" indicator when segment contains calls to action (subscribe, like this video, check out)
+- [x] Chat Message Uncertainty Badge — "uncertain" badge on AI messages expressing uncertainty (I'm not sure, hard to say, debatable)
+- [x] Home Page Video Card Watch Completion Status — "completed" or "halfway" badge based on watch progress
+- [x] Build verification PASSED
+
 ## Key Decisions
 - localStorage as fast cache, Supabase as durable store (dual-write)
 - Chapter markers: auto-generated from 2-5 min intervals

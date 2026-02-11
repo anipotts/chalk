@@ -1687,6 +1687,9 @@ export function TranscriptPanel({
                   {!compactMode && /\b(just kidding|joke|funny|hilarious|laughter|haha|humor|comedy|punchline|lighten up)\b/i.test(seg.text) && (
                     <span className="shrink-0 text-[7px] text-yellow-400/30" title="Contains humor or lighthearted language">lol</span>
                   )}
+                  {!compactMode && /\b(subscribe|like this video|hit the bell|leave a comment|share this|check out|click the link|visit our|follow us)\b/i.test(seg.text) && (
+                    <span className="shrink-0 text-[7px] text-red-400/30" title="Contains a call to action">cta</span>
+                  )}
                   {!compactMode && (() => {
                     const hasQ = (s: { text: string }) => /\?/.test(s.text);
                     if (!hasQ(seg)) return null;
