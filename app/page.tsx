@@ -201,6 +201,7 @@ export default function Home() {
   const [dailyGoal] = useState(() => getDailyGoal());
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [animatedCount, setAnimatedCount] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [lastSessionAgo, setLastSessionAgo] = useState<string | null>(null);
   const [totalWordsLearned, setTotalWordsLearned] = useState(0);
@@ -240,6 +241,23 @@ export default function Home() {
     const interval = setInterval(() => setSessionSeconds((s) => s + 1), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Animate video count from 0 to actual count on load
+  useEffect(() => {
+    const target = recentVideos.length;
+    if (target === 0) { setAnimatedCount(0); return; }
+    let frame: number;
+    const duration = 400; // ms
+    const start = performance.now();
+    const step = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      setAnimatedCount(Math.round(eased * target));
+      if (progress < 1) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [recentVideos.length]);
 
   // Rotate study tips every 10 seconds
   useEffect(() => {
@@ -624,7 +642,7 @@ export default function Home() {
             <div className="flex items-center justify-center gap-2 mb-3">
               <h3 className="text-xs font-medium text-slate-500 uppercase tracking-wider">
                 Recent Videos
-                <span className="ml-1 text-[9px] text-slate-600 font-normal normal-case">{recentVideos.length}</span>
+                <span className="ml-1 text-[9px] text-slate-600 font-normal normal-case tabular-nums">{animatedCount}</span>
               </h3>
               {recentVideos.length > 3 && (
                 <>

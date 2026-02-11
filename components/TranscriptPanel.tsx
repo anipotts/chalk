@@ -1176,7 +1176,24 @@ export function TranscriptPanel({
               className="flex-1 w-full resize-none bg-chalk-bg/40 border border-chalk-border/20 rounded-lg px-3 py-2 text-xs text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-chalk-accent/30 focus:border-transparent leading-relaxed"
             />
             {notes.trim() && (
-              <p className="text-[9px] text-slate-700 text-right tabular-nums">{notes.split(/\s+/).filter(Boolean).length} words · {notes.length} chars</p>
+              <div className="flex items-center justify-end gap-2">
+                <p className="text-[9px] text-slate-700 tabular-nums">{notes.split(/\s+/).filter(Boolean).length} words · {notes.length} chars</p>
+                <button
+                  onClick={() => {
+                    const blob = new Blob([notes], { type: 'text/plain' });
+                    const u = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = u;
+                    a.download = `notes${videoTitle ? '-' + videoTitle.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30) : ''}.txt`;
+                    a.click();
+                    URL.revokeObjectURL(u);
+                  }}
+                  className="text-[9px] text-slate-600 hover:text-slate-400 transition-colors"
+                  title="Download notes as .txt"
+                >
+                  Export
+                </button>
+              </div>
             )}
           </div>
         ) : viewMode === 'chapters' && chapters.length > 0 ? (

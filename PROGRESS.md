@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 97 (Completed)
+- [x] Transcript Notes Export Button — download notes as .txt file
+- [x] Chat Conversation Word Cloud Badge — show most frequently used word in stats
+- [x] Home Page Animate Video Count on Load — smooth count-up animation with ease-out cubic
+- [x] Build verification PASSED
+
 ## Wave 96 (Completed)
 - [x] Transcript View Tab Count Badges — show segment/chapter counts and notes indicator per tab
 - [x] Chat Quick Clear Input — X button to clear textarea input

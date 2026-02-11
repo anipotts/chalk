@@ -1605,6 +1605,16 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                       if (ups + downs === 0) return null;
                       return (<><span className="text-slate-700">&middot;</span><span>{ups > 0 && `${ups}\u2191`}{ups > 0 && downs > 0 && ' '}{downs > 0 && `${downs}\u2193`}</span></>);
                     })()}
+                    {messages.length >= 4 && (() => {
+                      const stops = new Set(['the','a','an','and','or','but','in','on','at','to','for','of','with','by','from','is','it','this','that','was','are','be','have','has','had','not','you','your','can','will','do','does','would','could','should','what','how','why','when','where','about','just','than','then','also','very','more','some','only','into','been','its','they','their','them','which','were','there','these','those','other','over','like','much','such','make','each','well','most','out','up','no']);
+                      const allText = messages.map((m) => m.content.toLowerCase()).join(' ');
+                      const words = allText.replace(/[^a-z\s]/g, '').split(/\s+/).filter((w) => w.length > 3 && !stops.has(w));
+                      const freq = new Map<string, number>();
+                      for (const w of words) freq.set(w, (freq.get(w) || 0) + 1);
+                      const top = [...freq.entries()].sort((a, b) => b[1] - a[1])[0];
+                      if (!top || top[1] < 3) return null;
+                      return <><span className="text-slate-700">&middot;</span><span title="Most used word">#{top[0]}</span></>;
+                    })()}
                   </div>
                 );
               })()}
