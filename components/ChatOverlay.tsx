@@ -1923,6 +1923,13 @@ ${messages.map((m) => `<div class="msg ${m.role}"><div class="role ${m.role === 
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" /></svg>
                   </button>
                 )}
+                {/* Link detection indicator */}
+                {!isStreaming && /https?:\/\/\S+/i.test(input) && (
+                  <span className="text-[8px] text-sky-400/70 shrink-0 flex items-center gap-0.5" title="URL detected in input">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-2.5 h-2.5"><path d="M4.64 6.11a2.25 2.25 0 0 1 3.18 0l.71.71a.75.75 0 0 1-1.06 1.06l-.71-.71a.75.75 0 0 0-1.06 0l-2.12 2.12a.75.75 0 0 0 1.06 1.06l1.06-1.06a.75.75 0 1 1 1.06 1.06l-1.06 1.06a2.25 2.25 0 0 1-3.18-3.18l2.12-2.12Zm6.72-2.12a2.25 2.25 0 0 0-3.18 0l-.71.71a.75.75 0 0 0 1.06 1.06l.71-.71a.75.75 0 0 1 1.06 0l2.12 2.12a.75.75 0 0 1-1.06 1.06l-1.06-1.06a.75.75 0 1 0-1.06 1.06l1.06 1.06a2.25 2.25 0 0 0 3.18-3.18l-2.12-2.12Z" /></svg>
+                    link
+                  </span>
+                )}
                 {/* Word count + character counter */}
                 {!isStreaming && input.length > 0 && (
                   <span className={`text-[9px] tabular-nums mr-1 shrink-0 ${input.length > 450 ? 'text-amber-400' : 'text-slate-600'}`}>

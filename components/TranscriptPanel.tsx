@@ -1483,7 +1483,7 @@ export function TranscriptPanel({
                       {formatTimestamp(seg.offset)}
                     </button>
                     {!compactMode && seg.duration && seg.duration > 0 && (
-                      <span className="text-[8px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums">({Math.round(seg.duration)}s)</span>
+                      <span className="text-[8px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums" title={`${formatTimestamp(seg.offset)}–${formatTimestamp(seg.offset + seg.duration)}`}>–{formatTimestamp(seg.offset + seg.duration)}</span>
                     )}
                     {!compactMode && <span className="text-[7px] text-slate-700 opacity-0 group-hover/seg:opacity-100 transition-opacity tabular-nums">{seg.text.split(/\s+/).filter(Boolean).length}w</span>}
                     {!compactMode && segDensities.size > 0 && (() => {

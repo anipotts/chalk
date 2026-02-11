@@ -532,6 +532,12 @@ Status: RUNNING
 - [x] Home Page Quick Actions — navigation links to History, Collections, Compare, Math Viz
 - [x] Build verification PASSED
 
+## Wave 105 (Completed)
+- [x] Transcript Segment Time Range Label — show end timestamp (–M:SS) on hover next to segment start time
+- [x] Chat Input Paste URL Detection — small "link" indicator appears when URL is detected in chat input
+- [x] Home Page Video Card Thumbnail Aspect Ratio — consistent 16:9 aspect-video container for thumbnails
+- [x] Build verification PASSED
+
 ## Wave 104 (Completed)
 - [x] Transcript Segment Auto-Summarize on Hover — tooltip shows condensed context from surrounding segments
 - [x] Chat Message Expand/Collapse All — toggle button in header to expand or collapse all long AI messages

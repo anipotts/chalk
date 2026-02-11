@@ -798,11 +798,11 @@ export default function Home() {
                     </div>
                   )}
                   {/* Thumbnail */}
-                  <div className="relative shrink-0 overflow-hidden rounded-lg">
+                  <div className="relative shrink-0 overflow-hidden rounded-lg w-20 aspect-video bg-chalk-surface">
                     <img
                       src={`https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`}
                       alt={video.title || ''}
-                      className="w-20 h-11 object-cover rounded-lg bg-chalk-surface transition-transform duration-200 group-hover/card:scale-105"
+                      className="w-full h-full object-cover rounded-lg bg-chalk-surface transition-transform duration-200 group-hover/card:scale-105"
                       onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).parentElement!.classList.add('flex', 'items-center', 'justify-center'); const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('viewBox', '0 0 16 16'); svg.setAttribute('fill', 'currentColor'); svg.setAttribute('class', 'w-5 h-5 text-slate-600'); svg.innerHTML = '<path d="M2 4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4Zm10.5 5.707L9.354 6.56a.5.5 0 0 0-.708 0L6 9.207l-1.146-1.147a.5.5 0 0 0-.708 0L3.5 8.707V12a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5V9.707Z"/>'; (e.target as HTMLImageElement).parentElement!.appendChild(svg); }}
                     />
                     {watchPct > 0.9 && (
