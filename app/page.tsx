@@ -84,7 +84,7 @@ export default function HomePage() {
     }
 
     if (abortControllerRef.current) {
-      abortControllerRef.current.abort('new search');
+      abortControllerRef.current.abort();
     }
 
     const timeoutId = setTimeout(async () => {
@@ -127,7 +127,7 @@ export default function HomePage() {
   // Cancel search when switching to URL tab
   useEffect(() => {
     if (activeTab === 'url' && abortControllerRef.current) {
-      abortControllerRef.current.abort('new search');
+      abortControllerRef.current.abort();
     }
   }, [activeTab]);
 
