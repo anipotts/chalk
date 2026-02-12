@@ -1,4 +1,6 @@
-interface Env {}
+interface Env {
+  TRANSCRIPT_CACHE: KVNamespace;
+}
 
 interface Segment {
   text: string;
@@ -298,15 +300,57 @@ const CLIENTS = [
   },
 ];
 
+// ─── KV cache helpers ───────────────────────────────────────────────────────────
+
+const CACHE_TTL = 86400; // 24 hours in seconds
+
+interface CachedCaptions {
+  segments: Segment[];
+  client: string;
+  cachedAt: number;
+}
+
+async function getCachedCaptions(kv: KVNamespace, videoId: string): Promise<CachedCaptions | null> {
+  try {
+    const data = await kv.get(`captions:${videoId}`, 'json');
+    return data as CachedCaptions | null;
+  } catch {
+    return null;
+  }
+}
+
+async function setCachedCaptions(kv: KVNamespace, videoId: string, segments: Segment[], client: string): Promise<void> {
+  try {
+    await kv.put(
+      `captions:${videoId}`,
+      JSON.stringify({ segments, client, cachedAt: Date.now() } as CachedCaptions),
+      { expirationTtl: CACHE_TTL },
+    );
+  } catch {
+    // Cache write failure is non-critical
+  }
+}
+
 // ─── Caption endpoint handler ───────────────────────────────────────────────────
 
-async function handleCaptions(videoId: string, corsHeaders: Record<string, string>): Promise<Response> {
+async function handleCaptions(videoId: string, corsHeaders: Record<string, string>, kv: KVNamespace): Promise<Response> {
+  // Check KV cache first — globally replicated, works from any edge
+  const cached = await getCachedCaptions(kv, videoId);
+  if (cached && cached.segments.length > 0) {
+    return Response.json(
+      { segments: cached.segments, source: 'cf-worker', client: cached.client, cached: true },
+      { headers: corsHeaders },
+    );
+  }
+
   // Phase 1: Race all Innertube clients, retry up to 3 rounds
   for (let round = 1; round <= 3; round++) {
     try {
       const result = await Promise.any(
         CLIENTS.map((c) => tryInnertubeClient(videoId, c).then((segments) => ({ segments, client: c.name }))),
       );
+      // Cache in KV for future requests from any edge
+      await setCachedCaptions(kv, videoId, result.segments, result.client);
       return Response.json(
         { segments: result.segments, source: 'cf-worker', client: result.client, round },
         { headers: corsHeaders },
@@ -320,6 +364,8 @@ async function handleCaptions(videoId: string, corsHeaders: Record<string, strin
   // Phase 2: Web scrape fallback
   try {
     const segments = await fetchCaptionsWebScrape(videoId);
+    // Cache web scrape results too
+    await setCachedCaptions(kv, videoId, segments, 'web-scrape');
     return Response.json(
       { segments, source: 'cf-worker', client: 'web-scrape' },
       { headers: corsHeaders },
@@ -412,7 +458,7 @@ async function handleAudio(videoId: string, corsHeaders: Record<string, string>)
 // ─── Main handler ───────────────────────────────────────────────────────────────
 
 export default {
-  async fetch(request: Request, _env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const corsHeaders = { 'Access-Control-Allow-Origin': '*' };
 
     if (request.method === 'OPTIONS') {
@@ -433,10 +479,21 @@ export default {
       return Response.json({ error: 'Missing or invalid ?v= parameter' }, { status: 400, headers: corsHeaders });
     }
 
+    // Warm mode: fetch and cache captions from the caller's edge (pre-populate KV)
+    if (mode === 'warm') {
+      const result = await handleCaptions(videoId, corsHeaders, env.TRANSCRIPT_CACHE);
+      const body = (await result.json()) as Record<string, unknown>;
+      const count = Array.isArray(body.segments) ? body.segments.length : 0;
+      return Response.json(
+        { warmed: result.ok, segments: count, cached: body.cached || false, client: body.client },
+        { headers: corsHeaders },
+      );
+    }
+
     if (mode === 'audio') {
       return handleAudio(videoId, corsHeaders);
     }
 
-    return handleCaptions(videoId, corsHeaders);
+    return handleCaptions(videoId, corsHeaders, env.TRANSCRIPT_CACHE);
   },
 };
