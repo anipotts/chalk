@@ -77,12 +77,13 @@ async function searchWithFallback(options: SearchOptions) {
   const { query, limit, timeout } = options;
 
   // Build priority list: last working instance first, then others
-  const pipedInstances = lastWorkingInstance?.type === 'piped'
-    ? [lastWorkingInstance.url, ...PIPED_INSTANCES.filter(i => i !== lastWorkingInstance.url)]
+  const cached = lastWorkingInstance;
+  const pipedInstances = cached?.type === 'piped'
+    ? [cached.url, ...PIPED_INSTANCES.filter(i => i !== cached.url)]
     : PIPED_INSTANCES;
 
-  const invidiousInstances = lastWorkingInstance?.type === 'invidious'
-    ? [lastWorkingInstance.url, ...INVIDIOUS_INSTANCES.filter(i => i !== lastWorkingInstance.url)]
+  const invidiousInstances = cached?.type === 'invidious'
+    ? [cached.url, ...INVIDIOUS_INSTANCES.filter(i => i !== cached.url)]
     : INVIDIOUS_INSTANCES;
 
   // Try Piped instances first (better performance)
