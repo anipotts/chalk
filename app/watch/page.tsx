@@ -4,15 +4,14 @@ import { useState, useRef, useCallback, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { TranscriptPanel } from '@/components/TranscriptPanel';
-import { ChatOverlay } from '@/components/ChatOverlay';
+import { InteractionOverlay } from '@/components/InteractionOverlay';
 import { useTranscriptStream } from '@/hooks/useTranscriptStream';
 import { useVideoTitle } from '@/hooks/useVideoTitle';
 import { formatTimestamp } from '@/lib/video-utils';
 import { ChalkboardSimple } from '@phosphor-icons/react';
 import type { MediaPlayerInstance } from '@vidstack/react';
 import { VoiceModeButton } from '@/components/VoiceModeButton';
-import { VoiceOverlay } from '@/components/VoiceOverlay';
-import { useVoiceMode } from '@/hooks/useVoiceMode';
+import { useUnifiedMode } from '@/hooks/useUnifiedMode';
 import { useVoiceClone } from '@/hooks/useVoiceClone';
 
 const VideoPlayer = dynamic(
@@ -147,29 +146,21 @@ function WatchContent() {
 
   const [currentTime, setCurrentTime] = useState(0);
   const [isPaused, setIsPaused] = useState(true);
-  const [chatVisible, setChatVisible] = useState(false);
+  const [interactionVisible, setInteractionVisible] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
   const [transcriptAutoOpened, setTranscriptAutoOpened] = useState(false);
   const [continueFrom, setContinueFrom] = useState<number | null>(null);
   const [sessionWatchTime, setSessionWatchTime] = useState(0);
-  const [pendingQuestion, setPendingQuestion] = useState<string | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
-  const [autoPauseChat, setAutoPauseChat] = useState(true);
   const [transcriptCollapsed, setTranscriptCollapsed] = useState(false);
-  const [chatCollapsed, setChatCollapsed] = useState(false);
-  const [chatMeta, setChatMeta] = useState({ messageCount: 0, isStreaming: false });
-  const [voiceModeActive, setVoiceModeActive] = useState(false);
 
   // Load preferences after mount to avoid hydration mismatch
   useEffect(() => {
-    const stored = localStorage.getItem('chalk-auto-pause-chat');
-    if (stored === 'false') setAutoPauseChat(false);
     try {
       const layout = localStorage.getItem('chalk-mobile-layout');
       if (layout) {
-        const { tc, cc } = JSON.parse(layout);
+        const { tc } = JSON.parse(layout);
         if (tc) setTranscriptCollapsed(true);
-        if (cc) setChatCollapsed(true);
       }
     } catch { /* ignore */ }
   }, []);
@@ -177,26 +168,28 @@ function WatchContent() {
   // Persist mobile collapse state
   useEffect(() => {
     try {
-      localStorage.setItem('chalk-mobile-layout', JSON.stringify({ tc: transcriptCollapsed, cc: chatCollapsed }));
+      localStorage.setItem('chalk-mobile-layout', JSON.stringify({ tc: transcriptCollapsed }));
     } catch { /* ignore */ }
-  }, [transcriptCollapsed, chatCollapsed]);
+  }, [transcriptCollapsed]);
   const playerRef = useRef<MediaPlayerInstance>(null);
   const progressSaveRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const watchTimeRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const currentTimeRef = useRef(0);
   const segmentsRef = useRef(segments);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const hasSegments = segments.length > 0;
   currentTimeRef.current = currentTime;
   segmentsRef.current = segments;
 
-  // Voice mode hooks
+  // Voice clone hook
   const { voiceId, isCloning, cloneError } = useVoiceClone({
     videoId: videoId || null,
-    enabled: voiceModeActive,
+    enabled: interactionVisible,
   });
 
-  const voiceMode = useVoiceMode({
+  // Unified interaction mode (text + voice)
+  const unified = useUnifiedMode({
     segments,
     currentTime,
     videoId: videoId || '',
@@ -288,13 +281,14 @@ function WatchContent() {
 
   const handlePause = useCallback(() => {
     setIsPaused(true);
-    if (autoPauseChat) setChatVisible(true);
-  }, [autoPauseChat]);
+    // Auto-open overlay on pause
+    setInteractionVisible(true);
+  }, []);
 
   const handlePlay = useCallback(() => {
     setIsPaused(false);
-    if (autoPauseChat) setChatVisible(false);
-  }, [autoPauseChat]);
+    // Keep overlay open if user is actively using it
+  }, []);
 
   const handleTimeUpdate = useCallback((time: number) => {
     setCurrentTime(time);
@@ -309,31 +303,25 @@ function WatchContent() {
     } catch { /* Vidstack $state proxy may throw */ }
   }, []);
 
-  const toggleChat = useCallback(() => {
-    setChatVisible((prev) => !prev);
+  const toggleInteraction = useCallback(() => {
+    setInteractionVisible((prev) => !prev);
   }, []);
 
-  const toggleVoiceMode = useCallback(() => {
-    setVoiceModeActive((prev) => {
-      const next = !prev;
-      // Auto-pause video when entering voice mode
-      if (next && playerRef.current) {
-        try { playerRef.current.pause(); } catch { /* ignore */ }
-      }
-      return next;
-    });
-  }, []);
+  const startVoiceMode = useCallback(() => {
+    // Auto-pause video when entering voice mode
+    if (playerRef.current) {
+      try { playerRef.current.pause(); } catch { /* ignore */ }
+    }
+    setInteractionVisible(true);
+    // Voice mode starts when user presses mic button
+    unified.startRecording();
+  }, [unified]);
 
   const handleAskAbout = useCallback((timestamp: number, text: string) => {
-    if (text.startsWith('Summarize this:') || text.startsWith('Explain this')) {
-      setPendingQuestion(text);
-    } else {
-      const mins = Math.floor(timestamp / 60);
-      const secs = Math.floor(timestamp % 60);
-      const ts = `${mins}:${secs.toString().padStart(2, '0')}`;
-      setPendingQuestion(`What's being discussed at [${ts}]?`);
-    }
-    setChatVisible(true);
+    // Open interaction overlay
+    setInteractionVisible(true);
+    // Focus input after a short delay
+    setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
 
   // Keyboard shortcuts
@@ -342,21 +330,26 @@ function WatchContent() {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
-      if (e.key === 'c' && !e.metaKey && !e.ctrlKey) {
+      // C key or any alphanumeric: open text mode
+      if ((e.key === 'c' || /^[a-z0-9]$/i.test(e.key)) && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
-        toggleChat();
+        setInteractionVisible(true);
+        setTimeout(() => inputRef.current?.focus(), 100);
       }
-      if (e.key === 'v' && !e.metaKey && !e.ctrlKey) {
+
+      // V key: open voice mode
+      if (e.key === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
-        toggleVoiceMode();
+        startVoiceMode();
       }
-      if (e.key === 'Escape') {
-        if (voiceModeActive) {
-          setVoiceModeActive(false);
-        } else {
-          setChatVisible(false);
-        }
+
+      // Escape: close overlay
+      if (e.key === 'Escape' && interactionVisible) {
+        e.preventDefault();
+        setInteractionVisible(false);
       }
+
+      // F key: fullscreen
       if (e.key === 'f' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
         const el = document.querySelector('media-player');
@@ -368,7 +361,7 @@ function WatchContent() {
     }
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [toggleChat, toggleVoiceMode, voiceModeActive]);
+  }, [interactionVisible, startVoiceMode]);
 
   if (!videoId) {
     return (
@@ -385,17 +378,8 @@ function WatchContent() {
     ? `${Math.floor(sessionWatchTime / 60)}m`
     : `${sessionWatchTime}s`;
 
-  const chatProps = {
-    segments,
-    currentTime,
-    videoId,
-    videoTitle: videoTitle ?? undefined,
-    transcriptSource: source ?? undefined,
-    onSeek: handleSeek,
-    onToggle: toggleChat,
-    pendingQuestion,
-    onPendingQuestionConsumed: () => setPendingQuestion(null),
-  } as const;
+  // Blur level: full when paused or in voice mode, light when playing + text
+  const blurLevel: 'light' | 'full' = isPaused || unified.voiceState !== 'idle' ? 'full' : 'light';
 
   return (
     <div className="flex h-[100dvh] bg-chalk-bg overflow-hidden animate-in fade-in duration-300">
@@ -445,23 +429,6 @@ function WatchContent() {
           <div className="flex items-center gap-2 ml-auto">
             <SpeedControlButton playerRef={playerRef} />
 
-            {/* Auto-pause toggle — desktop only */}
-            <button
-              onClick={() => {
-                const next = !autoPauseChat;
-                setAutoPauseChat(next);
-                localStorage.setItem('chalk-auto-pause-chat', String(next));
-              }}
-              className={`hidden md:inline-flex px-2 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
-                autoPauseChat
-                  ? 'bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30'
-                  : 'text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30'
-              }`}
-              title={autoPauseChat ? 'Chat auto-opens on pause (click to disable)' : 'Chat stays manual (click to auto-open on pause)'}
-            >
-              Auto-pause
-            </button>
-
             <button
               onClick={() => setShowTranscript((v) => !v)}
               className={`hidden md:inline-flex px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
@@ -473,20 +440,9 @@ function WatchContent() {
               Transcript
             </button>
 
-            <button
-              onClick={toggleChat}
-              className={`hidden md:inline-flex px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
-                chatVisible
-                  ? 'bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30'
-                  : 'text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30'
-              }`}
-            >
-              Chat
-            </button>
-
             <VoiceModeButton
-              active={voiceModeActive}
-              onClick={toggleVoiceMode}
+              active={interactionVisible && unified.voiceState !== 'idle'}
+              onClick={startVoiceMode}
               isCloning={isCloning}
               hasClone={!!voiceId}
             />
@@ -495,7 +451,7 @@ function WatchContent() {
 
         {/* Video area */}
         <div className={`flex-none md:flex-1 flex flex-col overflow-hidden relative md:max-h-none transition-[height] duration-200 ease-out motion-reduce:transition-none ${
-          keyboardOpen ? 'h-0' : (transcriptCollapsed && chatCollapsed) ? 'h-[calc(100dvh-80px)]' : 'h-[30dvh]'
+          keyboardOpen ? 'h-0' : transcriptCollapsed ? 'h-[calc(100dvh-80px)]' : 'h-[30dvh]'
         }`}>
           {/* Mobile back button */}
           <a
@@ -519,23 +475,39 @@ function WatchContent() {
             </div>
           </div>
 
-          {/* Voice mode overlay */}
-          <VoiceOverlay
-            visible={voiceModeActive}
-            voiceState={voiceMode.voiceState}
-            transcript={voiceMode.transcript}
-            responseText={voiceMode.responseText}
-            exchanges={voiceMode.exchanges}
-            error={voiceMode.error}
-            recordingDuration={voiceMode.recordingDuration}
-            isCloning={isCloning}
-            hasClone={!!voiceId}
+          {/* Unified interaction overlay (text + voice) */}
+          <InteractionOverlay
+            visible={interactionVisible}
+            segments={segments}
+            currentTime={currentTime}
+            videoId={videoId}
             videoTitle={videoTitle ?? undefined}
-            onStartRecording={voiceMode.startRecording}
-            onStopRecording={voiceMode.stopRecording}
-            onCancel={voiceMode.cancelRecording}
-            onStopPlayback={voiceMode.stopPlayback}
-            onClose={() => setVoiceModeActive(false)}
+            transcriptSource={source ?? undefined}
+            voiceId={voiceId}
+            isVoiceCloning={isCloning}
+            // Voice state
+            voiceState={unified.voiceState}
+            voiceTranscript={unified.voiceTranscript}
+            voiceResponseText={unified.voiceResponseText}
+            voiceError={unified.voiceError}
+            recordingDuration={unified.recordingDuration}
+            onStartRecording={unified.startRecording}
+            onStopRecording={unified.stopRecording}
+            onCancelRecording={unified.cancelRecording}
+            // Text state
+            isTextStreaming={unified.isTextStreaming}
+            currentUserText={unified.currentUserText}
+            currentAiText={unified.currentAiText}
+            textError={unified.textError}
+            onTextSubmit={unified.handleTextSubmit}
+            onStopTextStream={unified.stopTextStream}
+            // Unified state
+            exchanges={unified.exchanges}
+            onClearHistory={unified.clearHistory}
+            blurLevel={blurLevel}
+            onSeek={handleSeek}
+            onClose={() => setInteractionVisible(false)}
+            inputRef={inputRef}
           />
         </div>
 
@@ -543,8 +515,7 @@ function WatchContent() {
         <div className={`md:hidden flex flex-col border-t border-chalk-border/20 overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none ${
           keyboardOpen ? 'h-0'
             : transcriptCollapsed ? 'h-10'
-            : chatCollapsed ? 'h-[calc(70dvh-40px)]'
-            : 'h-[30dvh]'
+            : 'h-[calc(70dvh-40px)]'
         }`}>
           {transcriptCollapsed && !keyboardOpen ? (
             <WhisperBar
@@ -579,43 +550,6 @@ function WatchContent() {
           )}
         </div>
 
-        {/* Mobile chat — collapsible */}
-        <div className={`md:hidden flex flex-col overflow-hidden border-t border-chalk-border/20 pb-safe transition-[height] duration-200 ease-out motion-reduce:transition-none ${
-          keyboardOpen ? 'h-[100dvh]'
-            : chatCollapsed ? 'h-10'
-            : transcriptCollapsed ? 'h-[calc(70dvh-40px)]'
-            : 'h-[calc(40dvh)]'
-        }`}>
-          {chatCollapsed && !keyboardOpen ? (
-            <WhisperBar
-              label="Chat"
-              meta={
-                chatMeta.isStreaming ? 'Typing...'
-                  : chatMeta.messageCount > 0 ? `${chatMeta.messageCount} msgs`
-                  : undefined
-              }
-              onTap={() => setChatCollapsed(false)}
-            />
-          ) : (
-            <>
-              {!keyboardOpen && <SectionGrip onTap={() => setChatCollapsed(true)} sectionName="chat" />}
-              <div className="flex-1 min-h-0 overflow-hidden">
-                <ChatOverlay visible={true} variant="mobile" {...chatProps} onMetaChange={setChatMeta} />
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Chat sidebar — right (desktop), smooth slide */}
-      <div
-        className={`hidden md:flex flex-none overflow-hidden transition-[width] duration-300 ease-out ${
-          chatVisible ? 'w-[360px] border-l border-chalk-border/30' : 'w-0'
-        }`}
-      >
-        <div className="w-[360px] flex-none h-full">
-          <ChatOverlay visible={true} variant="sidebar" {...chatProps} />
-        </div>
       </div>
     </div>
   );

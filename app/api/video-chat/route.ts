@@ -32,24 +32,9 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Too many segments (max 5000)' }, { status: 400 });
   }
 
-  // Resolve model — voice mode forces Sonnet for speed
-  let resolvedModel: 'opus' | 'sonnet' | 'haiku';
-  if (voiceMode) {
-    resolvedModel = 'sonnet';
-  } else if (modelChoice === 'opus' || modelChoice === 'sonnet' || modelChoice === 'haiku') {
-    resolvedModel = modelChoice;
-  } else {
-    resolvedModel = 'sonnet'; // Default to Sonnet for video chat (good balance)
-  }
-
-  const MODEL_IDS = {
-    opus: 'claude-opus-4-6',
-    sonnet: 'claude-sonnet-4-5',
-    haiku: 'claude-haiku-4-5',
-  } as const;
-
-  const model = anthropic(MODEL_IDS[resolvedModel]);
-  const isDeep = resolvedModel === 'opus';
+  // Always use Sonnet for all interactions (simplified from model choice)
+  const resolvedModel = 'sonnet';
+  const model = anthropic('claude-sonnet-4-5');
 
   // Build full transcript context with priority markers around current position
   const typedSegments = (segments || []) as TranscriptSegment[];
@@ -113,57 +98,9 @@ export async function POST(req: Request) {
     model,
     system: systemPrompt,
     messages,
-    maxOutputTokens: voiceMode ? 500 : isDeep ? 16000 : resolvedModel === 'sonnet' ? 8000 : 4000,
-    providerOptions: isDeep ? {
-      anthropic: {
-        thinking: { type: 'enabled', budgetTokens: 8000 },
-      },
-    } : undefined,
+    maxOutputTokens: voiceMode ? 500 : 8000,
   });
 
-  // Reuse same streaming pattern as /api/generate
-  if (!isDeep) {
-    return result.toTextStreamResponse();
-  }
-
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    async start(controller) {
-      let reasoningSent = false;
-
-      try {
-        for await (const chunk of result.fullStream) {
-          if (chunk.type === 'reasoning-delta') {
-            controller.enqueue(encoder.encode(chunk.text));
-          } else if (chunk.type === 'reasoning-end') {
-            if (!reasoningSent) {
-              controller.enqueue(encoder.encode('\x1E'));
-              reasoningSent = true;
-            }
-          } else if (chunk.type === 'text-delta') {
-            if (!reasoningSent) {
-              controller.enqueue(encoder.encode('\x1E'));
-              reasoningSent = true;
-            }
-            controller.enqueue(encoder.encode(chunk.text));
-          }
-        }
-
-        if (!reasoningSent) {
-          controller.enqueue(encoder.encode('\x1E'));
-        }
-      } catch (err) {
-        console.error('Stream error:', err instanceof Error ? err.message : err);
-        if (!reasoningSent) {
-          controller.enqueue(encoder.encode('\x1E'));
-        }
-        controller.enqueue(encoder.encode('\n\n[An error occurred while generating the response.]'));
-      }
-      controller.close();
-    },
-  });
-
-  return new Response(stream, {
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-  });
+  // Simple text streaming (no Opus reasoning)
+  return result.toTextStreamResponse();
 }
