@@ -70,24 +70,20 @@ export default function HomePage() {
 
   // Debounced search effect
   useEffect(() => {
-    // Reset results if query is too short
     if (searchQuery.length < 2) {
       setSearchResults([]);
       setSearchError('');
       return;
     }
 
-    // Cancel previous request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
 
-    // Debounce: wait 300ms after last keystroke
     const timeoutId = setTimeout(async () => {
       setIsSearching(true);
       setSearchError('');
 
-      // Create new abort controller for this request
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
@@ -105,9 +101,7 @@ export default function HomePage() {
         const data = await response.json();
         setSearchResults(data.results || []);
       } catch (err: any) {
-        // Ignore abort errors (user typed again)
         if (err.name === 'AbortError') return;
-
         console.error('Search error:', err);
         setSearchError(err.message || 'Unable to search. Please try again.');
         setSearchResults([]);
@@ -116,7 +110,6 @@ export default function HomePage() {
       }
     }, 300);
 
-    // Cleanup
     return () => {
       clearTimeout(timeoutId);
     };
@@ -146,15 +139,18 @@ export default function HomePage() {
 
   const handleSearchRetry = () => {
     setSearchError('');
-    // Trigger re-search by updating the query (add/remove space)
     setSearchQuery((prev) => prev + ' ');
     setTimeout(() => setSearchQuery((prev) => prev.trim()), 50);
   };
 
+  const hasSearchContent = isSearching || searchResults.length > 0 || searchError;
+
   return (
     <div className="min-h-screen bg-chalk-bg flex flex-col">
-      {/* Hero */}
-      <div className="flex-1 flex items-center justify-center px-4 pt-12">
+      {/* Fixed header + input area — always vertically centered when no results */}
+      <div className={`flex flex-col items-center justify-center px-4 transition-all duration-300 ${
+        hasSearchContent ? 'pt-12 pb-4' : 'flex-1'
+      }`}>
         <div className="w-full max-w-2xl">
           {/* Header */}
           <div className="text-center mb-8">
@@ -221,38 +217,42 @@ export default function HomePage() {
 
           {/* Search input tab */}
           {activeTab === 'search' && (
-            <div>
-              <div className="max-w-xl mx-auto">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search for videos..."
-                  autoFocus
-                  className="w-full px-4 py-3 rounded-xl bg-chalk-surface/40 border border-chalk-border/30 text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-chalk-accent/40 focus:border-chalk-accent/30 transition-colors"
-                />
-                {searchQuery.length > 0 && searchQuery.length < 2 && (
-                  <p className="mt-2 text-xs text-slate-500 text-center">
-                    Type at least 2 characters to search
-                  </p>
-                )}
-              </div>
-
-              {/* Search results */}
-              <SearchResults
-                results={searchResults}
-                isLoading={isSearching}
-                error={searchError}
-                onRetry={handleSearchRetry}
+            <div className="max-w-xl mx-auto">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search for videos..."
+                autoFocus
+                className="w-full px-4 py-3 rounded-xl bg-chalk-surface/40 border border-chalk-border/30 text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-chalk-accent/40 focus:border-chalk-accent/30 transition-colors"
               />
+              {searchQuery.length > 0 && searchQuery.length < 2 && (
+                <p className="mt-2 text-xs text-slate-500 text-center">
+                  Type at least 2 characters to search
+                </p>
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Recent videos */}
-      {recentVideos.length > 0 && (
-        <div className="px-4 pb-12 pt-8 max-w-2xl mx-auto w-full">
+      {/* Search results — scrollable area below input, doesn't push header */}
+      {activeTab === 'search' && hasSearchContent && (
+        <div className="flex-1 px-4 pb-8 overflow-y-auto">
+          <div className="max-w-2xl mx-auto">
+            <SearchResults
+              results={searchResults}
+              isLoading={isSearching}
+              error={searchError}
+              onRetry={handleSearchRetry}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Recent videos — only show when no search content */}
+      {!hasSearchContent && recentVideos.length > 0 && (
+        <div className="px-4 pb-12 pt-4 max-w-2xl mx-auto w-full">
           <h2 className="text-xs font-medium text-slate-500 mb-3 uppercase tracking-wider">Recent</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {recentVideos.map((video) => (
