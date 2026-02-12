@@ -13,6 +13,9 @@
     },
     "app/api/video-chat/route.ts": {
       "maxDuration": 300
+    },
+    "app/api/youtube/warm-cache/route.ts": {
+      "maxDuration": 300
     }
   }
 }

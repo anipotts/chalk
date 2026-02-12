@@ -3,6 +3,8 @@
  * Fetches playlist info and videos using Innertube browse endpoint.
  */
 
+import { cachedPlaylistMeta, cachedPlaylistVideos } from '@/lib/youtube-cache';
+
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
@@ -199,12 +201,18 @@ export async function GET(req: Request) {
       return Response.json({ error: 'Playlist ID required' }, { status: 400 });
     }
 
-    const result = await fetchPlaylistInnertube(id, continuation);
-    // Strip playlist metadata from continuation responses (client ignores it)
+    // Cache initial requests; continuations bypass cache (unique tokens)
     if (continuation) {
-      const { playlist: _, ...rest } = result;
+      const contResult = await cachedPlaylistVideos(id, continuation, () =>
+        fetchPlaylistInnertube(id, continuation)
+      );
+      const { playlist: _, ...rest } = contResult;
       return Response.json(rest);
     }
+
+    const result = await cachedPlaylistMeta(id, () =>
+      fetchPlaylistInnertube(id)
+    );
     return Response.json(result);
   } catch (error) {
     console.error('Playlist API error:', error);

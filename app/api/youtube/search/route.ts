@@ -6,6 +6,7 @@
  */
 
 import { normalizeInvidiousResults, normalizePipedResults } from '@/lib/youtube-search';
+import { cachedSearch } from '@/lib/youtube-cache';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
@@ -564,7 +565,16 @@ export async function GET(req: Request) {
       : 'video';
 
     const limit = Math.min(Math.max(parseInt(limitParam || '20', 10) || 20, 1), 50);
-    const result = await searchWithFallback(query, limit, searchType, continuation);
+
+    // Cache initial search requests (not continuations — tokens are unique)
+    let result: { results: any[]; continuation?: string };
+    if (continuation) {
+      result = await searchWithFallback(query, limit, searchType, continuation);
+    } else {
+      result = await cachedSearch(searchType, query, '0', () =>
+        searchWithFallback(query, limit, searchType)
+      );
+    }
 
     return Response.json(result);
   } catch (error) {

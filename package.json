@@ -15,6 +15,8 @@
     "@react-three/fiber": "^9.5.0",
     "@supabase/supabase-js": "^2.95.3",
     "@types/three": "^0.182.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.36.2",
     "@vidstack/react": "^1.12.13",
     "ai": "^6.0.78",
     "framer-motion": "^12.34.0",
@@ -32,7 +34,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
     "@types/katex": "^0.16.8",
     "@types/node": "25.2.3",
     "@types/react": "^19.2.13",
