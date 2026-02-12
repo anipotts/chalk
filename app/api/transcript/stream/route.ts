@@ -13,7 +13,7 @@
  *   error    → { message }
  */
 
-import { captionRace, sttCascade, deduplicateSegments, mergeIntoSentences, type TranscriptSegment, type TranscriptSource } from '@/lib/transcript';
+import { captionRace, sttCascade, deduplicateSegments, cleanSegments, mergeIntoSentences, type TranscriptSegment, type TranscriptSource } from '@/lib/transcript';
 import { getCachedTranscript, setCachedTranscript } from '@/lib/transcript-cache';
 
 export const dynamic = 'force-dynamic';
@@ -89,7 +89,7 @@ export async function GET(req: Request) {
 
         try {
           const result = await captionRace(videoId);
-          segments = mergeIntoSentences(deduplicateSegments(result.segments));
+          segments = mergeIntoSentences(cleanSegments(deduplicateSegments(result.segments)));
           source = result.source;
           console.log(`[transcript] ${videoId}: fetched via ${source} (${segments.length} segments)`);
         } catch (e) {
@@ -102,7 +102,7 @@ export async function GET(req: Request) {
 
           try {
             const result = await sttCascade(videoId);
-            segments = mergeIntoSentences(deduplicateSegments(result.segments));
+            segments = mergeIntoSentences(cleanSegments(deduplicateSegments(result.segments)));
             source = result.source;
           } catch (e) {
             console.error(`[transcript] ${videoId}: STT cascade failed:`, e instanceof Error ? e.message : e);

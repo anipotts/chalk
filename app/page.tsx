@@ -9,6 +9,8 @@ import type { SearchResult } from '@/lib/youtube-search';
 
 const RECENT_VIDEOS_KEY = 'chalk-recent-videos';
 
+type SearchType = 'video' | 'channel' | 'playlist';
+
 interface RecentVideo {
   id: string;
   url: string;
@@ -54,9 +56,10 @@ export default function HomePage() {
   const [error, setError] = useState('');
 
   // Search state
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
+  const [searchType, setSearchType] = useState<SearchType>('video');
 
   // Pagination state
   const [continuationToken, setContinuationToken] = useState<string | null>(null);
@@ -97,7 +100,7 @@ export default function HomePage() {
 
       try {
         const response = await fetch(
-          `/api/youtube/search?q=${encodeURIComponent(inputValue)}&limit=20`,
+          `/api/youtube/search?q=${encodeURIComponent(inputValue)}&limit=20&type=${searchType}`,
           { signal: controller.signal }
         );
 
@@ -122,7 +125,7 @@ export default function HomePage() {
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [inputValue, activeTab]);
+  }, [inputValue, activeTab, searchType]);
 
   // Cancel search when switching to URL tab
   useEffect(() => {
@@ -179,6 +182,12 @@ export default function HomePage() {
     setTimeout(() => setInputValue((prev) => prev.trim()), 50);
   };
 
+  const handleSearchTypeChange = (type: SearchType) => {
+    setSearchType(type);
+    setSearchResults([]);
+    setContinuationToken(null);
+  };
+
   // Load more results (infinite scroll)
   const handleLoadMore = useCallback(async () => {
     if (!continuationToken || isLoadingMore) return;
@@ -188,7 +197,7 @@ export default function HomePage() {
 
     try {
       const response = await fetch(
-        `/api/youtube/search?q=${encodeURIComponent(inputValue)}&continuation=${encodeURIComponent(continuationToken)}`,
+        `/api/youtube/search?q=${encodeURIComponent(inputValue)}&type=${searchType}&continuation=${encodeURIComponent(continuationToken)}`,
         { signal: controller.signal }
       );
 
@@ -208,7 +217,7 @@ export default function HomePage() {
     } finally {
       setIsLoadingMore(false);
     }
-  }, [continuationToken, isLoadingMore, inputValue]);
+  }, [continuationToken, isLoadingMore, inputValue, searchType]);
 
   const hasSearchContent = isSearching || searchResults.length > 0 || searchError;
   const showTabs = !inputValue;
@@ -217,6 +226,11 @@ export default function HomePage() {
     activeTab === tab
       ? 'bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200 flex items-center gap-1'
       : 'bg-transparent text-slate-500 hover:text-slate-300 border border-transparent rounded-lg px-2.5 py-1.5 text-xs transition-all duration-200 flex items-center gap-1';
+
+  const searchTypePillClasses = (type: SearchType) =>
+    searchType === type
+      ? 'bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30'
+      : 'bg-transparent text-slate-500 hover:text-slate-300 border border-chalk-border/20 hover:border-chalk-border/40';
 
   return (
     <div className="h-screen bg-chalk-bg flex flex-col overflow-hidden">
@@ -252,8 +266,8 @@ export default function HomePage() {
                 value={inputValue}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                placeholder={activeTab === 'search' ? 'Search for videos...' : 'Paste a YouTube URL...'}
-                aria-label={activeTab === 'search' ? 'Search for videos' : 'Paste a YouTube URL'}
+                placeholder={activeTab === 'search' ? 'Search for videos, channels, or playlists...' : 'Paste a YouTube URL...'}
+                aria-label={activeTab === 'search' ? 'Search for videos, channels, or playlists' : 'Paste a YouTube URL'}
                 autoFocus
                 className="flex-1 px-3 py-2.5 bg-transparent text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none min-w-0"
               />
@@ -278,6 +292,21 @@ export default function HomePage() {
                 </div>
               ) : null}
             </div>
+
+            {/* Search type filter pills — show when searching */}
+            {activeTab === 'search' && inputValue.length >= 2 && (
+              <div className="flex gap-1.5 mt-2 justify-center">
+                {(['video', 'channel', 'playlist'] as SearchType[]).map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => handleSearchTypeChange(type)}
+                    className={`rounded-lg px-3 py-1 text-xs font-medium transition-all duration-200 ${searchTypePillClasses(type)}`}
+                  >
+                    {type === 'video' ? 'Videos' : type === 'channel' ? 'Channels' : 'Playlists'}
+                  </button>
+                ))}
+              </div>
+            )}
 
             {error && (
               <p className="mt-2 text-xs text-red-400 text-center">{error}</p>
