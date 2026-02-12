@@ -50,6 +50,7 @@ export function TextInput({
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={handleKeyDown}
       placeholder={placeholder}
+      aria-label={placeholder}
       rows={1}
       className="flex-1 resize-none px-3 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.08] text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-chalk-accent/40 focus:border-chalk-accent/30 transition-colors"
       disabled={disabled || isStreaming}

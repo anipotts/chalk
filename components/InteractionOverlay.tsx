@@ -236,6 +236,7 @@ export function InteractionOverlay({
             onClick={onClose}
             className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-colors pointer-events-auto"
             title="Close (Esc)"
+            aria-label="Close overlay"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
               <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
@@ -249,7 +250,7 @@ export function InteractionOverlay({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="relative z-10 flex flex-col w-full max-w-2xl mx-auto px-6 h-[80vh] max-h-[700px] pointer-events-none"
+            className="relative z-10 flex flex-col items-center w-full max-w-2xl mx-auto px-6 h-[80vh] max-h-[700px] pointer-events-none"
           >
 
               {/* Messages - unified container for all messages */}
@@ -373,6 +374,7 @@ export function InteractionOverlay({
                       }}
                       whileTap={{ scale: 0.95 }}
                       title="Hold to record voice"
+                      aria-label={voiceState === 'recording' ? 'Recording — release to stop' : voiceState === 'speaking' ? 'Speaker is responding' : 'Hold to record voice'}
                     >
                       {voiceState === 'speaking' ? (
                         <div className="scale-75">
@@ -397,6 +399,7 @@ export function InteractionOverlay({
                         onClick={onStopTextStream}
                         className="flex-shrink-0 w-11 h-11 rounded-xl bg-red-500/15 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500/25 transition-colors"
                         title="Stop"
+                        aria-label="Stop response"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
                           <rect x="3.5" y="3.5" width="9" height="9" rx="1.5" />
@@ -409,6 +412,7 @@ export function InteractionOverlay({
                         disabled={!input.trim()}
                         className="flex-shrink-0 w-11 h-11 rounded-xl bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30 flex items-center justify-center hover:bg-chalk-accent/25 disabled:opacity-30 disabled:hover:bg-chalk-accent/15 transition-colors"
                         title="Send"
+                        aria-label="Send message"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
                           <path fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />

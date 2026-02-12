@@ -147,7 +147,7 @@ export default function ChannelPage() {
       {/* Top bar */}
       <div className="sticky top-0 z-10 bg-chalk-bg/80 backdrop-blur-sm border-b border-chalk-border/20 px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
-          <Link href="/" className="text-slate-400 hover:text-chalk-text transition-colors">
+          <Link href="/" className="text-slate-400 hover:text-chalk-text transition-colors" aria-label="Back to home">
             <ArrowLeft size={20} />
           </Link>
           <Link href="/" className="flex items-center gap-1.5 text-chalk-text">

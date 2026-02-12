@@ -253,6 +253,7 @@ export default function HomePage() {
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder={activeTab === 'search' ? 'Search for videos...' : 'Paste a YouTube URL...'}
+                aria-label={activeTab === 'search' ? 'Search for videos' : 'Paste a YouTube URL'}
                 autoFocus
                 className="flex-1 px-3 py-2.5 bg-transparent text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none min-w-0"
               />
@@ -313,7 +314,7 @@ export default function HomePage() {
                   >
                     <img
                       src={`https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`}
-                      alt=""
+                      alt={video.title || video.id}
                       className="w-20 h-[45px] rounded-md object-cover bg-chalk-surface/30 shrink-0"
                     />
                     <div className="flex-1 min-w-0">

@@ -170,6 +170,7 @@ export function TranscriptPanel({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search transcript... (/)"
+            aria-label="Search transcript"
             className="w-full px-3 py-1.5 rounded-lg bg-chalk-surface/40 border border-chalk-border/20 text-xs text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-chalk-accent/40 transition-colors"
           />
         </div>
@@ -240,7 +241,15 @@ export function TranscriptPanel({
 
               <div
                 ref={isActive ? activeRef : undefined}
+                role="button"
+                tabIndex={0}
                 onClick={() => onSeek(seg.offset)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSeek(seg.offset);
+                  }
+                }}
                 className={`group flex gap-3 cursor-pointer transition-colors ${
                   isMobile ? 'px-3 py-1 active:scale-[0.99]' : 'px-4 py-1.5'
                 } ${
@@ -269,6 +278,7 @@ export function TranscriptPanel({
                     }}
                     className="shrink-0 self-start mt-0.5 opacity-0 group-hover:opacity-100 text-slate-600 hover:text-chalk-accent transition-all"
                     title="Ask about this"
+                    aria-label="Ask about this segment"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
                       <path d="M1 8.74c0 1.36.49 2.6 1.3 3.56-.13.77-.45 1.48-.91 2.08a.38.38 0 0 0 .3.62c1.07 0 2-.37 2.74-.93A6.47 6.47 0 0 0 7.5 15.5c3.59 0 6.5-2.98 6.5-6.76S11.09 2 7.5 2 1 4.96 1 8.74Z" />
