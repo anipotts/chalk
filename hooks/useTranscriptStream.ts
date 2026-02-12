@@ -102,11 +102,7 @@ export function useTranscriptStream(videoId: string | null): TranscriptStreamSta
               const payload = JSON.parse(data) as { phase: string; message: string };
               setStatus('extracting');
               setStatusMessage(payload.message);
-              // Rough progress mapping based on phase
-              if (payload.phase === 'cache') setProgress(10);
-              else if (payload.phase === 'captions') setProgress(20);
-              else if (payload.phase === 'downloading') setProgress(40);
-              else if (payload.phase === 'transcribing') setProgress(60);
+              // Progress is indeterminate — don't show fake percentages
               break;
             }
             case 'meta': {
@@ -114,7 +110,6 @@ export function useTranscriptStream(videoId: string | null): TranscriptStreamSta
               setSource(payload.source);
               if (payload.cached) {
                 setStatusMessage('Loaded from cache');
-                setProgress(90);
               }
               break;
             }

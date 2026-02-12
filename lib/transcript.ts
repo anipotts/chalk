@@ -4,7 +4,7 @@
  * For client-safe utils, import from '@/lib/video-utils' instead.
  *
  * Architecture:
- *   Phase 1 — Caption race (Promise.any): Innertube ANDROID + web scrape + caption-extractor + yt-dlp
+ *   Phase 1 — Caption race (Promise.any): CF Worker (Vercel only) + web scrape + caption-extractor + Innertube + yt-dlp
  *   Phase 2 — STT cascade (sequential): Innertube audio → web scrape audio (Groq/Deepgram) → yt-dlp + Whisper
  */
 
@@ -535,18 +535,44 @@ export async function downloadAudio(videoId: string): Promise<string> {
   return tempPath;
 }
 
+// ─── Cloudflare Worker proxy ────────────────────────────────────────────────────
+
+const CF_WORKER_PER_CALL_TIMEOUT = 15_000; // 15s per individual Worker call
+const CF_WORKER_TOTAL_TIMEOUT = 40_000;    // 40s total for all retries
+
+async function fetchTranscriptCfWorker(videoId: string): Promise<TranscriptSegment[]> {
+  const url = process.env.CF_TRANSCRIPT_WORKER_URL?.trim();
+  if (!url) throw new Error('CF_TRANSCRIPT_WORKER_URL not set');
+  const fetchUrl = `${url}?v=${videoId}`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), CF_WORKER_PER_CALL_TIMEOUT);
+  try {
+    const resp = await fetch(fetchUrl, { signal: controller.signal });
+    if (!resp.ok) {
+      const body = await resp.text().catch(() => '');
+      throw new Error(`CF Worker: ${resp.status} - ${body.slice(0, 200)}`);
+    }
+    const data = (await resp.json()) as { segments?: TranscriptSegment[]; error?: string };
+    if (data.error) throw new Error(`CF Worker: ${data.error}`);
+    if (!data.segments?.length) throw new Error('CF Worker: no segments');
+    return data.segments;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 // ─── Phase 1: Caption race ─────────────────────────────────────────────────────
 
 interface CaptionRaceResult {
   segments: TranscriptSegment[];
-  source: 'innertube' | 'web-scrape' | 'yt-dlp' | 'caption-extractor';
+  source: 'innertube' | 'web-scrape' | 'yt-dlp' | 'caption-extractor' | 'cf-worker';
 }
 
 const INNERTUBE_TIMEOUT = 15_000;         // 15s — Innertube is fast when it works
 const WEBSCRAPE_TIMEOUT = 20_000;         // 20s — page fetch + caption fetch
 const CAPTION_EXTRACTOR_TIMEOUT = 20_000; // 20s — third-party caption extraction
 const YTDLP_TIMEOUT = 30_000;            // 30s — yt-dlp needs time for JS challenge solving
-const RACE_TIMEOUT = 35_000;             // 35s overall caption race
+const RACE_TIMEOUT = 50_000;             // 50s overall caption race (CF Worker gets 3 retries)
 const STT_STRATEGY_TIMEOUT = 60_000;     // 60s per STT strategy (audio download + transcription)
 const PIPELINE_TIMEOUT = 240_000;        // 240s overall pipeline (leave 60s buffer for Vercel 300s)
 
@@ -568,11 +594,15 @@ export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
   const raceStart = Date.now();
 
   // Caption tiers run concurrently — first non-empty result wins.
-  // Order by reliability on Vercel: web scrape > caption-extractor > innertube > yt-dlp
+  // On Vercel, CF Worker is prepended as primary tier (YouTube blocks AWS/Vercel IPs).
+  const cfWorkerUrl = process.env.CF_TRANSCRIPT_WORKER_URL?.trim();
   const tiers: Array<{ fn: () => Promise<TranscriptSegment[]>; source: CaptionRaceResult['source']; timeout: number }> = [
-    { fn: () => fetchTranscriptWebScrape(videoId), source: 'web-scrape', timeout: WEBSCRAPE_TIMEOUT },
-    { fn: () => fetchTranscriptCaptionExtractor(videoId), source: 'caption-extractor', timeout: CAPTION_EXTRACTOR_TIMEOUT },
-    { fn: () => fetchTranscriptInnertube(videoId), source: 'innertube', timeout: INNERTUBE_TIMEOUT },
+    ...(IS_VERCEL && cfWorkerUrl
+      ? [{ fn: () => fetchTranscriptCfWorker(videoId), source: 'cf-worker' as const, timeout: CF_WORKER_TOTAL_TIMEOUT }]
+      : []),
+    { fn: () => fetchTranscriptWebScrape(videoId), source: 'web-scrape' as const, timeout: WEBSCRAPE_TIMEOUT },
+    { fn: () => fetchTranscriptCaptionExtractor(videoId), source: 'caption-extractor' as const, timeout: CAPTION_EXTRACTOR_TIMEOUT },
+    { fn: () => fetchTranscriptInnertube(videoId), source: 'innertube' as const, timeout: INNERTUBE_TIMEOUT },
   ];
 
   // Only add yt-dlp tier when NOT on Vercel (binary doesn't exist there)
@@ -582,7 +612,7 @@ export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
 
   const raceEntries = tiers.map(({ fn, source, timeout }) =>
     withTimeout(
-      withRetry(fn, { retries: 1, delayMs: 1000 }),
+      withRetry(fn, { retries: source === 'cf-worker' ? 3 : 1, delayMs: 1000 }),
       timeout,
       source,
     ).then((segments) => {
@@ -601,6 +631,31 @@ export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
   );
 }
 
+// ─── CF Worker audio proxy ──────────────────────────────────────────────────────
+
+async function downloadAudioCfWorker(videoId: string): Promise<Buffer> {
+  const url = process.env.CF_TRANSCRIPT_WORKER_URL?.trim();
+  if (!url) throw new Error('CF_TRANSCRIPT_WORKER_URL not set');
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 120000);
+  try {
+    const resp = await fetch(`${url}?v=${videoId}&mode=audio`, { signal: controller.signal });
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      throw new Error(`CF Worker audio: ${resp.status} - ${errText.slice(0, 200)}`);
+    }
+    const isPartial = resp.headers.get('x-audio-partial') === 'true';
+    const client = resp.headers.get('x-audio-client') || 'unknown';
+    const buf = Buffer.from(await resp.arrayBuffer());
+    if (buf.length < 1000) throw new Error('CF Worker audio: response too small (likely error)');
+    if (buf.length > MAX_AUDIO_BYTES) throw new Error(`CF Worker audio: too large (${Math.round(buf.length / 1024 / 1024)}MB)`);
+    console.log(`[transcript] CF Worker audio: ${buf.length} bytes, client=${client}, partial=${isPartial}`);
+    return buf;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 // ─── Phase 2: STT cascade ──────────────────────────────────────────────────────
 
 export async function sttCascade(videoId: string): Promise<TranscriptResult> {
@@ -615,7 +670,42 @@ export async function sttCascade(videoId: string): Promise<TranscriptResult> {
     return withTimeout(fn(), STT_STRATEGY_TIMEOUT, `STT:${name}`);
   }
 
-  // Strategy 1: Web scrape audio → Groq Whisper (most reliable on Vercel)
+  // Strategy 1: CF Worker audio proxy → Groq Whisper (primary on Vercel — CF IPs not blocked)
+  const cfWorkerUrl = process.env.CF_TRANSCRIPT_WORKER_URL?.trim();
+  if (IS_VERCEL && cfWorkerUrl && isGroqAvailable()) {
+    try {
+      console.log(`[transcript] ${videoId}: trying CF Worker audio + Groq Whisper...`);
+      const result = await tryStrategy('cfworker+groq', async () => {
+        const audioBuffer = await downloadAudioCfWorker(videoId);
+        return transcribeWithGroq(audioBuffer, `${videoId}.webm`);
+      });
+      if (result.length > 0) {
+        console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (CF Worker audio, ${result.length} segments, ${Date.now() - cascadeStart}ms)`);
+        return { segments: result, source: 'groq-whisper' };
+      }
+    } catch (e) {
+      console.warn(`[transcript] ${videoId}: CF Worker audio + Groq failed (${Date.now() - cascadeStart}ms):`, e instanceof Error ? e.message : e);
+    }
+  }
+
+  // Strategy 1b: CF Worker audio proxy → Deepgram (fallback STT for CF audio)
+  if (IS_VERCEL && cfWorkerUrl && isDeepgramAvailable()) {
+    try {
+      console.log(`[transcript] ${videoId}: trying CF Worker audio + Deepgram...`);
+      const result = await tryStrategy('cfworker+deepgram', async () => {
+        const audioBuffer = await downloadAudioCfWorker(videoId);
+        return transcribeWithDeepgram(audioBuffer, `${videoId}.webm`);
+      });
+      if (result.length > 0) {
+        console.log(`[transcript] ${videoId}: transcribed via Deepgram (CF Worker audio, ${result.length} segments, ${Date.now() - cascadeStart}ms)`);
+        return { segments: result, source: 'deepgram' };
+      }
+    } catch (e) {
+      console.warn(`[transcript] ${videoId}: CF Worker audio + Deepgram failed (${Date.now() - cascadeStart}ms):`, e instanceof Error ? e.message : e);
+    }
+  }
+
+  // Strategy 2: Web scrape audio → Groq Whisper
   if (isGroqAvailable()) {
     try {
       console.log(`[transcript] ${videoId}: trying web scrape audio + Groq Whisper...`);
@@ -632,7 +722,7 @@ export async function sttCascade(videoId: string): Promise<TranscriptResult> {
     }
   }
 
-  // Strategy 1b: Web scrape audio → Deepgram Nova-2 (fallback STT)
+  // Strategy 2b: Web scrape audio → Deepgram Nova-2 (fallback STT)
   if (isDeepgramAvailable()) {
     try {
       console.log(`[transcript] ${videoId}: trying web scrape audio + Deepgram...`);
@@ -649,7 +739,7 @@ export async function sttCascade(videoId: string): Promise<TranscriptResult> {
     }
   }
 
-  // Strategy 2: Innertube audio → Groq Whisper (may fail from datacenter IPs)
+  // Strategy 3: Innertube audio → Groq Whisper (may fail from datacenter IPs)
   if (isGroqAvailable()) {
     try {
       console.log(`[transcript] ${videoId}: trying Innertube audio + Groq Whisper...`);
@@ -666,7 +756,7 @@ export async function sttCascade(videoId: string): Promise<TranscriptResult> {
     }
   }
 
-  // Strategy 2: yt-dlp audio download → Groq or local Whisper (works locally, NOT on Vercel)
+  // Strategy 4: yt-dlp audio download → Groq or local Whisper (works locally, NOT on Vercel)
   if (IS_VERCEL) {
     throw new Error('All STT tiers failed (yt-dlp not available on Vercel)');
   }

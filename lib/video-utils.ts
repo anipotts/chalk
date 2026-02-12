@@ -16,7 +16,8 @@ export type TranscriptSource =
   | 'caption-extractor'
   | 'groq-whisper'
   | 'local-whisper'
-  | 'deepgram';
+  | 'deepgram'
+  | 'cf-worker';
 
 export interface TranscriptResult {
   segments: TranscriptSegment[];
