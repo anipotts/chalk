@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SearchResult, formatViewCount } from '@/lib/youtube-search';
 
@@ -27,6 +28,8 @@ function SkeletonCard() {
 }
 
 function VideoCard({ result }: { result: SearchResult }) {
+  const router = useRouter();
+
   return (
     <Link
       href={`/watch?v=${result.videoId}`}
@@ -49,15 +52,27 @@ function VideoCard({ result }: { result: SearchResult }) {
           {result.title}
         </h3>
 
-        {/* Author — link to channel page if channelId available */}
+        {/* Author — use span+onClick to avoid nested <a> inside <Link> */}
         {result.channelId ? (
-          <Link
-            href={`/channel/${result.channelId}`}
-            onClick={(e) => e.stopPropagation()}
-            className="text-slate-400 text-xs truncate block hover:text-chalk-accent transition-colors"
+          <span
+            role="link"
+            tabIndex={0}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              router.push(`/channel/${result.channelId}`);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                e.stopPropagation();
+                router.push(`/channel/${result.channelId}`);
+              }
+            }}
+            className="text-slate-400 text-xs truncate block hover:text-chalk-accent transition-colors cursor-pointer"
           >
             {result.author}
-          </Link>
+          </span>
         ) : (
           <p className="text-slate-400 text-xs truncate">
             {result.author}
@@ -139,13 +154,11 @@ export function SearchResults({ results, isLoading, error, onRetry, loadingMore,
           <VideoCard key={`${result.videoId}-${i}`} result={result} />
         ))}
 
-        {/* Inline skeleton cards when loading more */}
         {loadingMore && Array.from({ length: 3 }).map((_, i) => (
           <SkeletonCard key={`skeleton-${i}`} />
         ))}
       </div>
 
-      {/* Sentinel div for infinite scroll */}
       {onLoadMore && <div ref={sentinelRef} className="h-1" />}
     </>
   );

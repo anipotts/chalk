@@ -215,10 +215,10 @@ export default function HomePage() {
       : 'bg-transparent text-slate-500 hover:text-slate-300 border border-transparent rounded-lg px-2.5 py-1.5 text-xs transition-all duration-200 flex items-center gap-1';
 
   return (
-    <div className="min-h-screen bg-chalk-bg flex flex-col">
+    <div className="h-screen bg-chalk-bg flex flex-col overflow-hidden">
       {/* Header + input — slides up smoothly when search results appear */}
       <div
-        className="flex flex-col items-center px-4"
+        className="flex flex-col items-center px-4 shrink-0"
         style={{
           paddingTop: hasSearchContent ? '48px' : 'calc(50vh - 140px)',
           paddingBottom: hasSearchContent ? '8px' : '0px',
