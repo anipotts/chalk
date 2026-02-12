@@ -87,28 +87,33 @@ function parseInnertubeResponse(data: any, limit: number, isContinuation: boolea
     if (isContinuation) {
       // Continuation response has a different structure
       const actions = data?.onResponseReceivedCommands;
-      if (!Array.isArray(actions)) return { results };
+      if (!Array.isArray(actions)) {
+        console.warn('[search] continuation: no onResponseReceivedCommands, keys:', Object.keys(data || {}));
+        return { results };
+      }
 
       for (const action of actions) {
         const items = action?.appendContinuationItemsAction?.continuationItems;
         if (!Array.isArray(items)) continue;
 
         for (const item of items) {
-          // Check for continuation token
           if (item.continuationItemRenderer) {
             continuationToken = item.continuationItemRenderer
               ?.continuationEndpoint?.continuationCommand?.token;
             continue;
           }
 
+          // Try multiple extraction paths for continuation items
           const video = item?.itemSectionRenderer?.contents?.[0]?.videoRenderer
-            || item?.videoRenderer;
+            || item?.videoRenderer
+            || item?.richItemRenderer?.content?.videoRenderer;
           if (!video?.videoId) continue;
           if (results.length >= limit) break;
 
           results.push(extractVideoFromRenderer(video));
         }
       }
+      console.log(`[search] continuation parsed: ${results.length} videos, has next: ${!!continuationToken}`);
     } else {
       // Initial search response
       contents = data?.contents?.twoColumnSearchResultsRenderer?.primaryContents
@@ -212,13 +217,12 @@ async function searchWithFallback(query: string, limit: number, continuation?: s
     const result = await searchInnertube(query, limit, controller.signal, continuation);
     clearTimeout(timeoutId);
     if (result.results.length > 0) return result;
+    // If Innertube returned 0 results for a continuation, end pagination
+    if (continuation) return { results: [] };
   } catch (err) {
     console.error('Innertube search failed:', err);
-  }
-
-  // Fallbacks don't support continuation — only for initial searches
-  if (continuation) {
-    throw new Error('Continuation not available (Innertube failed)');
+    // For continuation requests, return empty rather than falling through to fallbacks
+    if (continuation) return { results: [] };
   }
 
   // 2. Try Piped instances

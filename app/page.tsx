@@ -192,7 +192,11 @@ export default function HomePage() {
         { signal: controller.signal }
       );
 
-      if (!response.ok) throw new Error('Failed to load more');
+      if (!response.ok) {
+        // Server error — stop pagination silently
+        setContinuationToken(null);
+        return;
+      }
 
       const data = await response.json();
       setSearchResults((prev) => [...prev, ...(data.results || [])]);
