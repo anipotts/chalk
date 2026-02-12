@@ -472,7 +472,7 @@ async function downloadAudioFromFormats(
  * Download audio from YouTube via Innertube streaming URLs (HTTP-only, no yt-dlp needed).
  * Fetches the player response to get adaptive audio stream URLs, then downloads directly.
  */
-async function downloadAudioHTTP(videoId: string): Promise<Buffer> {
+export async function downloadAudioHTTP(videoId: string): Promise<Buffer> {
   const data = await fetchInnertubePlayer(videoId);
   return downloadAudioFromFormats(data.streamingData?.adaptiveFormats, videoId);
 }
@@ -481,7 +481,7 @@ async function downloadAudioHTTP(videoId: string): Promise<Buffer> {
  * Download audio by scraping the YouTube watch page HTML.
  * More reliable from datacenter IPs than the Innertube POST because it looks like a browser visit.
  */
-async function downloadAudioWebScrape(videoId: string): Promise<Buffer> {
+export async function downloadAudioWebScrape(videoId: string): Promise<Buffer> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
 

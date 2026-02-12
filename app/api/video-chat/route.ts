@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { message, currentTimestamp, segments, history, model: modelChoice, videoTitle, personality, transcriptSource } = body;
+  const { message, currentTimestamp, segments, history, model: modelChoice, videoTitle, personality, transcriptSource, voiceMode } = body;
 
   if (!message || typeof message !== 'string') {
     return Response.json({ error: 'Missing message' }, { status: 400 });
@@ -32,9 +32,11 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Too many segments (max 5000)' }, { status: 400 });
   }
 
-  // Resolve model
+  // Resolve model — voice mode forces Sonnet for speed
   let resolvedModel: 'opus' | 'sonnet' | 'haiku';
-  if (modelChoice === 'opus' || modelChoice === 'sonnet' || modelChoice === 'haiku') {
+  if (voiceMode) {
+    resolvedModel = 'sonnet';
+  } else if (modelChoice === 'opus' || modelChoice === 'sonnet' || modelChoice === 'haiku') {
     resolvedModel = modelChoice;
   } else {
     resolvedModel = 'sonnet'; // Default to Sonnet for video chat (good balance)
@@ -79,6 +81,7 @@ export async function POST(req: Request) {
     currentTimestamp: formatTimestamp(currentTime),
     videoTitle: safeVideoTitle,
     transcriptSource: typeof transcriptSource === 'string' ? transcriptSource : undefined,
+    voiceMode: !!voiceMode,
   });
 
   // Apply personality modifier
@@ -110,7 +113,7 @@ export async function POST(req: Request) {
     model,
     system: systemPrompt,
     messages,
-    maxOutputTokens: isDeep ? 16000 : resolvedModel === 'sonnet' ? 8000 : 4000,
+    maxOutputTokens: voiceMode ? 500 : isDeep ? 16000 : resolvedModel === 'sonnet' ? 8000 : 4000,
     providerOptions: isDeep ? {
       anthropic: {
         thinking: { type: 'enabled', budgetTokens: 8000 },

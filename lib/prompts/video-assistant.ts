@@ -28,12 +28,26 @@ You have access to the FULL transcript of the video, split into two sections:
 9. For "summarize" or "study notes" requests: use bullet points with timestamp citations for each key point.
 </rules>`;
 
+export const VOICE_MODE_SUFFIX = `
+
+The user is speaking to you via voice. Your response will be read aloud using text-to-speech.
+
+VOICE-SPECIFIC RULES:
+1. Keep responses very concise — 1-3 sentences max.
+2. Be conversational and natural, as if speaking to a friend.
+3. Do NOT use markdown formatting (no bold, no bullets, no numbered lists, no headers).
+4. Do NOT use special characters or symbols.
+5. Reference timestamps naturally in speech, like "around the two minute mark" or "near the beginning" instead of [2:00].
+6. Avoid technical jargon unless the user uses it first.
+7. Sound warm and engaging — you are the speaker from the video having a conversation.`;
+
 export function buildVideoSystemPrompt(opts: {
   transcriptContext: string;
   currentTimestamp: string;
   videoTitle?: string;
   summary?: string;
   transcriptSource?: string;
+  voiceMode?: boolean;
 }): string {
   let prompt = VIDEO_ASSISTANT_SYSTEM_PROMPT;
 
@@ -51,6 +65,10 @@ export function buildVideoSystemPrompt(opts: {
 
   prompt += `\n\n<current_position>The user is at ${opts.currentTimestamp} in the video.</current_position>`;
   prompt += `\n\n<transcript_context>\n${opts.transcriptContext}\n</transcript_context>`;
+
+  if (opts.voiceMode) {
+    prompt += VOICE_MODE_SUFFIX;
+  }
 
   return prompt;
 }

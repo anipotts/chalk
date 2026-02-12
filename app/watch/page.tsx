@@ -10,6 +10,10 @@ import { useVideoTitle } from '@/hooks/useVideoTitle';
 import { formatTimestamp } from '@/lib/video-utils';
 import { ChalkboardSimple } from '@phosphor-icons/react';
 import type { MediaPlayerInstance } from '@vidstack/react';
+import { VoiceModeButton } from '@/components/VoiceModeButton';
+import { VoiceOverlay } from '@/components/VoiceOverlay';
+import { useVoiceMode } from '@/hooks/useVoiceMode';
+import { useVoiceClone } from '@/hooks/useVoiceClone';
 
 const VideoPlayer = dynamic(
   () => import('@/components/VideoPlayer').then((m) => ({ default: m.VideoPlayer })),
@@ -154,6 +158,7 @@ function WatchContent() {
   const [transcriptCollapsed, setTranscriptCollapsed] = useState(false);
   const [chatCollapsed, setChatCollapsed] = useState(false);
   const [chatMeta, setChatMeta] = useState({ messageCount: 0, isStreaming: false });
+  const [voiceModeActive, setVoiceModeActive] = useState(false);
 
   // Load preferences after mount to avoid hydration mismatch
   useEffect(() => {
@@ -184,6 +189,21 @@ function WatchContent() {
   const hasSegments = segments.length > 0;
   currentTimeRef.current = currentTime;
   segmentsRef.current = segments;
+
+  // Voice mode hooks
+  const { voiceId, isCloning, cloneError } = useVoiceClone({
+    videoId: videoId || null,
+    enabled: voiceModeActive,
+  });
+
+  const voiceMode = useVoiceMode({
+    segments,
+    currentTime,
+    videoId: videoId || '',
+    videoTitle: videoTitle ?? undefined,
+    voiceId,
+    transcriptSource: source ?? undefined,
+  });
 
   // Load saved progress
   useEffect(() => {
@@ -293,6 +313,17 @@ function WatchContent() {
     setChatVisible((prev) => !prev);
   }, []);
 
+  const toggleVoiceMode = useCallback(() => {
+    setVoiceModeActive((prev) => {
+      const next = !prev;
+      // Auto-pause video when entering voice mode
+      if (next && playerRef.current) {
+        try { playerRef.current.pause(); } catch { /* ignore */ }
+      }
+      return next;
+    });
+  }, []);
+
   const handleAskAbout = useCallback((timestamp: number, text: string) => {
     if (text.startsWith('Summarize this:') || text.startsWith('Explain this')) {
       setPendingQuestion(text);
@@ -315,8 +346,16 @@ function WatchContent() {
         e.preventDefault();
         toggleChat();
       }
+      if (e.key === 'v' && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        toggleVoiceMode();
+      }
       if (e.key === 'Escape') {
-        setChatVisible(false);
+        if (voiceModeActive) {
+          setVoiceModeActive(false);
+        } else {
+          setChatVisible(false);
+        }
       }
       if (e.key === 'f' && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
@@ -329,7 +368,7 @@ function WatchContent() {
     }
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
-  }, [toggleChat]);
+  }, [toggleChat, toggleVoiceMode, voiceModeActive]);
 
   if (!videoId) {
     return (
@@ -444,6 +483,13 @@ function WatchContent() {
             >
               Chat
             </button>
+
+            <VoiceModeButton
+              active={voiceModeActive}
+              onClick={toggleVoiceMode}
+              isCloning={isCloning}
+              hasClone={!!voiceId}
+            />
           </div>
         </div>
 
@@ -472,6 +518,25 @@ function WatchContent() {
               />
             </div>
           </div>
+
+          {/* Voice mode overlay */}
+          <VoiceOverlay
+            visible={voiceModeActive}
+            voiceState={voiceMode.voiceState}
+            transcript={voiceMode.transcript}
+            responseText={voiceMode.responseText}
+            exchanges={voiceMode.exchanges}
+            error={voiceMode.error}
+            recordingDuration={voiceMode.recordingDuration}
+            isCloning={isCloning}
+            hasClone={!!voiceId}
+            videoTitle={videoTitle ?? undefined}
+            onStartRecording={voiceMode.startRecording}
+            onStopRecording={voiceMode.stopRecording}
+            onCancel={voiceMode.cancelRecording}
+            onStopPlayback={voiceMode.stopPlayback}
+            onClose={() => setVoiceModeActive(false)}
+          />
         </div>
 
         {/* Mobile transcript — collapsible */}
