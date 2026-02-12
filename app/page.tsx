@@ -68,7 +68,7 @@ export default function HomePage() {
     setRecentVideos(getRecentVideos());
   }, []);
 
-  // Debounced search effect
+  // Debounced search effect (still requires 2 chars, just no visible hint)
   useEffect(() => {
     if (searchQuery.length < 2) {
       setSearchResults([]);
@@ -147,10 +147,15 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-chalk-bg flex flex-col">
-      {/* Fixed header + input area — always vertically centered when no results */}
-      <div className={`flex flex-col items-center justify-center px-4 transition-all duration-300 ${
-        hasSearchContent ? 'pt-12 pb-4' : 'flex-1'
-      }`}>
+      {/* Header + input — slides up smoothly when search results appear */}
+      <div
+        className="flex flex-col items-center px-4"
+        style={{
+          paddingTop: hasSearchContent ? '48px' : 'calc(50vh - 140px)',
+          paddingBottom: hasSearchContent ? '8px' : '0px',
+          transition: 'padding-top 0.5s cubic-bezier(0.4, 0, 0.2, 1), padding-bottom 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
         <div className="w-full max-w-2xl">
           {/* Header */}
           <div className="text-center mb-8">
@@ -226,57 +231,53 @@ export default function HomePage() {
                 autoFocus
                 className="w-full px-4 py-3 rounded-xl bg-chalk-surface/40 border border-chalk-border/30 text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-chalk-accent/40 focus:border-chalk-accent/30 transition-colors"
               />
-              {searchQuery.length > 0 && searchQuery.length < 2 && (
-                <p className="mt-2 text-xs text-slate-500 text-center">
-                  Type at least 2 characters to search
-                </p>
-              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Search results — scrollable area below input, doesn't push header */}
-      {activeTab === 'search' && hasSearchContent && (
-        <div className="flex-1 px-4 pb-8 overflow-y-auto">
-          <div className="max-w-2xl mx-auto">
+      {/* Below-input content area — recent videos or search results */}
+      <div className="flex-1 px-4 pb-8 overflow-y-auto">
+        <div className="max-w-2xl mx-auto">
+          {/* Search results */}
+          {activeTab === 'search' && hasSearchContent && (
             <SearchResults
               results={searchResults}
               isLoading={isSearching}
               error={searchError}
               onRetry={handleSearchRetry}
             />
-          </div>
-        </div>
-      )}
+          )}
 
-      {/* Recent videos — only show when no search content */}
-      {!hasSearchContent && recentVideos.length > 0 && (
-        <div className="px-4 pb-12 pt-4 max-w-2xl mx-auto w-full">
-          <h2 className="text-xs font-medium text-slate-500 mb-3 uppercase tracking-wider">Recent</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {recentVideos.map((video) => (
-              <a
-                key={video.id}
-                href={`/watch?v=${video.id}`}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-chalk-surface/20 border border-chalk-border/20 hover:bg-chalk-surface/40 hover:border-chalk-border/40 transition-colors group"
-              >
-                <img
-                  src={`https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`}
-                  alt=""
-                  className="w-20 h-[45px] rounded-md object-cover bg-chalk-surface/30 shrink-0"
-                />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-slate-300 truncate group-hover:text-chalk-text transition-colors">
-                    {video.title || video.id}
-                  </p>
-                  <p className="text-[10px] text-slate-600 mt-0.5">{timeAgo(video.timestamp)}</p>
-                </div>
-              </a>
-            ))}
-          </div>
+          {/* Recent videos — show below input when no search content */}
+          {!hasSearchContent && recentVideos.length > 0 && (
+            <div className="pt-6 max-w-xl mx-auto">
+              <h2 className="text-xs font-medium text-slate-500 mb-3 uppercase tracking-wider">Recent</h2>
+              <div className="space-y-1.5">
+                {recentVideos.map((video) => (
+                  <a
+                    key={video.id}
+                    href={`/watch?v=${video.id}`}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-chalk-surface/20 border border-chalk-border/20 hover:bg-chalk-surface/40 hover:border-chalk-border/40 transition-colors group"
+                  >
+                    <img
+                      src={`https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`}
+                      alt=""
+                      className="w-20 h-[45px] rounded-md object-cover bg-chalk-surface/30 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-slate-300 truncate group-hover:text-chalk-text transition-colors">
+                        {video.title || video.id}
+                      </p>
+                      <p className="text-[10px] text-slate-600 mt-0.5">{timeAgo(video.timestamp)}</p>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
