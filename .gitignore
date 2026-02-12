@@ -46,3 +46,6 @@ supabase/.temp/
 .env.test.local
 .env.production.local
 test-results/
+
+# UI prototypes / scratch
+ui-prototypes/

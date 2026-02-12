@@ -149,7 +149,6 @@ function WatchContent() {
   const [interactionVisible, setInteractionVisible] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
   const [continueFrom, setContinueFrom] = useState<number | null>(null);
-  const [sessionWatchTime, setSessionWatchTime] = useState(0);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [transcriptCollapsed, setTranscriptCollapsed] = useState(false);
 
@@ -172,7 +171,6 @@ function WatchContent() {
   }, [transcriptCollapsed]);
   const playerRef = useRef<MediaPlayerInstance>(null);
   const progressSaveRef = useRef<ReturnType<typeof setInterval>>(undefined);
-  const watchTimeRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const currentTimeRef = useRef(0);
   const segmentsRef = useRef(segments);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -232,18 +230,6 @@ function WatchContent() {
     }, 5000);
     return () => clearInterval(progressSaveRef.current);
   }, [videoId]);
-
-  // Track watch time
-  useEffect(() => {
-    if (!isPaused) {
-      watchTimeRef.current = setInterval(() => {
-        setSessionWatchTime((t) => t + 1);
-      }, 1000);
-    } else {
-      clearInterval(watchTimeRef.current);
-    }
-    return () => clearInterval(watchTimeRef.current);
-  }, [isPaused]);
 
   // Seek to saved position once player is available
   useEffect(() => {
@@ -371,10 +357,6 @@ function WatchContent() {
     );
   }
 
-  const watchTimeDisplay = sessionWatchTime >= 60
-    ? `${Math.floor(sessionWatchTime / 60)}m`
-    : `${sessionWatchTime}s`;
-
   // Blur level: full when paused or in voice mode, light when playing + text
   const blurLevel: 'light' | 'full' = isPaused || unified.voiceState !== 'idle' ? 'full' : 'light';
 
@@ -393,14 +375,9 @@ function WatchContent() {
             {channelName && (
               <span className="text-[10px] text-slate-500 truncate">{channelName}</span>
             )}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400 truncate">
-                {videoTitle || videoId}
-              </span>
-              {sessionWatchTime > 0 && (
-                <span className="text-[10px] text-slate-600 shrink-0">{watchTimeDisplay}</span>
-              )}
-            </div>
+            <span className="text-xs text-slate-400 truncate">
+              {videoTitle || videoId}
+            </span>
           </div>
 
           <div className="flex items-center gap-2 ml-auto">

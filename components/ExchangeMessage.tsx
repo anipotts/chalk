@@ -92,7 +92,7 @@ function renderInlineContent(text: string, onSeek: (seconds: number) => void, ke
  * - Numbered lists (1. item)
  * - [M:SS] timestamp citations as clickable pills
  */
-function renderRichContent(content: string, onSeek: (seconds: number) => void, videoId: string): React.ReactNode {
+export function renderRichContent(content: string, onSeek: (seconds: number) => void, videoId: string): React.ReactNode {
   const lines = content.split('\n');
   const blocks: React.ReactNode[] = [];
   let currentList: { type: 'ul' | 'ol'; items: string[] } | null = null;

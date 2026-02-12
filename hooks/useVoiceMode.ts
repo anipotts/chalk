@@ -185,7 +185,19 @@ export function useVoiceMode({
         throw new Error('AI response failed');
       }
 
-      const aiText = await chatResp.text();
+      // Stream the response chunk-by-chunk for visual display
+      const reader = chatResp.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      let aiText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        aiText += decoder.decode(value, { stream: true });
+        setResponseText(aiText);
+      }
 
       // Commit exchange to unified history and clear streaming display
       onCompleteRef.current({ userText, aiText, timestamp: currentTimeRef.current });

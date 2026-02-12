@@ -26,6 +26,8 @@ You have access to the FULL transcript of the video, split into two sections:
    - Keep it readable — no headers, no code blocks unless discussing code
 8. For "quiz me" or "test me" requests: ask 2-3 focused questions about the content covered so far, with timestamp references to where the answers can be found.
 9. For "summarize" or "study notes" requests: use bullet points with timestamp citations for each key point.
+10. NEVER use emojis in your responses. No exceptions.
+11. NEVER use em dashes (\u2014) or en dashes (\u2013). Use commas, periods, or semicolons instead. Avoid unnecessary hyphens.
 </rules>`;
 
 export const VOICE_MODE_SUFFIX = `
