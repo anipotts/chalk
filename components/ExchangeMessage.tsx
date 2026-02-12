@@ -52,6 +52,8 @@ function applyInlineFormatting(text: string, keyPrefix: string): React.ReactNode
  * Renders a text segment with both timestamp links and inline formatting.
  */
 function renderInlineContent(text: string, onSeek: (seconds: number) => void, keyPrefix: string, videoId: string): React.ReactNode[] {
+  // Strip bold markers wrapping timestamps (e.g. **[5:32]** → [5:32])
+  text = text.replace(/\*\*(\[\d{1,2}:\d{2}(?::\d{2})?\])\*\*/g, '$1');
   const timestamps = parseTimestampLinks(text);
   if (timestamps.length === 0) {
     return applyInlineFormatting(text, keyPrefix);

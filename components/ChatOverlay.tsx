@@ -184,6 +184,11 @@ export function ChatOverlay({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
+  const handleTimestampSeek = useCallback((seconds: number) => {
+    onSeek(seconds);
+    onToggle?.();
+  }, [onSeek, onToggle]);
+
   // Load chat history from localStorage after hydration to avoid SSR mismatch
   useEffect(() => {
     setMessages(loadChatHistory(videoId));
@@ -493,7 +498,7 @@ export function ChatOverlay({
               isStreaming={isStreaming && msg.id === messages[messages.length - 1]?.id && msg.role === 'assistant'}
               thinking={msg.thinking}
               thinkingDuration={msg.thinkingDuration}
-              onSeek={onSeek}
+              onSeek={handleTimestampSeek}
               videoId={videoId}
             />
           ))

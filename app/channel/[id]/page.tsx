@@ -301,7 +301,7 @@ export default function ChannelPage() {
     : undefined;
 
   return (
-    <div className="min-h-screen bg-chalk-bg">
+    <div className="h-[100dvh] overflow-y-auto bg-chalk-bg">
       {/* Top bar */}
       <div className="sticky top-0 z-20 bg-chalk-bg/80 backdrop-blur-sm border-b border-chalk-border/20 px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center gap-3">

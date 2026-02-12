@@ -154,6 +154,11 @@ export function InteractionOverlay({
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const handleTimestampSeek = useCallback((seconds: number) => {
+    onSeek(seconds);
+    onClose();
+  }, [onSeek, onClose]);
+
   const isTextMode = voiceState === 'idle';
   const isProcessing = voiceState === 'transcribing' || voiceState === 'thinking';
   const hasClone = Boolean(voiceId) && !isVoiceCloning;
@@ -264,7 +269,7 @@ export function InteractionOverlay({
                   <ExchangeMessage
                     key={exchange.id}
                     exchange={exchange}
-                    onSeek={onSeek}
+                    onSeek={handleTimestampSeek}
                     videoId={videoId}
                   />
                 ))}
@@ -293,7 +298,7 @@ export function InteractionOverlay({
                       >
                         <div className="max-w-[85%]">
                           <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-                            {renderRichContent(currentAiText || voiceResponseText, onSeek, videoId)}
+                            {renderRichContent(currentAiText || voiceResponseText, handleTimestampSeek, videoId)}
                             {(isTextStreaming || voiceState === 'thinking') && (
                               <span className="inline-block w-0.5 h-4 bg-chalk-accent animate-pulse ml-0.5 align-middle" />
                             )}
@@ -532,7 +537,7 @@ export function InteractionOverlay({
                     <ExchangeMessage
                       key={exchange.id}
                       exchange={exchange}
-                      onSeek={onSeek}
+                      onSeek={handleTimestampSeek}
                       videoId={videoId}
                     />
                   ))}
