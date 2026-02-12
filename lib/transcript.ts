@@ -542,11 +542,13 @@ interface CaptionRaceResult {
   source: 'innertube' | 'web-scrape' | 'yt-dlp' | 'caption-extractor';
 }
 
-const INNERTUBE_TIMEOUT = 15_000; // 15s — Innertube is fast when it works
-const WEBSCRAPE_TIMEOUT = 20_000; // 20s — page fetch + caption fetch
+const INNERTUBE_TIMEOUT = 15_000;         // 15s — Innertube is fast when it works
+const WEBSCRAPE_TIMEOUT = 20_000;         // 20s — page fetch + caption fetch
 const CAPTION_EXTRACTOR_TIMEOUT = 20_000; // 20s — third-party caption extraction
-const YTDLP_TIMEOUT = 30_000;    // 30s — yt-dlp needs time for JS challenge solving
-const RACE_TIMEOUT = 35_000;     // 35s overall caption race
+const YTDLP_TIMEOUT = 30_000;            // 30s — yt-dlp needs time for JS challenge solving
+const RACE_TIMEOUT = 35_000;             // 35s overall caption race
+const STT_STRATEGY_TIMEOUT = 60_000;     // 60s per STT strategy (audio download + transcription)
+const PIPELINE_TIMEOUT = 240_000;        // 240s overall pipeline (leave 60s buffer for Vercel 300s)
 
 async function fetchTranscriptCaptionExtractor(videoId: string): Promise<TranscriptSegment[]> {
   const { getSubtitles } = await import('youtube-caption-extractor');
@@ -563,15 +565,14 @@ async function fetchTranscriptCaptionExtractor(videoId: string): Promise<Transcr
 }
 
 export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
+  const raceStart = Date.now();
+
   // Caption tiers run concurrently — first non-empty result wins.
-  // Innertube ANDROID is fast (~1-2s) but YouTube may block from datacenter IPs.
-  // Web scrape fetches the watch page HTML — looks like a browser visit, most reliable on Vercel.
-  // caption-extractor uses its own scraping approach — additional redundancy.
-  // yt-dlp CLI is slower (~10-15s) but handles most edge cases (NOT available on Vercel).
+  // Order by reliability on Vercel: web scrape > caption-extractor > innertube > yt-dlp
   const tiers: Array<{ fn: () => Promise<TranscriptSegment[]>; source: CaptionRaceResult['source']; timeout: number }> = [
-    { fn: () => fetchTranscriptInnertube(videoId), source: 'innertube', timeout: INNERTUBE_TIMEOUT },
     { fn: () => fetchTranscriptWebScrape(videoId), source: 'web-scrape', timeout: WEBSCRAPE_TIMEOUT },
     { fn: () => fetchTranscriptCaptionExtractor(videoId), source: 'caption-extractor', timeout: CAPTION_EXTRACTOR_TIMEOUT },
+    { fn: () => fetchTranscriptInnertube(videoId), source: 'innertube', timeout: INNERTUBE_TIMEOUT },
   ];
 
   // Only add yt-dlp tier when NOT on Vercel (binary doesn't exist there)
@@ -584,7 +585,13 @@ export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
       withRetry(fn, { retries: 1, delayMs: 1000 }),
       timeout,
       source,
-    ).then((segments) => ({ segments, source }))
+    ).then((segments) => {
+      console.log(`[transcript] ${videoId}: ${source} succeeded in ${Date.now() - raceStart}ms (${segments.length} segments)`);
+      return { segments, source };
+    }).catch((err) => {
+      console.warn(`[transcript] ${videoId}: ${source} failed in ${Date.now() - raceStart}ms:`, err instanceof Error ? err.message : err);
+      throw err;
+    })
   );
 
   return withTimeout(
@@ -597,50 +604,65 @@ export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
 // ─── Phase 2: STT cascade ──────────────────────────────────────────────────────
 
 export async function sttCascade(videoId: string): Promise<TranscriptResult> {
+  const cascadeStart = Date.now();
   console.log(`[transcript] ${videoId}: all captions failed, starting STT cascade`);
 
-  // Strategy 1: Innertube audio download → Groq Whisper (often fails on Vercel datacenter IPs)
-  if (isGroqAvailable()) {
-    try {
-      console.log(`[transcript] ${videoId}: trying Innertube audio + Groq Whisper...`);
-      const audioBuffer = await downloadAudioHTTP(videoId);
-      const segments = await transcribeWithGroq(audioBuffer, `${videoId}.webm`);
-      if (segments.length > 0) {
-        console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (Innertube download, ${segments.length} segments)`);
-        return { segments, source: 'groq-whisper' };
-      }
-    } catch (e) {
-      console.warn(`[transcript] ${videoId}: Innertube + Groq Whisper failed:`, e instanceof Error ? e.message : e);
-    }
+  // Helper: run an STT strategy with a timeout
+  async function tryStrategy<T>(
+    name: string,
+    fn: () => Promise<T>,
+  ): Promise<T> {
+    return withTimeout(fn(), STT_STRATEGY_TIMEOUT, `STT:${name}`);
   }
 
-  // Strategy 1b: Web scrape audio download → Groq Whisper (reliable on Vercel — GET looks like browser)
+  // Strategy 1: Web scrape audio → Groq Whisper (most reliable on Vercel)
   if (isGroqAvailable()) {
     try {
       console.log(`[transcript] ${videoId}: trying web scrape audio + Groq Whisper...`);
-      const audioBuffer = await downloadAudioWebScrape(videoId);
-      const segments = await transcribeWithGroq(audioBuffer, `${videoId}.webm`);
-      if (segments.length > 0) {
-        console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (web scrape download, ${segments.length} segments)`);
-        return { segments, source: 'groq-whisper' };
+      const result = await tryStrategy('webscrape+groq', async () => {
+        const audioBuffer = await downloadAudioWebScrape(videoId);
+        return transcribeWithGroq(audioBuffer, `${videoId}.webm`);
+      });
+      if (result.length > 0) {
+        console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (web scrape, ${result.length} segments, ${Date.now() - cascadeStart}ms)`);
+        return { segments: result, source: 'groq-whisper' };
       }
     } catch (e) {
-      console.warn(`[transcript] ${videoId}: web scrape + Groq Whisper failed:`, e instanceof Error ? e.message : e);
+      console.warn(`[transcript] ${videoId}: web scrape + Groq failed (${Date.now() - cascadeStart}ms):`, e instanceof Error ? e.message : e);
     }
   }
 
-  // Strategy 1c: Web scrape audio download → Deepgram Nova-2 (fallback STT provider)
+  // Strategy 1b: Web scrape audio → Deepgram Nova-2 (fallback STT)
   if (isDeepgramAvailable()) {
     try {
       console.log(`[transcript] ${videoId}: trying web scrape audio + Deepgram...`);
-      const audioBuffer = await downloadAudioWebScrape(videoId);
-      const segments = await transcribeWithDeepgram(audioBuffer, `${videoId}.webm`);
-      if (segments.length > 0) {
-        console.log(`[transcript] ${videoId}: transcribed via Deepgram (web scrape download, ${segments.length} segments)`);
-        return { segments, source: 'deepgram' };
+      const result = await tryStrategy('webscrape+deepgram', async () => {
+        const audioBuffer = await downloadAudioWebScrape(videoId);
+        return transcribeWithDeepgram(audioBuffer, `${videoId}.webm`);
+      });
+      if (result.length > 0) {
+        console.log(`[transcript] ${videoId}: transcribed via Deepgram (web scrape, ${result.length} segments, ${Date.now() - cascadeStart}ms)`);
+        return { segments: result, source: 'deepgram' };
       }
     } catch (e) {
-      console.warn(`[transcript] ${videoId}: web scrape + Deepgram failed:`, e instanceof Error ? e.message : e);
+      console.warn(`[transcript] ${videoId}: web scrape + Deepgram failed (${Date.now() - cascadeStart}ms):`, e instanceof Error ? e.message : e);
+    }
+  }
+
+  // Strategy 2: Innertube audio → Groq Whisper (may fail from datacenter IPs)
+  if (isGroqAvailable()) {
+    try {
+      console.log(`[transcript] ${videoId}: trying Innertube audio + Groq Whisper...`);
+      const result = await tryStrategy('innertube+groq', async () => {
+        const audioBuffer = await downloadAudioHTTP(videoId);
+        return transcribeWithGroq(audioBuffer, `${videoId}.webm`);
+      });
+      if (result.length > 0) {
+        console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (Innertube, ${result.length} segments, ${Date.now() - cascadeStart}ms)`);
+        return { segments: result, source: 'groq-whisper' };
+      }
+    } catch (e) {
+      console.warn(`[transcript] ${videoId}: Innertube + Groq failed (${Date.now() - cascadeStart}ms):`, e instanceof Error ? e.message : e);
     }
   }
 
@@ -693,27 +715,36 @@ export async function sttCascade(videoId: string): Promise<TranscriptResult> {
 /**
  * Fetch transcript for a YouTube video.
  *
- * Phase 1: Caption race (Innertube ANDROID + yt-dlp in parallel)
- * Phase 2: STT cascade (Groq Whisper → local Whisper) — only if all captions fail
+ * Phase 1: Caption race (web scrape + caption-extractor + Innertube + yt-dlp in parallel)
+ * Phase 2: STT cascade (web scrape audio → Groq/Deepgram → Innertube audio → yt-dlp + Whisper)
  *
- * Returns TranscriptResult with segments + source metadata.
+ * Wrapped in an overall pipeline timeout to stay within Vercel's maxDuration.
  */
 export async function fetchTranscript(videoId: string): Promise<TranscriptResult> {
-  // Phase 1: Caption race
-  try {
-    const result = await captionRace(videoId);
-    console.log(`[transcript] ${videoId}: fetched via ${result.source} (${result.segments.length} segments)`);
-    return result;
-  } catch {
-    // All caption tiers failed — fall through to STT
-  }
+  const pipelineStart = Date.now();
 
-  // Phase 2: STT cascade
-  try {
-    return await sttCascade(videoId);
-  } catch {
-    throw new Error(`Could not fetch transcript for video ${videoId}`);
-  }
+  const run = async (): Promise<TranscriptResult> => {
+    // Phase 1: Caption race
+    try {
+      const result = await captionRace(videoId);
+      console.log(`[transcript] ${videoId}: fetched via ${result.source} (${result.segments.length} segments, total ${Date.now() - pipelineStart}ms)`);
+      return result;
+    } catch (e) {
+      console.warn(`[transcript] ${videoId}: caption race failed (${Date.now() - pipelineStart}ms):`, e instanceof Error ? e.message : e);
+    }
+
+    // Phase 2: STT cascade
+    try {
+      const result = await sttCascade(videoId);
+      console.log(`[transcript] ${videoId}: STT succeeded via ${result.source} (total ${Date.now() - pipelineStart}ms)`);
+      return result;
+    } catch (e) {
+      console.error(`[transcript] ${videoId}: all tiers failed (total ${Date.now() - pipelineStart}ms):`, e instanceof Error ? e.message : e);
+      throw new Error(`Could not fetch transcript for video ${videoId}`);
+    }
+  };
+
+  return withTimeout(run(), PIPELINE_TIMEOUT, 'Transcript pipeline');
 }
 
 /**

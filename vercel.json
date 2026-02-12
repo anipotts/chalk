@@ -6,10 +6,10 @@
       "maxDuration": 300
     },
     "app/api/transcript/route.ts": {
-      "maxDuration": 120
+      "maxDuration": 300
     },
     "app/api/transcript/stream/route.ts": {
-      "maxDuration": 120
+      "maxDuration": 300
     },
     "app/api/video-chat/route.ts": {
       "maxDuration": 300
