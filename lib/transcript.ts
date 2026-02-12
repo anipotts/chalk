@@ -845,7 +845,7 @@ export async function fetchTranscript(videoId: string): Promise<TranscriptResult
  * Returns cleaned segments with empty-after-cleaning entries removed.
  */
 export function cleanSegments(segments: TranscriptSegment[]): TranscriptSegment[] {
-  const BRACKET_ANNOTATIONS = /\[(?:Music|Applause|Laughter|Inaudible|Silence|Cheering|Cheers|Booing|Singing|Foreign|Background noise|Background music|MUSIC|APPLAUSE|LAUGHTER|music|applause|laughter)\]/gi;
+  const BRACKET_ANNOTATIONS = /\[(?:Music|Applause|Laughter|Inaudible|Silence|Cheering|Cheers|Booing|Singing|Foreign|Background noise|Background music)\]/gi;
   const MUSIC_NOTES = /[♪♫♬]+/g;
   const LEADING_DASH = /^[-–—]\s*/;
   const SPEAKER_LABEL = /^>>\s*[A-Z][A-Za-z\s.'-]*:\s*/;
@@ -864,6 +864,9 @@ export function cleanSegments(segments: TranscriptSegment[]): TranscriptSegment[
 
     // Remove music note characters
     text = text.replace(MUSIC_NOTES, '');
+
+    // Remove empty brackets left after stripping content (e.g., [♪] → [])
+    text = text.replace(/\[\s*\]/g, '');
 
     // Remove speaker labels like ">> JOHN SMITH: "
     text = text.replace(SPEAKER_LABEL, '');

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { extractVideoId } from '@/lib/video-utils';
 import { ChalkboardSimple, MagnifyingGlass } from '@phosphor-icons/react';
 import { SearchResults } from '@/components/SearchResults';
-import type { SearchResult } from '@/lib/youtube-search';
+import type { AnySearchResult } from '@/components/SearchResults';
 
 const RECENT_VIDEOS_KEY = 'chalk-recent-videos';
 
@@ -56,7 +56,7 @@ export default function HomePage() {
   const [error, setError] = useState('');
 
   // Search state
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<AnySearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
   const [searchType, setSearchType] = useState<SearchType>('video');
@@ -296,15 +296,20 @@ export default function HomePage() {
             {/* Search type filter pills — show when searching */}
             {activeTab === 'search' && inputValue.length >= 2 && (
               <div className="flex gap-1.5 mt-2 justify-center">
-                {(['video', 'channel', 'playlist'] as SearchType[]).map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => handleSearchTypeChange(type)}
-                    className={`rounded-lg px-3 py-1 text-xs font-medium transition-all duration-200 ${searchTypePillClasses(type)}`}
-                  >
-                    {type === 'video' ? 'Videos' : type === 'channel' ? 'Channels' : 'Playlists'}
-                  </button>
-                ))}
+                {(['video', 'channel', 'playlist'] as SearchType[]).map((type) => {
+                  const label = type === 'video' ? 'Videos' : type === 'channel' ? 'Channels' : 'Playlists';
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => handleSearchTypeChange(type)}
+                      aria-label={`Filter by ${label}`}
+                      aria-pressed={searchType === type}
+                      className={`rounded-lg px-3 py-1 text-xs font-medium transition-all duration-200 ${searchTypePillClasses(type)}`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             )}
 

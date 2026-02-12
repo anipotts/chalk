@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ChalkboardSimple, ArrowLeft } from '@phosphor-icons/react';
-import { formatViewCount } from '@/lib/youtube-search';
 
 interface PlaylistInfo {
   title: string;
@@ -81,6 +80,14 @@ export default function PlaylistPage() {
 
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  // Set page title when playlist loads
+  useEffect(() => {
+    if (playlist?.title) {
+      document.title = `${playlist.title} - chalk`;
+    }
+    return () => { document.title = 'chalk'; };
+  }, [playlist?.title]);
+
   // Initial fetch
   useEffect(() => {
     if (!playlistId) return;
@@ -150,7 +157,7 @@ export default function PlaylistPage() {
     <div className="min-h-screen bg-chalk-bg">
       {/* Top bar */}
       <div className="sticky top-0 z-10 bg-chalk-bg/80 backdrop-blur-sm border-b border-chalk-border/20 px-4 py-3">
-        <div className="max-w-3xl mx-auto flex items-center gap-3">
+        <div className="max-w-4xl mx-auto flex items-center gap-3">
           <Link href="/" className="text-slate-400 hover:text-chalk-text transition-colors" aria-label="Back to home">
             <ArrowLeft size={20} />
           </Link>
@@ -161,7 +168,7 @@ export default function PlaylistPage() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Playlist header */}
         {isLoading ? (
           <div className="flex gap-4 mb-8 animate-pulse">

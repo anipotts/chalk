@@ -26,7 +26,8 @@ interface PlaylistResult {
   channelId?: string;
 }
 
-type AnySearchResult = (SearchResult & { type?: 'video' }) | ChannelResult | PlaylistResult;
+export type { ChannelResult, PlaylistResult };
+export type AnySearchResult = (SearchResult & { type?: 'video' }) | ChannelResult | PlaylistResult;
 
 interface SearchResultsProps {
   results: AnySearchResult[];
@@ -179,7 +180,7 @@ function PlaylistCard({ result }: { result: PlaylistResult }) {
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
               <path fillRule="evenodd" d="M2 3.75A.75.75 0 0 1 2.75 3h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 3.75ZM2 8a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 8Zm0 4.25a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75Z" clipRule="evenodd" />
             </svg>
-            {result.videoCount} videos
+            {result.videoCount}{/^\d+$/.test(result.videoCount || '') ? ' videos' : ''}
           </div>
         )}
       </div>

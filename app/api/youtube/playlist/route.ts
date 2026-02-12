@@ -65,14 +65,14 @@ async function fetchPlaylistInnertube(playlistId: string, continuation?: string)
     if (!response.ok) throw new Error(`Innertube HTTP ${response.status}`);
 
     const data = await response.json();
-    return parsePlaylistResponse(data, continuation);
+    return parsePlaylistResponse(data, !!continuation);
   } catch (err) {
     clearTimeout(timeoutId);
     throw err;
   }
 }
 
-function parsePlaylistResponse(data: any, isContinuation?: string): PlaylistResponse {
+function parsePlaylistResponse(data: any, isContinuation: boolean): PlaylistResponse {
   const playlist: PlaylistInfo = { title: 'Unknown Playlist' };
   const videos: PlaylistVideo[] = [];
   let continuationToken: string | undefined;
@@ -200,6 +200,11 @@ export async function GET(req: Request) {
     }
 
     const result = await fetchPlaylistInnertube(id, continuation);
+    // Strip playlist metadata from continuation responses (client ignores it)
+    if (continuation) {
+      const { playlist: _, ...rest } = result;
+      return Response.json(rest);
+    }
     return Response.json(result);
   } catch (error) {
     console.error('Playlist API error:', error);

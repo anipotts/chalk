@@ -198,6 +198,12 @@ function extractResultFromItem(item: any, searchType: SearchType): InnertubeResu
       return extractChannelFromRenderer(renderer);
     }
     case 'playlist': {
+      // YouTube now returns lockupViewModel for playlist results (2025+)
+      const lockup = item?.lockupViewModel;
+      if (lockup?.contentType === 'LOCKUP_CONTENT_TYPE_PLAYLIST' && lockup.contentId) {
+        return extractPlaylistFromLockup(lockup);
+      }
+      // Legacy path: playlistRenderer (may still appear in some responses)
       const renderer = item?.playlistRenderer;
       if (!renderer?.playlistId) return null;
       return extractPlaylistFromRenderer(renderer);
@@ -347,6 +353,61 @@ function extractPlaylistFromRenderer(renderer: any): InnertubePlaylist | null {
   };
 }
 
+/**
+ * Extract playlist info from YouTube's lockupViewModel (new renderer since 2025).
+ */
+function extractPlaylistFromLockup(lockup: any): InnertubePlaylist | null {
+  const playlistId = lockup.contentId;
+  if (!playlistId) return null;
+
+  const meta = lockup.metadata?.lockupMetadataViewModel;
+  const title = meta?.title?.content || 'Unknown Playlist';
+
+  // Thumbnail from collectionThumbnailViewModel
+  const thumbSources = lockup.contentImage?.collectionThumbnailViewModel
+    ?.primaryThumbnail?.thumbnailViewModel?.image?.sources || [];
+  const thumbnailUrl = thumbSources[thumbSources.length - 1]?.url || '';
+
+  // Video count from overlay badge (e.g., "54 videos", "125 lessons")
+  const overlays = lockup.contentImage?.collectionThumbnailViewModel
+    ?.primaryThumbnail?.thumbnailViewModel?.overlays || [];
+  let videoCount: string | undefined;
+  for (const ov of overlays) {
+    const badges = ov.thumbnailOverlayBadgeViewModel?.thumbnailBadges || [];
+    for (const b of badges) {
+      const text = b.thumbnailBadgeViewModel?.text;
+      if (text) videoCount = text;
+    }
+  }
+
+  // Channel info from metadata rows
+  const rows = meta?.metadata?.contentMetadataViewModel?.metadataRows || [];
+  let channelName: string | undefined;
+  let channelId: string | undefined;
+  for (const row of rows) {
+    for (const part of row.metadataParts || []) {
+      const runs = part.text?.commandRuns || [];
+      for (const run of runs) {
+        const browseId = run.onTap?.innertubeCommand?.browseEndpoint?.browseId;
+        if (browseId && !browseId.startsWith('VL') && !channelId) {
+          channelName = part.text?.content;
+          channelId = browseId;
+        }
+      }
+    }
+  }
+
+  return {
+    type: 'playlist',
+    playlistId,
+    title,
+    thumbnailUrl,
+    videoCount,
+    channelName,
+    channelId,
+  };
+}
+
 async function searchPiped(instance: string, query: string, limit: number, signal: AbortSignal, searchType: SearchType) {
   const filter = searchType === 'channel' ? 'channels'
     : searchType === 'playlist' ? 'playlists'
@@ -379,7 +440,7 @@ async function searchPiped(instance: string, query: string, limit: number, signa
   // playlist
   return items.slice(0, limit).map((item: any) => ({
     type: 'playlist' as const,
-    playlistId: item.url?.split('list=')[1] || '',
+    playlistId: item.url?.split('list=')[1]?.split('&')[0] || '',
     title: item.name || 'Unknown Playlist',
     thumbnailUrl: item.thumbnail || '',
     videoCount: item.videos?.toString() || undefined,

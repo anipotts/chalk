@@ -24,6 +24,7 @@ const LIMITS: Record<string, number> = {
   '/api/voice-stt': 30,
   '/api/voice-tts': 30,
   '/api/voice-clone': 5,
+  '/api/youtube': 40,
 };
 
 function getLimit(pathname: string): number {
