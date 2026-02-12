@@ -221,16 +221,24 @@ export function InteractionOverlay({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {/* Backdrop with dynamic blur - clickable when showing hint */}
+          {/* Backdrop with dynamic blur - clickable everywhere */}
           <div
-            className={`absolute inset-0 ${blurLevel === 'full' ? 'bg-black/70' : 'bg-black/30'} backdrop-blur-xl ${showIdleHint ? 'cursor-pointer' : ''}`}
-            onClick={showIdleHint ? activateTextMode : undefined}
+            className={`absolute inset-0 ${blurLevel === 'full' ? 'bg-black/70' : 'bg-black/30'} backdrop-blur-xl cursor-pointer`}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                if (showIdleHint) {
+                  activateTextMode();
+                } else {
+                  onClose();
+                }
+              }
+            }}
           />
 
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-colors"
+            className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-colors pointer-events-auto"
             title="Close (Esc)"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
@@ -245,7 +253,7 @@ export function InteractionOverlay({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="relative z-10 flex flex-col items-center gap-4"
+              className="relative z-10 flex flex-col items-center gap-4 pointer-events-none"
             >
               {videoTitle && (
                 <div className="text-center">
@@ -266,13 +274,13 @@ export function InteractionOverlay({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className={`relative z-10 flex flex-col items-center gap-6 ${
+              className={`relative z-10 flex flex-col items-center gap-6 pointer-events-none ${
                 exchanges.length > 0 ? 'w-full max-w-2xl mx-auto px-6 h-[80vh] max-h-[600px]' : 'max-w-md px-6'
               }`}
             >
               {/* Header - only show when there are exchanges */}
               {exchanges.length > 0 && (
-                <div className="w-full flex items-center justify-between mb-0">
+                <div className="w-full flex items-center justify-between mb-0 pointer-events-auto">
                   <div className="text-white/70 text-xs">
                     {videoTitle && <span className="font-medium">{videoTitle}</span>}
                   </div>
@@ -299,7 +307,7 @@ export function InteractionOverlay({
                 <div
                   ref={scrollRef}
                   onScroll={handleScroll}
-                  className="flex-1 w-full overflow-y-auto scroll-smooth space-y-4 mb-4"
+                  className="flex-1 w-full overflow-y-auto scroll-smooth space-y-4 mb-4 pointer-events-auto"
                 >
                 {/* Past exchanges */}
                 {exchanges.map((exchange) => (
@@ -357,7 +365,7 @@ export function InteractionOverlay({
 
               {/* Current streaming exchange - show even when no history */}
               {exchanges.length === 0 && (currentUserText || currentAiText) && (
-                <div className="space-y-3 w-full max-w-md">
+                <div className="space-y-3 w-full max-w-md pointer-events-auto">
                   {currentUserText && (
                     <motion.div
                       initial={{ opacity: 0, y: 6 }}
@@ -391,7 +399,7 @@ export function InteractionOverlay({
                 <motion.div
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2 max-w-md"
+                  className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2 max-w-md pointer-events-auto"
                 >
                   {textError}
                 </motion.div>
@@ -399,7 +407,7 @@ export function InteractionOverlay({
 
               {/* Scroll to bottom button - only when there are exchanges */}
               {exchanges.length > 0 && isScrolledUp && (
-                <div className="absolute bottom-[72px] left-1/2 -translate-x-1/2 z-10">
+                <div className="absolute bottom-[72px] left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
                   <button
                     onClick={scrollToBottom}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-chalk-surface/90 border border-chalk-border/40 text-[11px] text-slate-400 hover:text-slate-200 shadow-lg transition-colors"
@@ -412,7 +420,7 @@ export function InteractionOverlay({
 
               {/* Text input */}
               {showTextInput && (
-                <div className={exchanges.length > 0 ? 'flex-none w-full' : 'w-full max-w-md'}>
+                <div className={`pointer-events-auto ${exchanges.length > 0 ? 'flex-none w-full' : 'w-full max-w-md'}`}>
                   <TextInput
                     value={input}
                     onChange={setInput}
@@ -435,7 +443,7 @@ export function InteractionOverlay({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative z-10 flex flex-col items-center gap-6 max-w-md px-6"
+              className="relative z-10 flex flex-col items-center gap-6 max-w-md px-6 pointer-events-none"
             >
               {/* Speaker info */}
               {videoTitle && (
@@ -460,12 +468,12 @@ export function InteractionOverlay({
               )}
 
               {/* Central visualization area */}
-              <div className="relative flex items-center justify-center w-40 h-40">
+              <div className="relative flex items-center justify-center w-40 h-40 pointer-events-auto">
                 {voiceState === 'recording' && <PulsingRings />}
 
                 {/* Mic button — push to talk */}
                 <motion.button
-                  className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-colors ${
+                  className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-colors pointer-events-auto ${
                     voiceState === 'recording'
                       ? 'bg-rose-500 shadow-lg shadow-rose-500/30'
                       : voiceState === 'speaking'
@@ -523,7 +531,7 @@ export function InteractionOverlay({
                 <motion.div
                   initial={{ opacity: 0, y: 5 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2 text-center max-w-[280px]"
+                  className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2 text-center max-w-[280px] pointer-events-auto"
                 >
                   {voiceError}
                 </motion.div>
@@ -531,7 +539,7 @@ export function InteractionOverlay({
 
               {/* Live transcript / response */}
               {(voiceTranscript || voiceResponseText) && (
-                <div className="w-full max-w-sm space-y-3">
+                <div className="w-full max-w-sm space-y-3 pointer-events-auto">
                   {voiceTranscript && (
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
@@ -560,7 +568,7 @@ export function InteractionOverlay({
 
               {/* Recent exchanges (last 2) */}
               {exchanges.length > 0 && !voiceTranscript && !voiceResponseText && (
-                <div className="w-full max-w-sm space-y-2 opacity-50">
+                <div className="w-full max-w-sm space-y-2 opacity-50 pointer-events-auto">
                   {exchanges.slice(-2).map((ex) => (
                     <div key={ex.id} className="space-y-1">
                       <p className="text-xs text-white/50 text-right truncate">{ex.userText}</p>
@@ -574,7 +582,7 @@ export function InteractionOverlay({
               {isProcessing && (
                 <button
                   onClick={onCancelRecording}
-                  className="text-xs text-white/40 hover:text-white/70 transition-colors"
+                  className="text-xs text-white/40 hover:text-white/70 transition-colors pointer-events-auto"
                 >
                   Cancel
                 </button>
