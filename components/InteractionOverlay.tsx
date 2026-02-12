@@ -167,10 +167,17 @@ export function InteractionOverlay({
   }, []);
 
   // Show idle hint when: text mode + no exchanges + no input + no current text exchange
-  const showIdleHint = isTextMode && exchanges.length === 0 && !input && !currentUserText && !currentAiText;
+  const showIdleHint = isTextMode && exchanges.length === 0 && !input && !currentUserText && !currentAiText && !isTextStreaming;
 
   // Show text input when in text mode (voice state is idle)
   const showTextInput = isTextMode;
+
+  // Activate text mode (open input)
+  const activateTextMode = useCallback(() => {
+    if (showIdleHint) {
+      setTimeout(() => inputRef?.current?.focus(), 100);
+    }
+  }, [showIdleHint, inputRef]);
 
   const stateLabel = {
     idle: 'Hold to speak',
@@ -214,8 +221,11 @@ export function InteractionOverlay({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {/* Backdrop with dynamic blur */}
-          <div className={`absolute inset-0 ${blurLevel === 'full' ? 'bg-black/70' : 'bg-black/30'} backdrop-blur-xl`} />
+          {/* Backdrop with dynamic blur - clickable when showing hint */}
+          <div
+            className={`absolute inset-0 ${blurLevel === 'full' ? 'bg-black/70' : 'bg-black/30'} backdrop-blur-xl ${showIdleHint ? 'cursor-pointer' : ''}`}
+            onClick={showIdleHint ? activateTextMode : undefined}
+          />
 
           {/* Close button */}
           <button
@@ -235,11 +245,16 @@ export function InteractionOverlay({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="relative z-10 cursor-pointer"
-              onClick={() => inputRef?.current?.focus()}
+              className="relative z-10 flex flex-col items-center gap-4"
             >
-              <p className="text-slate-400 text-sm">
-                Type to talk with {videoTitle ? <span className="text-white/80 font-medium">{videoTitle}</span> : 'this video'}
+              {videoTitle && (
+                <div className="text-center">
+                  <p className="text-xs text-white/40 mb-1">Talk to</p>
+                  <p className="text-sm text-white/80 font-medium truncate max-w-[300px]">{videoTitle}</p>
+                </div>
+              )}
+              <p className="text-slate-400 text-sm text-center px-6">
+                Click anywhere or start typing
               </p>
             </motion.div>
           )}
@@ -251,14 +266,16 @@ export function InteractionOverlay({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative z-10 w-full max-w-2xl mx-auto px-6 flex flex-col h-[80vh] max-h-[600px]"
+              className={`relative z-10 flex flex-col items-center gap-6 ${
+                exchanges.length > 0 ? 'w-full max-w-2xl mx-auto px-6 h-[80vh] max-h-[600px]' : 'max-w-md px-6'
+              }`}
             >
-              {/* Header */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-white/70 text-xs">
-                  {videoTitle && <span className="font-medium">{videoTitle}</span>}
-                </div>
-                {exchanges.length > 0 && (
+              {/* Header - only show when there are exchanges */}
+              {exchanges.length > 0 && (
+                <div className="w-full flex items-center justify-between mb-0">
+                  <div className="text-white/70 text-xs">
+                    {videoTitle && <span className="font-medium">{videoTitle}</span>}
+                  </div>
                   <button
                     onClick={onClearHistory}
                     className="text-[10px] text-slate-600 hover:text-slate-400 transition-colors px-1.5 py-0.5"
@@ -266,15 +283,24 @@ export function InteractionOverlay({
                   >
                     Clear
                   </button>
-                )}
-              </div>
+                </div>
+              )}
 
-              {/* Messages */}
-              <div
-                ref={scrollRef}
-                onScroll={handleScroll}
-                className="flex-1 overflow-y-auto scroll-smooth space-y-4 mb-4"
-              >
+              {/* Speaker info - show when no exchanges (similar to voice mode) */}
+              {exchanges.length === 0 && videoTitle && (
+                <div className="text-center">
+                  <p className="text-xs text-white/40 mb-1">Talking to</p>
+                  <p className="text-sm text-white/80 font-medium truncate max-w-[300px]">{videoTitle}</p>
+                </div>
+              )}
+
+              {/* Messages - only show scrollable area when there are exchanges */}
+              {exchanges.length > 0 && (
+                <div
+                  ref={scrollRef}
+                  onScroll={handleScroll}
+                  className="flex-1 w-full overflow-y-auto scroll-smooth space-y-4 mb-4"
+                >
                 {/* Past exchanges */}
                 {exchanges.map((exchange) => (
                   <ExchangeMessage
@@ -326,10 +352,53 @@ export function InteractionOverlay({
                     {textError}
                   </motion.div>
                 )}
-              </div>
+                </div>
+              )}
 
-              {/* Scroll to bottom button */}
-              {isScrolledUp && (
+              {/* Current streaming exchange - show even when no history */}
+              {exchanges.length === 0 && (currentUserText || currentAiText) && (
+                <div className="space-y-3 w-full max-w-md">
+                  {currentUserText && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex justify-end"
+                    >
+                      <div className="max-w-[80%] px-3.5 py-2 rounded-2xl rounded-br-sm bg-chalk-accent/90 text-white text-sm leading-relaxed break-words">
+                        {currentUserText}
+                      </div>
+                    </motion.div>
+                  )}
+                  {currentAiText && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex justify-start"
+                    >
+                      <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
+                        {currentAiText}
+                        {isTextStreaming && (
+                          <span className="inline-block w-0.5 h-4 bg-chalk-accent/70 animate-pulse ml-0.5 align-middle" />
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              )}
+
+              {/* Error message - show when no history */}
+              {exchanges.length === 0 && textError && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2 max-w-md"
+                >
+                  {textError}
+                </motion.div>
+              )}
+
+              {/* Scroll to bottom button - only when there are exchanges */}
+              {exchanges.length > 0 && isScrolledUp && (
                 <div className="absolute bottom-[72px] left-1/2 -translate-x-1/2 z-10">
                   <button
                     onClick={scrollToBottom}
@@ -343,7 +412,7 @@ export function InteractionOverlay({
 
               {/* Text input */}
               {showTextInput && (
-                <div className="flex-none">
+                <div className={exchanges.length > 0 ? 'flex-none w-full' : 'w-full max-w-md'}>
                   <TextInput
                     value={input}
                     onChange={setInput}

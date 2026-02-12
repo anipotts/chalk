@@ -146,7 +146,7 @@ function WatchContent() {
 
   const [currentTime, setCurrentTime] = useState(0);
   const [isPaused, setIsPaused] = useState(true);
-  const [interactionVisible, setInteractionVisible] = useState(false);
+  const [interactionVisible, setInteractionVisible] = useState(true);
   const [showTranscript, setShowTranscript] = useState(false);
   const [transcriptAutoOpened, setTranscriptAutoOpened] = useState(false);
   const [continueFrom, setContinueFrom] = useState<number | null>(null);
