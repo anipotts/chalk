@@ -110,7 +110,8 @@ function parseInnertubeResponse(data: any, limit: number, isContinuation: boolea
           if (!video?.videoId) continue;
           if (results.length >= limit) break;
 
-          results.push(extractVideoFromRenderer(video));
+          const parsed = extractVideoFromRenderer(video);
+          if (parsed) results.push(parsed);
         }
       }
       console.log(`[search] continuation parsed: ${results.length} videos, has next: ${!!continuationToken}`);
@@ -138,7 +139,8 @@ function parseInnertubeResponse(data: any, limit: number, isContinuation: boolea
           const video = item?.videoRenderer;
           if (!video?.videoId) continue;
 
-          results.push(extractVideoFromRenderer(video));
+          const parsed = extractVideoFromRenderer(video);
+          if (parsed) results.push(parsed);
         }
       }
     }
@@ -149,7 +151,46 @@ function parseInnertubeResponse(data: any, limit: number, isContinuation: boolea
   return { results, continuation: continuationToken };
 }
 
-function extractVideoFromRenderer(video: any): InnertubeVideo {
+/** Check if a video renderer represents a Short or non-standard video. */
+function isShortOrNonVideo(video: any): boolean {
+  // Shorts use /shorts/ navigation
+  const navUrl = video.navigationEndpoint?.commandMetadata?.webCommandMetadata?.url || '';
+  if (navUrl.includes('/shorts/')) return true;
+
+  // Shorts have an overlay badge saying "SHORTS"
+  const badges = video.badges || video.ownerBadges || [];
+  for (const badge of badges) {
+    const label = badge?.metadataBadgeRenderer?.label || '';
+    if (label.toUpperCase().includes('SHORT')) return true;
+  }
+
+  // Shorts have no lengthText at all
+  if (!video.lengthText) return true;
+
+  // Filter videos under 61 seconds (Shorts are ≤60s)
+  const durationText = video.lengthText?.simpleText || '';
+  if (durationText && parseDurationSeconds(durationText) <= 60) return true;
+
+  // Thumbnail overlay may have "SHORTS" style
+  const overlayStyle = video.thumbnailOverlays?.find(
+    (o: any) => o.thumbnailOverlayTimeStatusRenderer?.style === 'SHORTS'
+  );
+  if (overlayStyle) return true;
+
+  return false;
+}
+
+/** Parse "M:SS" or "H:MM:SS" duration string to seconds. */
+function parseDurationSeconds(duration: string): number {
+  const parts = duration.split(':').map(Number);
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  return 0;
+}
+
+function extractVideoFromRenderer(video: any): InnertubeVideo | null {
+  if (isShortOrNonVideo(video)) return null;
+
   const title = video.title?.runs?.map((r: any) => r.text).join('') || 'Untitled';
 
   const author = video.ownerText?.runs?.[0]?.text

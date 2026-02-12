@@ -128,7 +128,8 @@ function parseChannelResponse(data: any, isContinuation?: string): ChannelRespon
           const videoRenderer = item?.richItemRenderer?.content?.videoRenderer;
           if (!videoRenderer?.videoId) continue;
 
-          videos.push(extractVideo(videoRenderer));
+          const parsed = extractVideo(videoRenderer);
+          if (parsed) videos.push(parsed);
         }
       }
     }
@@ -150,7 +151,8 @@ function parseChannelResponse(data: any, isContinuation?: string): ChannelRespon
           const videoRenderer = item?.richItemRenderer?.content?.videoRenderer;
           if (!videoRenderer?.videoId) continue;
 
-          videos.push(extractVideo(videoRenderer));
+          const parsed = extractVideo(videoRenderer);
+          if (parsed) videos.push(parsed);
         }
       }
     }
@@ -159,7 +161,27 @@ function parseChannelResponse(data: any, isContinuation?: string): ChannelRespon
   return { channel, videos, continuation: continuationToken };
 }
 
-function extractVideo(video: any): ChannelVideo {
+function isShortOrNonVideo(video: any): boolean {
+  const navUrl = video.navigationEndpoint?.commandMetadata?.webCommandMetadata?.url || '';
+  if (navUrl.includes('/shorts/')) return true;
+  if (!video.lengthText) return true;
+  const durationText = video.lengthText?.simpleText || '';
+  if (durationText) {
+    const parts = durationText.split(':').map(Number);
+    const secs = parts.length === 3 ? parts[0] * 3600 + parts[1] * 60 + parts[2]
+      : parts.length === 2 ? parts[0] * 60 + parts[1] : 0;
+    if (secs <= 60) return true;
+  }
+  const overlayStyle = video.thumbnailOverlays?.find(
+    (o: any) => o.thumbnailOverlayTimeStatusRenderer?.style === 'SHORTS'
+  );
+  if (overlayStyle) return true;
+  return false;
+}
+
+function extractVideo(video: any): ChannelVideo | null {
+  if (isShortOrNonVideo(video)) return null;
+
   const title = video.title?.runs?.map((r: any) => r.text).join('') || 'Untitled';
 
   const thumbnails = video.thumbnail?.thumbnails || [];
