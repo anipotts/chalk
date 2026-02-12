@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { extractVideoId } from '@/lib/video-utils';
-import { ChalkboardSimple } from '@phosphor-icons/react';
+import { ChalkboardSimple, MagnifyingGlass } from '@phosphor-icons/react';
+import { SearchResults } from '@/components/SearchResults';
+import type { SearchResult } from '@/lib/youtube-search';
 
 const RECENT_VIDEOS_KEY = 'chalk-recent-videos';
 
@@ -42,13 +44,90 @@ function timeAgo(ts: number): string {
 
 export default function HomePage() {
   const router = useRouter();
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'url' | 'search'>('search');
+
+  // URL input state
   const [url, setUrl] = useState('');
   const [error, setError] = useState('');
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState('');
+
+  // Recent videos
   const [recentVideos, setRecentVideos] = useState<RecentVideo[]>([]);
+
+  // Abort controller for canceling in-flight requests
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     setRecentVideos(getRecentVideos());
   }, []);
+
+  // Debounced search effect
+  useEffect(() => {
+    // Reset results if query is too short
+    if (searchQuery.length < 2) {
+      setSearchResults([]);
+      setSearchError('');
+      return;
+    }
+
+    // Cancel previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Debounce: wait 300ms after last keystroke
+    const timeoutId = setTimeout(async () => {
+      setIsSearching(true);
+      setSearchError('');
+
+      // Create new abort controller for this request
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      try {
+        const response = await fetch(
+          `/api/youtube/search?q=${encodeURIComponent(searchQuery)}&limit=9`,
+          { signal: controller.signal }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Search failed');
+        }
+
+        const data = await response.json();
+        setSearchResults(data.results || []);
+      } catch (err: any) {
+        // Ignore abort errors (user typed again)
+        if (err.name === 'AbortError') return;
+
+        console.error('Search error:', err);
+        setSearchError(err.message || 'Unable to search. Please try again.');
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    // Cleanup
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [searchQuery]);
+
+  // Cancel search when switching tabs
+  useEffect(() => {
+    if (activeTab === 'url' && abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+  }, [activeTab]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,48 +144,117 @@ export default function HomePage() {
     router.push(`/watch?v=${videoId}`);
   };
 
+  const handleSearchRetry = () => {
+    setSearchError('');
+    // Trigger re-search by updating the query (add/remove space)
+    setSearchQuery((prev) => prev + ' ');
+    setTimeout(() => setSearchQuery((prev) => prev.trim()), 50);
+  };
+
   return (
     <div className="min-h-screen bg-chalk-bg flex flex-col">
       {/* Hero */}
-      <div className="flex-1 flex items-center justify-center px-4">
-        <div className="w-full max-w-xl text-center">
-          <h1 className="text-3xl font-bold text-chalk-text mb-2 flex items-center justify-center gap-2">
-            <ChalkboardSimple size={32} />
-            chalk
-          </h1>
-          <p className="text-sm text-slate-500 mb-8">
-            Learn from any YouTube video with AI
-          </p>
+      <div className="flex-1 flex items-center justify-center px-4 pt-12">
+        <div className="w-full max-w-2xl">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-chalk-text mb-2 flex items-center justify-center gap-2">
+              <ChalkboardSimple size={32} />
+              chalk
+            </h1>
+            <p className="text-sm text-slate-500">
+              Learn from any YouTube video with AI
+            </p>
+          </div>
 
-          <form onSubmit={handleSubmit} className="flex gap-2">
-            <input
-              type="text"
-              value={url}
-              onChange={(e) => { setUrl(e.target.value); setError(''); }}
-              placeholder="Paste a YouTube URL..."
-              autoFocus
-              className="flex-1 px-4 py-3 rounded-xl bg-chalk-surface/40 border border-chalk-border/30 text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-chalk-accent/40 focus:border-chalk-accent/30 transition-colors"
-            />
+          {/* Tab selector */}
+          <div className="flex gap-2 justify-center mb-4">
             <button
-              type="submit"
-              disabled={!url.trim()}
-              className="px-5 py-3 rounded-xl bg-chalk-accent text-white text-sm font-medium hover:bg-chalk-accent/90 disabled:opacity-40 disabled:hover:bg-chalk-accent transition-colors"
+              onClick={() => setActiveTab('search')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === 'search'
+                  ? 'bg-chalk-accent/10 border border-chalk-accent/40 text-chalk-accent'
+                  : 'bg-chalk-surface/20 border border-chalk-border/20 text-slate-400 hover:bg-chalk-surface/30'
+              }`}
             >
-              Watch
+              <MagnifyingGlass size={16} weight="bold" className="inline mr-1.5 -mt-0.5" />
+              Search
             </button>
-          </form>
+            <button
+              onClick={() => setActiveTab('url')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                activeTab === 'url'
+                  ? 'bg-chalk-accent/10 border border-chalk-accent/40 text-chalk-accent'
+                  : 'bg-chalk-surface/20 border border-chalk-border/20 text-slate-400 hover:bg-chalk-surface/30'
+              }`}
+            >
+              URL
+            </button>
+          </div>
 
-          {error && (
-            <p className="mt-2 text-xs text-red-400">{error}</p>
+          {/* URL input tab */}
+          {activeTab === 'url' && (
+            <div>
+              <form onSubmit={handleSubmit} className="flex gap-2 max-w-xl mx-auto">
+                <input
+                  type="text"
+                  value={url}
+                  onChange={(e) => { setUrl(e.target.value); setError(''); }}
+                  placeholder="Paste a YouTube URL..."
+                  autoFocus
+                  className="flex-1 px-4 py-3 rounded-xl bg-chalk-surface/40 border border-chalk-border/30 text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-chalk-accent/40 focus:border-chalk-accent/30 transition-colors"
+                />
+                <button
+                  type="submit"
+                  disabled={!url.trim()}
+                  className="px-5 py-3 rounded-xl bg-chalk-accent text-white text-sm font-medium hover:bg-chalk-accent/90 disabled:opacity-40 disabled:hover:bg-chalk-accent transition-colors"
+                >
+                  Watch
+                </button>
+              </form>
+
+              {error && (
+                <p className="mt-2 text-xs text-red-400 text-center">{error}</p>
+              )}
+            </div>
+          )}
+
+          {/* Search input tab */}
+          {activeTab === 'search' && (
+            <div>
+              <div className="max-w-xl mx-auto">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search for videos..."
+                  autoFocus
+                  className="w-full px-4 py-3 rounded-xl bg-chalk-surface/40 border border-chalk-border/30 text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-chalk-accent/40 focus:border-chalk-accent/30 transition-colors"
+                />
+                {searchQuery.length > 0 && searchQuery.length < 2 && (
+                  <p className="mt-2 text-xs text-slate-500 text-center">
+                    Type at least 2 characters to search
+                  </p>
+                )}
+              </div>
+
+              {/* Search results */}
+              <SearchResults
+                results={searchResults}
+                isLoading={isSearching}
+                error={searchError}
+                onRetry={handleSearchRetry}
+              />
+            </div>
           )}
         </div>
       </div>
 
       {/* Recent videos */}
       {recentVideos.length > 0 && (
-        <div className="px-4 pb-12 max-w-xl mx-auto w-full">
+        <div className="px-4 pb-12 pt-8 max-w-2xl mx-auto w-full">
           <h2 className="text-xs font-medium text-slate-500 mb-3 uppercase tracking-wider">Recent</h2>
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {recentVideos.map((video) => (
               <a
                 key={video.id}
