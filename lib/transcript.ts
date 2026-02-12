@@ -838,6 +838,52 @@ export async function fetchTranscript(videoId: string): Promise<TranscriptResult
 }
 
 /**
+ * Clean transcript segment text by removing common artifacts from auto-captions.
+ *
+ * Strips: [Music], [Applause], [Laughter], ♪ notes, \n newlines,
+ * leading speaker dashes, and normalizes whitespace.
+ * Returns cleaned segments with empty-after-cleaning entries removed.
+ */
+export function cleanSegments(segments: TranscriptSegment[]): TranscriptSegment[] {
+  const BRACKET_ANNOTATIONS = /\[(?:Music|Applause|Laughter|Inaudible|Silence|Cheering|Cheers|Booing|Singing|Foreign|Background noise|Background music|MUSIC|APPLAUSE|LAUGHTER|music|applause|laughter)\]/gi;
+  const MUSIC_NOTES = /[♪♫♬]+/g;
+  const LEADING_DASH = /^[-–—]\s*/;
+  const SPEAKER_LABEL = /^>>\s*[A-Z][A-Za-z\s.'-]*:\s*/;
+  const MULTI_SPACE = /\s{2,}/g;
+
+  const result: TranscriptSegment[] = [];
+
+  for (const seg of segments) {
+    let text = seg.text;
+
+    // Strip newlines and carriage returns
+    text = text.replace(/[\r\n]+/g, ' ');
+
+    // Remove bracket annotations like [Music], [Applause], etc.
+    text = text.replace(BRACKET_ANNOTATIONS, '');
+
+    // Remove music note characters
+    text = text.replace(MUSIC_NOTES, '');
+
+    // Remove speaker labels like ">> JOHN SMITH: "
+    text = text.replace(SPEAKER_LABEL, '');
+
+    // Remove leading dashes (speaker turn markers)
+    text = text.replace(LEADING_DASH, '');
+
+    // Normalize whitespace
+    text = text.replace(MULTI_SPACE, ' ').trim();
+
+    // Only keep segments that still have meaningful text
+    if (text.length > 0) {
+      result.push({ ...seg, text });
+    }
+  }
+
+  return result;
+}
+
+/**
  * Deduplicate overlapping auto-generated caption segments.
  */
 export function deduplicateSegments(segments: TranscriptSegment[]): TranscriptSegment[] {

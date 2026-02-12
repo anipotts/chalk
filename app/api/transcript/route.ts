@@ -6,7 +6,7 @@
  * Uses 3-tier cache hierarchy before fetching.
  */
 
-import { fetchTranscript, deduplicateSegments, mergeIntoSentences } from '@/lib/transcript';
+import { fetchTranscript, deduplicateSegments, cleanSegments, mergeIntoSentences } from '@/lib/transcript';
 import { getCachedTranscript, setCachedTranscript } from '@/lib/transcript-cache';
 
 export const dynamic = 'force-dynamic';
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   // Fetch from source (Phase 1 caption race → Phase 2 STT cascade)
   try {
     const result = await fetchTranscript(videoId);
-    const segments = mergeIntoSentences(deduplicateSegments(result.segments));
+    const segments = mergeIntoSentences(cleanSegments(deduplicateSegments(result.segments)));
 
     if (segments.length > 0) {
       setCachedTranscript(videoId, segments, result.source);
