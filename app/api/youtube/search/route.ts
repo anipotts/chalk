@@ -1,6 +1,7 @@
 /**
  * YouTube Search API Route
- * Uses YouTube's Innertube API directly (most reliable), with Piped/Invidious fallback
+ * Uses YouTube's Innertube API directly (most reliable), with Piped/Invidious fallback.
+ * Supports pagination via continuation tokens.
  */
 
 import { normalizeInvidiousResults, normalizePipedResults } from '@/lib/youtube-search';
@@ -8,7 +9,6 @@ import { normalizeInvidiousResults, normalizePipedResults } from '@/lib/youtube-
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
-// Fallback instances (used only if Innertube fails)
 const PIPED_INSTANCES = [
   'https://pipedapi.kavin.rocks',
   'https://pipedapi.adminforge.de',
@@ -25,30 +25,43 @@ interface InnertubeVideo {
   videoId: string;
   title: string;
   author: string;
+  channelId?: string;
   thumbnailUrl: string;
   duration: string;
   viewCount: number;
   publishedText: string;
 }
 
+interface InnertubeSearchResult {
+  results: InnertubeVideo[];
+  continuation?: string;
+}
+
 /**
  * Search via YouTube Innertube API (direct, no API key, most reliable)
  */
-async function searchInnertube(query: string, limit: number, signal: AbortSignal): Promise<InnertubeVideo[]> {
+async function searchInnertube(query: string, limit: number, signal: AbortSignal, continuation?: string): Promise<InnertubeSearchResult> {
+  const body: Record<string, any> = {
+    context: {
+      client: {
+        clientName: 'WEB',
+        clientVersion: '2.20250101.00.00',
+        hl: 'en',
+        gl: 'US',
+      },
+    },
+  };
+
+  if (continuation) {
+    body.continuation = continuation;
+  } else {
+    body.query = query;
+  }
+
   const response = await fetch('https://www.youtube.com/youtubei/v1/search', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      context: {
-        client: {
-          clientName: 'WEB',
-          clientVersion: '2.20250101.00.00',
-          hl: 'en',
-          gl: 'US',
-        },
-      },
-      query,
-    }),
+    body: JSON.stringify(body),
     signal,
   });
 
@@ -57,79 +70,118 @@ async function searchInnertube(query: string, limit: number, signal: AbortSignal
   }
 
   const data = await response.json();
-  return parseInnertubeResponse(data, limit);
+  return parseInnertubeResponse(data, limit, !!continuation);
 }
 
 /**
- * Parse Innertube's nested response into flat video results
+ * Parse Innertube's nested response into flat video results.
+ * Handles both initial search and continuation responses.
  */
-function parseInnertubeResponse(data: any, limit: number): InnertubeVideo[] {
+function parseInnertubeResponse(data: any, limit: number, isContinuation: boolean): InnertubeSearchResult {
   const results: InnertubeVideo[] = [];
+  let continuationToken: string | undefined;
 
   try {
-    const contents = data?.contents?.twoColumnSearchResultsRenderer?.primaryContents
-      ?.sectionListRenderer?.contents;
+    let contents: any[];
 
-    if (!Array.isArray(contents)) return [];
+    if (isContinuation) {
+      // Continuation response has a different structure
+      const actions = data?.onResponseReceivedCommands;
+      if (!Array.isArray(actions)) return { results };
 
-    for (const section of contents) {
-      const items = section?.itemSectionRenderer?.contents;
-      if (!Array.isArray(items)) continue;
+      for (const action of actions) {
+        const items = action?.appendContinuationItemsAction?.continuationItems;
+        if (!Array.isArray(items)) continue;
 
-      for (const item of items) {
-        if (results.length >= limit) break;
+        for (const item of items) {
+          // Check for continuation token
+          if (item.continuationItemRenderer) {
+            continuationToken = item.continuationItemRenderer
+              ?.continuationEndpoint?.continuationCommand?.token;
+            continue;
+          }
 
-        const video = item?.videoRenderer;
-        if (!video?.videoId) continue;
+          const video = item?.itemSectionRenderer?.contents?.[0]?.videoRenderer
+            || item?.videoRenderer;
+          if (!video?.videoId) continue;
+          if (results.length >= limit) break;
 
-        // Extract title
-        const title = video.title?.runs?.map((r: any) => r.text).join('') || 'Untitled';
+          results.push(extractVideoFromRenderer(video));
+        }
+      }
+    } else {
+      // Initial search response
+      contents = data?.contents?.twoColumnSearchResultsRenderer?.primaryContents
+        ?.sectionListRenderer?.contents;
 
-        // Extract author
-        const author = video.ownerText?.runs?.[0]?.text
-          || video.longBylineText?.runs?.[0]?.text
-          || 'Unknown';
+      if (!Array.isArray(contents)) return { results };
 
-        // Extract thumbnail
-        const thumbnails = video.thumbnail?.thumbnails || [];
-        const thumb = thumbnails.find((t: any) => t.width >= 300)
-          || thumbnails[thumbnails.length - 1]
-          || {};
-        const thumbnailUrl = thumb.url || `https://i.ytimg.com/vi/${video.videoId}/mqdefault.jpg`;
+      for (const section of contents) {
+        // Check for continuation token in section list
+        if (section.continuationItemRenderer) {
+          continuationToken = section.continuationItemRenderer
+            ?.continuationEndpoint?.continuationCommand?.token;
+          continue;
+        }
 
-        // Extract duration
-        const duration = video.lengthText?.simpleText || '0:00';
+        const items = section?.itemSectionRenderer?.contents;
+        if (!Array.isArray(items)) continue;
 
-        // Extract view count
-        let viewCount = 0;
-        const viewText = video.viewCountText?.simpleText || '';
-        const viewMatch = viewText.replace(/,/g, '').match(/(\d+)/);
-        if (viewMatch) viewCount = parseInt(viewMatch[1], 10);
+        for (const item of items) {
+          if (results.length >= limit) break;
 
-        // Extract published text
-        const publishedText = video.publishedTimeText?.simpleText || '';
+          const video = item?.videoRenderer;
+          if (!video?.videoId) continue;
 
-        results.push({
-          videoId: video.videoId,
-          title,
-          author,
-          thumbnailUrl,
-          duration,
-          viewCount,
-          publishedText,
-        });
+          results.push(extractVideoFromRenderer(video));
+        }
       }
     }
   } catch {
     // Parse error — return whatever we got
   }
 
-  return results;
+  return { results, continuation: continuationToken };
 }
 
-/**
- * Fallback: search via Piped instance
- */
+function extractVideoFromRenderer(video: any): InnertubeVideo {
+  const title = video.title?.runs?.map((r: any) => r.text).join('') || 'Untitled';
+
+  const author = video.ownerText?.runs?.[0]?.text
+    || video.longBylineText?.runs?.[0]?.text
+    || 'Unknown';
+
+  const channelId = video.ownerText?.runs?.[0]?.navigationEndpoint?.browseEndpoint?.browseId
+    || video.longBylineText?.runs?.[0]?.navigationEndpoint?.browseEndpoint?.browseId
+    || undefined;
+
+  const thumbnails = video.thumbnail?.thumbnails || [];
+  const thumb = thumbnails.find((t: any) => t.width >= 300)
+    || thumbnails[thumbnails.length - 1]
+    || {};
+  const thumbnailUrl = thumb.url || `https://i.ytimg.com/vi/${video.videoId}/mqdefault.jpg`;
+
+  const duration = video.lengthText?.simpleText || '0:00';
+
+  let viewCount = 0;
+  const viewText = video.viewCountText?.simpleText || '';
+  const viewMatch = viewText.replace(/,/g, '').match(/(\d+)/);
+  if (viewMatch) viewCount = parseInt(viewMatch[1], 10);
+
+  const publishedText = video.publishedTimeText?.simpleText || '';
+
+  return {
+    videoId: video.videoId,
+    title,
+    author,
+    channelId,
+    thumbnailUrl,
+    duration,
+    viewCount,
+    publishedText,
+  };
+}
+
 async function searchPiped(instance: string, query: string, limit: number, signal: AbortSignal) {
   const url = `${instance}/search?q=${encodeURIComponent(query)}&filter=videos`;
   const response = await fetch(url, { signal });
@@ -138,9 +190,6 @@ async function searchPiped(instance: string, query: string, limit: number, signa
   return normalizePipedResults(data).slice(0, limit);
 }
 
-/**
- * Fallback: search via Invidious instance
- */
 async function searchInvidious(instance: string, query: string, limit: number, signal: AbortSignal) {
   const url = `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video`;
   const response = await fetch(url, { signal });
@@ -150,20 +199,26 @@ async function searchInvidious(instance: string, query: string, limit: number, s
 }
 
 /**
- * Search with cascading fallback: Innertube → Piped → Invidious
+ * Search with cascading fallback: Innertube → Piped → Invidious.
+ * Returns results and optional continuation token.
  */
-async function searchWithFallback(query: string, limit: number) {
+async function searchWithFallback(query: string, limit: number, continuation?: string): Promise<{ results: any[]; continuation?: string }> {
   const timeout = 8000;
 
-  // 1. Try Innertube (most reliable)
+  // 1. Try Innertube (most reliable, supports continuation)
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
-    const results = await searchInnertube(query, limit, controller.signal);
+    const result = await searchInnertube(query, limit, controller.signal, continuation);
     clearTimeout(timeoutId);
-    if (results.length > 0) return results;
+    if (result.results.length > 0) return result;
   } catch (err) {
     console.error('Innertube search failed:', err);
+  }
+
+  // Fallbacks don't support continuation — only for initial searches
+  if (continuation) {
+    throw new Error('Continuation not available (Innertube failed)');
   }
 
   // 2. Try Piped instances
@@ -173,7 +228,7 @@ async function searchWithFallback(query: string, limit: number) {
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       const results = await searchPiped(instance, query, limit, controller.signal);
       clearTimeout(timeoutId);
-      return results;
+      return { results };
     } catch (err) {
       console.error(`Piped ${instance} failed:`, err);
     }
@@ -186,7 +241,7 @@ async function searchWithFallback(query: string, limit: number) {
       const timeoutId = setTimeout(() => controller.abort(), 5000);
       const results = await searchInvidious(instance, query, limit, controller.signal);
       clearTimeout(timeoutId);
-      return results;
+      return { results };
     } catch (err) {
       console.error(`Invidious ${instance} failed:`, err);
     }
@@ -200,15 +255,16 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const query = searchParams.get('q');
     const limitParam = searchParams.get('limit');
+    const continuation = searchParams.get('continuation') || undefined;
 
     if (!query || query.length < 1 || query.length > 200) {
       return Response.json({ error: 'Invalid query' }, { status: 400 });
     }
 
-    const limit = Math.min(Math.max(parseInt(limitParam || '9', 10) || 9, 1), 50);
-    const results = await searchWithFallback(query, limit);
+    const limit = Math.min(Math.max(parseInt(limitParam || '20', 10) || 20, 1), 50);
+    const result = await searchWithFallback(query, limit, continuation);
 
-    return Response.json({ results });
+    return Response.json(result);
   } catch (error) {
     console.error('Search API error:', error);
 

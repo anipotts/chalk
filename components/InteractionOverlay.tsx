@@ -169,8 +169,8 @@ export function InteractionOverlay({
   // Show idle hint when: text mode + no exchanges + no input + no current text exchange
   const showIdleHint = isTextMode && exchanges.length === 0 && !input && !currentUserText && !currentAiText && !isTextStreaming;
 
-  // Show text input when in text mode (voice state is idle)
-  const showTextInput = isTextMode;
+  // Show text input area - always visible (voice button can change states independently)
+  const showTextInput = true;
 
   // Activate text mode (open input)
   const activateTextMode = useCallback(() => {
@@ -221,16 +221,12 @@ export function InteractionOverlay({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {/* Backdrop with dynamic blur - clickable everywhere */}
+          {/* Backdrop with dynamic blur - clickable to close */}
           <div
             className={`absolute inset-0 ${blurLevel === 'full' ? 'bg-black/70' : 'bg-black/30'} backdrop-blur-xl cursor-pointer`}
             onClick={(e) => {
               if (e.target === e.currentTarget) {
-                if (showIdleHint) {
-                  activateTextMode();
-                } else {
-                  onClose();
-                }
+                onClose();
               }
             }}
           />
@@ -246,31 +242,233 @@ export function InteractionOverlay({
             </svg>
           </button>
 
-          {/* IDLE HINT STATE */}
-          {showIdleHint && (
-            <motion.div
-              key="idle-hint"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 20 }}
-              className="relative z-10 flex flex-col items-center gap-4 pointer-events-none"
-            >
-              {videoTitle && (
-                <div className="text-center">
-                  <p className="text-xs text-white/40 mb-1">Talk to</p>
-                  <p className="text-sm text-white/80 font-medium truncate max-w-[300px]">{videoTitle}</p>
+
+          {/* UNIFIED INPUT MODE */}
+          <motion.div
+            key="text-mode"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            className="relative z-10 flex flex-col w-full max-w-2xl mx-auto px-6 h-[80vh] max-h-[700px] pointer-events-none"
+          >
+
+              {/* Messages - unified container for all messages */}
+              <div
+                ref={scrollRef}
+                onScroll={handleScroll}
+                className="flex-1 w-full overflow-y-auto scroll-smooth space-y-3 mb-4 pointer-events-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              >
+                {/* Past exchanges */}
+                {exchanges.map((exchange) => (
+                  <ExchangeMessage
+                    key={exchange.id}
+                    exchange={exchange}
+                    onSeek={onSeek}
+                    videoId={videoId}
+                  />
+                ))}
+
+                {/* Current streaming exchange - same styling as history */}
+                {(currentUserText || currentAiText || voiceTranscript || voiceResponseText) && (
+                  <div className="space-y-3">
+                    {/* User message (text or voice transcript) */}
+                    {(currentUserText || voiceTranscript) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex justify-end w-full"
+                      >
+                        <div className="max-w-[85%] px-3.5 py-2 rounded-2xl bg-[#3b82f6] text-white text-sm leading-relaxed break-words">
+                          {currentUserText || voiceTranscript}
+                        </div>
+                      </motion.div>
+                    )}
+                    {/* AI response */}
+                    {(currentAiText || voiceResponseText) && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex justify-start w-full"
+                      >
+                        <div className="max-w-[85%] px-3.5 py-2 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] text-slate-200 text-sm leading-relaxed whitespace-pre-wrap break-words">
+                          {currentAiText || voiceResponseText}
+                          {isTextStreaming && (
+                            <span className="inline-block w-0.5 h-4 bg-chalk-accent animate-pulse ml-0.5 align-middle" />
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+
+                {/* Error message */}
+                {(textError || voiceError) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2"
+                  >
+                    {textError || voiceError}
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Scroll to bottom button - only when there are exchanges */}
+              {exchanges.length > 0 && isScrolledUp && (
+                <div className="absolute bottom-[72px] left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
+                  <button
+                    onClick={scrollToBottom}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-chalk-surface/90 border border-chalk-border/40 text-[11px] text-slate-400 hover:text-slate-200 shadow-lg transition-colors"
+                  >
+                    <DownArrowIcon />
+                    New messages
+                  </button>
                 </div>
               )}
-              <p className="text-slate-400 text-sm text-center px-6">
-                Click anywhere or start typing
-              </p>
-            </motion.div>
-          )}
 
-          {/* TEXT MODE STATE */}
-          {!showIdleHint && isTextMode && (
+              {/* Input row: Text input | Mic button | Send button */}
+              {showTextInput && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 20 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className={`pointer-events-auto ${exchanges.length > 0 ? 'flex-none w-full' : 'w-full max-w-md'}`}
+                >
+                  {/* Unified input row */}
+                  <div className="flex items-center gap-2">
+                    <TextInput
+                      value={input}
+                      onChange={setInput}
+                      onSubmit={handleSubmit}
+                      isStreaming={isTextStreaming}
+                      onStop={onStopTextStream}
+                      placeholder="Ask about this video..."
+                      inputRef={inputRef}
+                      autoFocus={true}
+                    />
+
+                    {/* Mic button */}
+                    <motion.button
+                      className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-all ${
+                        voiceState === 'recording'
+                          ? 'bg-rose-500 shadow-lg shadow-rose-500/30'
+                          : voiceState === 'speaking'
+                            ? 'bg-emerald-500/20 border border-emerald-500/40'
+                            : voiceState === 'transcribing' || voiceState === 'thinking'
+                              ? 'bg-chalk-accent/20 border border-chalk-accent/40'
+                              : 'bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.15]'
+                      }`}
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        if (voiceState === 'idle') onStartRecording();
+                      }}
+                      onPointerUp={(e) => {
+                        e.preventDefault();
+                        if (voiceState === 'recording') onStopRecording();
+                      }}
+                      onPointerLeave={(e) => {
+                        e.preventDefault();
+                        if (voiceState === 'recording') onStopRecording();
+                      }}
+                      whileTap={{ scale: 0.95 }}
+                      title="Hold to record voice"
+                    >
+                      {voiceState === 'speaking' ? (
+                        <div className="scale-75">
+                          <SoundWaveBars />
+                        </div>
+                      ) : (voiceState === 'transcribing' || voiceState === 'thinking') ? (
+                        <ThinkingDots />
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                          className={`w-5 h-5 ${voiceState === 'recording' ? 'text-white' : 'text-white/70'}`}
+                        >
+                          <path d="M12 2a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4Z" />
+                          <path d="M6 11a.75.75 0 0 0-1.5 0 7.5 7.5 0 0 0 6.75 7.46v2.79a.75.75 0 0 0 1.5 0v-2.79A7.5 7.5 0 0 0 19.5 11a.75.75 0 0 0-1.5 0 6 6 0 0 1-12 0Z" />
+                        </svg>
+                      )}
+                    </motion.button>
+
+                    {/* Send/Stop button */}
+                    {isTextStreaming ? (
+                      <button
+                        type="button"
+                        onClick={onStopTextStream}
+                        className="flex-shrink-0 w-11 h-11 rounded-xl bg-red-500/15 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500/25 transition-colors"
+                        title="Stop"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                          <rect x="3.5" y="3.5" width="9" height="9" rx="1.5" />
+                        </svg>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleSubmit}
+                        disabled={!input.trim()}
+                        className="flex-shrink-0 w-11 h-11 rounded-xl bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30 flex items-center justify-center hover:bg-chalk-accent/25 disabled:opacity-30 disabled:hover:bg-chalk-accent/15 transition-colors"
+                        title="Send"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                          <path fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Voice state indicator when recording/processing */}
+                  {voiceState !== 'idle' && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="mt-3 text-center"
+                    >
+                      <p className={`text-sm font-medium ${
+                        voiceState === 'recording' ? 'text-rose-400'
+                          : voiceState === 'speaking' ? 'text-emerald-400'
+                            : 'text-chalk-accent'
+                      }`}>
+                        {voiceState === 'recording' && `Recording... ${formatDuration(recordingDuration)}`}
+                        {voiceState === 'transcribing' && 'Transcribing...'}
+                        {voiceState === 'thinking' && 'Thinking...'}
+                        {voiceState === 'speaking' && 'Speaking...'}
+                      </p>
+                    </motion.div>
+                  )}
+
+                  {/* Voice error */}
+                  {voiceError && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-3 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2"
+                    >
+                      {voiceError}
+                    </motion.div>
+                  )}
+
+                  {/* Clear button - at bottom */}
+                  {exchanges.length > 0 && (
+                    <div className="mt-4 flex justify-center">
+                      <button
+                        onClick={onClearHistory}
+                        className="text-xs text-slate-500 hover:text-slate-300 px-3 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors"
+                        title="Clear conversation history"
+                      >
+                        Clear history
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </motion.div>
+
+          {/* VOICE MODE STATE - Now unified with text mode, keeping this for voice transcript display */}
+          {false && !isTextMode && (
             <motion.div
-              key="text-mode"
+              key="voice-mode"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
@@ -278,7 +476,7 @@ export function InteractionOverlay({
                 exchanges.length > 0 ? 'w-full max-w-2xl mx-auto px-6 h-[80vh] max-h-[600px]' : 'max-w-md px-6'
               }`}
             >
-              {/* Header - only show when there are exchanges */}
+              {/* Header - show when there are exchanges */}
               {exchanges.length > 0 && (
                 <div className="w-full flex items-center justify-between mb-0 pointer-events-auto">
                   <div className="text-white/70 text-xs">
@@ -294,159 +492,8 @@ export function InteractionOverlay({
                 </div>
               )}
 
-              {/* Speaker info - show when no exchanges (similar to voice mode) */}
+              {/* Speaker info - show when no exchanges */}
               {exchanges.length === 0 && videoTitle && (
-                <div className="text-center">
-                  <p className="text-xs text-white/40 mb-1">Talking to</p>
-                  <p className="text-sm text-white/80 font-medium truncate max-w-[300px]">{videoTitle}</p>
-                </div>
-              )}
-
-              {/* Messages - only show scrollable area when there are exchanges */}
-              {exchanges.length > 0 && (
-                <div
-                  ref={scrollRef}
-                  onScroll={handleScroll}
-                  className="flex-1 w-full overflow-y-auto scroll-smooth space-y-4 mb-4 pointer-events-auto"
-                >
-                {/* Past exchanges */}
-                {exchanges.map((exchange) => (
-                  <ExchangeMessage
-                    key={exchange.id}
-                    exchange={exchange}
-                    onSeek={onSeek}
-                    videoId={videoId}
-                  />
-                ))}
-
-                {/* Current streaming exchange */}
-                {(currentUserText || currentAiText) && (
-                  <div className="space-y-3">
-                    {currentUserText && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex justify-end"
-                      >
-                        <div className="max-w-[80%] px-3.5 py-2 rounded-2xl rounded-br-sm bg-chalk-accent/90 text-white text-sm leading-relaxed break-words">
-                          {currentUserText}
-                        </div>
-                      </motion.div>
-                    )}
-                    {currentAiText && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex justify-start"
-                      >
-                        <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-                          {currentAiText}
-                          {isTextStreaming && (
-                            <span className="inline-block w-0.5 h-4 bg-chalk-accent/70 animate-pulse ml-0.5 align-middle" />
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </div>
-                )}
-
-                {/* Error message */}
-                {textError && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2"
-                  >
-                    {textError}
-                  </motion.div>
-                )}
-                </div>
-              )}
-
-              {/* Current streaming exchange - show even when no history */}
-              {exchanges.length === 0 && (currentUserText || currentAiText) && (
-                <div className="space-y-3 w-full max-w-md pointer-events-auto">
-                  {currentUserText && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex justify-end"
-                    >
-                      <div className="max-w-[80%] px-3.5 py-2 rounded-2xl rounded-br-sm bg-chalk-accent/90 text-white text-sm leading-relaxed break-words">
-                        {currentUserText}
-                      </div>
-                    </motion.div>
-                  )}
-                  {currentAiText && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex justify-start"
-                    >
-                      <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-                        {currentAiText}
-                        {isTextStreaming && (
-                          <span className="inline-block w-0.5 h-4 bg-chalk-accent/70 animate-pulse ml-0.5 align-middle" />
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </div>
-              )}
-
-              {/* Error message - show when no history */}
-              {exchanges.length === 0 && textError && (
-                <motion.div
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2 max-w-md pointer-events-auto"
-                >
-                  {textError}
-                </motion.div>
-              )}
-
-              {/* Scroll to bottom button - only when there are exchanges */}
-              {exchanges.length > 0 && isScrolledUp && (
-                <div className="absolute bottom-[72px] left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
-                  <button
-                    onClick={scrollToBottom}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-chalk-surface/90 border border-chalk-border/40 text-[11px] text-slate-400 hover:text-slate-200 shadow-lg transition-colors"
-                  >
-                    <DownArrowIcon />
-                    New messages
-                  </button>
-                </div>
-              )}
-
-              {/* Text input */}
-              {showTextInput && (
-                <div className={`pointer-events-auto ${exchanges.length > 0 ? 'flex-none w-full' : 'w-full max-w-md'}`}>
-                  <TextInput
-                    value={input}
-                    onChange={setInput}
-                    onSubmit={handleSubmit}
-                    isStreaming={isTextStreaming}
-                    onStop={onStopTextStream}
-                    placeholder="Ask about this video..."
-                    inputRef={inputRef}
-                    autoFocus={!showIdleHint}
-                  />
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* VOICE MODE STATE */}
-          {!isTextMode && (
-            <motion.div
-              key="voice-mode"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative z-10 flex flex-col items-center gap-6 max-w-md px-6 pointer-events-none"
-            >
-              {/* Speaker info */}
-              {videoTitle && (
                 <div className="text-center">
                   <p className="text-xs text-white/40 mb-1">Talking to</p>
                   <p className="text-sm text-white/80 font-medium truncate max-w-[300px]">{videoTitle}</p>
@@ -464,6 +511,66 @@ export function InteractionOverlay({
                 <div className="flex items-center gap-1.5 text-xs text-emerald-400/70">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                   Voice cloned
+                </div>
+              )}
+
+              {/* Messages - show when there are exchanges */}
+              {exchanges.length > 0 && (
+                <div
+                  ref={scrollRef}
+                  onScroll={handleScroll}
+                  className="w-full max-h-[40vh] overflow-y-auto scroll-smooth space-y-4 mb-6 pointer-events-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                >
+                  {/* Past exchanges */}
+                  {exchanges.map((exchange) => (
+                    <ExchangeMessage
+                      key={exchange.id}
+                      exchange={exchange}
+                      onSeek={onSeek}
+                      videoId={videoId}
+                    />
+                  ))}
+
+                  {/* Current voice exchange */}
+                  {(voiceTranscript || voiceResponseText) && (
+                    <div className="space-y-3">
+                      {voiceTranscript && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex justify-end w-full"
+                        >
+                          <div className="max-w-[85%] px-3.5 py-2 rounded-2xl bg-chalk-accent/90 text-white text-sm leading-relaxed break-words">
+                            {voiceTranscript}
+                          </div>
+                        </motion.div>
+                      )}
+                      {voiceResponseText && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="flex justify-start w-full"
+                        >
+                          <div className="max-w-[85%] text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
+                            {voiceResponseText}
+                          </div>
+                        </motion.div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Scroll to bottom button - only when there are exchanges */}
+              {exchanges.length > 0 && isScrolledUp && (
+                <div className="absolute bottom-[200px] left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
+                  <button
+                    onClick={scrollToBottom}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-chalk-surface/90 border border-chalk-border/40 text-[11px] text-slate-400 hover:text-slate-200 shadow-lg transition-colors"
+                  >
+                    <DownArrowIcon />
+                    New messages
+                  </button>
                 </div>
               )}
 

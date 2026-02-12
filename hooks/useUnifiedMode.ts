@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useVoiceMode, type VoiceState } from './useVoiceMode';
 import type { TranscriptSegment, TranscriptSource } from '@/lib/video-utils';
 
@@ -77,17 +77,7 @@ export function useUnifiedMode({
   voiceId,
   transcriptSource,
 }: UseUnifiedModeOptions): UseUnifiedModeReturn {
-  // Voice mode (wrapped)
-  const voice = useVoiceMode({
-    segments,
-    currentTime,
-    videoId,
-    videoTitle,
-    voiceId,
-    transcriptSource,
-  });
-
-  // Unified exchanges (persisted)
+  // Unified exchanges (persisted) — single source of truth
   const [exchanges, setExchanges] = useState<UnifiedExchange[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
@@ -100,8 +90,43 @@ export function useUnifiedMode({
 
   const currentTimeRef = useRef(currentTime);
   const segmentsRef = useRef(segments);
+  const exchangesRef = useRef(exchanges);
   currentTimeRef.current = currentTime;
   segmentsRef.current = segments;
+  exchangesRef.current = exchanges;
+
+  // Build conversation history for voice mode (last 10 exchanges)
+  const conversationHistory = useMemo(() => {
+    return exchanges.slice(-10).flatMap((ex) => [
+      { role: 'user' as const, content: ex.userText },
+      { role: 'assistant' as const, content: ex.aiText },
+    ]);
+  }, [exchanges]);
+
+  // Callback when voice exchange completes — adds directly to unified history
+  const handleVoiceExchangeComplete = useCallback((data: { userText: string; aiText: string; timestamp: number }) => {
+    const exchange: UnifiedExchange = {
+      id: String(Date.now()),
+      type: 'voice',
+      userText: data.userText,
+      aiText: data.aiText,
+      timestamp: data.timestamp,
+      model: 'sonnet',
+    };
+    setExchanges((prev) => [...prev, exchange]);
+  }, []);
+
+  // Voice mode — pure pipeline, no internal exchange tracking
+  const voice = useVoiceMode({
+    segments,
+    currentTime,
+    videoId,
+    videoTitle,
+    voiceId,
+    transcriptSource,
+    conversationHistory,
+    onExchangeComplete: handleVoiceExchangeComplete,
+  });
 
   // Load history on mount
   useEffect(() => {
@@ -115,27 +140,6 @@ export function useUnifiedMode({
       saveHistory(videoId, exchanges);
     }
   }, [exchanges, videoId, hydrated, isTextStreaming]);
-
-  // Sync voice exchanges to unified history
-  useEffect(() => {
-    const voiceExchanges = voice.exchanges;
-    if (voiceExchanges.length === 0) return;
-
-    // Check if we need to add new voice exchanges
-    const lastVoiceExchange = voiceExchanges[voiceExchanges.length - 1];
-    const existingExchange = exchanges.find((ex) => ex.id === lastVoiceExchange.id);
-
-    if (!existingExchange) {
-      // New voice exchange - add it
-      setExchanges((prev) => [
-        ...prev,
-        {
-          ...lastVoiceExchange,
-          type: 'voice',
-        },
-      ]);
-    }
-  }, [voice.exchanges]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cleanup on unmount
   useEffect(() => {
@@ -159,7 +163,7 @@ export function useUnifiedMode({
 
     try {
       // Build history from unified exchanges (last 10)
-      const history = exchanges.slice(-10).flatMap((ex) => [
+      const history = exchangesRef.current.slice(-10).flatMap((ex) => [
         { role: 'user' as const, content: ex.userText },
         { role: 'assistant' as const, content: ex.aiText },
       ]);
@@ -219,7 +223,7 @@ export function useUnifiedMode({
     } finally {
       setIsTextStreaming(false);
     }
-  }, [isTextStreaming, exchanges, videoTitle, transcriptSource]);
+  }, [isTextStreaming, videoTitle, transcriptSource]);
 
   const stopTextStream = useCallback(() => {
     textAbortRef.current?.abort();

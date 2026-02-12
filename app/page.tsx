@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { extractVideoId } from '@/lib/video-utils';
 import { ChalkboardSimple, MagnifyingGlass } from '@phosphor-icons/react';
@@ -44,19 +44,23 @@ function timeAgo(ts: number): string {
 
 export default function HomePage() {
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Tab state
   const [activeTab, setActiveTab] = useState<'url' | 'search'>('search');
 
-  // URL input state
-  const [url, setUrl] = useState('');
+  // Unified input value
+  const [inputValue, setInputValue] = useState('');
   const [error, setError] = useState('');
 
   // Search state
-  const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
+
+  // Pagination state
+  const [continuationToken, setContinuationToken] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Recent videos
   const [recentVideos, setRecentVideos] = useState<RecentVideo[]>([]);
@@ -68,11 +72,14 @@ export default function HomePage() {
     setRecentVideos(getRecentVideos());
   }, []);
 
-  // Debounced search effect (still requires 2 chars, just no visible hint)
+  // Debounced search effect
   useEffect(() => {
-    if (searchQuery.length < 2) {
-      setSearchResults([]);
-      setSearchError('');
+    if (activeTab !== 'search' || inputValue.length < 2) {
+      if (activeTab === 'search') {
+        setSearchResults([]);
+        setSearchError('');
+        setContinuationToken(null);
+      }
       return;
     }
 
@@ -83,13 +90,14 @@ export default function HomePage() {
     const timeoutId = setTimeout(async () => {
       setIsSearching(true);
       setSearchError('');
+      setContinuationToken(null);
 
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
       try {
         const response = await fetch(
-          `/api/youtube/search?q=${encodeURIComponent(searchQuery)}&limit=9`,
+          `/api/youtube/search?q=${encodeURIComponent(inputValue)}&limit=20`,
           { signal: controller.signal }
         );
 
@@ -100,6 +108,7 @@ export default function HomePage() {
 
         const data = await response.json();
         setSearchResults(data.results || []);
+        setContinuationToken(data.continuation || null);
       } catch (err: any) {
         if (err.name === 'AbortError') return;
         console.error('Search error:', err);
@@ -113,18 +122,29 @@ export default function HomePage() {
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [searchQuery]);
+  }, [inputValue, activeTab]);
 
-  // Cancel search when switching tabs
+  // Cancel search when switching to URL tab
   useEffect(() => {
     if (activeTab === 'url' && abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
   }, [activeTab]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = url.trim();
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setInputValue(val);
+    setError('');
+
+    // Auto-detect URL paste while in search mode
+    if (activeTab === 'search' && extractVideoId(val.trim())) {
+      setActiveTab('url');
+    }
+  };
+
+  const handleUrlSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const trimmed = inputValue.trim();
     if (!trimmed) return;
 
     const videoId = extractVideoId(trimmed);
@@ -137,13 +157,62 @@ export default function HomePage() {
     router.push(`/watch?v=${videoId}`);
   };
 
-  const handleSearchRetry = () => {
-    setSearchError('');
-    setSearchQuery((prev) => prev + ' ');
-    setTimeout(() => setSearchQuery((prev) => prev.trim()), 50);
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && activeTab === 'url') {
+      handleUrlSubmit();
+    }
   };
 
+  const handleTabSwitch = (tab: 'search' | 'url') => {
+    setActiveTab(tab);
+    setInputValue('');
+    setError('');
+    setSearchResults([]);
+    setSearchError('');
+    setContinuationToken(null);
+    inputRef.current?.focus();
+  };
+
+  const handleSearchRetry = () => {
+    setSearchError('');
+    setInputValue((prev) => prev + ' ');
+    setTimeout(() => setInputValue((prev) => prev.trim()), 50);
+  };
+
+  // Load more results (infinite scroll)
+  const handleLoadMore = useCallback(async () => {
+    if (!continuationToken || isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    const controller = new AbortController();
+
+    try {
+      const response = await fetch(
+        `/api/youtube/search?q=${encodeURIComponent(inputValue)}&continuation=${encodeURIComponent(continuationToken)}`,
+        { signal: controller.signal }
+      );
+
+      if (!response.ok) throw new Error('Failed to load more');
+
+      const data = await response.json();
+      setSearchResults((prev) => [...prev, ...(data.results || [])]);
+      setContinuationToken(data.continuation || null);
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        console.error('Load more error:', err);
+      }
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [continuationToken, isLoadingMore, inputValue]);
+
   const hasSearchContent = isSearching || searchResults.length > 0 || searchError;
+  const showTabs = !inputValue;
+
+  const pillClasses = (tab: 'search' | 'url') =>
+    activeTab === tab
+      ? 'bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all duration-200 flex items-center gap-1'
+      : 'bg-transparent text-slate-500 hover:text-slate-300 border border-transparent rounded-lg px-2.5 py-1.5 text-xs transition-all duration-200 flex items-center gap-1';
 
   return (
     <div className="min-h-screen bg-chalk-bg flex flex-col">
@@ -168,71 +237,47 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Tab selector */}
-          <div className="flex gap-2 justify-center mb-4">
-            <button
-              onClick={() => setActiveTab('search')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'search'
-                  ? 'bg-chalk-accent/10 border border-chalk-accent/40 text-chalk-accent'
-                  : 'bg-chalk-surface/20 border border-chalk-border/20 text-slate-400 hover:bg-chalk-surface/30'
-              }`}
-            >
-              <MagnifyingGlass size={16} weight="bold" className="inline mr-1.5 -mt-0.5" />
-              Search
-            </button>
-            <button
-              onClick={() => setActiveTab('url')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                activeTab === 'url'
-                  ? 'bg-chalk-accent/10 border border-chalk-accent/40 text-chalk-accent'
-                  : 'bg-chalk-surface/20 border border-chalk-border/20 text-slate-400 hover:bg-chalk-surface/30'
-              }`}
-            >
-              URL
-            </button>
-          </div>
+          {/* Unified input with inline tab pills */}
+          <div className="max-w-xl mx-auto">
+            <div className="flex items-center gap-0 px-1 py-1 rounded-xl bg-chalk-surface/40 border border-chalk-border/30 focus-within:ring-2 focus-within:ring-chalk-accent/40 focus-within:border-chalk-accent/30 transition-colors">
 
-          {/* URL input tab */}
-          {activeTab === 'url' && (
-            <div>
-              <form onSubmit={handleSubmit} className="flex gap-2 max-w-xl mx-auto">
-                <input
-                  type="text"
-                  value={url}
-                  onChange={(e) => { setUrl(e.target.value); setError(''); }}
-                  placeholder="Paste a YouTube URL..."
-                  autoFocus
-                  className="flex-1 px-4 py-3 rounded-xl bg-chalk-surface/40 border border-chalk-border/30 text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-chalk-accent/40 focus:border-chalk-accent/30 transition-colors"
-                />
+              {/* Single input field */}
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputValue}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder={activeTab === 'search' ? 'Search for videos...' : 'Paste a YouTube URL...'}
+                autoFocus
+                className="flex-1 px-3 py-2.5 bg-transparent text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none min-w-0"
+              />
+
+              {/* Right side: tab pills when empty, Watch button when URL detected */}
+              {activeTab === 'url' && inputValue.trim() ? (
                 <button
-                  type="submit"
-                  disabled={!url.trim()}
-                  className="px-5 py-3 rounded-xl bg-chalk-accent text-white text-sm font-medium hover:bg-chalk-accent/90 disabled:opacity-40 disabled:hover:bg-chalk-accent transition-colors"
+                  onClick={() => handleUrlSubmit()}
+                  className="px-4 py-1.5 mr-1 rounded-lg bg-chalk-accent text-white text-xs font-medium hover:bg-chalk-accent/90 transition-colors shrink-0"
                 >
                   Watch
                 </button>
-              </form>
-
-              {error && (
-                <p className="mt-2 text-xs text-red-400 text-center">{error}</p>
-              )}
+              ) : showTabs ? (
+                <div className="flex gap-1 pr-1 shrink-0">
+                  <button onClick={() => handleTabSwitch('search')} className={pillClasses('search')}>
+                    <MagnifyingGlass size={14} weight="bold" />
+                    Search
+                  </button>
+                  <button onClick={() => handleTabSwitch('url')} className={pillClasses('url')}>
+                    URL
+                  </button>
+                </div>
+              ) : null}
             </div>
-          )}
 
-          {/* Search input tab */}
-          {activeTab === 'search' && (
-            <div className="max-w-xl mx-auto">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search for videos..."
-                autoFocus
-                className="w-full px-4 py-3 rounded-xl bg-chalk-surface/40 border border-chalk-border/30 text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-chalk-accent/40 focus:border-chalk-accent/30 transition-colors"
-              />
-            </div>
-          )}
+            {error && (
+              <p className="mt-2 text-xs text-red-400 text-center">{error}</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -246,6 +291,8 @@ export default function HomePage() {
               isLoading={isSearching}
               error={searchError}
               onRetry={handleSearchRetry}
+              loadingMore={isLoadingMore}
+              onLoadMore={continuationToken ? handleLoadMore : undefined}
             />
           )}
 

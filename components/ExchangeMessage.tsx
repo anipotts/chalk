@@ -180,26 +180,26 @@ function CopyButton({ text }: { text: string }) {
 export function ExchangeMessage({ exchange, onSeek, videoId }: ExchangeMessageProps) {
   return (
     <div className="space-y-3">
-      {/* User message - right aligned */}
+      {/* User message - right aligned with max width */}
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
-        className="flex justify-end"
+        className="flex justify-end w-full"
       >
-        <div className="max-w-[80%] px-3.5 py-2 rounded-2xl rounded-br-sm bg-chalk-accent/90 text-white text-sm leading-relaxed break-words">
+        <div className="max-w-[85%] px-3.5 py-2 rounded-2xl bg-chalk-accent/90 text-white text-sm leading-relaxed break-words">
           {exchange.userText}
         </div>
       </motion.div>
 
-      {/* AI message - left aligned */}
+      {/* AI message - left aligned with max width */}
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, delay: 0.1 }}
-        className="flex justify-start group"
+        className="flex justify-start group w-full"
       >
-        <div className="min-w-0 w-full">
+        <div className="max-w-[85%]">
           <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
             {renderRichContent(exchange.aiText, onSeek, videoId)}
           </div>

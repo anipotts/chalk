@@ -8,6 +8,7 @@ export interface SearchResult {
   videoId: string;
   title: string;
   author: string;
+  channelId?: string;
   thumbnailUrl: string;
   duration: string; // formatted as "M:SS" or "H:MM:SS"
   viewCount: number;

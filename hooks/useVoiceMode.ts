@@ -5,13 +5,6 @@ import type { TranscriptSegment, TranscriptSource } from '@/lib/video-utils';
 
 export type VoiceState = 'idle' | 'recording' | 'transcribing' | 'thinking' | 'speaking';
 
-interface VoiceExchange {
-  id: string;
-  userText: string;
-  aiText: string;
-  timestamp: number;
-}
-
 interface UseVoiceModeOptions {
   segments: TranscriptSegment[];
   currentTime: number;
@@ -19,13 +12,14 @@ interface UseVoiceModeOptions {
   videoTitle?: string;
   voiceId: string | null;
   transcriptSource?: TranscriptSource;
+  conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }>;
+  onExchangeComplete: (exchange: { userText: string; aiText: string; timestamp: number }) => void;
 }
 
 interface UseVoiceModeReturn {
   voiceState: VoiceState;
   transcript: string;
   responseText: string;
-  exchanges: VoiceExchange[];
   error: string | null;
   recordingDuration: number;
   startRecording: () => void;
@@ -41,11 +35,12 @@ export function useVoiceMode({
   videoTitle,
   voiceId,
   transcriptSource,
+  conversationHistory,
+  onExchangeComplete,
 }: UseVoiceModeOptions): UseVoiceModeReturn {
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
   const [transcript, setTranscript] = useState('');
   const [responseText, setResponseText] = useState('');
-  const [exchanges, setExchanges] = useState<VoiceExchange[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
 
@@ -55,13 +50,16 @@ export function useVoiceMode({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const abortRef = useRef<AbortController | null>(null);
-  const exchangesRef = useRef(exchanges);
 
+  // Refs for latest values (avoid stale closures in async processRecording)
   const currentTimeRef = useRef(currentTime);
   const segmentsRef = useRef(segments);
+  const historyRef = useRef(conversationHistory);
+  const onCompleteRef = useRef(onExchangeComplete);
   currentTimeRef.current = currentTime;
   segmentsRef.current = segments;
-  exchangesRef.current = exchanges;
+  historyRef.current = conversationHistory;
+  onCompleteRef.current = onExchangeComplete;
 
   // Cleanup on unmount
   useEffect(() => {
@@ -73,45 +71,30 @@ export function useVoiceMode({
     };
   }, []);
 
-  /**
-   * Interrupt everything in progress — stop audio, cancel API calls, stop recording.
-   * Called automatically when user starts a new recording mid-conversation.
-   */
   const interruptAll = useCallback(() => {
-    // Stop any playing audio
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.onended = null;
       audioRef.current.onerror = null;
       audioRef.current = null;
     }
-
-    // Abort any in-flight API calls (STT, LLM, TTS)
     if (abortRef.current) {
       abortRef.current.abort();
       abortRef.current = null;
     }
-
-    // Stop any active recording
     const recorder = mediaRecorderRef.current;
     if (recorder && recorder.state !== 'inactive') {
       recorder.onstop = null;
       recorder.stop();
     }
     mediaRecorderRef.current = null;
-
-    // Release mic stream
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
-
-    // Clear timer
     clearInterval(timerRef.current);
   }, []);
 
   const startRecording = useCallback(async () => {
-    // INTERRUPT: stop whatever is happening (speaking, thinking, etc.)
     interruptAll();
-
     setError(null);
     setTranscript('');
     setResponseText('');
@@ -179,11 +162,7 @@ export function useVoiceMode({
       // Step 2: LLM
       setVoiceState('thinking');
 
-      // Use ref to get latest exchanges (avoids stale closure)
-      const history = exchangesRef.current.slice(-10).flatMap((ex) => [
-        { role: 'user' as const, content: ex.userText },
-        { role: 'assistant' as const, content: ex.aiText },
-      ]);
+      const history = [...historyRef.current];
       history.push({ role: 'user' as const, content: userText });
 
       const chatResp = await fetch('/api/video-chat', {
@@ -207,16 +186,11 @@ export function useVoiceMode({
       }
 
       const aiText = await chatResp.text();
-      setResponseText(aiText);
 
-      // Add to exchanges immediately (so next recording has context)
-      const exchange: VoiceExchange = {
-        id: String(Date.now()),
-        userText,
-        aiText,
-        timestamp: currentTimeRef.current,
-      };
-      setExchanges((prev) => [...prev, exchange]);
+      // Commit exchange to unified history and clear streaming display
+      onCompleteRef.current({ userText, aiText, timestamp: currentTimeRef.current });
+      setTranscript('');
+      setResponseText('');
 
       // Step 3: TTS
       setVoiceState('speaking');
@@ -231,7 +205,6 @@ export function useVoiceMode({
       });
 
       if (!ttsResp.ok) {
-        // TTS failed — show text, go idle (user can still read the response)
         setVoiceState('idle');
         return;
       }
@@ -256,7 +229,7 @@ export function useVoiceMode({
 
       await audio.play();
     } catch (err) {
-      if (controller.signal.aborted) return; // Interrupted — not an error
+      if (controller.signal.aborted) return;
       const msg = err instanceof Error ? err.message : 'Voice processing failed';
       setError(msg);
       setVoiceState('idle');
@@ -307,7 +280,6 @@ export function useVoiceMode({
     voiceState,
     transcript,
     responseText,
-    exchanges,
     error,
     recordingDuration,
     startRecording,

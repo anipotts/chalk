@@ -33,7 +33,7 @@ const VideoPlayer = dynamic(
   }
 );
 
-const SPEED_PRESETS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5, 8, 10];
+const SPEED_PRESETS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
 
 function SpeedControlButton({ playerRef }: { playerRef: React.RefObject<MediaPlayerInstance | null> }) {
   const [open, setOpen] = useState(false);
@@ -142,13 +142,12 @@ function WatchContent() {
   const videoId = searchParams.get('v') || '';
 
   const { segments, status, statusMessage, error, source, progress } = useTranscriptStream(videoId || null);
-  const { title: videoTitle } = useVideoTitle(videoId || null);
+  const { title: videoTitle, channelName } = useVideoTitle(videoId || null);
 
   const [currentTime, setCurrentTime] = useState(0);
   const [isPaused, setIsPaused] = useState(true);
-  const [interactionVisible, setInteractionVisible] = useState(true);
+  const [interactionVisible, setInteractionVisible] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
-  const [transcriptAutoOpened, setTranscriptAutoOpened] = useState(false);
   const [continueFrom, setContinueFrom] = useState<number | null>(null);
   const [sessionWatchTime, setSessionWatchTime] = useState(0);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
@@ -271,13 +270,7 @@ function WatchContent() {
     return () => vv.removeEventListener('resize', handleResize);
   }, []);
 
-  // Auto-open transcript when segments arrive
-  useEffect(() => {
-    if (hasSegments && !transcriptAutoOpened) {
-      setShowTranscript(true);
-      setTranscriptAutoOpened(true);
-    }
-  }, [hasSegments, transcriptAutoOpened]);
+  // Transcript stays closed by default - user must manually open it
 
   const handlePause = useCallback(() => {
     setIsPaused(true);
@@ -313,9 +306,9 @@ function WatchContent() {
       try { playerRef.current.pause(); } catch { /* ignore */ }
     }
     setInteractionVisible(true);
-    // Voice mode starts when user presses mic button
-    unified.startRecording();
-  }, [unified]);
+    // Voice mode will start when user presses mic button in overlay
+    // (removed auto-start recording)
+  }, []);
 
   const handleAskAbout = useCallback((timestamp: number, text: string) => {
     // Open interaction overlay
@@ -330,11 +323,15 @@ function WatchContent() {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
-      // C key or any alphanumeric: open text mode
-      if ((e.key === 'c' || /^[a-z0-9]$/i.test(e.key)) && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        e.preventDefault();
+      // Any alphanumeric key or space: open text mode and focus input
+      if (/^[a-z0-9 ]$/i.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey && !interactionVisible) {
+        // Open overlay immediately
         setInteractionVisible(true);
-        setTimeout(() => inputRef.current?.focus(), 100);
+        // Focus input as soon as it mounts
+        requestAnimationFrame(() => {
+          inputRef.current?.focus();
+        });
+        return;
       }
 
       // V key: open voice mode
@@ -383,31 +380,6 @@ function WatchContent() {
 
   return (
     <div className="flex h-[100dvh] bg-chalk-bg overflow-hidden animate-in fade-in duration-300">
-      {/* Transcript sidebar — left (desktop), smooth slide */}
-      <div
-        className={`hidden md:flex flex-none overflow-hidden transition-[width] duration-300 ease-out ${
-          showTranscript ? 'w-[360px] border-r border-chalk-border/30' : 'w-0'
-        }`}
-      >
-        <div className="w-[360px] flex-none h-full">
-          <TranscriptPanel
-            segments={segments}
-            currentTime={currentTime}
-            onSeek={handleSeek}
-            status={status}
-            statusMessage={statusMessage}
-            source={source}
-            progress={progress}
-            error={error ?? undefined}
-            variant="sidebar"
-            onClose={() => setShowTranscript(false)}
-            onAskAbout={handleAskAbout}
-            videoId={videoId}
-            videoTitle={videoTitle ?? undefined}
-          />
-        </div>
-      </div>
-
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top bar — hidden on mobile, z-20 so speed dropdown escapes above the video area */}
@@ -417,13 +389,18 @@ function WatchContent() {
             chalk
           </a>
           <span className="text-slate-600 hidden sm:inline">|</span>
-          <div className="flex-1 min-w-0 hidden sm:flex items-center gap-2">
-            <span className="text-xs text-slate-400 truncate">
-              {videoTitle || videoId}
-            </span>
-            {sessionWatchTime > 0 && (
-              <span className="text-[10px] text-slate-600 shrink-0">{watchTimeDisplay}</span>
+          <div className="flex-1 min-w-0 hidden sm:flex flex-col gap-0.5">
+            {channelName && (
+              <span className="text-[10px] text-slate-500 truncate">{channelName}</span>
             )}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 truncate">
+                {videoTitle || videoId}
+              </span>
+              {sessionWatchTime > 0 && (
+                <span className="text-[10px] text-slate-600 shrink-0">{watchTimeDisplay}</span>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 ml-auto">
@@ -463,7 +440,7 @@ function WatchContent() {
               <path fillRule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clipRule="evenodd" />
             </svg>
           </a>
-          <div className="flex-1 md:flex md:items-center md:justify-center p-0 md:p-4 overflow-hidden">
+          <div className="flex-1 md:flex md:items-center md:justify-center p-0 md:p-4 overflow-hidden relative">
             <div className="w-full max-w-5xl">
               <VideoPlayer
                 playerRef={playerRef}
@@ -473,6 +450,15 @@ function WatchContent() {
                 onTimeUpdate={handleTimeUpdate}
               />
             </div>
+
+            {/* Hint text - only show when overlay is closed */}
+            {!interactionVisible && channelName && (
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+                <p className="text-slate-400 text-sm whitespace-nowrap text-center">
+                  Start typing to talk to {channelName}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Unified interaction overlay (text + voice) */}
@@ -550,6 +536,31 @@ function WatchContent() {
           )}
         </div>
 
+      </div>
+
+      {/* Transcript sidebar — right (desktop), smooth slide */}
+      <div
+        className={`hidden md:flex flex-none overflow-hidden transition-[width] duration-300 ease-out ${
+          showTranscript ? 'w-[360px] border-l border-chalk-border/30' : 'w-0'
+        }`}
+      >
+        <div className="w-[360px] flex-none h-full">
+          <TranscriptPanel
+            segments={segments}
+            currentTime={currentTime}
+            onSeek={handleSeek}
+            status={status}
+            statusMessage={statusMessage}
+            source={source}
+            progress={progress}
+            error={error ?? undefined}
+            variant="sidebar"
+            onClose={() => setShowTranscript(false)}
+            onAskAbout={handleAskAbout}
+            videoId={videoId}
+            videoTitle={videoTitle ?? undefined}
+          />
+        </div>
       </div>
     </div>
   );
