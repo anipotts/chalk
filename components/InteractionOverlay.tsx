@@ -674,7 +674,7 @@ export function InteractionOverlay({
                 onScroll={handleScroll}
                 onMouseOver={handleMouseOver}
                 onMouseOut={handleMouseOut}
-                className="flex-1 w-full overflow-y-auto scroll-smooth space-y-3 md:space-y-4 px-2 md:px-5 py-2 md:py-4 pointer-events-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                className="flex-1 w-full overflow-y-auto scroll-smooth space-y-3 md:space-y-4 px-3 md:px-4 py-3 md:py-4 pointer-events-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
               >
                 {/* Explore mode: initial options */}
                 {showExploreUI && !hasExploreContent && !exploreStreaming && !isLearnModeActive && (
@@ -868,7 +868,7 @@ export function InteractionOverlay({
           </div>
 
           {/* Input strip — below border on desktop, bottom of overlay on mobile */}
-          <div className="flex-none w-full px-2 pb-2 md:px-0 md:pb-0 md:mt-3 pointer-events-auto">
+          <div className="flex-none w-full px-3 pb-3 md:px-0 md:pb-0 md:mt-3 pointer-events-auto">
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}

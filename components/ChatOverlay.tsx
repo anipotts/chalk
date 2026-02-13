@@ -414,7 +414,7 @@ export function ChatOverlay({
 
       {/* Header — hidden on mobile */}
       {!isMobile && (
-        <div className={`flex items-center justify-between px-4 py-2.5 border-b ${isSidebar ? 'border-chalk-border/30' : 'border-white/[0.06]'}`}>
+        <div className={`flex items-center justify-between px-4 py-3 border-b ${isSidebar ? 'border-chalk-border/30' : 'border-white/[0.06]'}`}>
           <div className="flex items-center gap-2 text-slate-300">
             <ChatsTeardrop size={14} weight="fill" />
             <span className="text-xs font-medium">Ask about this video</span>
@@ -446,7 +446,7 @@ export function ChatOverlay({
         ref={scrollRef}
         onScroll={handleScroll}
         className={`flex-1 overflow-y-auto scroll-smooth ${
-          isMobile ? 'px-3 py-2 space-y-3 overscroll-contain' : 'px-4 py-3 space-y-4'
+          isMobile ? 'px-3 py-3 space-y-3 overscroll-contain' : 'px-4 py-4 space-y-4'
         }`}
       >
         {messages.length === 0 ? (
@@ -488,7 +488,7 @@ export function ChatOverlay({
 
       {/* Input area */}
       <div className={`flex-none border-t ${isSidebar ? 'border-chalk-border/30' : isMobile ? 'border-chalk-border/30' : 'border-white/[0.06]'} ${
-        isMobile ? 'px-2 pt-2 pb-2' : 'px-3 pt-3 pb-4'
+        isMobile ? 'px-3 py-2' : 'px-4 py-3'
       }`}>
         {/* Mobile clear button */}
         {isMobile && messages.length > 0 && (

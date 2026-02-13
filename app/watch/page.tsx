@@ -547,7 +547,7 @@ function WatchContent() {
       {/* Main area */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* Top bar — hidden on mobile, z-20 so speed dropdown escapes above the video area */}
-        <div className="hidden md:flex flex-none items-center gap-3 px-4 py-2 border-b border-chalk-border/30 bg-chalk-bg/80 backdrop-blur-md relative z-20">
+        <div className="hidden md:flex flex-none items-center gap-3 px-4 py-3 border-b border-chalk-border/30 bg-chalk-bg/80 backdrop-blur-md relative z-20">
           {/* Left: chalk icon + compact search */}
           <a
             href="/"

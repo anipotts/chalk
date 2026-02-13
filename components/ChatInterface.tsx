@@ -349,7 +349,7 @@ export function ChatInterface() {
       {/* Main chat area */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* Header */}
-        <div className="flex-none flex items-center gap-3 px-4 sm:px-6 py-3 border-b border-chalk-border/30 bg-chalk-bg/80 backdrop-blur-md">
+        <div className="flex-none flex items-center gap-3 px-4 sm:px-6 py-3 border-b border-chalk-border/30 bg-chalk-bg/80 backdrop-blur-md relative z-10">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             aria-label="Toggle sidebar"
@@ -366,7 +366,7 @@ export function ChatInterface() {
         {/* Messages */}
         <div
           ref={scrollRef}
-          className="flex-1 overflow-y-auto px-4 sm:px-6 py-6"
+          className="flex-1 overflow-y-auto px-4 sm:px-6 py-4"
         >
           <div className="max-w-3xl mx-auto">
             {messages.length === 0 && (
@@ -420,7 +420,7 @@ export function ChatInterface() {
         </div>
 
         {/* Input bar */}
-        <div className="flex-none p-3 sm:p-4 bg-chalk-bg/80 backdrop-blur-md border-t border-chalk-border/30">
+        <div className="flex-none px-3 py-3 sm:px-4 sm:py-3 bg-chalk-bg/80 backdrop-blur-md border-t border-chalk-border/30">
           <div className="max-w-3xl mx-auto">
             {/* Model selector row */}
             <div className="flex items-center mb-2 pl-1">

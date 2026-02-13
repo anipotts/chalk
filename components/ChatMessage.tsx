@@ -119,7 +119,7 @@ export function ChatMessage({ role, content, spec, isStreaming, isJsonPending, t
   if (role === 'user') {
     return (
       <div className="flex justify-end mb-4">
-        <div className="max-w-[80%] px-4 py-2.5 rounded-2xl rounded-br-md bg-blue-500 text-white text-sm leading-relaxed break-words">
+        <div className="max-w-[85%] px-3.5 py-2 rounded-2xl rounded-br-sm bg-chalk-accent/90 text-white text-sm leading-relaxed break-words">
           {content}
         </div>
       </div>

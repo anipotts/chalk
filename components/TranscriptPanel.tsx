@@ -134,7 +134,7 @@ export function TranscriptPanel({
     <div className={`flex flex-col ${isSidebar || isMobile ? 'h-full' : 'max-h-[400px]'} bg-chalk-bg`}>
       {/* Header — hidden on mobile */}
       {!isMobile && (
-        <div className="flex-none flex items-center justify-between px-4 py-2.5 border-b border-chalk-border/30">
+        <div className="flex-none flex items-center justify-between px-4 py-3 border-b border-chalk-border/30">
           <div className="flex items-center gap-2">
             <span className="text-xs font-medium text-chalk-text">Transcript</span>
             {source && (
