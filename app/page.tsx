@@ -1,21 +1,31 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { extractVideoId } from '@/lib/video-utils';
 import { ChalkboardSimple, MagnifyingGlass } from '@phosphor-icons/react';
 import { SearchResults } from '@/components/SearchResults';
 import type { AnySearchResult } from '@/components/SearchResults';
+import { motion, AnimatePresence } from 'framer-motion';
+import OrbitAnimation from '@/components/OrbitAnimation';
+import SearchDropdown from '@/components/SearchDropdown';
 
 const RECENT_VIDEOS_KEY = 'chalk-recent-videos';
 
 type SearchType = 'video' | 'channel' | 'playlist';
+type SortBy = 'relevance' | 'viewCount' | 'date';
 
 interface RecentVideo {
   id: string;
   url: string;
   title?: string;
   timestamp: number;
+}
+
+function saveRecentVideo(videoId: string, url: string, title?: string) {
+  const recent = getRecentVideos().filter((v) => v.id !== videoId);
+  recent.unshift({ id: videoId, url, title, timestamp: Date.now() });
+  localStorage.setItem(RECENT_VIDEOS_KEY, JSON.stringify(recent.slice(0, 10)));
 }
 
 function getRecentVideos(): RecentVideo[] {
@@ -27,25 +37,21 @@ function getRecentVideos(): RecentVideo[] {
   }
 }
 
-function saveRecentVideo(videoId: string, url: string, title?: string) {
-  const recent = getRecentVideos().filter((v) => v.id !== videoId);
-  recent.unshift({ id: videoId, url, title, timestamp: Date.now() });
-  localStorage.setItem(RECENT_VIDEOS_KEY, JSON.stringify(recent.slice(0, 10)));
+export default function HomePageWrapper() {
+  return (
+    <Suspense fallback={
+      <div className="h-screen bg-chalk-bg flex items-center justify-center">
+        <div className="text-slate-500 text-sm">Loading...</div>
+      </div>
+    }>
+      <HomePage />
+    </Suspense>
+  );
 }
 
-function timeAgo(ts: number): string {
-  const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
-
-export default function HomePage() {
+function HomePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Tab state
@@ -60,24 +66,33 @@ export default function HomePage() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState('');
   const [searchType, setSearchType] = useState<SearchType>('video');
+  const [sortBy, setSortBy] = useState<SortBy>('relevance');
 
   // Pagination state
   const [continuationToken, setContinuationToken] = useState<string | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  // Mobile detection + raised latch (prevents bounce on partial deletes)
+  // Mobile detection
   const [isMobile, setIsMobile] = useState(false);
-  const [isRaised, setIsRaised] = useState(false);
 
-  // Recent videos
-  const [recentVideos, setRecentVideos] = useState<RecentVideo[]>([]);
+  // Focus state for orbit breathing
+  const [isInputFocused, setIsInputFocused] = useState(false);
+
+  // Dropdown visibility
+  const [showDropdown, setShowDropdown] = useState(false);
+  const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Abort controller for canceling in-flight requests
   const abortControllerRef = useRef<AbortController | null>(null);
 
+  // Handle ?q= query param from NavBar
   useEffect(() => {
-    setRecentVideos(getRecentVideos());
-  }, []);
+    const q = searchParams.get('q');
+    if (q) {
+      setInputValue(q);
+      setActiveTab('search');
+    }
+  }, [searchParams]);
 
   // Mobile detection
   useEffect(() => {
@@ -112,10 +127,11 @@ export default function HomePage() {
       abortControllerRef.current = controller;
 
       try {
-        const response = await fetch(
-          `/api/youtube/search?q=${encodeURIComponent(inputValue)}&limit=20&type=${searchType}`,
-          { signal: controller.signal }
-        );
+        let url = `/api/youtube/search?q=${encodeURIComponent(inputValue)}&limit=20&type=${searchType}`;
+        if (sortBy !== 'relevance') {
+          url += `&sort=${sortBy}`;
+        }
+        const response = await fetch(url, { signal: controller.signal });
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -123,7 +139,33 @@ export default function HomePage() {
         }
 
         const data = await response.json();
-        setSearchResults(data.results || []);
+        let results = data.results || [];
+
+        // Client-side sort fallback if API doesn't support sort param
+        if (sortBy === 'viewCount' && results.length > 0) {
+          results = [...results].sort((a: AnySearchResult, b: AnySearchResult) => {
+            const aViews = 'viewCount' in a ? parseInt(String(a.viewCount).replace(/[^0-9]/g, '')) || 0 : 0;
+            const bViews = 'viewCount' in b ? parseInt(String(b.viewCount).replace(/[^0-9]/g, '')) || 0 : 0;
+            return bViews - aViews;
+          });
+        } else if (sortBy === 'date' && results.length > 0) {
+          results = [...results].sort((a: AnySearchResult, b: AnySearchResult) => {
+            const aDate = 'publishedText' in a ? String(a.publishedText) : '';
+            const bDate = 'publishedText' in b ? String(b.publishedText) : '';
+            // Simple heuristic: "hours ago" < "days ago" < "weeks ago" < "months ago" < "years ago"
+            const weight = (s: string) => {
+              if (s.includes('hour')) return 1;
+              if (s.includes('day')) return 2;
+              if (s.includes('week')) return 3;
+              if (s.includes('month')) return 4;
+              if (s.includes('year')) return 5;
+              return 6;
+            };
+            return weight(aDate) - weight(bDate);
+          });
+        }
+
+        setSearchResults(results);
         setContinuationToken(data.continuation || null);
       } catch (err: any) {
         if (err.name === 'AbortError') return;
@@ -138,7 +180,7 @@ export default function HomePage() {
     return () => {
       clearTimeout(timeoutId);
     };
-  }, [inputValue, activeTab, searchType]);
+  }, [inputValue, activeTab, searchType, sortBy]);
 
   // Cancel search when switching to URL tab
   useEffect(() => {
@@ -151,6 +193,7 @@ export default function HomePage() {
     const val = e.target.value;
     setInputValue(val);
     setError('');
+    setShowDropdown(val.length === 0);
 
     // Auto-detect URL paste while in search mode
     if (activeTab === 'search' && extractVideoId(val.trim())) {
@@ -201,6 +244,32 @@ export default function HomePage() {
     setContinuationToken(null);
   };
 
+  const handleSortChange = (sort: SortBy) => {
+    setSortBy(sort);
+    setSearchResults([]);
+    setContinuationToken(null);
+  };
+
+  const handleInputFocus = () => {
+    if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+    setIsInputFocused(true);
+    setShowDropdown(inputValue.length === 0);
+  };
+
+  const handleInputBlur = () => {
+    blurTimeoutRef.current = setTimeout(() => {
+      setIsInputFocused(false);
+      setShowDropdown(false);
+    }, 150);
+  };
+
+  const handleTopicSelect = (topic: string) => {
+    setInputValue(topic);
+    setShowDropdown(false);
+    setActiveTab('search');
+    inputRef.current?.focus();
+  };
+
   // Load more results (infinite scroll)
   const handleLoadMore = useCallback(async () => {
     if (!continuationToken || isLoadingMore) return;
@@ -215,7 +284,6 @@ export default function HomePage() {
       );
 
       if (!response.ok) {
-        // Server error — stop pagination silently
         setContinuationToken(null);
         return;
       }
@@ -233,13 +301,7 @@ export default function HomePage() {
   }, [continuationToken, isLoadingMore, inputValue, searchType]);
 
   const hasSearchContent = isSearching || searchResults.length > 0 || searchError;
-
-  // Sticky-raise latch: stays raised until input is fully cleared
-  useEffect(() => {
-    if (hasSearchContent) setIsRaised(true);
-    else if (!inputValue) setIsRaised(false);
-  }, [hasSearchContent, inputValue]);
-
+  const isSearchMode = !!(hasSearchContent && inputValue.length >= 2);
   const showTabs = !inputValue;
 
   const pillClasses = (tab: 'search' | 'url') =>
@@ -252,98 +314,172 @@ export default function HomePage() {
       ? 'bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30'
       : 'bg-transparent text-slate-500 hover:text-slate-300 border border-chalk-border/20 hover:border-chalk-border/40';
 
-  return (
-    <div className="h-screen bg-chalk-bg flex flex-col overflow-hidden">
-      {/* Header + input — slides up smoothly when search results appear */}
-      <div
-        className="flex flex-col items-center px-4 shrink-0"
-        style={{
-          paddingTop: isMobile ? '48px' : (isRaised ? '48px' : 'calc(50vh - 140px)'),
-          paddingBottom: isRaised ? '8px' : '0px',
-          transition: isMobile ? 'none' : 'padding-top 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding-bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}
-      >
-        <div className="w-full max-w-2xl">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-chalk-text mb-2 flex items-center justify-center gap-2">
-              <ChalkboardSimple size={32} />
-              chalk
-            </h1>
-            <p className="text-sm text-slate-500">
-              Learn from any YouTube video with AI
-            </p>
+  // The search input element (shared between orbit center and raised state)
+  const searchInput = (
+    <div className="w-full max-w-lg mx-auto relative">
+      <div className="flex items-center gap-0 px-1 py-1 rounded-xl bg-chalk-surface/40 border border-chalk-border/30 focus-within:ring-2 focus-within:ring-chalk-accent/40 focus-within:border-chalk-accent/30 transition-colors backdrop-blur-sm">
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onFocus={handleInputFocus}
+          onBlur={handleInputBlur}
+          placeholder={activeTab === 'search' ? 'Search for videos, channels, or playlists...' : 'Paste a YouTube URL...'}
+          aria-label={activeTab === 'search' ? 'Search for videos, channels, or playlists' : 'Paste a YouTube URL'}
+          autoFocus
+          className="flex-1 px-3 py-2.5 bg-transparent text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none min-w-0"
+        />
+
+        {/* Right side: tab pills when empty, Watch button when URL detected */}
+        {activeTab === 'url' && inputValue.trim() ? (
+          <button
+            onClick={() => handleUrlSubmit()}
+            className="px-4 py-1.5 mr-1 rounded-lg bg-chalk-accent text-white text-xs font-medium hover:bg-chalk-accent/90 transition-colors shrink-0"
+          >
+            Watch
+          </button>
+        ) : showTabs ? (
+          <div className="flex gap-1 pr-1 shrink-0">
+            <button onClick={() => handleTabSwitch('search')} className={pillClasses('search')}>
+              <MagnifyingGlass size={14} weight="bold" />
+              Search
+            </button>
+            <button onClick={() => handleTabSwitch('url')} className={pillClasses('url')}>
+              URL
+            </button>
           </div>
-
-          {/* Unified input with inline tab pills */}
-          <div className="max-w-xl mx-auto">
-            <div className="flex items-center gap-0 px-1 py-1 rounded-xl bg-chalk-surface/40 border border-chalk-border/30 focus-within:ring-2 focus-within:ring-chalk-accent/40 focus-within:border-chalk-accent/30 transition-colors">
-
-              {/* Single input field */}
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                placeholder={activeTab === 'search' ? 'Search for videos, channels, or playlists...' : 'Paste a YouTube URL...'}
-                aria-label={activeTab === 'search' ? 'Search for videos, channels, or playlists' : 'Paste a YouTube URL'}
-                autoFocus
-                className="flex-1 px-3 py-2.5 bg-transparent text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none min-w-0"
-              />
-
-              {/* Right side: tab pills when empty, Watch button when URL detected */}
-              {activeTab === 'url' && inputValue.trim() ? (
-                <button
-                  onClick={() => handleUrlSubmit()}
-                  className="px-4 py-1.5 mr-1 rounded-lg bg-chalk-accent text-white text-xs font-medium hover:bg-chalk-accent/90 transition-colors shrink-0"
-                >
-                  Watch
-                </button>
-              ) : showTabs ? (
-                <div className="flex gap-1 pr-1 shrink-0">
-                  <button onClick={() => handleTabSwitch('search')} className={pillClasses('search')}>
-                    <MagnifyingGlass size={14} weight="bold" />
-                    Search
-                  </button>
-                  <button onClick={() => handleTabSwitch('url')} className={pillClasses('url')}>
-                    URL
-                  </button>
-                </div>
-              ) : null}
-            </div>
-
-            {/* Search type filter pills — show when searching */}
-            {activeTab === 'search' && inputValue.length >= 2 && (
-              <div className="flex gap-1.5 mt-2 justify-center">
-                {(['video', 'channel', 'playlist'] as SearchType[]).map((type) => {
-                  const label = type === 'video' ? 'Videos' : type === 'channel' ? 'Channels' : 'Playlists';
-                  return (
-                    <button
-                      key={type}
-                      onClick={() => handleSearchTypeChange(type)}
-                      aria-label={`Filter by ${label}`}
-                      aria-pressed={searchType === type}
-                      className={`rounded-lg px-3 py-1 text-xs font-medium transition-all duration-200 ${searchTypePillClasses(type)}`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
-            {error && (
-              <p className="mt-2 text-xs text-red-400 text-center">{error}</p>
-            )}
-          </div>
-        </div>
+        ) : null}
       </div>
 
-      {/* Below-input content area — recent videos or search results */}
+      {/* Search dropdown */}
+      <AnimatePresence>
+        {showDropdown && isInputFocused && activeTab === 'search' && (
+          <SearchDropdown
+            isVisible={true}
+            onSelectTopic={handleTopicSelect}
+          />
+        )}
+      </AnimatePresence>
+
+      {error && (
+        <p className="mt-2 text-xs text-red-400 text-center">{error}</p>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="h-screen bg-chalk-bg flex flex-col overflow-hidden">
+      {/* Header area */}
+      <motion.div
+        className="flex flex-col items-center px-4 shrink-0"
+        animate={{
+          paddingTop: isMobile ? 48 : (isSearchMode ? 48 : 0),
+          paddingBottom: isSearchMode ? 8 : 0,
+        }}
+        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+      >
+        <div className="w-full max-w-2xl">
+          {/* Logo and tagline */}
+          <motion.div
+            className="text-center"
+            animate={{
+              marginBottom: isSearchMode ? 16 : 8,
+              marginTop: isSearchMode ? 0 : 0,
+            }}
+            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+          >
+            {isSearchMode ? (
+              /* Compact header when searching */
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <ChalkboardSimple size={20} className="text-chalk-text" />
+                <h1 className="text-lg font-bold text-chalk-text">chalk</h1>
+              </div>
+            ) : (
+              /* Full header on home state */
+              <>
+                <h1 className="text-2xl font-bold text-chalk-text mb-1.5 flex items-center justify-center gap-2">
+                  <ChalkboardSimple size={28} />
+                  chalk
+                </h1>
+                <p className="text-sm text-slate-500 mb-2">
+                  Learn from any YouTube video with AI
+                </p>
+              </>
+            )}
+          </motion.div>
+
+          {/* Orbit animation (visible only in home state) */}
+          <AnimatePresence>
+            {!isSearchMode && (
+              <motion.div
+                className="flex justify-center"
+                initial={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+              >
+                <OrbitAnimation isInputFocused={isInputFocused}>
+                  {searchInput}
+                </OrbitAnimation>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Raised search input (visible only in search mode) */}
+          {isSearchMode && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              {searchInput}
+            </motion.div>
+          )}
+
+          {/* Search type filter pills + sort — show when searching */}
+          {activeTab === 'search' && inputValue.length >= 2 && (
+            <motion.div
+              className="flex items-center gap-1.5 mt-3 justify-center flex-wrap"
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {(['video', 'channel', 'playlist'] as SearchType[]).map((type) => {
+                const label = type === 'video' ? 'Videos' : type === 'channel' ? 'Channels' : 'Playlists';
+                return (
+                  <button
+                    key={type}
+                    onClick={() => handleSearchTypeChange(type)}
+                    aria-label={`Filter by ${label}`}
+                    aria-pressed={searchType === type}
+                    className={`rounded-lg px-3 py-1 text-xs font-medium transition-all duration-200 ${searchTypePillClasses(type)}`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+
+              {/* Sort dropdown */}
+              {searchResults.length > 0 && (
+                <select
+                  value={sortBy}
+                  onChange={(e) => handleSortChange(e.target.value as SortBy)}
+                  className="ml-2 text-xs bg-chalk-surface/60 border border-chalk-border/30 rounded-lg px-2 py-1 text-slate-400 focus:outline-none focus:ring-1 focus:ring-chalk-accent/40 cursor-pointer"
+                >
+                  <option value="relevance">Relevance</option>
+                  <option value="viewCount">Most viewed</option>
+                  <option value="date">Upload date</option>
+                </select>
+              )}
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Below-input content area — search results */}
       <div className="flex-1 px-4 pb-8 overflow-y-auto">
         <div className="max-w-2xl mx-auto">
-          {/* Search results */}
           {activeTab === 'search' && hasSearchContent && (
             <SearchResults
               results={searchResults}
@@ -353,34 +489,6 @@ export default function HomePage() {
               loadingMore={isLoadingMore}
               onLoadMore={continuationToken ? handleLoadMore : undefined}
             />
-          )}
-
-          {/* Recent videos — show below input when no search content */}
-          {!hasSearchContent && recentVideos.length > 0 && (
-            <div className="pt-6 max-w-xl mx-auto">
-              <h2 className="text-xs font-medium text-slate-500 mb-3 uppercase tracking-wider">Recent</h2>
-              <div className="space-y-1.5">
-                {recentVideos.map((video) => (
-                  <a
-                    key={video.id}
-                    href={`/watch?v=${video.id}`}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-chalk-surface/20 border border-chalk-border/20 hover:bg-chalk-surface/40 hover:border-chalk-border/40 transition-colors group"
-                  >
-                    <img
-                      src={`https://i.ytimg.com/vi/${video.id}/mqdefault.jpg`}
-                      alt={video.title || video.id}
-                      className="w-20 h-[45px] rounded-md object-cover bg-chalk-surface/30 shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-slate-300 truncate group-hover:text-chalk-text transition-colors">
-                        {video.title || video.id}
-                      </p>
-                      <p className="text-[10px] text-slate-600 mt-0.5">{timeAgo(video.timestamp)}</p>
-                    </div>
-                  </a>
-                ))}
-              </div>
-            </div>
           )}
         </div>
       </div>

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "katex/dist/katex.min.css";
 import "./globals.css";
+import NavBarWrapper from "@/components/NavBarWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -41,8 +42,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body suppressHydrationWarning className={`${inter.className} bg-chalk-bg text-chalk-text h-[100dvh] overflow-hidden`}>
-        {children}
+      <body suppressHydrationWarning className={`${inter.className} bg-chalk-bg text-chalk-text h-[100dvh] overflow-hidden flex flex-col`}>
+        <NavBarWrapper />
+        <div className="flex-1 overflow-hidden">
+          {children}
+        </div>
       </body>
     </html>
   );
