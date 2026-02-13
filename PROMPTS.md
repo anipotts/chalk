@@ -189,45 +189,119 @@ Could extract a shared rules constant and compose prompts from it.
 
 ---
 
+## Research: Best System Prompts for Reference
+
+Analyzed 30+ production prompts from `github.com/x1xhlol/system-prompts-and-models-of-ai-tools`.
+
+### Top 3 References for Chalk
+
+**1. Claude Code 2.0** (`Anthropic/Claude Code 2.0.txt`)
+Best reference for deadpan professional tone. Core principle: "Do what has been asked; nothing more, nothing less." Responses default to under 4 lines. Asking "2 + 2" gets "4" with no filler. Enforces professional objectivity over user validation. Uses markdown only when it helps clarity. No preamble.
+
+**2. Perplexity** (`Perplexity/Prompt.txt`)
+Closest analog to Chalk's citation-driven answering. Inline citations immediately after relevant claims using bracketed indices. Up to three sources per sentence. Forbids separate reference sections. Mandates "journalistic tone" (unbiased, factual, no moralizing). Emojis explicitly forbidden. Responses begin with summary sentences rather than headers. Maps directly onto Chalk's `[M:SS]` timestamp citation pattern.
+
+**3. Poke by Interaction** (`Poke/Poke_p1.txt` through `Poke_p6.txt`)
+Best source for anti-sycophancy rules and conversational naturalness. Bans "How can I help you," formal apologies, corporate pleasantries, and robotic phrases. Prohibits all-caps, bold, italic for emphasis. Requires matching user's message length and energy. Original wit only; overused jokes banned. Multi-agent architecture where user-facing layer never reveals internal tool names.
+
+### Specific Rules to Add to Chalk Prompts
+
+**A. Anti-Sycophancy (High Impact)**
+```
+- Never start with praise ("Great question", "Good point", "That's interesting").
+- Never end with an offer ("Let me know if you have questions", "Happy to help").
+- Never use "certainly", "absolutely", "of course", "indeed" as filler.
+```
+
+**B. Verbosity Calibration (High Impact)**
+```
+- Factual lookup ("What did they say about X?"): 1-2 sentences with timestamp.
+- Concept explanation ("Explain the thing at [3:45]"): 2-4 sentences.
+- Summary or study notes: structured bullet points, as long as needed.
+- Match the user's effort. A three-word question gets a short answer.
+```
+
+**C. Tighter Citation Placement (Medium Impact)**
+```
+- Place citations immediately after the specific claim, not at sentence end.
+- Multiple timestamps per sentence when warranted:
+  "The speaker introduces X at [2:14] and revisits it at [8:30]."
+```
+
+**D. Invisible Machinery (Medium Impact)**
+```
+- Never mention internal processes. Do not say "Let me check the transcript",
+  "Based on the transcript", or reference the AI model. Answer as if you
+  simply know the video.
+```
+
+**E. Progressive Disclosure (Medium Impact)**
+```
+- Default to the shortest useful answer. If the user wants more depth,
+  they will ask. Do not front-load depth that was not requested.
+```
+
+### Tool Call Patterns Worth Building
+
+| Tool | Description | Inspiration |
+|------|-------------|-------------|
+| `search_transcript` | Semantic search within transcript. "Where do they talk about X?" returns segments with timestamps. | Cursor `codebase_search` |
+| `seek_video` | Navigate player to timestamp. Replaces `[M:SS]` link parsing with structured tool call. | Manus browser actions |
+| `create_bookmark` | Save timestamped note. Params: timestamp, label, note. Persists to localStorage/Supabase. | Windsurf `create_memory` |
+| `study_plan` | Generate structured learning plan with milestones. | v0 `TodoManager` |
+
+### Ideal Chalk Voice (Synthesized)
+
+- Answer first, context second. Lead with the answer. Timestamp and explanation follow.
+- Match the user's energy. Short question, short answer. Detailed question, detailed answer.
+- Cite inline. Timestamps appear immediately after the claim they support.
+- No filler words, no filler sentences. No greetings, no sign-offs, no praise, no offers.
+- Know the video cold. Never reference "the transcript" or internal processes.
+- Deadpan clarity over warmth. Correct when wrong. Direct when ambiguous. Concise always.
+
+---
+
 ## Tomorrow's Plan
 
-### Phase 1: Research & Reference (30 min)
-- Review system prompts from https://github.com/x1xhlol/system-prompts-and-models-of-ai-tools
-- Focus on: Anthropic Claude prompts, Poke by Interaction style, Cursor agent prompt
-- Extract: conciseness patterns, tool call definitions, tone frameworks
-- Note any tool call patterns worth adopting (timestamp navigation, video context tools)
+### Phase 1: Define Chalk Voice (20 min)
+Write `lib/prompts/shared.ts` with:
+- 5-line brand voice spec that all prompts inherit
+- Anti-sycophancy rules (from Poke research)
+- Verbosity calibration rules (from Claude Code research)
+- Invisible machinery rules
+- No emojis, no dashes, cite timestamps (shared constant)
 
-### Phase 2: Define Chalk Voice (30 min)
-- Write a 5-line brand voice spec that all prompts inherit
-- Principles: direct, capitalized, no emojis, no dashes, minimal, clear
-- Like Poke by Interaction but capitalized and never using emojis
-- Test against examples: "too corporate?" "too casual?" "just right?"
-
-### Phase 3: Rewrite Prompts (2-3 hours)
+### Phase 2: Rewrite Core Prompts (2 hours)
 Priority order:
-1. `VIDEO_ASSISTANT_SYSTEM_PROMPT` - most used, biggest impact
-2. `EXPLORE_MODE_SYSTEM_PROMPT` - already close, tighten options quality
-3. `VOICE_MODE_SUFFIX` - align with new brand voice
-4. `LEARN_MODE_BASE_PROMPT` - compress teaching rules
-5. `CHALK_DEEP_SYSTEM_PROMPT` - trim ChalkSpec docs, keep "texting a friend" vibe
-6. `FAST_SYSTEM_PROMPT` - already good, minor tweaks
-7. Learn options inline prompt - move to lib/prompts, compress
+1. `VIDEO_ASSISTANT_SYSTEM_PROMPT` - add anti-sycophancy, verbosity calibration, tighter citations, invisible machinery, progressive disclosure. Compress from 13 rules to ~8.
+2. `EXPLORE_MODE_SYSTEM_PROMPT` - already strong. Add invisible machinery rule. Tighten option quality instructions.
+3. `VOICE_MODE_SUFFIX` - replace "warm and engaging" with "natural and direct". Align with new voice.
+4. `LEARN_MODE_BASE_PROMPT` - compress teaching rules. Add anti-sycophancy.
+5. `CHALK_DEEP_SYSTEM_PROMPT` - trim ChalkSpec docs (expression rules can be a cached block). Keep "texting a friend" vibe.
+6. `FAST_SYSTEM_PROMPT` - already minimal. Minor tweaks.
+7. Learn options inline prompt - move to `lib/prompts/learn-mode.ts`, compress.
 
-### Phase 4: Extract Shared Rules (30 min)
-- Create `lib/prompts/shared.ts` with common rules block
-- Compose all prompts from shared + specific
-- Eliminate duplication
+### Phase 3: Compose from Shared (30 min)
+- All prompts import from `lib/prompts/shared.ts`
+- Eliminate rule duplication across 4+ files
+- Each prompt file is: shared voice + specific behavior
 
-### Phase 5: Evaluate Tool Calls (optional, 30 min)
-- Consider defining client-side "tools" the AI can call:
-  - `seek(timestamp)` - jump to video position
-  - `highlight(startTime, endTime)` - highlight transcript section
-  - `quiz(questions)` - structured quiz generation
-  - `summarize(startTime, endTime)` - summarize a section
-- This would replace parsing [M:SS] from text with structured tool responses
-- Evaluate effort vs. payoff
+### Phase 4: Evaluate Tool Calls (30 min, optional)
+- Prototype `search_transcript` tool definition
+- Evaluate: would structured tool calls for `seek_video` + `create_bookmark` improve UX vs. current [M:SS] parsing?
+- Estimate effort. If low, implement. If high, defer.
 
-### Phase 6: Test & Iterate (1 hour)
-- Test each rewritten prompt against real videos
-- Compare output quality before/after
+### Phase 5: Test & Iterate (1 hour)
+- Test each rewritten prompt against 3 real videos (short, medium, long)
+- Compare: is the tone right? Too terse? Too corporate?
+- A/B the old vs new on the same question
 - Iterate on any that feel off
+
+### Key Files to Reference During Rewrites
+| File | What to steal |
+|------|---------------|
+| `Anthropic/Claude Code 2.0.txt` | Tone, verbosity calibration, no-preamble |
+| `Perplexity/Prompt.txt` | Inline citation placement, journalistic tone |
+| `Poke/Poke_p1.txt` | Anti-sycophancy banned phrases, energy matching |
+| `Cursor Prompts/Agent Prompt 2025-09-03.txt` | Progressive disclosure, parallel tool calls |
+| All at: `github.com/x1xhlol/system-prompts-and-models-of-ai-tools` |
