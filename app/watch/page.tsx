@@ -589,7 +589,7 @@ function WatchContent() {
 
         {/* Video area */}
         <div className={`flex-none md:flex-1 flex flex-col overflow-hidden relative md:max-h-none transition-[height] duration-200 ease-out motion-reduce:transition-none ${
-          keyboardOpen ? 'h-0' : transcriptCollapsed ? 'h-[calc(100dvh-140px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]' : 'h-[28dvh]'
+          keyboardOpen ? 'h-0' : interactionVisible ? 'h-[calc(100dvh-env(safe-area-inset-top)-48px)]' : transcriptCollapsed ? 'h-[calc(100dvh-140px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]' : 'h-[28dvh]'
         }`}>
           <div className="flex-1 md:flex md:flex-col md:items-center md:justify-center p-0 md:p-4 overflow-hidden relative z-0">
             <div className={`w-full ${viewMaxWidth} md:rounded-xl md:overflow-hidden md:border-[3px] md:border-chalk-accent transition-[max-width] duration-300 ease-out`}>
@@ -680,7 +680,7 @@ function WatchContent() {
 
         {/* Mobile transcript — collapsible */}
         <div className={`md:hidden flex flex-col border-t border-chalk-border/40 overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none ${
-          keyboardOpen ? 'h-0'
+          keyboardOpen || interactionVisible ? 'h-0'
             : transcriptCollapsed ? 'h-10'
             : 'h-[calc(72dvh-100px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]'
         }`}>
