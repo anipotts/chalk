@@ -1,6 +1,6 @@
 import { streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { buildVideoSystemPrompt } from '@/lib/prompts/video-assistant';
+import { buildVideoSystemPrompt, buildExploreSystemPrompt } from '@/lib/prompts/video-assistant';
 import { formatTimestamp, type TranscriptSegment } from '@/lib/video-utils';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { message, currentTimestamp, segments, history, model: modelChoice, videoTitle, personality, transcriptSource, voiceMode } = body;
+  const { message, currentTimestamp, segments, history, model: modelChoice, videoTitle, personality, transcriptSource, voiceMode, exploreMode, exploreGoal } = body;
 
   if (!message || typeof message !== 'string') {
     return Response.json({ error: 'Missing message' }, { status: 400 });
@@ -31,10 +31,6 @@ export async function POST(req: Request) {
   if (segments && segments.length > 5000) {
     return Response.json({ error: 'Too many segments (max 5000)' }, { status: 400 });
   }
-
-  // Always use Sonnet for all interactions (simplified from model choice)
-  const resolvedModel = 'sonnet';
-  const model = anthropic('claude-sonnet-4-5');
 
   // Build full transcript context with priority markers around current position
   const typedSegments = (segments || []) as TranscriptSegment[];
@@ -59,8 +55,54 @@ export async function POST(req: Request) {
     transcriptContext = '(No transcript available)';
   }
 
-  // Build system prompt with video context
   const safeVideoTitle = typeof videoTitle === 'string' ? videoTitle.slice(0, 200) : undefined;
+
+  // Explore Mode: use Opus with extended thinking
+  if (exploreMode) {
+    const model = anthropic('claude-opus-4-6-20250414');
+
+    const systemPrompt = buildExploreSystemPrompt({
+      transcriptContext,
+      currentTimestamp: formatTimestamp(currentTime),
+      videoTitle: safeVideoTitle,
+      exploreGoal: typeof exploreGoal === 'string' ? exploreGoal : undefined,
+      transcriptSource: typeof transcriptSource === 'string' ? transcriptSource : undefined,
+    });
+
+    const MAX_HISTORY = 20;
+    const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+
+    if (history && Array.isArray(history)) {
+      const trimmed = history.slice(-MAX_HISTORY);
+      for (const msg of trimmed) {
+        if (msg.role === 'user' || msg.role === 'assistant') {
+          messages.push({ role: msg.role, content: String(msg.content).slice(0, 4000) });
+        }
+      }
+    } else {
+      messages.push({ role: 'user', content: message });
+    }
+
+    const result = streamText({
+      model,
+      system: systemPrompt,
+      messages,
+      maxOutputTokens: 1500,
+      providerOptions: {
+        anthropic: {
+          thinking: { type: 'enabled', budgetTokens: 10000 },
+        },
+      },
+    });
+
+    // Stream text response; client parses <options>...</options> from the final text
+    return result.toTextStreamResponse();
+  }
+
+  // Normal mode: Sonnet
+  const model = anthropic('claude-sonnet-4-5');
+
+  // Build system prompt with video context
   let systemPrompt = buildVideoSystemPrompt({
     transcriptContext,
     currentTimestamp: formatTimestamp(currentTime),

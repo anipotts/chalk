@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback, type RefObject } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TextInput } from './TextInput';
+import { ExplorePills } from './ExplorePills';
 import { ExchangeMessage, renderRichContent, type UnifiedExchange } from './ExchangeMessage';
 import type { VoiceState } from '@/hooks/useVoiceMode';
 import type { TranscriptSegment, TranscriptSource } from '@/lib/video-utils';
@@ -49,6 +50,15 @@ function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+/** Parse <options>opt1|opt2|opt3</options> from AI text. Returns [cleanText, options]. */
+function parseExploreOptions(text: string): [string, string[]] {
+  const match = text.match(/<options>([\s\S]*?)<\/options>/);
+  if (!match) return [text, []];
+  const cleanText = text.replace(/<options>[\s\S]*?<\/options>/, '').trimEnd();
+  const options = match[1].split('|').map((o) => o.trim()).filter(Boolean);
+  return [cleanText, options];
 }
 
 /* --- Voice mode visual elements --- */
@@ -116,10 +126,68 @@ function DownArrowIcon() {
   );
 }
 
+/** Timestamp hover tooltip showing transcript context */
+function TimestampTooltip({
+  seconds,
+  segments,
+  position,
+}: {
+  seconds: number;
+  segments: TranscriptSegment[];
+  position: { x: number; y: number };
+}) {
+  // Find the 2-3 nearest segments around the timestamp
+  const sorted = [...segments].sort(
+    (a, b) => Math.abs(a.offset - seconds) - Math.abs(b.offset - seconds)
+  );
+  const nearby = sorted.slice(0, 3).sort((a, b) => a.offset - b.offset);
+
+  if (nearby.length === 0) return null;
+
+  const formatTs = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 4 }}
+      transition={{ duration: 0.1 }}
+      className="fixed z-50 bg-chalk-surface border border-chalk-border rounded-lg p-2 max-w-[300px] shadow-xl pointer-events-none"
+      style={{ left: position.x, top: position.y - 8, transform: 'translate(-50%, -100%)' }}
+    >
+      <div className="space-y-1">
+        {nearby.map((seg, i) => {
+          const isExact = Math.abs(seg.offset - seconds) < 3;
+          return (
+            <div key={i} className={`text-xs leading-relaxed ${isExact ? 'text-chalk-text' : 'text-slate-500'}`}>
+              <span className="font-mono text-[10px] text-slate-600 mr-1">[{formatTs(seg.offset)}]</span>
+              {seg.text}
+            </div>
+          );
+        })}
+      </div>
+    </motion.div>
+  );
+}
+
+const INITIAL_EXPLORE_PILLS = [
+  'Understand key concepts',
+  'Get a quick summary',
+  'Quiz me on this',
+  'Help me apply this',
+];
+
 export function InteractionOverlay({
   visible,
+  segments,
+  currentTime,
   videoId,
   videoTitle,
+  transcriptSource,
   voiceId,
   isVoiceCloning,
 
@@ -154,6 +222,20 @@ export function InteractionOverlay({
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Explore Mode state
+  const [exploreMode, setExploreMode] = useState(false);
+  const [explorePills, setExplorePills] = useState<string[]>([]);
+  const [exploreGoal, setExploreGoal] = useState<string | null>(null);
+  const [exploreExchanges, setExploreExchanges] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([]);
+  const [exploreStreaming, setExploreStreaming] = useState(false);
+  const [exploreCurrentAiText, setExploreCurrentAiText] = useState('');
+  const [exploreCurrentUserText, setExploreCurrentUserText] = useState('');
+  const [exploreError, setExploreError] = useState<string | null>(null);
+  const exploreAbortRef = useRef<AbortController | null>(null);
+
+  // Timestamp tooltip state
+  const [tooltipInfo, setTooltipInfo] = useState<{ seconds: number; position: { x: number; y: number } } | null>(null);
+
   const handleTimestampSeek = useCallback((seconds: number) => {
     onSeek(seconds);
     onClose();
@@ -172,9 +254,10 @@ export function InteractionOverlay({
   }, []);
 
   // Show idle hint when: text mode + no exchanges + no input + no current text exchange
-  const showIdleHint = isTextMode && exchanges.length === 0 && !input && !currentUserText && !currentAiText && !isTextStreaming;
+  const hasExploreContent = exploreExchanges.length > 0 || exploreCurrentAiText || exploreCurrentUserText;
+  const showIdleHint = isTextMode && exchanges.length === 0 && !input && !currentUserText && !currentAiText && !isTextStreaming && !hasExploreContent;
 
-  // Show text input area - always visible (voice button can change states independently)
+  // Show text input area - always visible
   const showTextInput = true;
 
   // Activate text mode (open input)
@@ -201,7 +284,7 @@ export function InteractionOverlay({
 
   useEffect(() => {
     if (!isScrolledUp) scrollToBottom();
-  }, [exchanges, currentAiText, scrollToBottom, isScrolledUp]);
+  }, [exchanges, currentAiText, exploreExchanges, exploreCurrentAiText, scrollToBottom, isScrolledUp]);
 
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
@@ -213,8 +296,175 @@ export function InteractionOverlay({
     if (!input.trim()) return;
     const text = input.trim();
     setInput('');
-    await onTextSubmit(text);
-  }, [input, onTextSubmit]);
+
+    if (exploreMode) {
+      // Handle explore mode submission directly
+      await submitExploreMessage(text);
+    } else {
+      await onTextSubmit(text);
+    }
+  }, [input, exploreMode, onTextSubmit]);
+
+  // Toggle explore mode
+  const toggleExploreMode = useCallback(() => {
+    setExploreMode((prev) => {
+      const next = !prev;
+      if (next) {
+        // Entering explore mode: show initial pills if no explore conversation yet
+        if (exploreExchanges.length === 0) {
+          setExplorePills(INITIAL_EXPLORE_PILLS);
+        }
+      } else {
+        // Leaving explore mode: clear pills, keep exchanges for context
+        setExplorePills([]);
+        // Abort any in-flight explore stream
+        if (exploreAbortRef.current) {
+          exploreAbortRef.current.abort();
+          exploreAbortRef.current = null;
+        }
+        setExploreStreaming(false);
+        setExploreCurrentAiText('');
+        setExploreCurrentUserText('');
+      }
+      return next;
+    });
+  }, [exploreExchanges.length]);
+
+  // Submit explore message (calls API directly)
+  const submitExploreMessage = useCallback(async (text: string) => {
+    if (exploreStreaming) return;
+
+    // Set goal on first message
+    if (!exploreGoal) {
+      setExploreGoal(text);
+    }
+
+    setExploreCurrentUserText(text);
+    setExploreCurrentAiText('');
+    setExplorePills([]);
+    setExploreError(null);
+    setExploreStreaming(true);
+
+    // Build history for API
+    const history = [
+      ...exploreExchanges.map((ex) => ({
+        role: ex.role,
+        content: ex.text,
+      })),
+      { role: 'user' as const, content: text },
+    ];
+
+    const controller = new AbortController();
+    exploreAbortRef.current = controller;
+
+    try {
+      const response = await fetch('/api/video-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: text,
+          currentTimestamp: currentTime,
+          segments,
+          history,
+          videoTitle,
+          transcriptSource,
+          exploreMode: true,
+          exploreGoal: exploreGoal || text,
+        }),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({ error: 'Request failed' }));
+        throw new Error(err.error || 'Request failed');
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('No response body');
+
+      const decoder = new TextDecoder();
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        fullText += chunk;
+
+        // Show text without the options block while streaming
+        const [cleanText] = parseExploreOptions(fullText);
+        setExploreCurrentAiText(cleanText);
+      }
+
+      // Parse final text for options
+      const [cleanText, options] = parseExploreOptions(fullText);
+
+      // Move current exchange to history
+      setExploreExchanges((prev) => [
+        ...prev,
+        { role: 'user', text },
+        { role: 'assistant', text: cleanText },
+      ]);
+      setExploreCurrentUserText('');
+      setExploreCurrentAiText('');
+      setExplorePills(options);
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      setExploreError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setExploreStreaming(false);
+      exploreAbortRef.current = null;
+    }
+  }, [exploreStreaming, exploreGoal, exploreExchanges, currentTime, segments, videoTitle, transcriptSource]);
+
+  // Handle pill selection
+  const handlePillSelect = useCallback((option: string) => {
+    submitExploreMessage(option);
+  }, [submitExploreMessage]);
+
+  // Focus text input (for "Something else..." pill)
+  const focusInput = useCallback(() => {
+    inputRef?.current?.focus();
+  }, [inputRef]);
+
+  // Timestamp tooltip via event delegation
+  const handleMouseOver = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const button = target.closest('button[aria-label^="Seek to"]');
+    if (button) {
+      const label = button.getAttribute('aria-label') || '';
+      const match = label.match(/Seek to (\d+):(\d{2})(?::(\d{2}))? in video/);
+      if (match) {
+        let seconds: number;
+        if (match[3]) {
+          seconds = parseInt(match[1]) * 3600 + parseInt(match[2]) * 60 + parseInt(match[3]);
+        } else {
+          seconds = parseInt(match[1]) * 60 + parseInt(match[2]);
+        }
+        const rect = button.getBoundingClientRect();
+        setTooltipInfo({
+          seconds,
+          position: { x: rect.left + rect.width / 2, y: rect.top },
+        });
+      }
+    }
+  }, []);
+
+  const handleMouseOut = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const button = target.closest('button[aria-label^="Seek to"]');
+    if (button) {
+      setTooltipInfo(null);
+    }
+  }, []);
+
+  // Determine which exchanges and streaming text to show
+  const showExploreUI = exploreMode;
+  const activeExchanges = showExploreUI ? [] : exchanges; // Explore mode uses its own exchange list
+  const activeStreaming = showExploreUI ? exploreStreaming : isTextStreaming;
+  const activeUserText = showExploreUI ? exploreCurrentUserText : currentUserText;
+  const activeAiText = showExploreUI ? exploreCurrentAiText : currentAiText;
 
   return (
     <AnimatePresence>
@@ -262,10 +512,75 @@ export function InteractionOverlay({
               <div
                 ref={scrollRef}
                 onScroll={handleScroll}
+                onMouseOver={handleMouseOver}
+                onMouseOut={handleMouseOut}
                 className="flex-1 w-full overflow-y-auto scroll-smooth space-y-3 mb-4 pointer-events-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
               >
-                {/* Past exchanges */}
-                {exchanges.map((exchange) => (
+                {/* Explore mode initial welcome */}
+                {showExploreUI && exploreExchanges.length === 0 && !exploreCurrentUserText && !exploreStreaming && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="space-y-3"
+                  >
+                    <div className="flex justify-start w-full">
+                      <div className="max-w-[85%]">
+                        <div className="text-[15px] text-slate-300 leading-relaxed">
+                          What would you like to explore?
+                        </div>
+                        <ExplorePills
+                          options={explorePills}
+                          onSelect={handlePillSelect}
+                          onFocusInput={focusInput}
+                        />
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Explore mode conversation history */}
+                {showExploreUI && exploreExchanges.map((ex, i) => {
+                  if (ex.role === 'user') {
+                    return (
+                      <motion.div
+                        key={`explore-${i}`}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex justify-end w-full"
+                      >
+                        <div className="max-w-[85%] px-3.5 py-2 rounded-2xl bg-chalk-accent/90 text-white text-sm leading-relaxed break-words">
+                          {ex.text}
+                        </div>
+                      </motion.div>
+                    );
+                  }
+                  // Assistant message with pills after the last assistant message
+                  const isLastAssistant = i === exploreExchanges.length - 1;
+                  return (
+                    <motion.div
+                      key={`explore-${i}`}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="flex justify-start w-full"
+                    >
+                      <div className="max-w-[85%]">
+                        <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
+                          {renderRichContent(ex.text, handleTimestampSeek, videoId)}
+                        </div>
+                        {isLastAssistant && explorePills.length > 0 && !exploreStreaming && (
+                          <ExplorePills
+                            options={explorePills}
+                            onSelect={handlePillSelect}
+                            onFocusInput={focusInput}
+                          />
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+
+                {/* Normal mode: past exchanges */}
+                {!showExploreUI && exchanges.map((exchange) => (
                   <ExchangeMessage
                     key={exchange.id}
                     exchange={exchange}
@@ -274,23 +589,23 @@ export function InteractionOverlay({
                   />
                 ))}
 
-                {/* Current streaming exchange - same styling as history */}
-                {(currentUserText || currentAiText || voiceTranscript || voiceResponseText) && (
+                {/* Current streaming exchange */}
+                {(activeUserText || activeAiText || (!showExploreUI && (voiceTranscript || voiceResponseText))) && (
                   <div className="space-y-3">
                     {/* User message (text or voice transcript) */}
-                    {(currentUserText || voiceTranscript) && (
+                    {(activeUserText || (!showExploreUI && voiceTranscript)) && (
                       <motion.div
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="flex justify-end w-full"
                       >
                         <div className="max-w-[85%] px-3.5 py-2 rounded-2xl bg-chalk-accent/90 text-white text-sm leading-relaxed break-words">
-                          {currentUserText || voiceTranscript}
+                          {activeUserText || voiceTranscript}
                         </div>
                       </motion.div>
                     )}
-                    {/* AI response — uses same renderRichContent as exchange history */}
-                    {(currentAiText || voiceResponseText) && (
+                    {/* AI response */}
+                    {(activeAiText || (!showExploreUI && voiceResponseText)) && (
                       <motion.div
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -298,8 +613,8 @@ export function InteractionOverlay({
                       >
                         <div className="max-w-[85%]">
                           <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-                            {renderRichContent(currentAiText || voiceResponseText, handleTimestampSeek, videoId)}
-                            {(isTextStreaming || voiceState === 'thinking') && (
+                            {renderRichContent(activeAiText || voiceResponseText, handleTimestampSeek, videoId)}
+                            {(activeStreaming || voiceState === 'thinking') && (
                               <span className="inline-block w-0.5 h-4 bg-chalk-accent animate-pulse ml-0.5 align-middle" />
                             )}
                           </div>
@@ -310,19 +625,19 @@ export function InteractionOverlay({
                 )}
 
                 {/* Error message */}
-                {(textError || voiceError) && (
+                {(textError || voiceError || exploreError) && (
                   <motion.div
                     initial={{ opacity: 0, y: 5 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2"
                   >
-                    {textError || voiceError}
+                    {textError || voiceError || exploreError}
                   </motion.div>
                 )}
               </div>
 
               {/* Scroll to bottom button - only when there are exchanges */}
-              {exchanges.length > 0 && isScrolledUp && (
+              {(exchanges.length > 0 || exploreExchanges.length > 0) && isScrolledUp && (
                 <div className="absolute bottom-[72px] left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
                   <button
                     onClick={scrollToBottom}
@@ -341,7 +656,7 @@ export function InteractionOverlay({
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.3, ease: 'easeOut' }}
-                  className={`pointer-events-auto ${exchanges.length > 0 ? 'flex-none w-full' : 'w-full max-w-md'}`}
+                  className={`pointer-events-auto ${(exchanges.length > 0 || exploreExchanges.length > 0 || hasExploreContent) ? 'flex-none w-full' : 'w-full max-w-md'}`}
                 >
                   {/* Unified input row */}
                   <div className="flex items-center gap-2">
@@ -349,11 +664,19 @@ export function InteractionOverlay({
                       value={input}
                       onChange={setInput}
                       onSubmit={handleSubmit}
-                      isStreaming={isTextStreaming}
-                      onStop={onStopTextStream}
+                      isStreaming={activeStreaming}
+                      onStop={showExploreUI ? () => {
+                        if (exploreAbortRef.current) {
+                          exploreAbortRef.current.abort();
+                          exploreAbortRef.current = null;
+                        }
+                        setExploreStreaming(false);
+                      } : onStopTextStream}
                       placeholder="Ask about this video..."
                       inputRef={inputRef}
                       autoFocus={true}
+                      exploreMode={exploreMode}
+                      onToggleExplore={toggleExploreMode}
                     />
 
                     {/* Mic button */}
@@ -400,10 +723,16 @@ export function InteractionOverlay({
                     </motion.button>
 
                     {/* Send/Stop button */}
-                    {isTextStreaming ? (
+                    {activeStreaming ? (
                       <button
                         type="button"
-                        onClick={onStopTextStream}
+                        onClick={showExploreUI ? () => {
+                          if (exploreAbortRef.current) {
+                            exploreAbortRef.current.abort();
+                            exploreAbortRef.current = null;
+                          }
+                          setExploreStreaming(false);
+                        } : onStopTextStream}
                         className="flex-shrink-0 w-11 h-11 rounded-xl bg-red-500/15 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500/25 transition-colors"
                         title="Stop"
                         aria-label="Stop response"
@@ -461,10 +790,20 @@ export function InteractionOverlay({
                   )}
 
                   {/* Clear button - at bottom */}
-                  {exchanges.length > 0 && (
+                  {(exchanges.length > 0 || exploreExchanges.length > 0) && (
                     <div className="mt-4 flex justify-center">
                       <button
-                        onClick={onClearHistory}
+                        onClick={() => {
+                          onClearHistory();
+                          if (exploreMode) {
+                            setExploreExchanges([]);
+                            setExploreGoal(null);
+                            setExplorePills(INITIAL_EXPLORE_PILLS);
+                            setExploreCurrentAiText('');
+                            setExploreCurrentUserText('');
+                            setExploreError(null);
+                          }
+                        }}
                         className="text-xs text-slate-500 hover:text-slate-300 px-3 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors"
                         title="Clear conversation history"
                       >
@@ -707,6 +1046,17 @@ export function InteractionOverlay({
               )}
             </motion.div>
           )}
+
+          {/* Timestamp tooltip */}
+          <AnimatePresence>
+            {tooltipInfo && (
+              <TimestampTooltip
+                seconds={tooltipInfo.seconds}
+                segments={segments}
+                position={tooltipInfo.position}
+              />
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
     </AnimatePresence>
