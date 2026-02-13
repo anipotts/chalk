@@ -12,6 +12,10 @@ import type { ParsedQuiz, ParsedExplanation, LearnModePhase, LearnAction } from 
 import { storageKey } from '@/lib/brand';
 import type { LearnOption } from '@/hooks/useLearnOptions';
 import { CaretDoubleDown, Microphone, StopCircle, PaperPlaneTilt } from '@phosphor-icons/react';
+import { classifyThinkingBudget, type DepthLevel } from '@/lib/thinking-budget';
+import { ThinkingDepthIndicator } from './ThinkingDepthIndicator';
+import { splitReasoningFromText } from '@/lib/stream-parser';
+import { ReasoningPanel } from './ReasoningPanel';
 
 /* --- Learn mode error boundary --- */
 
@@ -109,6 +113,10 @@ interface InteractionOverlayProps {
   onSelectAnswer: (questionIndex: number, optionId: string) => void;
   onNextBatch: () => void;
   onStopLearnMode: () => void;
+
+  // Curriculum context (cross-video playlist)
+  curriculumContext?: string | null;
+  curriculumVideoCount?: number;
 }
 
 function formatDuration(seconds: number): string {
@@ -292,6 +300,8 @@ export function InteractionOverlay({
   onSelectAnswer,
   onNextBatch,
   onStopLearnMode,
+  curriculumContext,
+  curriculumVideoCount,
 }: InteractionOverlayProps) {
   const [input, setInput] = useState('');
   const [isScrolledUp, setIsScrolledUp] = useState(false);
@@ -303,12 +313,20 @@ export function InteractionOverlay({
   const [exploreMode, setExploreMode] = useState(false);
   const [explorePills, setExplorePills] = useState<string[]>([]);
   const [exploreGoal, setExploreGoal] = useState<string | null>(null);
-  const [exploreExchanges, setExploreExchanges] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([]);
+  const [exploreExchanges, setExploreExchanges] = useState<Array<{ role: 'user' | 'assistant'; text: string; thinking?: string; thinkingDuration?: number }>>([]);
   const [exploreStreaming, setExploreStreaming] = useState(false);
   const [exploreCurrentAiText, setExploreCurrentAiText] = useState('');
   const [exploreCurrentUserText, setExploreCurrentUserText] = useState('');
   const [exploreError, setExploreError] = useState<string | null>(null);
   const exploreAbortRef = useRef<AbortController | null>(null);
+
+  // Adaptive thinking depth state
+  const [exploreDepthLevel, setExploreDepthLevel] = useState<DepthLevel>('moderate');
+  const [exploreDepthLabel, setExploreDepthLabel] = useState('');
+  const [exploreIsThinking, setExploreIsThinking] = useState(false);
+  const [exploreThinkingDuration, setExploreThinkingDuration] = useState<number | null>(null);
+  const [exploreThinking, setExploreThinking] = useState<string | null>(null);
+  const exploreThinkingStartRef = useRef<number | null>(null);
 
   // Timestamp tooltip state
   const [tooltipInfo, setTooltipInfo] = useState<{ seconds: number; position: { x: number; y: number } } | null>(null);
@@ -414,13 +432,22 @@ export function InteractionOverlay({
     });
   }, [exploreExchanges.length]);
 
-  // Submit explore message (calls API directly)
+  // Submit explore message (calls API directly with adaptive thinking budget)
   const submitExploreMessage = useCallback(async (text: string) => {
     if (exploreStreaming) return;
 
     if (!exploreGoal) {
       setExploreGoal(text);
     }
+
+    // Classify thinking budget based on message complexity
+    const budget = classifyThinkingBudget(text, exploreExchanges.length, undefined, 'explore');
+    setExploreDepthLevel(budget.depthLevel);
+    setExploreDepthLabel(budget.depthLabel);
+    setExploreIsThinking(true);
+    setExploreThinkingDuration(null);
+    setExploreThinking(null);
+    exploreThinkingStartRef.current = Date.now();
 
     setExploreCurrentUserText(text);
     setExploreCurrentAiText('');
@@ -452,6 +479,8 @@ export function InteractionOverlay({
           transcriptSource,
           exploreMode: true,
           exploreGoal: exploreGoal || text,
+          thinkingBudget: budget.budgetTokens,
+          curriculumContext: curriculumContext || undefined,
         }),
         signal: controller.signal,
       });
@@ -465,25 +494,46 @@ export function InteractionOverlay({
       if (!reader) throw new Error('No response body');
 
       const decoder = new TextDecoder();
-      let fullText = '';
+      let fullRaw = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        fullText += chunk;
+        fullRaw += chunk;
 
-        const [cleanText] = parseExploreOptions(fullText);
-        setExploreCurrentAiText(cleanText);
+        // Parse reasoning vs text using \x1E separator
+        const { reasoning, text: textContent, hasSeparator } = splitReasoningFromText(fullRaw);
+
+        if (hasSeparator) {
+          // Separator received — thinking is complete
+          if (exploreThinkingStartRef.current && exploreIsThinking) {
+            setExploreThinkingDuration(Date.now() - exploreThinkingStartRef.current);
+            setExploreIsThinking(false);
+          }
+          setExploreThinking(reasoning || null);
+
+          // Show the text content (after separator), parse options progressively
+          const [cleanText] = parseExploreOptions(textContent);
+          setExploreCurrentAiText(cleanText);
+        } else {
+          // Still in reasoning phase — update thinking text
+          setExploreThinking(reasoning || null);
+        }
       }
 
-      const [cleanText, options] = parseExploreOptions(fullText);
+      // Final parse
+      const { reasoning: finalReasoning, text: finalText } = splitReasoningFromText(fullRaw);
+      const [cleanText, options] = parseExploreOptions(finalText);
+      const thinkDuration = exploreThinkingStartRef.current
+        ? Date.now() - exploreThinkingStartRef.current
+        : null;
 
       setExploreExchanges((prev) => [
         ...prev,
         { role: 'user', text },
-        { role: 'assistant', text: cleanText },
+        { role: 'assistant', text: cleanText, thinking: finalReasoning || undefined, thinkingDuration: thinkDuration ?? undefined },
       ]);
       setExploreCurrentUserText('');
       setExploreCurrentAiText('');
@@ -493,9 +543,11 @@ export function InteractionOverlay({
       setExploreError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setExploreStreaming(false);
+      setExploreIsThinking(false);
       exploreAbortRef.current = null;
+      exploreThinkingStartRef.current = null;
     }
-  }, [exploreStreaming, exploreGoal, exploreExchanges, currentTime, segments, videoTitle, transcriptSource]);
+  }, [exploreStreaming, exploreGoal, exploreExchanges, currentTime, segments, videoTitle, transcriptSource, curriculumContext, exploreIsThinking]);
 
   // Handle pill selection
   const handlePillSelect = useCallback((option: string) => {
@@ -659,6 +711,12 @@ export function InteractionOverlay({
                         <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
                           {renderRichContent(ex.text, handleTimestampSeek, videoId)}
                         </div>
+                        {ex.thinking && (
+                          <ReasoningPanel
+                            thinking={ex.thinking}
+                            thinkingDuration={ex.thinkingDuration}
+                          />
+                        )}
                         {isLastAssistant && explorePills.length > 0 && !exploreStreaming && (
                           <ExplorePills
                             options={explorePills}
@@ -683,6 +741,16 @@ export function InteractionOverlay({
                     isReadAloudLoading={isReadAloudLoading && playingMessageId === exchange.id}
                   />
                 ))}
+
+                {/* Thinking depth indicator for explore mode (shows during thinking phase) */}
+                {showExploreUI && exploreStreaming && (exploreIsThinking || exploreThinkingDuration) && (
+                  <ThinkingDepthIndicator
+                    depthLevel={exploreDepthLevel}
+                    depthLabel={exploreDepthLabel}
+                    isThinking={exploreIsThinking}
+                    thinkingDuration={exploreThinkingDuration}
+                  />
+                )}
 
                 {/* Current streaming exchange */}
                 {(activeUserText || activeAiText || (!showExploreUI && (voiceTranscript || voiceResponseText))) && (
@@ -789,6 +857,15 @@ export function InteractionOverlay({
                 >
                   {/* Unified input row */}
                   <div className="flex items-center gap-2">
+                    {/* Curriculum context badge */}
+                    {curriculumContext && curriculumVideoCount && curriculumVideoCount > 0 && (
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <span className="text-[10px] font-medium text-slate-500 bg-white/[0.04] border border-white/[0.06] rounded-full px-2 py-0.5">
+                          Curriculum: {curriculumVideoCount} videos loaded
+                        </span>
+                      </div>
+                    )}
+
                     <TextInput
                       value={input}
                       onChange={setInput}

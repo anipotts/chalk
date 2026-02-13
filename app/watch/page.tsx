@@ -17,6 +17,7 @@ import { useUnifiedMode } from "@/hooks/useUnifiedMode";
 import { useVoiceClone } from "@/hooks/useVoiceClone";
 import { useLearnMode } from "@/hooks/useLearnMode";
 import { useLearnOptions } from "@/hooks/useLearnOptions";
+import { useCurriculumContext } from "@/hooks/useCurriculumContext";
 
 const VideoPlayer = dynamic(
   () =>
@@ -195,6 +196,7 @@ function MobileChatTrigger({
 function WatchContent() {
   const searchParams = useSearchParams();
   const videoId = searchParams.get("v") || "";
+  const playlistId = searchParams.get("list") || null;
   const navRouter = useRouter();
   const [navSearchValue, setNavSearchValue] = useState("");
 
@@ -317,6 +319,9 @@ function WatchContent() {
     videoId: videoId || "",
     videoTitle: videoTitle ?? undefined,
   });
+
+  // Cross-video curriculum context (loads sibling video transcripts for playlist)
+  const curriculum = useCurriculumContext(playlistId, videoId);
 
   // Pre-generated learn options (lazy — only fetched when learn mode is first opened)
   const { options: learnOptions, isLoading: learnOptionsLoading } =
@@ -760,6 +765,8 @@ function WatchContent() {
             onSelectAnswer={learnMode.selectAnswer}
             onNextBatch={learnMode.requestNextBatch}
             onStopLearnMode={learnMode.stopLearnMode}
+            curriculumContext={curriculum.curriculumContext}
+            curriculumVideoCount={curriculum.videoCount}
           />
         </div>
 

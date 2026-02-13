@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { segments, currentTimestamp, videoTitle, history, action, difficulty, score } = body;
+  const { segments, currentTimestamp, videoTitle, history, action, difficulty, score, thinkingBudget } = body;
 
   // Validate
   if (segments && !Array.isArray(segments)) {
@@ -112,7 +112,7 @@ export async function POST(req: Request) {
     maxOutputTokens: 4000,
     providerOptions: {
       anthropic: {
-        thinking: { type: 'enabled', budgetTokens: 10000 },
+        thinking: { type: 'enabled', budgetTokens: Math.max(1024, Math.min(16000, typeof thinkingBudget === 'number' ? thinkingBudget : 10000)) },
       },
     },
   });
