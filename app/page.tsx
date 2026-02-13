@@ -65,6 +65,10 @@ export default function HomePage() {
   const [continuationToken, setContinuationToken] = useState<string | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
+  // Mobile detection + raised latch (prevents bounce on partial deletes)
+  const [isMobile, setIsMobile] = useState(false);
+  const [isRaised, setIsRaised] = useState(false);
+
   // Recent videos
   const [recentVideos, setRecentVideos] = useState<RecentVideo[]>([]);
 
@@ -73,6 +77,15 @@ export default function HomePage() {
 
   useEffect(() => {
     setRecentVideos(getRecentVideos());
+  }, []);
+
+  // Mobile detection
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
   }, []);
 
   // Debounced search effect
@@ -220,6 +233,13 @@ export default function HomePage() {
   }, [continuationToken, isLoadingMore, inputValue, searchType]);
 
   const hasSearchContent = isSearching || searchResults.length > 0 || searchError;
+
+  // Sticky-raise latch: stays raised until input is fully cleared
+  useEffect(() => {
+    if (hasSearchContent) setIsRaised(true);
+    else if (!inputValue) setIsRaised(false);
+  }, [hasSearchContent, inputValue]);
+
   const showTabs = !inputValue;
 
   const pillClasses = (tab: 'search' | 'url') =>
@@ -238,9 +258,9 @@ export default function HomePage() {
       <div
         className="flex flex-col items-center px-4 shrink-0"
         style={{
-          paddingTop: hasSearchContent ? '48px' : 'calc(50vh - 140px)',
-          paddingBottom: hasSearchContent ? '8px' : '0px',
-          transition: 'padding-top 0.5s cubic-bezier(0.4, 0, 0.2, 1), padding-bottom 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+          paddingTop: isMobile ? '48px' : (isRaised ? '48px' : 'calc(50vh - 140px)'),
+          paddingBottom: isRaised ? '8px' : '0px',
+          transition: isMobile ? 'none' : 'padding-top 0.4s cubic-bezier(0.4, 0, 0.2, 1), padding-bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
         <div className="w-full max-w-2xl">
