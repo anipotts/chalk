@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { TimestampLink } from './TimestampLink';
 import { parseTimestampLinks } from '@/lib/video-utils';
+import { ClipboardText, CheckCircle, SpeakerSimpleHigh, SpeakerSimpleLow } from '@phosphor-icons/react';
 
 export interface UnifiedExchange {
   id: string;
@@ -169,14 +170,9 @@ function CopyButton({ text }: { text: string }) {
       title={copied ? 'Copied!' : 'Copy'}
     >
       {copied ? (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3 text-emerald-400">
-          <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
-        </svg>
+        <CheckCircle size={12} weight="fill" className="text-emerald-400" />
       ) : (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-          <path d="M5.5 3.5A1.5 1.5 0 0 1 7 2h2.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 1 .439 1.061V9.5A1.5 1.5 0 0 1 12 11V3.5A1.5 1.5 0 0 0 10.5 2H7a1.5 1.5 0 0 0-1.5 1.5Z" />
-          <path d="M3.5 6A1.5 1.5 0 0 1 5 4.5h4.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 1 .439 1.061V12.5A1.5 1.5 0 0 1 12 14H5a1.5 1.5 0 0 1-1.5-1.5V6Z" />
-        </svg>
+        <ClipboardText size={12} weight="bold" />
       )}
     </button>
   );
@@ -195,14 +191,9 @@ function SpeakerButton({ exchange, onPlay, isPlaying, isLoading }: { exchange: U
       {isLoading ? (
         <div className="w-3 h-3 border border-chalk-accent/50 border-t-chalk-accent rounded-full animate-spin" />
       ) : isPlaying ? (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-          <path d="M8.5 4.75a.75.75 0 0 0-1.107-.66l-3.5 1.88A.75.75 0 0 0 3.5 6.62v2.76a.75.75 0 0 0 .393.66l3.5 1.88a.75.75 0 0 0 1.107-.66V4.75Z" />
-          <path d="M11.26 5.73a.75.75 0 0 1 1.01.31 5.003 5.003 0 0 1 0 3.92.75.75 0 1 1-1.32-.71 3.503 3.503 0 0 0 0-2.5.75.75 0 0 1 .31-1.02Z" />
-        </svg>
+        <SpeakerSimpleHigh size={12} weight="fill" />
       ) : (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-          <path d="M8.5 4.75a.75.75 0 0 0-1.107-.66l-3.5 1.88A.75.75 0 0 0 3.5 6.62v2.76a.75.75 0 0 0 .393.66l3.5 1.88a.75.75 0 0 0 1.107-.66V4.75Z" />
-        </svg>
+        <SpeakerSimpleLow size={12} weight="bold" />
       )}
     </button>
   );

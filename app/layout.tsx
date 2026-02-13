@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "katex/dist/katex.min.css";
 import "./globals.css";
+import { BRAND } from "@/lib/brand";
+import NavBarWrapper from "@/components/NavBarWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,8 +17,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "chalk",
-  description: "Paste a YouTube URL, pause the video, and ask AI anything about what you're watching.",
+  title: BRAND.name,
+  description: BRAND.tagline,
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -30,7 +32,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'chalk',
+    title: BRAND.name,
   },
 };
 
@@ -41,8 +43,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="dark">
-      <body suppressHydrationWarning className={`${inter.className} bg-chalk-bg text-chalk-text h-[100dvh] overflow-hidden`}>
-        {children}
+      <body suppressHydrationWarning className={`${inter.className} bg-chalk-bg text-chalk-text h-[100dvh] overflow-hidden flex flex-col`}>
+        <NavBarWrapper />
+        <div className="flex-1 overflow-hidden">
+          {children}
+        </div>
       </body>
     </html>
   );

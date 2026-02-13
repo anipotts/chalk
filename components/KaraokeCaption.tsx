@@ -84,8 +84,8 @@ export function KaraokeCaption({ segments, currentTime }: KaraokeCaptionProps) {
     : fallbackWords;
 
   return (
-    <div className="w-full text-center py-3 px-6 select-none">
-      <p className="text-base md:text-lg leading-relaxed font-light tracking-wide">
+    <div className="w-full text-center py-1 select-none">
+      <p className="text-base md:text-lg leading-relaxed font-light tracking-wide md:line-clamp-2">
         {displayWords.map((word, i) => (
           <span
             key={`${segment.offset}-${i}`}

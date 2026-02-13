@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { renderRichContent } from './ExchangeMessage';
 import type { ParsedQuiz, ParsedExplanation, LearnModePhase, LearnAction } from '@/hooks/useLearnMode';
 import type { LearnOption } from '@/hooks/useLearnOptions';
+import { CaretDown, ArrowRight, ClipboardText, DownloadSimple, CheckFat, XCircle, SkipForward, ArrowArcRight } from '@phosphor-icons/react';
 
 interface LearnModeQuizProps {
   phase: LearnModePhase;
@@ -91,9 +92,7 @@ function ThinkingPanel({ thinking, duration }: { thinking: string; duration: num
             Opus 4.6 reasoning
             {duration !== null && ` (${(duration / 1000).toFixed(1)}s)`}
           </span>
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3 text-amber-400/50 ml-auto">
-            <path fillRule="evenodd" d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clipRule="evenodd" />
-          </svg>
+          <CaretDown size={12} weight="bold" className="text-amber-400/50 ml-auto" />
         </button>
         <div className="hidden px-3 pb-3">
           <p className="text-[12px] text-amber-200/50 leading-relaxed whitespace-pre-wrap max-h-40 overflow-y-auto">
@@ -197,9 +196,7 @@ function ActionSelector({
               <p className="text-[11px] text-slate-500 truncate">{opt.description}</p>
             </div>
             {i === selectedIndex && (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 text-chalk-accent flex-shrink-0">
-                <path fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />
-              </svg>
+              <ArrowRight size={14} weight="bold" className="text-chalk-accent flex-shrink-0" />
             )}
           </button>
         ))}
@@ -280,20 +277,14 @@ function ExportBar({ content, videoTitle }: { content: string; videoTitle?: stri
         onClick={handleCopy}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-slate-400 hover:text-slate-200 hover:bg-white/[0.08] transition-colors"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-          <path d="M5.5 3.5A1.5 1.5 0 0 1 7 2h2.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 1 .439 1.061V9.5A1.5 1.5 0 0 1 12 11V3.5A1.5 1.5 0 0 0 10.5 2H7a1.5 1.5 0 0 0-1.5 1.5Z" />
-          <path d="M3.5 6A1.5 1.5 0 0 1 5 4.5h4.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 1 .439 1.061V12.5A1.5 1.5 0 0 1 12 14H5a1.5 1.5 0 0 1-1.5-1.5V6Z" />
-        </svg>
+        <ClipboardText size={12} weight="bold" />
         {copied ? 'Copied!' : 'Copy'}
       </button>
       <button
         onClick={handleDownload}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-slate-400 hover:text-slate-200 hover:bg-white/[0.08] transition-colors"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-          <path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z" />
-          <path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 14h6.5A2.75 2.75 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-1.5Z" />
-        </svg>
+        <DownloadSimple size={12} weight="bold" />
         Download .md
       </button>
     </motion.div>
@@ -369,14 +360,10 @@ function QuizCard({
               </span>
               <span className="flex-1 text-sm leading-relaxed">{opt.text}</span>
               {answered && opt.id === question.correctId && (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-emerald-400 flex-shrink-0">
-                  <path fillRule="evenodd" d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
-                </svg>
+                <CheckFat size={16} weight="fill" className="text-emerald-400 flex-shrink-0" />
               )}
               {answered && opt.id === selectedAnswer && !isCorrect && (
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4 text-red-400 flex-shrink-0">
-                  <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
-                </svg>
+                <XCircle size={16} weight="fill" className="text-red-400 flex-shrink-0" />
               )}
             </button>
           );
@@ -517,9 +504,7 @@ export function LearnModeQuiz({
                 onClick={() => onSeek(explanation.seekTo!)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-chalk-accent/10 border border-chalk-accent/20 text-xs text-chalk-accent hover:bg-chalk-accent/20 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-                  <path d="M1 4.804a1 1 0 0 1 1.53-.848l5.113 3.196a1 1 0 0 1 0 1.696L2.53 12.044A1 1 0 0 1 1 11.196V4.804ZM13.5 4.5A.5.5 0 0 1 14 5v6a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5Z" />
-                </svg>
+                <SkipForward size={12} weight="fill" />
                 {explanation.seekReason}
               </button>
             )}
@@ -570,9 +555,7 @@ export function LearnModeQuiz({
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30 text-sm font-medium hover:bg-chalk-accent/25 active:scale-[0.97] transition-all"
             >
               Continue
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                <path fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />
-              </svg>
+              <ArrowArcRight size={14} weight="bold" />
             </motion.button>
           )}
         </div>

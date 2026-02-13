@@ -27,15 +27,16 @@ interface UseLearnOptionsParams {
   segments: TranscriptSegment[];
   videoTitle?: string;
   channelName?: string | null;
+  enabled?: boolean;
 }
 
-export function useLearnOptions({ segments, videoTitle, channelName }: UseLearnOptionsParams) {
+export function useLearnOptions({ segments, videoTitle, channelName, enabled = false }: UseLearnOptionsParams) {
   const [options, setOptions] = useState<LearnOption[]>([...FALLBACK_OPTIONS, CUSTOM_OPTION]);
   const [isLoading, setIsLoading] = useState(false);
   const fetchedRef = useRef(false);
 
   useEffect(() => {
-    if (fetchedRef.current || segments.length === 0 || !videoTitle) return;
+    if (!enabled || fetchedRef.current || segments.length === 0 || !videoTitle) return;
     fetchedRef.current = true;
 
     const controller = new AbortController();

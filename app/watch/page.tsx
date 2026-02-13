@@ -1,44 +1,51 @@
-'use client';
+"use client";
 
-import { useState, useRef, useCallback, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
-import dynamic from 'next/dynamic';
-import { TranscriptPanel } from '@/components/TranscriptPanel';
-import { InteractionOverlay } from '@/components/InteractionOverlay';
-import { useTranscriptStream } from '@/hooks/useTranscriptStream';
-import { useVideoTitle } from '@/hooks/useVideoTitle';
-import { formatTimestamp } from '@/lib/video-utils';
-import { ChalkboardSimple } from '@phosphor-icons/react';
-import { KaraokeCaption } from '@/components/KaraokeCaption';
-import type { MediaPlayerInstance } from '@vidstack/react';
+import { useState, useRef, useCallback, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+import { TranscriptPanel } from "@/components/TranscriptPanel";
+import { InteractionOverlay } from "@/components/InteractionOverlay";
+import { useTranscriptStream } from "@/hooks/useTranscriptStream";
+import { useVideoTitle } from "@/hooks/useVideoTitle";
+import { formatTimestamp } from "@/lib/video-utils";
+import { storageKey } from "@/lib/brand";
+import { ChalkboardSimple, Play, Microphone, ArrowBendUpLeft, MagnifyingGlass } from "@phosphor-icons/react";
+import { KaraokeCaption } from "@/components/KaraokeCaption";
+import type { MediaPlayerInstance } from "@vidstack/react";
 
-import { useUnifiedMode } from '@/hooks/useUnifiedMode';
-import { useVoiceClone } from '@/hooks/useVoiceClone';
-import { useLearnMode } from '@/hooks/useLearnMode';
-import { useLearnOptions } from '@/hooks/useLearnOptions';
+import { useUnifiedMode } from "@/hooks/useUnifiedMode";
+import { useVoiceClone } from "@/hooks/useVoiceClone";
+import { useLearnMode } from "@/hooks/useLearnMode";
+import { useLearnOptions } from "@/hooks/useLearnOptions";
 
 const VideoPlayer = dynamic(
-  () => import('@/components/VideoPlayer').then((m) => ({ default: m.VideoPlayer })),
+  () =>
+    import("@/components/VideoPlayer").then((m) => ({
+      default: m.VideoPlayer,
+    })),
   {
     ssr: false,
     loading: () => (
-      <div className="w-full aspect-video rounded-xl bg-chalk-surface/30 animate-pulse flex items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-chalk-surface/50 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-slate-500">
-              <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
-            </svg>
+      <div className="flex justify-center items-center w-full rounded-xl animate-pulse aspect-video bg-chalk-surface/30">
+        <div className="flex flex-col gap-3 items-center">
+          <div className="flex justify-center items-center w-12 h-12 rounded-full bg-chalk-surface/50">
+            <Play size={24} weight="fill" className="text-slate-500" />
           </div>
           <span className="text-xs text-slate-500">Loading player...</span>
         </div>
       </div>
     ),
-  }
+  },
 );
 
 const SPEED_PRESETS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+const VIEW_SIZE_CYCLE = ["compact", "default", "expanded"] as const;
 
-function SpeedControlButton({ playerRef }: { playerRef: React.RefObject<MediaPlayerInstance | null> }) {
+function SpeedControlButton({
+  playerRef,
+}: {
+  playerRef: React.RefObject<MediaPlayerInstance | null>;
+}) {
   const [open, setOpen] = useState(false);
   const [speed, setSpeed] = useState(1);
   const ref = useRef<HTMLDivElement>(null);
@@ -47,7 +54,9 @@ function SpeedControlButton({ playerRef }: { playerRef: React.RefObject<MediaPla
     const interval = setInterval(() => {
       try {
         if (playerRef.current) setSpeed(playerRef.current.playbackRate);
-      } catch { /* Vidstack $state proxy may throw during teardown */ }
+      } catch {
+        /* Vidstack $state proxy may throw during teardown */
+      }
     }, 500);
     return () => clearInterval(interval);
   }, [playerRef]);
@@ -55,10 +64,11 @@ function SpeedControlButton({ playerRef }: { playerRef: React.RefObject<MediaPla
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, [open]);
 
   const handleSelect = (s: number) => {
@@ -66,9 +76,11 @@ function SpeedControlButton({ playerRef }: { playerRef: React.RefObject<MediaPla
       if (playerRef.current) {
         playerRef.current.playbackRate = s;
         setSpeed(s);
-        localStorage.setItem('chalk-playback-speed', String(s));
+        localStorage.setItem(storageKey("playback-speed"), String(s));
       }
-    } catch { /* Vidstack $state proxy may throw */ }
+    } catch {
+      /* Vidstack $state proxy may throw */
+    }
     setOpen(false);
   };
 
@@ -78,27 +90,27 @@ function SpeedControlButton({ playerRef }: { playerRef: React.RefObject<MediaPla
         onClick={() => setOpen(!open)}
         className={`px-1.5 py-1 rounded-lg text-[11px] font-mono font-medium transition-colors ${
           speed !== 1
-            ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-            : 'text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30'
+            ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+            : "text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30"
         }`}
         title="Playback speed"
       >
         {speed}x
       </button>
       {open && (
-        <div className="absolute top-full right-0 mt-2 w-28 rounded-xl bg-chalk-surface border border-chalk-border/40 shadow-xl shadow-black/30 z-50">
-          <div className="p-1 max-h-64 overflow-y-auto">
+        <div className="absolute right-0 top-full z-50 mt-2 w-28 rounded-xl border shadow-xl bg-chalk-surface border-chalk-border/40 shadow-black/30">
+          <div className="overflow-y-auto p-1 max-h-64">
             {SPEED_PRESETS.map((s) => (
               <button
                 key={s}
                 onClick={() => handleSelect(s)}
                 className={`w-full text-left px-3 py-1.5 rounded-lg text-xs transition-colors ${
                   speed === s
-                    ? 'bg-chalk-accent/15 text-chalk-accent font-medium'
-                    : 'text-slate-400 hover:text-chalk-text hover:bg-chalk-bg/40'
+                    ? "bg-chalk-accent/15 text-chalk-accent font-medium"
+                    : "text-slate-400 hover:text-chalk-text hover:bg-chalk-bg/40"
                 }`}
               >
-                {s}x{s === 1 ? ' (Normal)' : ''}
+                {s}x{s === 1 ? " (Normal)" : ""}
               </button>
             ))}
           </div>
@@ -110,7 +122,13 @@ function SpeedControlButton({ playerRef }: { playerRef: React.RefObject<MediaPla
 
 /* --- Mobile collapse/expand components --- */
 
-function SectionGrip({ onTap, sectionName }: { onTap: () => void; sectionName: string }) {
+function SectionGrip({
+  onTap,
+  sectionName,
+}: {
+  onTap: () => void;
+  sectionName: string;
+}) {
   return (
     <button
       onClick={onTap}
@@ -123,7 +141,15 @@ function SectionGrip({ onTap, sectionName }: { onTap: () => void; sectionName: s
   );
 }
 
-function WhisperBar({ label, meta, onTap }: { label: string; meta?: string; onTap: () => void }) {
+function WhisperBar({
+  label,
+  meta,
+  onTap,
+}: {
+  label: string;
+  meta?: string;
+  onTap: () => void;
+}) {
   return (
     <button
       onClick={onTap}
@@ -131,37 +157,49 @@ function WhisperBar({ label, meta, onTap }: { label: string; meta?: string; onTa
       aria-label={`Expand ${label}`}
       className="md:hidden w-full h-10 flex items-center justify-between px-4 active:bg-white/[0.04] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chalk-accent"
     >
-      <span className="text-[11px] text-slate-400 font-medium tracking-wide">{label}</span>
-      <div className="flex items-center gap-2">
-        {meta && <span className="text-[10px] text-slate-400 font-mono">{meta}</span>}
+      <span className="text-[11px] text-slate-400 font-medium tracking-wide">
+        {label}
+      </span>
+      <div className="flex gap-2 items-center">
+        {meta && (
+          <span className="text-[10px] text-slate-400 font-mono">{meta}</span>
+        )}
         <span className="text-xs text-slate-400">&#9662;</span>
       </div>
     </button>
   );
 }
 
-function MobileChatTrigger({ onTap, channelName }: { onTap: () => void; channelName?: string | null }) {
+function MobileChatTrigger({
+  onTap,
+  channelName,
+}: {
+  onTap: () => void;
+  channelName?: string | null;
+}) {
   return (
     <button
       onClick={onTap}
       className="md:hidden flex-none flex items-center gap-3 px-4 py-3 border-t border-chalk-border/30 bg-chalk-bg/95 backdrop-blur-md w-full active:bg-white/[0.03] transition-colors"
     >
-      <div className="flex-1 text-left text-xs text-slate-500 truncate">
-        {channelName ? `Ask ${channelName} anything...` : 'Ask about this video...'}
+      <div className="flex-1 text-xs text-left truncate text-slate-500">
+        {channelName
+          ? `Ask ${channelName} anything...`
+          : "Ask about this video..."}
       </div>
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white/30 flex-shrink-0">
-        <path d="M12 2a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4Z" />
-        <path d="M6 11a.75.75 0 0 0-1.5 0 7.5 7.5 0 0 0 6.75 7.46v2.79a.75.75 0 0 0 1.5 0v-2.79A7.5 7.5 0 0 0 19.5 11a.75.75 0 0 0-1.5 0 6 6 0 0 1-12 0Z" />
-      </svg>
+      <Microphone size={20} weight="fill" className="flex-shrink-0 text-white/30" />
     </button>
   );
 }
 
 function WatchContent() {
   const searchParams = useSearchParams();
-  const videoId = searchParams.get('v') || '';
+  const videoId = searchParams.get("v") || "";
+  const navRouter = useRouter();
+  const [navSearchValue, setNavSearchValue] = useState("");
 
-  const { segments, status, statusMessage, error, source, progress } = useTranscriptStream(videoId || null);
+  const { segments, status, statusMessage, error, source, progress } =
+    useTranscriptStream(videoId || null);
   const { title: videoTitle, channelName } = useVideoTitle(videoId || null);
 
   const [currentTime, setCurrentTime] = useState(0);
@@ -172,60 +210,74 @@ function WatchContent() {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [transcriptCollapsed, setTranscriptCollapsed] = useState(false);
   const [pendingKey, setPendingKey] = useState<string | null>(null);
-  const VIEW_SIZE_CYCLE = ['expanded', 'default', 'compact', 'default'] as const;
-  const [viewSizeIndex, setViewSizeIndex] = useState(1); // start at 'default'
+  const [viewSizeIndex, setViewSizeIndex] = useState(1); // start at 'default' (M)
   const viewSize = VIEW_SIZE_CYCLE[viewSizeIndex];
+  const [learnEverOpened, setLearnEverOpened] = useState(false);
 
   // Load preferences after mount to avoid hydration mismatch
   useEffect(() => {
     try {
-      const layout = localStorage.getItem('chalk-mobile-layout');
+      const layout = localStorage.getItem(storageKey("mobile-layout"));
       if (layout) {
         const { tc } = JSON.parse(layout);
         if (tc) setTranscriptCollapsed(true);
       }
-      const savedSize = localStorage.getItem('chalk-overlay-size');
-      if (savedSize === 'expanded') setViewSizeIndex(0);
-      else if (savedSize === 'compact') setViewSizeIndex(2);
-      else if (savedSize === 'default') setViewSizeIndex(1);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   // Persist mobile collapse state
   useEffect(() => {
     try {
-      localStorage.setItem('chalk-mobile-layout', JSON.stringify({ tc: transcriptCollapsed }));
-    } catch { /* ignore */ }
+      localStorage.setItem(
+        storageKey("mobile-layout"),
+        JSON.stringify({ tc: transcriptCollapsed }),
+      );
+    } catch {
+      /* ignore */
+    }
   }, [transcriptCollapsed]);
   const playerRef = useRef<MediaPlayerInstance>(null);
   const progressSaveRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const currentTimeRef = useRef(0);
   const segmentsRef = useRef(segments);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const hasPlayedOnce = useRef(false);
 
   const hasSegments = segments.length > 0;
 
   const cycleViewSize = useCallback(() => {
-    setViewSizeIndex(prev => {
-      const next = (prev + 1) % VIEW_SIZE_CYCLE.length;
-      try { localStorage.setItem('chalk-overlay-size', VIEW_SIZE_CYCLE[next]); } catch { /* ignore */ }
-      return next;
-    });
-  }, [VIEW_SIZE_CYCLE]);
+    setViewSizeIndex((prev) => (prev + 1) % VIEW_SIZE_CYCLE.length);
+  }, []);
 
-  const viewMaxWidth = viewSize === 'compact' ? 'max-w-2xl' : viewSize === 'expanded' ? 'max-w-6xl' : 'max-w-4xl';
+  const viewMaxWidth =
+    viewSize === "compact"
+      ? "max-w-2xl"
+      : viewSize === "expanded"
+        ? "max-w-6xl"
+        : "max-w-4xl";
 
   // Sync refs outside of render (React 19 safe)
-  useEffect(() => { currentTimeRef.current = currentTime; }, [currentTime]);
-  useEffect(() => { segmentsRef.current = segments; }, [segments]);
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
+  useEffect(() => {
+    segmentsRef.current = segments;
+  }, [segments]);
 
   // Save to recent videos (localStorage) so landing page shows them
   useEffect(() => {
     if (!videoId) return;
     try {
-      const key = 'chalk-recent-videos';
-      const recent: Array<{ id: string; url: string; title?: string; channelName?: string; timestamp: number }> =
-        JSON.parse(localStorage.getItem(key) || '[]');
+      const key = storageKey("recent-videos");
+      const recent: Array<{
+        id: string;
+        url: string;
+        title?: string;
+        channelName?: string;
+        timestamp: number;
+      }> = JSON.parse(localStorage.getItem(key) || "[]");
       const existing = recent.find((v) => v.id === videoId);
       const filtered = recent.filter((v) => v.id !== videoId);
       filtered.unshift({
@@ -236,7 +288,9 @@ function WatchContent() {
         timestamp: Date.now(),
       });
       localStorage.setItem(key, JSON.stringify(filtered.slice(0, 10)));
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [videoId, videoTitle, channelName]);
 
   // Voice clone hook — now channel-level
@@ -250,7 +304,7 @@ function WatchContent() {
   const unified = useUnifiedMode({
     segments,
     currentTime,
-    videoId: videoId || '',
+    videoId: videoId || "",
     videoTitle: videoTitle ?? undefined,
     voiceId,
     transcriptSource: source ?? undefined,
@@ -260,16 +314,18 @@ function WatchContent() {
   const learnMode = useLearnMode({
     segments,
     currentTime,
-    videoId: videoId || '',
+    videoId: videoId || "",
     videoTitle: videoTitle ?? undefined,
   });
 
-  // Pre-generated learn options (background Haiku call)
-  const { options: learnOptions, isLoading: learnOptionsLoading } = useLearnOptions({
-    segments,
-    videoTitle: videoTitle ?? undefined,
-    channelName,
-  });
+  // Pre-generated learn options (lazy — only fetched when learn mode is first opened)
+  const { options: learnOptions, isLoading: learnOptionsLoading } =
+    useLearnOptions({
+      segments,
+      videoTitle: videoTitle ?? undefined,
+      channelName,
+      enabled: learnEverOpened,
+    });
 
   // Load saved progress
   useEffect(() => {
@@ -279,14 +335,19 @@ function WatchContent() {
       const hashMatch = hash.match(/^#t=(\d+(?:\.\d+)?)$/);
       if (hashMatch) {
         const seconds = parseFloat(hashMatch[1]);
-        if (seconds > 0) { setContinueFrom(seconds); return; }
+        if (seconds > 0) {
+          setContinueFrom(seconds);
+          return;
+        }
       }
-      const saved = localStorage.getItem(`chalk-progress-${videoId}`);
+      const saved = localStorage.getItem(storageKey(`progress-${videoId}`));
       if (saved) {
         const seconds = parseFloat(saved);
         if (seconds > 5) setContinueFrom(seconds);
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, [videoId]);
 
   // Save progress every 5s (refs avoid interval churn on every time update)
@@ -296,11 +357,15 @@ function WatchContent() {
       const t = currentTimeRef.current;
       const segs = segmentsRef.current;
       if (t > 5) {
-        localStorage.setItem(`chalk-progress-${videoId}`, String(t));
+        localStorage.setItem(storageKey(`progress-${videoId}`), String(t));
         if (segs.length > 0) {
           const lastSeg = segs[segs.length - 1];
           const dur = lastSeg.offset + (lastSeg.duration || 0);
-          if (dur > 0) localStorage.setItem(`chalk-duration-${videoId}`, String(dur));
+          if (dur > 0)
+            localStorage.setItem(
+              storageKey(`duration-${videoId}`),
+              String(dur),
+            );
         }
       }
     }, 5000);
@@ -316,7 +381,9 @@ function WatchContent() {
           playerRef.current.currentTime = continueFrom;
           clearInterval(timer);
         }
-      } catch { /* Vidstack $state proxy may throw during init */ }
+      } catch {
+        /* Vidstack $state proxy may throw during init */
+      }
     }, 200);
     return () => clearInterval(timer);
   }, [continueFrom]);
@@ -328,17 +395,20 @@ function WatchContent() {
     const handleResize = () => {
       setKeyboardOpen(vv.height < window.innerHeight * 0.75);
     };
-    vv.addEventListener('resize', handleResize);
-    return () => vv.removeEventListener('resize', handleResize);
+    vv.addEventListener("resize", handleResize);
+    return () => vv.removeEventListener("resize", handleResize);
   }, []);
 
   const handlePause = useCallback(() => {
     setIsPaused(true);
-    setInteractionVisible(true);
+    if (hasPlayedOnce.current) {
+      setInteractionVisible(true);
+    }
   }, []);
 
   const handlePlay = useCallback(() => {
     setIsPaused(false);
+    hasPlayedOnce.current = true;
   }, []);
 
   const handleTimeUpdate = useCallback((time: number) => {
@@ -351,7 +421,9 @@ function WatchContent() {
         playerRef.current.currentTime = seconds;
         playerRef.current.play();
       }
-    } catch { /* Vidstack $state proxy may throw */ }
+    } catch {
+      /* Vidstack $state proxy may throw */
+    }
   }, []);
 
   const toggleInteraction = useCallback(() => {
@@ -360,7 +432,11 @@ function WatchContent() {
 
   const startVoiceMode = useCallback(() => {
     if (playerRef.current) {
-      try { playerRef.current.pause(); } catch { /* ignore */ }
+      try {
+        playerRef.current.pause();
+      } catch {
+        /* ignore */
+      }
     }
     setInteractionVisible(true);
   }, []);
@@ -369,6 +445,11 @@ function WatchContent() {
     setInteractionVisible(true);
     setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
+
+  const handleOpenLearnMode = useCallback(() => {
+    setLearnEverOpened(true);
+    learnMode.openActionSelector();
+  }, [learnMode.openActionSelector]);
 
   const handleFocusInput = useCallback(() => {
     learnMode.stopLearnMode();
@@ -380,10 +461,16 @@ function WatchContent() {
     function handleKey(e: KeyboardEvent) {
       if (window.innerWidth < 768) return;
       const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
 
       // Any alphanumeric key or space: open text mode and focus input
-      if (/^[a-z0-9 ]$/i.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey && !interactionVisible) {
+      if (
+        /^[a-z0-9 ]$/i.test(e.key) &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !interactionVisible
+      ) {
         e.preventDefault();
         setPendingKey(e.key);
         setInteractionVisible(true);
@@ -391,146 +478,227 @@ function WatchContent() {
       }
 
       // V key: open voice mode
-      if (e.key === 'v' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      if (e.key === "v" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
         startVoiceMode();
       }
 
       // Escape: close overlay
-      if (e.key === 'Escape' && interactionVisible) {
+      if (e.key === "Escape" && interactionVisible) {
         e.preventDefault();
         setInteractionVisible(false);
       }
 
       // F key: fullscreen
-      if (e.key === 'f' && !e.metaKey && !e.ctrlKey) {
+      if (e.key === "f" && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();
-        const el = document.querySelector('media-player');
+        const el = document.querySelector("media-player");
         if (el && document.fullscreenEnabled) {
           if (document.fullscreenElement) document.exitFullscreen();
           else el.requestFullscreen();
         }
       }
     }
-    document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
   }, [interactionVisible, startVoiceMode]);
 
   if (!videoId) {
     return (
-      <div className="flex items-center justify-center h-screen bg-chalk-bg">
+      <div className="flex justify-center items-center h-screen bg-chalk-bg">
         <div className="text-center">
-          <p className="text-slate-400 mb-4">No video specified</p>
-          <a href="/" className="text-chalk-accent hover:underline text-sm">Go back home</a>
+          <p className="mb-4 text-slate-400">No video specified</p>
+          <a href="/" className="text-sm text-chalk-accent hover:underline">
+            Go back home
+          </a>
         </div>
       </div>
     );
   }
 
   // Blur: transparent while typing, subtle blur only when AI responses are visible
-  const blurLevel: 'none' | 'active' =
-    (unified.exchanges.length > 0 || unified.isTextStreaming || learnMode.phase !== 'idle')
-      ? 'active' : 'none';
+  const blurLevel: "none" | "active" =
+    unified.exchanges.length > 0 ||
+    unified.isTextStreaming ||
+    learnMode.phase !== "idle"
+      ? "active"
+      : "none";
 
   return (
-    <div className="flex h-[100dvh] bg-chalk-bg overflow-hidden animate-in fade-in duration-300">
+    <div className="flex h-[100dvh] bg-chalk-bg overflow-hidden animate-in fade-in duration-300 px-safe">
       {/* Main area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex flex-col flex-1 min-w-0">
         {/* Top bar — hidden on mobile, z-20 so speed dropdown escapes above the video area */}
-        <div className="hidden md:flex flex-none items-center gap-3 px-4 py-2.5 border-b border-chalk-border/30 bg-chalk-bg/80 backdrop-blur-md relative z-20">
-          <a href="/" className="flex items-center gap-1.5 text-lg font-semibold text-chalk-text hover:text-chalk-accent transition-colors">
-            <ChalkboardSimple size={20} />
-            chalk
+        <div className="hidden md:flex flex-none items-center gap-3 px-4 py-2 border-b border-chalk-border/30 bg-chalk-bg/80 backdrop-blur-md relative z-20">
+          {/* Left: chalk icon + compact search */}
+          <a
+            href="/"
+            className="flex items-center gap-1.5 text-chalk-text hover:text-chalk-accent transition-colors shrink-0"
+            title="Home"
+          >
+            <ChalkboardSimple size={18} />
+            <span className="text-sm font-semibold">chalk</span>
           </a>
-          <span className="text-slate-600 hidden sm:inline">|</span>
-          <div className="flex-1 min-w-0 hidden sm:flex flex-col gap-0.5">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const val = navSearchValue.trim();
+              if (val) {
+                navRouter.push(`/?q=${encodeURIComponent(val)}`);
+                setNavSearchValue("");
+              }
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] focus-within:ring-1 focus-within:ring-chalk-accent/40 focus-within:border-chalk-accent/30 transition-colors w-48"
+          >
+            <MagnifyingGlass size={13} className="text-slate-500 shrink-0" />
+            <input
+              type="text"
+              value={navSearchValue}
+              onChange={(e) => setNavSearchValue(e.target.value)}
+              placeholder="Search videos, channels..."
+              className="flex-1 bg-transparent text-xs text-chalk-text placeholder:text-slate-600 focus:outline-none min-w-0"
+            />
+          </form>
+          <span className="text-slate-600/50">|</span>
+          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
             {channelName && (
-              <span className="text-[10px] text-slate-500 truncate">{channelName}</span>
+              <span className="text-[10px] text-slate-500 truncate">
+                {channelName}
+              </span>
             )}
-            <span className="text-xs text-slate-400 truncate">
+            <span className="text-xs truncate text-slate-400">
               {videoTitle || videoId}
             </span>
           </div>
 
           {/* Centered hint — absolutely positioned so it doesn't shift the flex layout */}
           {!interactionVisible && channelName && (
-            <span className="absolute left-1/2 -translate-x-1/2 text-xs text-slate-500 hidden sm:inline whitespace-nowrap pointer-events-none">
-              Start typing or pause to talk to {channelName}
+            <span className="hidden absolute left-1/2 text-xs whitespace-nowrap -translate-x-1/2 pointer-events-none text-slate-500 lg:inline">
+              Pause or start typing to talk to {channelName}
             </span>
           )}
 
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex gap-2 items-center ml-auto">
             <button
               onClick={cycleViewSize}
               className={`px-1.5 py-1 rounded-lg text-[11px] font-mono font-medium transition-colors ${
-                viewSize !== 'default'
-                  ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
-                  : 'text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30'
+                viewSize !== "default"
+                  ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                  : "text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30"
               }`}
               title={`View size: ${viewSize}`}
             >
-              {viewSize === 'compact' ? 'S' : viewSize === 'expanded' ? 'L' : 'M'}
+              {viewSize === "compact"
+                ? "S"
+                : viewSize === "expanded"
+                  ? "L"
+                  : "M"}
             </button>
             <SpeedControlButton playerRef={playerRef} />
 
+            {interactionVisible && unified.exchanges.length > 0 && (
+              <button
+                onClick={unified.clearHistory}
+                className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30 transition-colors"
+              >
+                Clear
+              </button>
+            )}
             <button
               onClick={() => setShowTranscript((v) => !v)}
               className={`hidden md:inline-flex px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
                 showTranscript
-                  ? 'bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30'
-                  : 'text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30'
+                  ? "bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30"
+                  : "text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30"
               }`}
             >
               Transcript
             </button>
-
           </div>
         </div>
 
         {/* Mobile header */}
         <div className="md:hidden flex-none flex items-center gap-2 px-2 pb-2 pt-[calc(env(safe-area-inset-top)+8px)] bg-chalk-bg/95 backdrop-blur-md border-b border-chalk-border/30">
-          <a href="/" className="flex items-center p-1.5 -ml-0.5 text-white/60 active:text-white/90 transition-colors" aria-label="Back to home">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4.5 h-4.5">
-              <path fillRule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clipRule="evenodd" />
-            </svg>
+          <a
+            href="/"
+            className="flex items-center p-2.5 -ml-1 text-white/60 active:text-white/90 transition-colors"
+            aria-label="Back to home"
+          >
+            <ArrowBendUpLeft size={18} weight="bold" />
           </a>
-          <ChalkboardSimple size={16} className="text-chalk-text flex-shrink-0" />
-          <div className="flex-1 min-w-0 flex flex-col">
+          <ChalkboardSimple
+            size={16}
+            className="flex-shrink-0 text-chalk-text"
+          />
+          <div className="flex flex-col flex-1 min-w-0">
             {channelName && (
-              <span className="text-[10px] text-slate-500 truncate leading-tight">{channelName}</span>
+              <span className="text-[10px] text-slate-500 truncate leading-tight">
+                {channelName}
+              </span>
             )}
-            <span className="text-xs text-slate-400 truncate leading-tight">{videoTitle || videoId}</span>
+            <span className="text-xs leading-tight truncate text-slate-400">
+              {videoTitle || videoId}
+            </span>
           </div>
           <SpeedControlButton playerRef={playerRef} />
         </div>
 
         {/* Video area — on mobile: flex-none when transcript visible, flex-1 when overlay open or transcript collapsed */}
-        <div className={`md:flex-1 flex flex-col overflow-hidden relative md:max-h-none transition-[flex] duration-200 ease-out motion-reduce:transition-none ${
-          keyboardOpen ? 'flex-none h-0' : interactionVisible || transcriptCollapsed ? 'flex-1 min-h-0' : 'flex-none h-[28dvh]'
-        }`}>
-          <div className="flex-1 md:flex md:flex-col md:items-center md:justify-center p-0 md:p-4 overflow-hidden relative z-0">
-            <div className={`w-full ${viewMaxWidth} md:rounded-xl md:overflow-hidden md:border-[3px] md:border-chalk-accent transition-[max-width] duration-300 ease-out`}>
-              <VideoPlayer
-                playerRef={playerRef}
-                videoId={videoId}
-                onPause={handlePause}
-                onPlay={handlePlay}
-                onTimeUpdate={handleTimeUpdate}
-              />
-            </div>
-
-            {/* Karaoke captions - show when segments loaded and overlay is closed */}
-            {hasSegments && !interactionVisible && (
-              <div className={`w-full ${viewMaxWidth} transition-[max-width] duration-300 ease-out`}>
-                <KaraokeCaption segments={segments} currentTime={currentTime} />
+        <div
+          className={`md:flex-1 flex flex-col overflow-hidden relative md:max-h-none transition-[flex,height] duration-[250ms] ease-out motion-reduce:transition-none ${
+            keyboardOpen
+              ? "flex-none h-0"
+              : interactionVisible || transcriptCollapsed
+                ? "flex-1 min-h-0"
+                : "flex-none h-[28dvh]"
+          }`}
+        >
+          <div className="overflow-hidden relative z-0 flex-1 p-0 md:flex md:flex-col md:items-center md:justify-center md:p-4">
+            <div className={`w-full ${viewMaxWidth} transition-[max-width] duration-[250ms] ease-out`}>
+              {/* Video — transparent border maintains sizing; visible border from persistent ring */}
+              <div className="relative md:rounded-xl md:overflow-hidden md:border-[3px] md:border-transparent">
+                <VideoPlayer
+                  playerRef={playerRef}
+                  videoId={videoId}
+                  onPause={handlePause}
+                  onPlay={handlePlay}
+                  onTimeUpdate={handleTimeUpdate}
+                />
+                {/* Mobile: absolute overlay captions */}
+                {hasSegments && !interactionVisible && (
+                  <div className="md:hidden absolute right-0 bottom-0 left-0 z-10 px-2 pt-8 pb-2 bg-gradient-to-t to-transparent pointer-events-none from-black/60">
+                    <KaraokeCaption
+                      segments={segments}
+                      currentTime={currentTime}
+                    />
+                  </div>
+                )}
               </div>
-            )}
 
+              {/* Desktop caption strip — fixed height so video never shifts */}
+              <div className="hidden md:flex items-center justify-center mt-3 h-[52px] overflow-hidden">
+                {hasSegments && !interactionVisible && (
+                  <KaraokeCaption
+                    segments={segments}
+                    currentTime={currentTime}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Persistent blue border ring — always visible, above overlay backdrop */}
+          <div className="hidden md:flex absolute inset-0 flex-col items-center justify-center p-4 pointer-events-none z-[35]">
+            <div className={`w-full ${viewMaxWidth} transition-[max-width] duration-[250ms] ease-out`}>
+              <div className="aspect-video rounded-xl border-[3px] border-chalk-accent" />
+              <div className="h-[52px] mt-3" />
+            </div>
           </div>
 
           {/* Unified interaction overlay (text + voice + learn) */}
           <InteractionOverlay
             visible={interactionVisible}
+            autoDismiss={!isPaused}
             viewSize={viewSize}
             segments={segments}
             currentTime={currentTime}
@@ -586,7 +754,7 @@ function WatchContent() {
             learnError={learnMode.error}
             learnOptions={learnOptions}
             learnOptionsLoading={learnOptionsLoading}
-            onOpenLearnMode={learnMode.openActionSelector}
+            onOpenLearnMode={handleOpenLearnMode}
             onSelectAction={learnMode.executeAction}
             onFocusInput={handleFocusInput}
             onSelectAnswer={learnMode.selectAnswer}
@@ -596,25 +764,34 @@ function WatchContent() {
         </div>
 
         {/* Mobile transcript — collapsible; flex-1 fills remaining space, flex-none for collapsed/hidden */}
-        <div className={`md:hidden flex flex-col border-t border-chalk-border/40 overflow-hidden transition-[flex] duration-200 ease-out motion-reduce:transition-none ${
-          keyboardOpen || interactionVisible ? 'flex-none h-0'
-            : transcriptCollapsed ? 'flex-none h-10'
-            : 'flex-1 min-h-0'
-        }`}>
+        <div
+          className={`md:hidden flex flex-col border-t border-chalk-border/40 overflow-hidden transition-[flex,height] duration-[250ms] ease-out motion-reduce:transition-none ${
+            keyboardOpen || interactionVisible
+              ? "flex-none h-0"
+              : transcriptCollapsed
+                ? "flex-none h-10"
+                : "flex-1 min-h-0"
+          }`}
+        >
           {transcriptCollapsed && !keyboardOpen ? (
             <WhisperBar
               label="Transcript"
               meta={
-                status === 'connecting' || status === 'extracting' ? 'Loading...'
-                  : segments.length === 0 ? 'No transcript'
-                  : formatTimestamp(currentTime)
+                status === "connecting" || status === "extracting"
+                  ? "Loading..."
+                  : segments.length === 0
+                    ? "No transcript"
+                    : formatTimestamp(currentTime)
               }
               onTap={() => setTranscriptCollapsed(false)}
             />
           ) : (
             <>
-              <SectionGrip onTap={() => setTranscriptCollapsed(true)} sectionName="transcript" />
-              <div className="flex-1 min-h-0 overflow-hidden">
+              <SectionGrip
+                onTap={() => setTranscriptCollapsed(true)}
+                sectionName="transcript"
+              />
+              <div className="overflow-hidden flex-1 min-h-0">
                 <TranscriptPanel
                   segments={segments}
                   currentTime={currentTime}
@@ -637,17 +814,19 @@ function WatchContent() {
         {/* Mobile chat trigger — opens full overlay */}
         {!interactionVisible && (
           <>
-            <MobileChatTrigger onTap={() => setInteractionVisible(true)} channelName={channelName} />
-            <div className="md:hidden flex-none bg-chalk-bg pb-safe" />
+            <MobileChatTrigger
+              onTap={() => setInteractionVisible(true)}
+              channelName={channelName}
+            />
+            <div className="flex-none md:hidden bg-chalk-bg pb-safe" />
           </>
         )}
-
       </div>
 
       {/* Transcript sidebar — right (desktop), smooth slide */}
       <div
-        className={`hidden md:flex flex-none overflow-hidden transition-[width] duration-300 ease-out ${
-          showTranscript ? 'w-[360px] border-l border-chalk-border/30' : 'w-0'
+        className={`hidden md:flex flex-none overflow-hidden transition-[width] duration-[250ms] ease-out ${
+          showTranscript ? "border-l w-[360px] border-chalk-border/30" : "w-0"
         }`}
       >
         <div className="w-[360px] flex-none h-full">
@@ -674,11 +853,13 @@ function WatchContent() {
 
 export default function WatchPage() {
   return (
-    <Suspense fallback={
-      <div className="flex items-center justify-center h-screen bg-chalk-bg">
-        <div className="w-8 h-8 border-2 border-chalk-accent/30 border-t-chalk-accent rounded-full animate-spin" />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center h-screen bg-chalk-bg">
+          <div className="w-8 h-8 rounded-full border-2 animate-spin border-chalk-accent/30 border-t-chalk-accent" />
+        </div>
+      }
+    >
       <WatchContent />
     </Suspense>
   );

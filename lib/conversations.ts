@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { storageKey } from './brand';
 
 export interface Conversation {
   id: string;
@@ -22,7 +23,7 @@ const MAX_MESSAGES_PER_CONVERSATION = 200;
 // ---------------------------------------------------------------------------
 // localStorage cache — fast reads, synced from Supabase on mount
 // ---------------------------------------------------------------------------
-const STORAGE_KEY = 'chalk_conversations';
+const STORAGE_KEY = storageKey('conversations');
 
 function getCached(): Conversation[] {
   if (typeof window === 'undefined') return [];

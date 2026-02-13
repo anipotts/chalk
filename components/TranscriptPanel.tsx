@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { formatTimestamp, type TranscriptSegment, type TranscriptSource } from '@/lib/video-utils';
 import type { TranscriptStatus } from '@/hooks/useTranscriptStream';
+import { XCircle, Chats } from '@phosphor-icons/react';
 
 interface Chapter {
   offset: number;
@@ -153,9 +154,7 @@ export function TranscriptPanel({
               title="Close transcript"
               aria-label="Close transcript"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
-              </svg>
+              <XCircle size={14} weight="bold" />
             </button>
           )}
         </div>
@@ -280,9 +279,7 @@ export function TranscriptPanel({
                     title="Ask about this"
                     aria-label="Ask about this segment"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-                      <path d="M1 8.74c0 1.36.49 2.6 1.3 3.56-.13.77-.45 1.48-.91 2.08a.38.38 0 0 0 .3.62c1.07 0 2-.37 2.74-.93A6.47 6.47 0 0 0 7.5 15.5c3.59 0 6.5-2.98 6.5-6.76S11.09 2 7.5 2 1 4.96 1 8.74Z" />
-                    </svg>
+                    <Chats size={12} weight="bold" />
                   </button>
                 )}
               </div>

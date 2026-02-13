@@ -7,6 +7,7 @@ import type { ChalkSpec } from "@/lib/schemas";
 import { parseStreamContent, extractSpecFallback, splitReasoningFromText } from "@/lib/stream-parser";
 import { getWelcomeExamples } from "@/lib/examples";
 import { getDemoCacheEntry } from "@/lib/demo-cache";
+import { TextAlignLeft, PaperPlaneTilt } from '@phosphor-icons/react';
 import {
   listConversations,
   getConversation,
@@ -354,9 +355,7 @@ export function ChatInterface() {
             aria-label="Toggle sidebar"
             className="lg:hidden p-2.5 -ml-1 rounded-lg hover:bg-chalk-surface text-slate-400 hover:text-chalk-text transition-colors"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
-              <path fillRule="evenodd" d="M2 4.75A.75.75 0 0 1 2.75 4h14.5a.75.75 0 0 1 0 1.5H2.75A.75.75 0 0 1 2 4.75Zm0 10.5a.75.75 0 0 1 .75-.75h14.5a.75.75 0 0 1 0 1.5H2.75a.75.75 0 0 1-.75-.75ZM2 10a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5A.75.75 0 0 1 2 10Z" clipRule="evenodd" />
-            </svg>
+            <TextAlignLeft size={20} weight="bold" />
           </button>
           <div>
             <h1 className="text-lg font-semibold text-chalk-text">chalk</h1>
@@ -451,14 +450,7 @@ export function ChatInterface() {
                 aria-label="Send message"
                 className="p-3 rounded-full bg-chalk-accent text-white hover:bg-blue-600 disabled:opacity-30 disabled:hover:bg-chalk-accent transition-colors shrink-0"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path d="M3.105 2.288a.75.75 0 0 0-.826.95l1.414 4.926A1.5 1.5 0 0 0 5.135 9.25h6.115a.75.75 0 0 1 0 1.5H5.135a1.5 1.5 0 0 0-1.442 1.086l-1.414 4.926a.75.75 0 0 0 .826.95 28.896 28.896 0 0 0 15.293-7.155.75.75 0 0 0 0-1.114A28.897 28.897 0 0 0 3.105 2.288Z" />
-                </svg>
+                <PaperPlaneTilt size={20} weight="fill" />
               </button>
             </form>
           </div>

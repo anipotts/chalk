@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import type { VoiceState } from '@/hooks/useVoiceMode';
+import { XCircle, Microphone } from '@phosphor-icons/react';
 
 interface VoiceExchange {
   id: string;
@@ -136,9 +137,7 @@ export function VoiceOverlay({
             className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-colors"
             title="Close voice mode (Esc)"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-            </svg>
+            <XCircle size={16} weight="bold" />
           </button>
 
           {/* Main content */}
@@ -200,12 +199,9 @@ export function VoiceOverlay({
                 ) : isProcessing ? (
                   <ThinkingDots />
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                    className={`w-8 h-8 ${voiceState === 'recording' ? 'text-white' : 'text-white/70'}`}
-                  >
-                    <path d="M12 2a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4Z" />
-                    <path d="M6 11a.75.75 0 0 0-1.5 0 7.5 7.5 0 0 0 6.75 7.46v2.79a.75.75 0 0 0 1.5 0v-2.79A7.5 7.5 0 0 0 19.5 11a.75.75 0 0 0-1.5 0 6 6 0 0 1-12 0Z" />
-                  </svg>
+                  <Microphone size={32} weight="fill"
+                    className={voiceState === 'recording' ? 'text-white' : 'text-white/70'}
+                  />
                 )}
               </motion.button>
             </div>

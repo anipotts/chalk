@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { Pulse, FilmStrip, ChatsTeardrop, ShareNetwork, BookmarkSimple } from '@phosphor-icons/react';
 
 interface AnalyticsData {
   totalEvents: number;
@@ -191,27 +192,27 @@ export default function AnalyticsPage() {
               <StatCard
                 label="Events"
                 value={data.totalEvents}
-                icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M8 1a.75.75 0 0 1 .75.75v5.69l2.47-2.47a.75.75 0 1 1 1.06 1.06l-3.75 3.75a.75.75 0 0 1-1.06 0L3.72 6.03a.75.75 0 0 1 1.06-1.06l2.47 2.47V1.75A.75.75 0 0 1 8 1ZM2.75 13a.75.75 0 0 0 0 1.5h10.5a.75.75 0 0 0 0-1.5H2.75Z" /></svg>}
+                icon={<Pulse size={14} weight="bold" />}
               />
               <StatCard
                 label="Videos"
                 value={data.totalVideos}
-                icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M3 3.5A1.5 1.5 0 0 1 4.5 2h7A1.5 1.5 0 0 1 13 3.5v9a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 3 12.5v-9Z" /></svg>}
+                icon={<FilmStrip size={14} weight="duotone" />}
               />
               <StatCard
                 label="Chats"
                 value={data.totalChats}
-                icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M1 8.74c0 1.36.49 2.6 1.3 3.56-.13.77-.45 1.48-.91 2.08a.38.38 0 0 0 .3.62c1.07 0 2-.37 2.74-.93A6.47 6.47 0 0 0 7.5 15.5c3.59 0 6.5-2.98 6.5-6.76S11.09 2 7.5 2 1 4.96 1 8.74Z" /></svg>}
+                icon={<ChatsTeardrop size={14} weight="fill" />}
               />
               <StatCard
                 label="Shares"
                 value={data.totalShares}
-                icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M12 6a2 2 0 1 0-1.994-1.842L5.323 6.5a2 2 0 1 0 0 3l4.683 2.342a2 2 0 1 0 .67-1.342L5.994 8.158a2.03 2.03 0 0 0 0-.316L10.676 5.5A1.99 1.99 0 0 0 12 6Z" /></svg>}
+                icon={<ShareNetwork size={14} weight="duotone" />}
               />
               <StatCard
                 label="Bookmarks"
                 value={data.totalBookmarks}
-                icon={<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5"><path d="M3.75 2a.75.75 0 0 0-.75.75v10.5a.75.75 0 0 0 1.28.53L8 10.06l3.72 3.72a.75.75 0 0 0 1.28-.53V2.75a.75.75 0 0 0-.75-.75h-8.5Z" /></svg>}
+                icon={<BookmarkSimple size={14} weight="fill" />}
               />
             </div>
 
