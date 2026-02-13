@@ -77,13 +77,13 @@ export function TextInput({
         <button
           type="button"
           onClick={onToggleExplore}
-          className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-all duration-200 ${
+          className={`h-7 px-2.5 rounded-lg text-[11px] font-medium transition-all ${
             exploreMode
-              ? 'bg-chalk-accent/20 text-chalk-accent border border-chalk-accent/30'
-              : 'bg-white/[0.04] text-slate-500 border border-white/[0.08] hover:bg-white/[0.08] hover:text-slate-400'
+              ? 'bg-chalk-accent/15 text-chalk-accent hover:bg-chalk-accent/25'
+              : 'bg-white/[0.06] hover:bg-white/[0.12] text-white/50 hover:text-white/80'
           }`}
           title="Toggle Explore Mode (Shift+Tab)"
-          aria-label={exploreMode ? 'Disable Explore Mode' : 'Enable Explore Mode'}
+          aria-label={exploreMode ? 'Exit Explore Mode' : 'Start Explore Mode'}
           aria-pressed={exploreMode}
         >
           Explore

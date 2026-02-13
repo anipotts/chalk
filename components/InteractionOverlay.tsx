@@ -103,6 +103,7 @@ interface InteractionOverlayProps {
   learnError: string | null;
   learnOptions: LearnOption[];
   learnOptionsLoading: boolean;
+  onEnsureLearnOptions?: () => void;
   onOpenLearnMode: () => void;
   onSelectAction: (action: LearnAction) => void;
   onFocusInput?: () => void;
@@ -215,13 +216,6 @@ function TimestampTooltip({
   );
 }
 
-const INITIAL_EXPLORE_PILLS = [
-  'Understand key concepts',
-  'Get a quick summary',
-  'Quiz me on this',
-  'Help me apply this',
-];
-
 export function InteractionOverlay({
   visible,
   autoDismiss,
@@ -286,6 +280,7 @@ export function InteractionOverlay({
   learnError,
   learnOptions,
   learnOptionsLoading,
+  onEnsureLearnOptions,
   onOpenLearnMode,
   onSelectAction,
   onFocusInput,
@@ -340,7 +335,7 @@ export function InteractionOverlay({
 
   const isLearnModeActive = learnPhase !== 'idle';
   const hasExploreContent = exploreExchanges.length > 0 || exploreCurrentAiText || exploreCurrentUserText;
-  const hasContent = exchanges.length > 0 || isTextStreaming || !!currentUserText || !!currentAiText || !!voiceTranscript || !!voiceResponseText || isLearnModeActive || hasExploreContent;
+  const hasContent = exchanges.length > 0 || isTextStreaming || !!currentUserText || !!currentAiText || !!voiceTranscript || !!voiceResponseText || isLearnModeActive || hasExploreContent || exploreMode;
 
   // Auto-dismiss: when video is playing (autoDismiss), no content, and no input, close after 5s
   useEffect(() => {
@@ -353,7 +348,7 @@ export function InteractionOverlay({
   }, [autoDismiss, visible, hasContent, input, onClose]);
 
   // Show idle hint when: text mode + no exchanges + no input + no current text exchange + not in learn mode + no explore content
-  const showIdleHint = isTextMode && exchanges.length === 0 && !input && !currentUserText && !currentAiText && !isTextStreaming && !isLearnModeActive && !hasExploreContent;
+  const showIdleHint = isTextMode && exchanges.length === 0 && !input && !currentUserText && !currentAiText && !isTextStreaming && !isLearnModeActive && !hasExploreContent && !exploreMode;
 
   // Auto-scroll
   const scrollToBottom = useCallback(() => {
@@ -385,22 +380,28 @@ export function InteractionOverlay({
     const text = input.trim();
     setInput('');
 
+    // If learn mode was active, exit it first (typing freely enters explore chat)
+    if (isLearnModeActive) {
+      onStopLearnMode();
+    }
+
     if (exploreMode) {
       await submitExploreMessage(text);
     } else {
       await onTextSubmit(text);
     }
-  }, [input, exploreMode, onTextSubmit]);
+  }, [input, exploreMode, isLearnModeActive, onStopLearnMode, onTextSubmit]);
 
-  // Toggle explore mode
+  // Toggle explore mode (unified: subsumes both explore chat and learn mode)
   const toggleExploreMode = useCallback(() => {
     setExploreMode((prev) => {
       const next = !prev;
       if (next) {
-        if (exploreExchanges.length === 0) {
-          setExplorePills(INITIAL_EXPLORE_PILLS);
-        }
+        // Entering explore mode — trigger lazy loading of learn options
+        onEnsureLearnOptions?.();
+        setExplorePills([]);
       } else {
+        // Exiting explore mode — clean up everything
         setExplorePills([]);
         if (exploreAbortRef.current) {
           exploreAbortRef.current.abort('explore toggled');
@@ -409,10 +410,17 @@ export function InteractionOverlay({
         setExploreStreaming(false);
         setExploreCurrentAiText('');
         setExploreCurrentUserText('');
+        setExploreExchanges([]);
+        setExploreGoal(null);
+        setExploreError(null);
+        // Also stop learn mode if active
+        if (learnPhase !== 'idle') {
+          onStopLearnMode();
+        }
       }
       return next;
     });
-  }, [exploreExchanges.length]);
+  }, [onEnsureLearnOptions, learnPhase, onStopLearnMode]);
 
   // Submit explore message (calls API directly)
   const submitExploreMessage = useCallback(async (text: string) => {
@@ -497,10 +505,17 @@ export function InteractionOverlay({
     }
   }, [exploreStreaming, exploreGoal, exploreExchanges, currentTime, segments, videoTitle, transcriptSource]);
 
-  // Handle pill selection
+  // Handle pill selection (explore chat follow-up pills)
   const handlePillSelect = useCallback((option: string) => {
     submitExploreMessage(option);
   }, [submitExploreMessage]);
+
+  // Handle unified option card click (triggers learn mode flow)
+  const handleOptionCardClick = useCallback((action: LearnAction) => {
+    onOpenLearnMode(); // resets learn state + sets learnEverOpened
+    // Execute action after state reset
+    setTimeout(() => onSelectAction(action), 0);
+  }, [onOpenLearnMode, onSelectAction]);
 
   // Focus text input (for "Something else..." pill)
   const focusInput = useCallback(() => {
@@ -609,25 +624,42 @@ export function InteractionOverlay({
                 onMouseOut={handleMouseOut}
                 className="flex-1 w-full overflow-y-auto scroll-smooth space-y-3 md:space-y-4 px-2 md:px-5 py-2 md:py-4 pointer-events-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
               >
-                {/* Explore mode initial welcome */}
-                {showExploreUI && exploreExchanges.length === 0 && !exploreCurrentUserText && !exploreStreaming && (
+                {/* Explore mode: unified initial options (learn option cards + type freely hint) */}
+                {showExploreUI && !hasExploreContent && !exploreStreaming && !isLearnModeActive && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="space-y-3"
+                    className="w-full space-y-3"
                   >
-                    <div className="flex justify-start w-full">
-                      <div className="max-w-[85%]">
-                        <div className="text-[15px] text-slate-300 leading-relaxed">
-                          What would you like to explore?
-                        </div>
-                        <ExplorePills
-                          options={explorePills}
-                          onSelect={handlePillSelect}
-                          onFocusInput={focusInput}
-                        />
-                      </div>
+                    <p className="text-sm text-slate-400">
+                      What would you like to do with this video?
+                    </p>
+                    <div className="flex flex-col gap-1.5 w-full">
+                      {learnOptions.map((opt) => (
+                        <button
+                          key={opt.id}
+                          onClick={() => {
+                            if (opt.id === 'custom') {
+                              inputRef?.current?.focus();
+                            } else {
+                              handleOptionCardClick({ id: opt.id, label: opt.label, intent: opt.intent });
+                            }
+                          }}
+                          className="group w-full flex items-center gap-3 px-4 py-3 rounded-lg border transition-all text-left active:scale-[0.98] bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15]"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">{opt.label}</p>
+                            <p className="text-[11px] text-slate-500 truncate">{opt.description}</p>
+                          </div>
+                        </button>
+                      ))}
                     </div>
+                    {learnOptionsLoading && (
+                      <p className="text-[10px] text-slate-600">Generating options...</p>
+                    )}
+                    <p className="text-[10px] text-slate-600">
+                      Or type a question below to start a conversation
+                    </p>
                   </motion.div>
                 )}
 
@@ -806,22 +838,6 @@ export function InteractionOverlay({
                       autoFocus={true}
                       exploreMode={exploreMode}
                       onToggleExplore={toggleExploreMode}
-                      rightSlot={
-                        <button
-                          type="button"
-                          onClick={isLearnModeActive ? onStopLearnMode : onOpenLearnMode}
-                          disabled={isTextStreaming}
-                          className={`h-7 px-2.5 rounded-lg text-[11px] font-medium transition-all disabled:opacity-30 ${
-                            isLearnModeActive
-                              ? 'bg-chalk-accent/15 text-chalk-accent hover:bg-chalk-accent/25'
-                              : 'bg-white/[0.06] hover:bg-white/[0.12] text-white/50 hover:text-white/80'
-                          }`}
-                          title={isLearnModeActive ? 'Exit Learn Mode' : 'Start Learn Mode'}
-                          aria-label={isLearnModeActive ? 'Exit Learn Mode' : 'Start Learn Mode'}
-                        >
-                          Learn
-                        </button>
-                      }
                     />
 
                     {/* Mic button */}
@@ -936,7 +952,7 @@ export function InteractionOverlay({
                           if (exploreMode) {
                             setExploreExchanges([]);
                             setExploreGoal(null);
-                            setExplorePills(INITIAL_EXPLORE_PILLS);
+                            setExplorePills([]);
                             setExploreCurrentAiText('');
                             setExploreCurrentUserText('');
                             setExploreError(null);

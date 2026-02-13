@@ -459,6 +459,10 @@ function WatchContent() {
     setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
 
+  const handleEnsureLearnOptions = useCallback(() => {
+    setLearnEverOpened(true);
+  }, []);
+
   const handleOpenLearnMode = useCallback(() => {
     setLearnEverOpened(true);
     learnMode.openActionSelector();
@@ -767,6 +771,7 @@ function WatchContent() {
             learnError={learnMode.error}
             learnOptions={learnOptions}
             learnOptionsLoading={learnOptionsLoading}
+            onEnsureLearnOptions={handleEnsureLearnOptions}
             onOpenLearnMode={handleOpenLearnMode}
             onSelectAction={learnMode.executeAction}
             onFocusInput={handleFocusInput}
