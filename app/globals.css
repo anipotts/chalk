@@ -161,6 +161,17 @@ body {
   transition: color 0.15s ease-out, text-shadow 0.15s ease-out;
 }
 
+/* Orbit animation */
+@keyframes orbitRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes orbitRotateSlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 
 /* Mafs overrides for dark theme */
 .MafsView {
