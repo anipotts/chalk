@@ -13,6 +13,8 @@ interface TextInputProps {
   autoFocus?: boolean;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
   rightSlot?: ReactNode;
+  exploreMode?: boolean;
+  onToggleExplore?: () => void;
 }
 
 export function TextInput({
@@ -26,6 +28,8 @@ export function TextInput({
   autoFocus = false,
   inputRef: externalRef,
   rightSlot,
+  exploreMode = false,
+  onToggleExplore,
 }: TextInputProps) {
   const internalRef = useRef<HTMLTextAreaElement>(null);
   const textareaRef = externalRef || internalRef;
@@ -37,6 +41,13 @@ export function TextInput({
   }, [autoFocus, textareaRef]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Shift+Tab toggles Explore Mode
+    if (e.key === 'Tab' && e.shiftKey && onToggleExplore) {
+      e.preventDefault();
+      onToggleExplore();
+      return;
+    }
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (!isStreaming && value.trim()) {
@@ -45,6 +56,10 @@ export function TextInput({
     }
   };
 
+  const resolvedPlaceholder = exploreMode
+    ? 'What do you want to explore in this video?'
+    : placeholder;
+
   return (
     <div className="flex-1 flex items-center gap-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] focus-within:ring-1 focus-within:ring-chalk-accent/40 focus-within:border-chalk-accent/30 transition-colors">
       <textarea
@@ -52,12 +67,28 @@ export function TextInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        aria-label={placeholder}
+        placeholder={resolvedPlaceholder}
+        aria-label={resolvedPlaceholder}
         rows={1}
         className="flex-1 resize-none px-3 py-2.5 bg-transparent text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none"
         disabled={disabled || isStreaming}
       />
+      {onToggleExplore && (
+        <button
+          type="button"
+          onClick={onToggleExplore}
+          className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-all duration-200 ${
+            exploreMode
+              ? 'bg-chalk-accent/20 text-chalk-accent border border-chalk-accent/30'
+              : 'bg-white/[0.04] text-slate-500 border border-white/[0.08] hover:bg-white/[0.08] hover:text-slate-400'
+          }`}
+          title="Toggle Explore Mode (Shift+Tab)"
+          aria-label={exploreMode ? 'Disable Explore Mode' : 'Enable Explore Mode'}
+          aria-pressed={exploreMode}
+        >
+          Explore
+        </button>
+      )}
       {rightSlot && <div className="flex-shrink-0 pr-1.5">{rightSlot}</div>}
     </div>
   );
