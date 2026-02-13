@@ -5,6 +5,8 @@ import { useVoiceMode, type VoiceState } from './useVoiceMode';
 import { useReadAloud, type UseReadAloudReturn } from './useReadAloud';
 import type { TranscriptSegment, TranscriptSource } from '@/lib/video-utils';
 import { storageKey } from '@/lib/brand';
+import { parseStreamWithToolCalls, type ToolCallData } from '@/components/ToolRenderers';
+import type { KnowledgeContext } from '@/hooks/useKnowledgeContext';
 
 export interface UnifiedExchange {
   id: string;
@@ -13,6 +15,7 @@ export interface UnifiedExchange {
   aiText: string;
   timestamp: number;
   model?: string;
+  toolCalls?: ToolCallData[];
 }
 
 interface UseUnifiedModeOptions {
@@ -22,6 +25,7 @@ interface UseUnifiedModeOptions {
   videoTitle?: string;
   voiceId: string | null;
   transcriptSource?: TranscriptSource;
+  knowledgeContext?: KnowledgeContext | null;
 }
 
 interface UseUnifiedModeReturn {
@@ -41,6 +45,7 @@ interface UseUnifiedModeReturn {
   stopTextStream: () => void;
   currentUserText: string;
   currentAiText: string;
+  currentToolCalls: ToolCallData[];
   textError: string | null;
 
   // Read aloud
@@ -86,6 +91,7 @@ export function useUnifiedMode({
   videoTitle,
   voiceId,
   transcriptSource,
+  knowledgeContext,
 }: UseUnifiedModeOptions): UseUnifiedModeReturn {
   // Unified exchanges (persisted) — single source of truth
   const [exchanges, setExchanges] = useState<UnifiedExchange[]>([]);
@@ -95,8 +101,11 @@ export function useUnifiedMode({
   const [isTextStreaming, setIsTextStreaming] = useState(false);
   const [currentUserText, setCurrentUserText] = useState('');
   const [currentAiText, setCurrentAiText] = useState('');
+  const [currentToolCalls, setCurrentToolCalls] = useState<ToolCallData[]>([]);
   const [textError, setTextError] = useState<string | null>(null);
   const textAbortRef = useRef<AbortController | null>(null);
+  const knowledgeContextRef = useRef(knowledgeContext);
+  knowledgeContextRef.current = knowledgeContext;
 
   const currentTimeRef = useRef(currentTime);
   const segmentsRef = useRef(segments);
@@ -174,6 +183,7 @@ export function useUnifiedMode({
 
     setCurrentUserText(text);
     setCurrentAiText('');
+    setCurrentToolCalls([]);
     setTextError(null);
     setIsTextStreaming(true);
 
@@ -197,6 +207,8 @@ export function useUnifiedMode({
           videoTitle,
           transcriptSource,
           voiceMode: false,
+          videoId,
+          knowledgeContext: knowledgeContextRef.current,
         }),
         signal: abortController.signal,
       });
@@ -209,15 +221,20 @@ export function useUnifiedMode({
       if (!reader) throw new Error('No response body');
 
       const decoder = new TextDecoder();
-      let fullText = '';
+      let rawStream = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        fullText += decoder.decode(value, { stream: true });
-        setCurrentAiText(fullText);
+        rawStream += decoder.decode(value, { stream: true });
+        const { text: cleanText, toolCalls } = parseStreamWithToolCalls(rawStream);
+        setCurrentAiText(cleanText);
+        if (toolCalls.length > 0) setCurrentToolCalls(toolCalls);
       }
+
+      // Final parse
+      const { text: finalText, toolCalls: finalToolCalls } = parseStreamWithToolCalls(rawStream);
 
       // Add to exchanges
       const exchangeId = String(Date.now());
@@ -225,18 +242,20 @@ export function useUnifiedMode({
         id: exchangeId,
         type: 'text',
         userText: text,
-        aiText: fullText,
+        aiText: finalText,
         timestamp: currentTimeRef.current,
         model: 'sonnet',
+        toolCalls: finalToolCalls.length > 0 ? finalToolCalls : undefined,
       };
 
       setExchanges((prev) => [...prev, exchange]);
       setCurrentUserText('');
       setCurrentAiText('');
+      setCurrentToolCalls([]);
 
       // Auto-play read aloud if enabled
-      if (readAloud.autoReadAloud && fullText) {
-        readAloud.playMessage(exchangeId, fullText);
+      if (readAloud.autoReadAloud && finalText) {
+        readAloud.playMessage(exchangeId, finalText);
       }
     } catch (error) {
       if (abortController.signal.aborted) return;
@@ -245,7 +264,7 @@ export function useUnifiedMode({
     } finally {
       setIsTextStreaming(false);
     }
-  }, [isTextStreaming, videoTitle, transcriptSource]);
+  }, [isTextStreaming, videoTitle, transcriptSource, videoId]);
 
   const stopTextStream = useCallback(() => {
     textAbortRef.current?.abort('user stopped');
@@ -273,6 +292,7 @@ export function useUnifiedMode({
     stopTextStream,
     currentUserText,
     currentAiText,
+    currentToolCalls,
     textError,
 
     // Read aloud

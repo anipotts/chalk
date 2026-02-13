@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { TextInput } from './TextInput';
 import { ExplorePills } from './ExplorePills';
 import { ExchangeMessage, renderRichContent, type UnifiedExchange } from './ExchangeMessage';
+import { ToolResultRenderer, type ToolCallData } from './ToolRenderers';
 import { LearnModeQuiz } from './LearnModeQuiz';
 import type { VoiceState } from '@/hooks/useVoiceMode';
 import type { TranscriptSegment, TranscriptSource } from '@/lib/video-utils';
@@ -69,9 +70,13 @@ interface InteractionOverlayProps {
   isTextStreaming: boolean;
   currentUserText: string;
   currentAiText: string;
+  currentToolCalls?: ToolCallData[];
   textError: string | null;
   onTextSubmit: (text: string) => Promise<void>;
   onStopTextStream: () => void;
+
+  // Side panel
+  onOpenVideo?: (videoId: string, title: string, channelName: string, seekTo?: number) => void;
 
   // Read aloud
   autoReadAloud: boolean;
@@ -250,9 +255,11 @@ export function InteractionOverlay({
   isTextStreaming,
   currentUserText,
   currentAiText,
+  currentToolCalls,
   textError,
   onTextSubmit,
   onStopTextStream,
+  onOpenVideo,
 
   // Read aloud
   autoReadAloud,
@@ -760,6 +767,7 @@ export function InteractionOverlay({
                     onPlayMessage={onPlayMessage}
                     isPlaying={playingMessageId === exchange.id}
                     isReadAloudLoading={isReadAloudLoading && playingMessageId === exchange.id}
+                    onOpenVideo={onOpenVideo}
                   />
                 ))}
 
@@ -802,6 +810,19 @@ export function InteractionOverlay({
                               <span className="inline-block w-0.5 h-4 bg-chalk-accent animate-pulse ml-0.5 align-middle" />
                             )}
                           </div>
+                          {/* Tool results during streaming */}
+                          {!showExploreUI && currentToolCalls && currentToolCalls.length > 0 && (
+                            <div className="mt-2 space-y-1">
+                              {currentToolCalls.map((tc, i) => (
+                                <ToolResultRenderer
+                                  key={`stream-tool-${i}`}
+                                  toolCall={tc}
+                                  onSeek={handleTimestampSeek}
+                                  onOpenVideo={onOpenVideo}
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     )}

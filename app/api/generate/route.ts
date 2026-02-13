@@ -1,7 +1,7 @@
 import { streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { classifyQuery } from '@/lib/router';
-import { CHALK_DEEP_SYSTEM_PROMPT, FAST_SYSTEM_PROMPT, CREATIVE_SYSTEM_PROMPT } from '@/lib/prompts';
+import { CHALK_DEEP_SYSTEM_PROMPT, FAST_SYSTEM_PROMPT, CREATIVE_SYSTEM_PROMPT } from '@/lib/prompts/math';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;

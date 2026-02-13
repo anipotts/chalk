@@ -18,6 +18,8 @@ import { useVoiceClone } from "@/hooks/useVoiceClone";
 import { useLearnMode } from "@/hooks/useLearnMode";
 import { useLearnOptions } from "@/hooks/useLearnOptions";
 import { useCurriculumContext } from "@/hooks/useCurriculumContext";
+import { useKnowledgeContext } from "@/hooks/useKnowledgeContext";
+import { SideVideoPanel, type SideVideoEntry } from "@/components/SideVideoPanel";
 
 const VideoPlayer = dynamic(
   () =>
@@ -213,6 +215,7 @@ function WatchContent() {
   const [isPaused, setIsPaused] = useState(true);
   const [interactionVisible, setInteractionVisible] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
+  const [sideStack, setSideStack] = useState<SideVideoEntry[]>([]);
   const [continueFrom, setContinueFrom] = useState<number | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [transcriptCollapsed, setTranscriptCollapsed] = useState(false);
@@ -307,6 +310,9 @@ function WatchContent() {
     enabled: interactionVisible,
   });
 
+  // Knowledge graph context (populated by batch enrichment)
+  const { knowledgeContext } = useKnowledgeContext(videoId);
+
   // Unified interaction mode (text + voice + read aloud)
   const unified = useUnifiedMode({
     segments,
@@ -315,6 +321,7 @@ function WatchContent() {
     videoTitle: effectiveTitle ?? undefined,
     voiceId,
     transcriptSource: source ?? undefined,
+    knowledgeContext,
   });
 
   // Learn mode (Opus 4.6 adaptive learning)
@@ -462,6 +469,26 @@ function WatchContent() {
   const handleAskAbout = useCallback((_timestamp: number, _text: string) => {
     setInteractionVisible(true);
     setTimeout(() => inputRef.current?.focus(), 100);
+  }, []);
+
+  // Side panel: open a reference video
+  const handleOpenVideo = useCallback((vid: string, title: string, channelName: string, seekTo?: number) => {
+    setSideStack(prev => {
+      const entry: SideVideoEntry = { videoId: vid, title, channelName, seekTo };
+      // Max stack depth 2
+      if (prev.length >= 2) {
+        return [prev[0], entry];
+      }
+      return [...prev, entry];
+    });
+  }, []);
+
+  const handleSidePopVideo = useCallback(() => {
+    setSideStack(prev => prev.slice(0, -1));
+  }, []);
+
+  const handleSideClose = useCallback(() => {
+    setSideStack([]);
   }, []);
 
   const handleOpenLearnMode = useCallback(() => {
@@ -738,9 +765,11 @@ function WatchContent() {
             isTextStreaming={unified.isTextStreaming}
             currentUserText={unified.currentUserText}
             currentAiText={unified.currentAiText}
+            currentToolCalls={unified.currentToolCalls}
             textError={unified.textError}
             onTextSubmit={unified.handleTextSubmit}
             onStopTextStream={unified.stopTextStream}
+            onOpenVideo={handleOpenVideo}
             // Read aloud
             autoReadAloud={unified.autoReadAloud}
             onToggleAutoReadAloud={unified.setAutoReadAloud}
@@ -843,10 +872,27 @@ function WatchContent() {
         )}
       </div>
 
+      {/* Side video panel — reference video player (desktop only) */}
+      <div
+        className={`hidden md:flex flex-none overflow-hidden transition-[width] duration-[250ms] ease-out ${
+          sideStack.length > 0 ? "border-l w-[440px] border-chalk-border/30" : "w-0"
+        }`}
+      >
+        {sideStack.length > 0 && (
+          <div className="w-[440px] flex-none h-full">
+            <SideVideoPanel
+              stack={sideStack}
+              onPop={handleSidePopVideo}
+              onClose={handleSideClose}
+            />
+          </div>
+        )}
+      </div>
+
       {/* Transcript sidebar — right (desktop), smooth slide */}
       <div
         className={`hidden md:flex flex-none overflow-hidden transition-[width] duration-[250ms] ease-out ${
-          showTranscript ? "border-l w-[360px] border-chalk-border/30" : "w-0"
+          showTranscript && sideStack.length === 0 ? "border-l w-[360px] border-chalk-border/30" : "w-0"
         }`}
       >
         <div className="w-[360px] flex-none h-full">

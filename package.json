@@ -17,6 +17,7 @@
     "@types/three": "^0.182.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.2",
+    "@upstash/vector": "^1.2.2",
     "@vidstack/react": "^1.12.13",
     "ai": "^6.0.78",
     "framer-motion": "^12.34.0",

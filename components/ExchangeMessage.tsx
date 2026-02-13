@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { TimestampLink } from './TimestampLink';
 import { parseTimestampLinks } from '@/lib/video-utils';
 import { ClipboardText, CheckCircle, SpeakerSimpleHigh, SpeakerSimpleLow } from '@phosphor-icons/react';
+import { ToolResultRenderer, type ToolCallData } from './ToolRenderers';
+import katex from 'katex';
 
 export interface UnifiedExchange {
   id: string;
@@ -13,6 +15,7 @@ export interface UnifiedExchange {
   aiText: string;
   timestamp: number;
   model?: string;
+  toolCalls?: ToolCallData[];
 }
 
 interface ExchangeMessageProps {
@@ -22,14 +25,39 @@ interface ExchangeMessageProps {
   onPlayMessage?: (id: string, text: string) => void;
   isPlaying?: boolean;
   isReadAloudLoading?: boolean;
+  onOpenVideo?: (videoId: string, title: string, channelName: string, seekTo?: number) => void;
 }
 
 /**
- * Apply inline formatting: **bold** and `code`
+ * Render inline LaTeX ($...$) to a React element.
+ */
+function renderInlineLatex(expr: string, key: string): React.ReactNode {
+  try {
+    const html = katex.renderToString(expr, {
+      displayMode: false,
+      throwOnError: false,
+      trust: true,
+    });
+    return (
+      <span
+        key={key}
+        className="inline-block align-middle mx-0.5"
+        style={{ color: '#e2e8f0' }}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    );
+  } catch {
+    return <span key={key} className="text-rose-400">${expr}$</span>;
+  }
+}
+
+/**
+ * Apply inline formatting: **bold**, `code`, and $LaTeX$
  */
 function applyInlineFormatting(text: string, keyPrefix: string): React.ReactNode[] {
   const parts: React.ReactNode[] = [];
-  const regex = /(\*\*(.+?)\*\*|`([^`]+)`)/g;
+  // Match: **bold**, `code`, or $latex$ (non-greedy, no nested $)
+  const regex = /(\*\*(.+?)\*\*|`([^`]+)`|\$([^$]+?)\$)/g;
   let lastIdx = 0;
   let match;
 
@@ -41,6 +69,8 @@ function applyInlineFormatting(text: string, keyPrefix: string): React.ReactNode
       parts.push(<strong key={`${keyPrefix}-b-${match.index}`} className="font-semibold text-chalk-text">{match[2]}</strong>);
     } else if (match[3]) {
       parts.push(<code key={`${keyPrefix}-c-${match.index}`} className="px-1 py-0.5 rounded bg-white/[0.06] text-[13px] font-mono text-slate-200">{match[3]}</code>);
+    } else if (match[4]) {
+      parts.push(renderInlineLatex(match[4], `${keyPrefix}-l-${match.index}`));
     }
     lastIdx = match.index + match[0].length;
   }
@@ -199,7 +229,7 @@ function SpeakerButton({ exchange, onPlay, isPlaying, isLoading }: { exchange: U
   );
 }
 
-export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPlaying, isReadAloudLoading }: ExchangeMessageProps) {
+export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPlaying, isReadAloudLoading, onOpenVideo }: ExchangeMessageProps) {
   return (
     <div className="space-y-3">
       {/* User message - right aligned with max width */}
@@ -225,6 +255,20 @@ export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPl
           <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
             {renderRichContent(exchange.aiText, onSeek, videoId)}
           </div>
+
+          {/* Tool call results */}
+          {exchange.toolCalls && exchange.toolCalls.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {exchange.toolCalls.map((tc, i) => (
+                <ToolResultRenderer
+                  key={`tool-${exchange.id}-${i}`}
+                  toolCall={tc}
+                  onSeek={onSeek}
+                  onOpenVideo={onOpenVideo}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Action buttons */}
           <div className="mt-1 flex items-center gap-0.5">

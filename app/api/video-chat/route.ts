@@ -1,7 +1,11 @@
 import { streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { buildVideoSystemPromptParts, buildExploreSystemPrompt } from '@/lib/prompts/video-assistant';
+import { buildVideoSystemPromptParts, buildExploreSystemPromptParts } from '@/lib/prompts/video-assistant';
+import { PERSONALITY_MODIFIERS } from '@/lib/prompts/shared';
 import { formatTimestamp, type TranscriptSegment } from '@/lib/video-utils';
+import { createVideoTools } from '@/lib/tools/video-tools';
+import { buildKnowledgeGraphPromptContext } from '@/hooks/useKnowledgeContext';
+import type { KnowledgeContext } from '@/app/api/knowledge-context/route';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -14,7 +18,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { message, currentTimestamp, segments, history, videoTitle, personality, transcriptSource, voiceMode, exploreMode, exploreGoal, modelChoice, thinkingBudget, curriculumContext } = body;
+  const { message, currentTimestamp, segments, history, videoTitle, personality, transcriptSource, voiceMode, exploreMode, exploreGoal, modelChoice, thinkingBudget, curriculumContext, videoId, knowledgeContext } = body;
 
   if (!message || typeof message !== 'string') {
     return Response.json({ error: 'Missing message' }, { status: 400 });
@@ -65,7 +69,7 @@ export async function POST(req: Request) {
       typeof thinkingBudget === 'number' ? thinkingBudget : 10000
     ));
 
-    let systemPrompt = buildExploreSystemPrompt({
+    const exploreParts = buildExploreSystemPromptParts({
       transcriptContext,
       currentTimestamp: formatTimestamp(currentTime),
       videoTitle: safeVideoTitle,
@@ -75,7 +79,12 @@ export async function POST(req: Request) {
 
     // Inject curriculum context if provided (cross-video playlist context)
     if (typeof curriculumContext === 'string' && curriculumContext.length > 0) {
-      systemPrompt += `\n\n<curriculum_context>\nThe student is watching this video as part of a playlist/course. Here are transcripts from related videos in the series. You may reference content from other lectures using "In [Video Title] at [M:SS]..." to draw connections.\n${curriculumContext}\n</curriculum_context>`;
+      const cacheOpts = { anthropic: { cacheControl: { type: 'ephemeral' as const } } };
+      exploreParts.splice(1, 0, {
+        role: 'system' as const,
+        content: `<curriculum_context>\nThe student is watching this video as part of a playlist/course. Here are transcripts from related videos in the series. You may reference content from other lectures using "In [Video Title] at [M:SS]..." to draw connections.\n${curriculumContext}\n</curriculum_context>`,
+        providerOptions: cacheOpts,
+      });
     }
 
     const MAX_HISTORY = 20;
@@ -94,7 +103,7 @@ export async function POST(req: Request) {
 
     const result = streamText({
       model,
-      system: systemPrompt,
+      system: exploreParts,
       messages,
       maxOutputTokens: 1500,
       providerOptions: {
@@ -164,6 +173,20 @@ export async function POST(req: Request) {
     voiceMode: !!voiceMode,
   });
 
+  // Inject knowledge graph context if provided (from useKnowledgeContext)
+  const kgCtx = knowledgeContext as KnowledgeContext | undefined;
+  if (kgCtx?.video || (kgCtx?.related_videos?.length ?? 0) > 0) {
+    const kgXml = buildKnowledgeGraphPromptContext(kgCtx!);
+    if (kgXml) {
+      const cacheOpts = { anthropic: { cacheControl: { type: 'ephemeral' as const } } };
+      systemParts.splice(1, 0, {
+        role: 'system' as const,
+        content: kgXml,
+        providerOptions: cacheOpts,
+      });
+    }
+  }
+
   // Inject curriculum context if provided (cross-video playlist context)
   if (typeof curriculumContext === 'string' && curriculumContext.length > 0) {
     const cacheOpts = { anthropic: { cacheControl: { type: 'ephemeral' as const } } };
@@ -175,14 +198,9 @@ export async function POST(req: Request) {
   }
 
   // Apply personality modifier to the last (uncached) part
-  const PERSONALITY_PROMPTS: Record<string, string> = {
-    encouraging: '\n\nAdopt an encouraging, supportive teaching style. Praise the user for good questions, celebrate their understanding, and use positive reinforcement. Be warm and enthusiastic.',
-    strict: '\n\nAdopt a direct, no-nonsense teaching style. Be concise and challenging. Point out gaps in understanding directly. Push the user to think deeper. No fluff.',
-    socratic: '\n\nAdopt the Socratic method. Instead of giving direct answers, guide the user with probing questions. Help them discover answers themselves. Only reveal answers if they are truly stuck.',
-  };
-  if (typeof personality === 'string' && PERSONALITY_PROMPTS[personality]) {
+  if (typeof personality === 'string' && PERSONALITY_MODIFIERS[personality]) {
     const lastPart = systemParts[systemParts.length - 1];
-    lastPart.content += PERSONALITY_PROMPTS[personality];
+    lastPart.content += PERSONALITY_MODIFIERS[personality];
   }
 
   // Build messages array from history (cap at 20 messages to limit cost)
@@ -200,13 +218,54 @@ export async function POST(req: Request) {
     messages.push({ role: 'user', content: message });
   }
 
+  // Create tools if we have knowledge graph context and a valid video ID
+  const safeVideoId = typeof videoId === 'string' && /^[a-zA-Z0-9_-]{11}$/.test(videoId) ? videoId : null;
+  const hasKnowledge = kgCtx?.video || (kgCtx?.related_videos?.length ?? 0) > 0;
+  const tools = safeVideoId && !voiceMode
+    ? createVideoTools(safeVideoId, typedSegments)
+    : undefined;
+
   const result = streamText({
     model,
     system: systemParts,
     messages,
     maxOutputTokens: voiceMode ? 500 : 8000,
+    ...(tools ? { tools, maxSteps: 3 } : {}),
   });
 
-  // Simple text streaming (no Opus reasoning)
+  // When tools are active, stream a custom format:
+  // - Text deltas are streamed as-is
+  // - Tool results are embedded as \x1D{json}\x1D (group separator delimited)
+  // This keeps backward compatibility with the existing text stream parser
+  if (tools && hasKnowledge) {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of result.fullStream) {
+            if (chunk.type === 'text-delta') {
+              controller.enqueue(encoder.encode(chunk.text));
+            } else if (chunk.type === 'tool-result') {
+              // Embed tool result as delimited JSON
+              const toolData = JSON.stringify({
+                toolName: chunk.toolName,
+                result: chunk.output,
+              });
+              controller.enqueue(encoder.encode(`\x1D${toolData}\x1D`));
+            }
+          }
+        } catch (err) {
+          console.error('Tool stream error:', err instanceof Error ? err.message : err);
+          controller.enqueue(encoder.encode('\n\n[An error occurred while generating the response.]'));
+        }
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
+  }
+
   return result.toTextStreamResponse();
 }

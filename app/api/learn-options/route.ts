@@ -1,5 +1,6 @@
 import { generateText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
+import { LEARN_OPTIONS_SYSTEM_PROMPT } from '@/lib/prompts/learn-options';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -23,17 +24,7 @@ export async function POST(req: Request) {
   try {
     const { text } = await generateText({
       model: anthropic('claude-haiku-4-5-20251001'),
-      system: `You generate context-aware learning action options for a YouTube video learning assistant called Chalk.
-
-Return a JSON array of 3-4 action options. Each option has: id (unique slug), label (short action text, 3-6 words), description (1 sentence explaining what user gets), intent ("patient" or "impatient").
-
-Rules:
-- Make options specific to THIS video's content and topic
-- Include a mix of patient (deep learning) and impatient (quick results) options
-- Always include one quiz-type option with id "quiz"
-- Labels should be action-oriented ("Quiz me on...", "Summarize the...", "Explain the...")
-- Keep descriptions under 60 characters
-- Return ONLY the JSON array, no other text`,
+      system: LEARN_OPTIONS_SYSTEM_PROMPT,
       prompt: `Video: "${videoTitle}"${channelName ? `\nChannel: ${channelName}` : ''}${durationMin ? `\nDuration: ~${durationMin} min` : ''}
 \nTranscript start: "${typeof transcriptStart === 'string' ? transcriptStart.slice(0, 500) : ''}"
 \nTranscript end: "${typeof transcriptEnd === 'string' ? transcriptEnd.slice(0, 500) : ''}"`,
