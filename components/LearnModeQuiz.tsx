@@ -79,7 +79,7 @@ function ThinkingPanel({ thinking, duration }: { thinking: string; duration: num
       animate={{ opacity: 1, height: 'auto' }}
       className="w-full mb-4"
     >
-      <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] overflow-hidden">
+      <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.04] overflow-hidden">
         <button
           className="w-full flex items-center gap-2 px-3 py-2 text-left"
           onClick={(e) => {
@@ -183,7 +183,7 @@ function ActionSelector({
                 onSelect({ id: opt.id, label: opt.label, intent: opt.intent });
               }
             }}
-            className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left active:scale-[0.98] ${
+            className={`group w-full flex items-center gap-3 px-4 py-3 rounded-lg border transition-all text-left active:scale-[0.98] ${
               i === selectedIndex
                 ? 'bg-chalk-accent/10 border-chalk-accent/30 ring-1 ring-chalk-accent/20'
                 : 'bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15]'
@@ -318,7 +318,7 @@ function QuizCard({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: questionIndex * 0.1 }}
-      className="w-full rounded-xl border border-white/[0.08] bg-white/[0.02] overflow-hidden"
+      className="w-full rounded-lg border border-white/[0.08] bg-white/[0.02] overflow-hidden"
     >
       <div className="px-4 py-3 border-b border-white/[0.06]">
         <p className="text-sm text-slate-200 leading-relaxed">
@@ -486,7 +486,7 @@ export function LearnModeQuiz({
 
         {/* Markdown response content (non-quiz) */}
         {hasMarkdownResponse && (
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4">
+          <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
             <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
               {renderRichContent(responseContent, onSeek, videoId)}
             </div>
@@ -495,7 +495,7 @@ export function LearnModeQuiz({
 
         {/* Explanation (structured) */}
         {explanation && !hasMarkdownResponse && (
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4">
+          <div className="rounded-lg border border-white/[0.08] bg-white/[0.02] p-4">
             <p className="text-sm text-slate-300 leading-relaxed mb-3">
               {renderTimestampText(explanation.content, onSeek)}
             </p>
@@ -552,7 +552,7 @@ export function LearnModeQuiz({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               onClick={onNextBatch}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30 text-sm font-medium hover:bg-chalk-accent/25 active:scale-[0.97] transition-all"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30 text-sm font-medium hover:bg-chalk-accent/25 active:scale-[0.97] transition-all"
             >
               Continue
               <ArrowArcRight size={14} weight="bold" />
