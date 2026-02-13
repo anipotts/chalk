@@ -140,99 +140,20 @@ function WhisperBar({ label, meta, onTap }: { label: string; meta?: string; onTa
   );
 }
 
-function MobileChatBar({
-  onSubmit,
-  isStreaming,
-  onStop,
-  voiceState,
-  onStartRecording,
-  channelName,
-}: {
-  onSubmit: (text: string) => void;
-  isStreaming: boolean;
-  onStop: () => void;
-  voiceState: string;
-  onStartRecording: () => void;
-  channelName?: string | null;
-}) {
-  const [text, setText] = useState('');
-  const canSend = text.trim().length > 0 && !isStreaming;
-
-  const handleSend = () => {
-    if (!canSend) return;
-    onSubmit(text.trim());
-    setText('');
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
+function MobileChatTrigger({ onTap, channelName }: { onTap: () => void; channelName?: string | null }) {
   return (
-    <div
-      className="md:hidden flex-none flex items-end gap-2 px-3 py-2 border-t border-chalk-border/30 bg-chalk-bg/95 backdrop-blur-md"
+    <button
+      onClick={onTap}
+      className="md:hidden flex-none flex items-center gap-3 px-4 py-3 border-t border-chalk-border/30 bg-chalk-bg/95 backdrop-blur-md w-full active:bg-white/[0.03] transition-colors"
     >
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder={channelName ? `Type to talk to ${channelName}` : "Ask about the video..."}
-        disabled={isStreaming}
-        rows={1}
-        className="flex-1 min-w-0 resize-none rounded-xl bg-chalk-surface/40 border border-chalk-border/30 px-3 py-2.5 text-xs text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-chalk-accent/40 focus:border-chalk-accent/30 disabled:opacity-40"
-      />
-
-      {/* Mic button */}
-      <button
-        type="button"
-        onClick={onStartRecording}
-        disabled={isStreaming}
-        className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-          voiceState === 'recording'
-            ? 'bg-rose-500 text-white border border-rose-500'
-            : 'text-white/20 bg-white/[0.02] border border-white/[0.05]'
-        } disabled:opacity-30`}
-        aria-label="Record voice"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
-          <path d="M12 2a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4Z" />
-          <path d="M6 11a.75.75 0 0 0-1.5 0 7.5 7.5 0 0 0 6.75 7.46v2.79a.75.75 0 0 0 1.5 0v-2.79A7.5 7.5 0 0 0 19.5 11a.75.75 0 0 0-1.5 0 6 6 0 0 1-12 0Z" />
-        </svg>
-      </button>
-
-      {/* Send / Stop button */}
-      {isStreaming ? (
-        <button
-          type="button"
-          onClick={onStop}
-          className="flex-shrink-0 w-10 h-10 rounded-xl bg-red-500/15 text-red-400 border border-red-500/30 flex items-center justify-center"
-          aria-label="Stop response"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-            <rect x="3.5" y="3.5" width="9" height="9" rx="1.5" />
-          </svg>
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={handleSend}
-          disabled={!canSend}
-          className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
-            canSend
-              ? 'bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30'
-              : 'text-white/20 bg-white/[0.02] border border-white/[0.05]'
-          } disabled:opacity-30`}
-          aria-label="Send message"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-            <path fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />
-          </svg>
-        </button>
-      )}
-    </div>
+      <div className="flex-1 text-left text-xs text-slate-500 truncate">
+        {channelName ? `Ask ${channelName} anything...` : 'Ask about this video...'}
+      </div>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 text-white/30 flex-shrink-0">
+        <path d="M12 2a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4Z" />
+        <path d="M6 11a.75.75 0 0 0-1.5 0 7.5 7.5 0 0 0 6.75 7.46v2.79a.75.75 0 0 0 1.5 0v-2.79A7.5 7.5 0 0 0 19.5 11a.75.75 0 0 0-1.5 0 6 6 0 0 1-12 0Z" />
+      </svg>
+    </button>
   );
 }
 
@@ -444,11 +365,6 @@ function WatchContent() {
     setInteractionVisible(true);
   }, []);
 
-  const handleMobileChatSubmit = useCallback(async (text: string) => {
-    setInteractionVisible(true);
-    await unified.handleTextSubmit(text);
-  }, [unified.handleTextSubmit]);
-
   const handleAskAbout = useCallback((_timestamp: number, _text: string) => {
     setInteractionVisible(true);
     setTimeout(() => inputRef.current?.focus(), 100);
@@ -459,9 +375,10 @@ function WatchContent() {
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [learnMode.stopLearnMode]);
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts — desktop only (mobile has no physical keyboard)
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
+      if (window.innerWidth < 768) return;
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
 
@@ -587,9 +504,9 @@ function WatchContent() {
           <SpeedControlButton playerRef={playerRef} />
         </div>
 
-        {/* Video area */}
-        <div className={`flex-none md:flex-1 flex flex-col overflow-hidden relative md:max-h-none transition-[height] duration-200 ease-out motion-reduce:transition-none ${
-          keyboardOpen ? 'h-0' : interactionVisible ? 'h-[calc(100dvh-env(safe-area-inset-top)-48px)]' : transcriptCollapsed ? 'h-[calc(100dvh-140px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]' : 'h-[28dvh]'
+        {/* Video area — on mobile: flex-none when transcript visible, flex-1 when overlay open or transcript collapsed */}
+        <div className={`md:flex-1 flex flex-col overflow-hidden relative md:max-h-none transition-[flex] duration-200 ease-out motion-reduce:transition-none ${
+          keyboardOpen ? 'flex-none h-0' : interactionVisible || transcriptCollapsed ? 'flex-1 min-h-0' : 'flex-none h-[28dvh]'
         }`}>
           <div className="flex-1 md:flex md:flex-col md:items-center md:justify-center p-0 md:p-4 overflow-hidden relative z-0">
             <div className={`w-full ${viewMaxWidth} md:rounded-xl md:overflow-hidden md:border-[3px] md:border-chalk-accent transition-[max-width] duration-300 ease-out`}>
@@ -678,11 +595,11 @@ function WatchContent() {
           />
         </div>
 
-        {/* Mobile transcript — collapsible */}
-        <div className={`md:hidden flex flex-col border-t border-chalk-border/40 overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none ${
-          keyboardOpen || interactionVisible ? 'h-0'
-            : transcriptCollapsed ? 'h-10'
-            : 'h-[calc(72dvh-100px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]'
+        {/* Mobile transcript — collapsible; flex-1 fills remaining space, flex-none for collapsed/hidden */}
+        <div className={`md:hidden flex flex-col border-t border-chalk-border/40 overflow-hidden transition-[flex] duration-200 ease-out motion-reduce:transition-none ${
+          keyboardOpen || interactionVisible ? 'flex-none h-0'
+            : transcriptCollapsed ? 'flex-none h-10'
+            : 'flex-1 min-h-0'
         }`}>
           {transcriptCollapsed && !keyboardOpen ? (
             <WhisperBar
@@ -717,17 +634,10 @@ function WatchContent() {
           )}
         </div>
 
-        {/* Persistent mobile chat bar — hidden when InteractionOverlay is open */}
+        {/* Mobile chat trigger — opens full overlay */}
         {!interactionVisible && (
           <>
-            <MobileChatBar
-              onSubmit={handleMobileChatSubmit}
-              isStreaming={unified.isTextStreaming}
-              onStop={unified.stopTextStream}
-              voiceState={unified.voiceState}
-              onStartRecording={() => { setInteractionVisible(true); unified.startRecording(); }}
-              channelName={channelName}
-            />
+            <MobileChatTrigger onTap={() => setInteractionVisible(true)} channelName={channelName} />
             <div className="md:hidden flex-none bg-chalk-bg pb-safe" />
           </>
         )}
