@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     }
 
     return Response.json(
-      { segments, source: result.source },
+      { segments, source: result.source, metadata: result.metadata },
       { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch (error) {

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { message, currentTimestamp, segments, history, videoTitle, personality, transcriptSource, voiceMode, exploreMode, exploreGoal } = body;
+  const { message, currentTimestamp, segments, history, videoTitle, personality, transcriptSource, voiceMode, exploreMode, exploreGoal, modelChoice } = body;
 
   if (!message || typeof message !== 'string') {
     return Response.json({ error: 'Missing message' }, { status: 400 });
@@ -98,8 +98,13 @@ export async function POST(req: Request) {
     return result.toTextStreamResponse();
   }
 
-  // Normal mode: Sonnet with cached prompt parts
-  const model = anthropic('claude-sonnet-4-5');
+  // Normal mode: resolve model from client choice (default Sonnet)
+  const modelId = modelChoice === 'opus'
+    ? 'claude-opus-4-6-20250414'
+    : modelChoice === 'haiku'
+      ? 'claude-haiku-4-5-20250929'
+      : 'claude-sonnet-4-5-20250514';
+  const model = anthropic(modelId);
 
   // Build system prompt as cached parts
   const systemParts = buildVideoSystemPromptParts({

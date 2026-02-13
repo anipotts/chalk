@@ -70,6 +70,7 @@ export async function transcribeWithDeepgram(
 
   try {
     const resp = await fetch(
+      // TODO: future — add diarize=true for multi-speaker support
       'https://api.deepgram.com/v1/listen?model=nova-2&punctuate=true&paragraphs=true&utterances=true&language=en',
       {
         method: 'POST',
@@ -90,12 +91,21 @@ export async function transcribeWithDeepgram(
     const data = (await resp.json()) as DeepgramResponse;
 
     // Prefer utterances (sentence-level segments with timestamps)
+    // Attach word-level data from the channel alternatives
     if (data.results?.utterances && data.results.utterances.length > 0) {
-      return data.results.utterances.map((u) => ({
-        text: u.transcript.trim(),
-        offset: u.start,
-        duration: u.end - u.start,
-      }));
+      const allWords = data.results?.channels?.[0]?.alternatives?.[0]?.words || [];
+      return data.results.utterances.map((u) => {
+        // Find words that fall within this utterance's time range
+        const segWords = allWords
+          .filter((w) => w.start >= u.start && w.start < u.end)
+          .map((w) => ({ text: w.punctuated_word || w.word, startMs: w.start * 1000 }));
+        return {
+          text: u.transcript.trim(),
+          offset: u.start,
+          duration: u.end - u.start,
+          words: segWords.length > 0 ? segWords : undefined,
+        };
+      });
     }
 
     // Fall back to paragraphs → sentences
@@ -123,7 +133,11 @@ export async function transcribeWithDeepgram(
         const text = group.map((w) => w.punctuated_word || w.word).join(' ');
         const start = group[0].start;
         const end = group[group.length - 1].end;
-        segments.push({ text, offset: start, duration: end - start });
+        const words = group.map((w) => ({
+          text: w.punctuated_word || w.word,
+          startMs: w.start * 1000,
+        }));
+        segments.push({ text, offset: start, duration: end - start, words });
       }
       return segments;
     }

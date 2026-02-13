@@ -1,3 +1,4 @@
+import { nanoid } from 'nanoid';
 import { supabase } from './supabase';
 import { storageKey } from './brand';
 
@@ -70,18 +71,6 @@ function fromSupabaseRow(row: Record<string, unknown>): Conversation {
   };
 }
 
-/** Generate a collision-resistant ID using Web Crypto API (browser + Node compatible) */
-function generateId(): string {
-  const bytes = new Uint8Array(8);
-  if (typeof globalThis.crypto?.getRandomValues === 'function') {
-    globalThis.crypto.getRandomValues(bytes);
-  } else {
-    // Fallback for old environments
-    for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
-  }
-  // Convert to base64url-safe string
-  return Array.from(bytes, (b) => b.toString(36)).join('').slice(0, 12);
-}
 
 // ---------------------------------------------------------------------------
 // Public API — synchronous for immediate reads (localStorage), async for writes
@@ -97,7 +86,7 @@ export function getConversation(id: string): Conversation | null {
 
 export function createConversation(firstMessage: string): Conversation {
   const conv: Conversation = {
-    id: generateId(),
+    id: nanoid(12),
     title: firstMessage.slice(0, 60) + (firstMessage.length > 60 ? '...' : ''),
     messages: [],
     createdAt: Date.now(),

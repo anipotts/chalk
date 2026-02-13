@@ -158,7 +158,13 @@ body {
 
 /* Karaoke caption word transitions */
 .karaoke-word {
-  transition: color 0.15s ease-out, text-shadow 0.15s ease-out;
+  transition: color 0.15s ease-out;
+  display: inline-block;
+}
+
+/* Active word snaps instantly — no transition delay */
+.karaoke-active {
+  transition: none;
 }
 
 /* Orbit animation */

@@ -12,9 +12,18 @@ interface GroqWhisperSegment {
   text: string;
 }
 
+interface GroqWhisperWord {
+  word: string;
+  start: number;
+  end: number;
+}
+
 interface GroqWhisperResponse {
   segments: GroqWhisperSegment[];
+  words?: GroqWhisperWord[];
   text: string;
+  language?: string;
+  duration?: number;
 }
 
 /**
@@ -46,6 +55,8 @@ export async function transcribeWithGroq(
   formData.append('file', new Blob([new Uint8Array(audioBuffer)]), filename);
   formData.append('model', 'whisper-large-v3-turbo');
   formData.append('response_format', 'verbose_json');
+  formData.append('timestamp_granularities[]', 'word');
+  formData.append('timestamp_granularities[]', 'segment');
   formData.append('language', 'en');
 
   const controller = new AbortController();
@@ -70,11 +81,22 @@ export async function transcribeWithGroq(
       throw new Error('Groq Whisper returned no segments');
     }
 
-    return data.segments.map((s) => ({
-      text: s.text.trim(),
-      offset: s.start,
-      duration: s.end - s.start,
-    }));
+    // Build a lookup of words per segment by matching word timestamps to segment ranges
+    const groqWords = data.words || [];
+
+    return data.segments.map((s) => {
+      // Find words that fall within this segment's time range
+      const segWords = groqWords
+        .filter((w) => w.start >= s.start && w.start < s.end)
+        .map((w) => ({ text: w.word, startMs: w.start * 1000 }));
+
+      return {
+        text: s.text.trim(),
+        offset: s.start,
+        duration: s.end - s.start,
+        words: segWords.length > 0 ? segWords : undefined,
+      };
+    });
   } finally {
     clearTimeout(timeout);
   }

@@ -9,13 +9,26 @@ interface KaraokeCaptionProps {
   currentTime: number;
 }
 
+interface WordTiming {
+  text: string;
+  startMs: number;
+  endMs: number;
+}
+
+interface ActiveResult {
+  segment: TranscriptSegment;
+  index: number;
+  fading: boolean;
+}
+
 /**
- * Binary search for the segment containing the given time.
+ * Binary search for the active segment at a given time.
+ * Bridges gaps < 1.5 s between segments to prevent flashing.
  */
 function findActiveSegment(
   segments: TranscriptSegment[],
   time: number,
-): { segment: TranscriptSegment; index: number } | null {
+): ActiveResult | null {
   if (segments.length === 0) return null;
 
   let lo = 0;
@@ -33,78 +46,115 @@ function findActiveSegment(
     } else if (time >= end) {
       lo = mid + 1;
     } else {
-      return { segment: seg, index: mid };
+      return { segment: seg, index: mid, fading: false };
+    }
+  }
+
+  // Gap bridging: keep previous segment visible for up to 1.5 s after it ends
+  if (hi >= 0 && hi < segments.length) {
+    const prev = segments[hi];
+    const nextSeg = hi + 1 < segments.length ? segments[hi + 1] : undefined;
+    const prevDur = getSegmentDuration(prev, nextSeg);
+    const prevEnd = prev.offset + prevDur;
+    if (time >= prevEnd && time - prevEnd < 1.5) {
+      return { segment: prev, index: hi, fading: true };
     }
   }
 
   return null;
 }
 
-export function KaraokeCaption({ segments, currentTime }: KaraokeCaptionProps) {
-  const result = useMemo(
-    () => findActiveSegment(segments, currentTime),
-    [segments, currentTime],
-  );
+/**
+ * Build word timings with computed end times.
+ * Uses json3 word-level data when available, falls back to
+ * character-count interpolation across the segment duration.
+ */
+function computeWordTimings(
+  segment: TranscriptSegment,
+  duration: number,
+): WordTiming[] {
+  const segEndMs = (segment.offset + duration) * 1000;
 
-  if (!result) return null;
-
-  const { segment, index } = result;
-  const next = index + 1 < segments.length ? segments[index + 1] : undefined;
-  const duration = getSegmentDuration(segment, next);
-  const wordTimings = segment.words;
-  const fallbackWords = segment.text.trim().split(/\s+/);
-
-  if (fallbackWords.length === 0 || (fallbackWords.length === 1 && fallbackWords[0] === '')) return null;
-
-  // Use word-level timings from json3 if available, otherwise character-count interpolation
-  let currentWordIndex: number;
-  if (wordTimings && wordTimings.length > 0) {
-    const currentMs = currentTime * 1000;
-    currentWordIndex = 0;
-    for (let i = wordTimings.length - 1; i >= 0; i--) {
-      if (currentMs >= wordTimings[i].startMs) { currentWordIndex = i; break; }
-    }
-  } else {
-    // Character-count interpolation fallback
-    const elapsed = currentTime - segment.offset;
-    const progress = Math.min(1, Math.max(0, elapsed / duration));
-    const totalChars = fallbackWords.reduce((sum, w) => sum + w.length, 0);
-    const targetChar = Math.floor(progress * totalChars);
-    let charCount = 0;
-    currentWordIndex = 0;
-    for (let i = 0; i < fallbackWords.length; i++) {
-      charCount += fallbackWords[i].length;
-      if (charCount > targetChar) { currentWordIndex = i; break; }
-      if (i === fallbackWords.length - 1) currentWordIndex = i;
-    }
+  if (segment.words && segment.words.length > 0) {
+    return segment.words.map((w, i, arr) => ({
+      text: w.text,
+      startMs: w.startMs,
+      endMs: i + 1 < arr.length ? arr[i + 1].startMs : segEndMs,
+    }));
   }
 
-  const displayWords = wordTimings && wordTimings.length > 0
-    ? wordTimings.map((w) => w.text)
-    : fallbackWords;
+  // Fallback: character-count proportional interpolation
+  const words = segment.text.trim().split(/\s+/);
+  if (words.length === 0 || (words.length === 1 && words[0] === '')) return [];
+
+  const totalChars = words.reduce((sum, w) => sum + w.length, 0);
+  if (totalChars === 0) return [];
+
+  const segStartMs = segment.offset * 1000;
+  const segDurMs = duration * 1000;
+  let charsSoFar = 0;
+
+  return words.map((w) => {
+    const startMs = segStartMs + (charsSoFar / totalChars) * segDurMs;
+    charsSoFar += w.length;
+    const endMs = segStartMs + (charsSoFar / totalChars) * segDurMs;
+    return { text: w, startMs, endMs };
+  });
+}
+
+export function KaraokeCaption({ segments, currentTime }: KaraokeCaptionProps) {
+  const renderData = useMemo(() => {
+    const active = findActiveSegment(segments, currentTime);
+    if (!active) return null;
+
+    const { segment, index, fading } = active;
+    const next = index + 1 < segments.length ? segments[index + 1] : undefined;
+    const duration = getSegmentDuration(segment, next);
+    const words = computeWordTimings(segment, duration);
+    if (words.length === 0) return null;
+
+    const currentMs = currentTime * 1000;
+    let activeWordIndex = -1;
+
+    if (!fading) {
+      for (let i = words.length - 1; i >= 0; i--) {
+        if (currentMs >= words[i].startMs) {
+          activeWordIndex = i;
+          break;
+        }
+      }
+    }
+
+    return { segment, words, activeWordIndex, fading };
+  }, [segments, currentTime]);
+
+  if (!renderData) return null;
+
+  const { segment, words, activeWordIndex, fading } = renderData;
 
   return (
     <div className="w-full text-center py-1 select-none">
       <p className="text-base md:text-lg leading-relaxed font-light tracking-wide md:line-clamp-2">
-        {displayWords.map((word, i) => (
-          <span
-            key={`${segment.offset}-${i}`}
-            className={`karaoke-word inline-block mr-[0.3em] ${
-              i < currentWordIndex
-                ? 'text-white/70'
-                : i === currentWordIndex
-                  ? 'text-blue-400'
-                  : 'text-white/20'
-            }`}
-            style={
-              i === currentWordIndex
-                ? { textShadow: '0 0 14px rgba(96, 165, 250, 0.6)' }
-                : undefined
-            }
-          >
-            {word}
-          </span>
-        ))}
+        {words.map((wt, i) => {
+          const isActive = i === activeWordIndex && !fading;
+          const isSpoken = i < activeWordIndex && !fading;
+
+          let className = 'karaoke-word mr-[0.3em] ';
+
+          if (fading) {
+            className += 'text-white/25';
+          } else if (isActive) {
+            className += 'karaoke-active text-blue-400';
+          } else {
+            className += 'text-white/30';
+          }
+
+          return (
+            <span key={`${segment.offset}-${i}`} className={className}>
+              {wt.text}
+            </span>
+          );
+        })}
       </p>
     </div>
   );

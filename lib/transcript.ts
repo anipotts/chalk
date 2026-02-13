@@ -24,6 +24,18 @@ export { formatTimestamp, parseTimestampLinks, extractVideoId } from './video-ut
 
 import type { TranscriptSegment, TranscriptResult } from './video-utils';
 
+function extractMetadata(data: InnertubePlayerResponse): VideoMetadata | undefined {
+  const vd = data.videoDetails;
+  if (!vd) return undefined;
+  return {
+    title: vd.title,
+    lengthSeconds: vd.lengthSeconds ? parseInt(vd.lengthSeconds, 10) : undefined,
+    channelId: vd.channelId,
+    description: vd.shortDescription,
+    author: vd.author,
+  };
+}
+
 // ─── Constants ──────────────────────────────────────────────────────────────
 
 const IS_VERCEL = !!process.env.VERCEL;
@@ -34,6 +46,14 @@ const ALLOWED_CAPTION_HOSTS = ['www.youtube.com', 'youtube.com', 'www.google.com
 const ALLOWED_AUDIO_HOSTS = ['rr', 'redirector.googlevideo.com']; // googlevideo CDN uses rr*.googlevideo.com
 
 // ─── Innertube types ───────────────────────────────────────────────────────────
+
+export interface VideoMetadata {
+  title?: string;
+  lengthSeconds?: number;
+  channelId?: string;
+  description?: string;
+  author?: string;
+}
 
 interface InnertubePlayerResponse {
   captions?: {
@@ -53,6 +73,13 @@ interface InnertubePlayerResponse {
       contentLength?: string;
       approxDurationMs?: string;
     }>;
+  };
+  videoDetails?: {
+    title?: string;
+    lengthSeconds?: string;
+    channelId?: string;
+    shortDescription?: string;
+    author?: string;
   };
 }
 
@@ -170,8 +197,9 @@ function isAllowedYouTubeUrl(urlStr: string, allowedPrefixes: string[]): boolean
 // The ANDROID client still returns them, but caption URLs serve XML timedtext
 // instead of JSON3 (the fmt param is ignored). We parse the XML directly.
 
-async function fetchTranscriptInnertube(videoId: string): Promise<TranscriptSegment[]> {
+async function fetchTranscriptInnertube(videoId: string): Promise<{ segments: TranscriptSegment[]; metadata?: VideoMetadata }> {
   const data = await fetchInnertubePlayer(videoId);
+  const metadata = extractMetadata(data);
   const tracks = data.captions?.playerCaptionsTracklistRenderer?.captionTracks;
   if (!tracks || tracks.length === 0) throw new Error('No caption tracks found');
 
@@ -220,7 +248,7 @@ async function fetchTranscriptInnertube(videoId: string): Promise<TranscriptSegm
   }
 
   if (segments.length === 0) throw new Error('Innertube: returned 0 segments');
-  return segments;
+  return { segments, metadata };
 }
 
 // ─── Tier 1b: Web page scrape (extract ytInitialPlayerResponse from HTML) ────
@@ -229,7 +257,7 @@ async function fetchTranscriptInnertube(videoId: string): Promise<TranscriptSegm
 // the embedded player response. More reliable from datacenter IPs than
 // the Innertube API POST because it looks like a normal page visit.
 
-async function fetchTranscriptWebScrape(videoId: string): Promise<TranscriptSegment[]> {
+async function fetchTranscriptWebScrape(videoId: string): Promise<{ segments: TranscriptSegment[]; metadata?: VideoMetadata }> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
 
@@ -262,6 +290,7 @@ async function fetchTranscriptWebScrape(videoId: string): Promise<TranscriptSegm
     throw new Error('Failed to parse ytInitialPlayerResponse JSON');
   }
 
+  const metadata = extractMetadata(playerData);
   const tracks = playerData.captions?.playerCaptionsTracklistRenderer?.captionTracks;
   if (!tracks || tracks.length === 0) throw new Error('Web scrape: no caption tracks found');
 
@@ -308,7 +337,7 @@ async function fetchTranscriptWebScrape(videoId: string): Promise<TranscriptSegm
 
   if (segments.length === 0) throw new Error('Web scrape: returned 0 segments');
   console.log(`[transcript] web scrape: got ${segments.length} segments`);
-  return segments;
+  return { segments, metadata };
 }
 
 // ─── Tier 2: yt-dlp CLI (write subs to file) ───────────────────────────────────
@@ -584,6 +613,7 @@ async function fetchTranscriptCfWorker(videoId: string): Promise<TranscriptSegme
 interface CaptionRaceResult {
   segments: TranscriptSegment[];
   source: 'innertube' | 'web-scrape' | 'yt-dlp' | 'caption-extractor' | 'cf-worker';
+  metadata?: VideoMetadata;
 }
 
 const INNERTUBE_TIMEOUT = 15_000;         // 15s — Innertube is fast when it works
@@ -613,19 +643,21 @@ export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
 
   // Caption tiers run concurrently — first non-empty result wins.
   // On Vercel, CF Worker is prepended as primary tier (YouTube blocks AWS/Vercel IPs).
+  // Some tiers return { segments, metadata }, others return plain segments.
+  type TierResult = TranscriptSegment[] | { segments: TranscriptSegment[]; metadata?: VideoMetadata };
   const cfWorkerUrl = process.env.CF_TRANSCRIPT_WORKER_URL?.trim();
-  const tiers: Array<{ fn: () => Promise<TranscriptSegment[]>; source: CaptionRaceResult['source']; timeout: number }> = [
+  const tiers: Array<{ fn: () => Promise<TierResult>; source: CaptionRaceResult['source']; timeout: number }> = [
     ...(IS_VERCEL && cfWorkerUrl
-      ? [{ fn: () => fetchTranscriptCfWorker(videoId), source: 'cf-worker' as const, timeout: CF_WORKER_TOTAL_TIMEOUT }]
+      ? [{ fn: () => fetchTranscriptCfWorker(videoId) as Promise<TierResult>, source: 'cf-worker' as const, timeout: CF_WORKER_TOTAL_TIMEOUT }]
       : []),
     { fn: () => fetchTranscriptWebScrape(videoId), source: 'web-scrape' as const, timeout: WEBSCRAPE_TIMEOUT },
-    { fn: () => fetchTranscriptCaptionExtractor(videoId), source: 'caption-extractor' as const, timeout: CAPTION_EXTRACTOR_TIMEOUT },
+    { fn: () => fetchTranscriptCaptionExtractor(videoId) as Promise<TierResult>, source: 'caption-extractor' as const, timeout: CAPTION_EXTRACTOR_TIMEOUT },
     { fn: () => fetchTranscriptInnertube(videoId), source: 'innertube' as const, timeout: INNERTUBE_TIMEOUT },
   ];
 
   // Only add yt-dlp tier when NOT on Vercel (binary doesn't exist there)
   if (!IS_VERCEL) {
-    tiers.push({ fn: () => fetchTranscriptYtDlp(videoId), source: 'yt-dlp', timeout: YTDLP_TIMEOUT });
+    tiers.push({ fn: () => fetchTranscriptYtDlp(videoId) as Promise<TierResult>, source: 'yt-dlp', timeout: YTDLP_TIMEOUT });
   }
 
   const raceEntries = tiers.map(({ fn, source, timeout }) =>
@@ -633,9 +665,11 @@ export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
       withRetry(fn, { retries: source === 'cf-worker' ? 3 : 1, delayMs: 1000 }),
       timeout,
       source,
-    ).then((segments) => {
+    ).then((result) => {
+      const segments = Array.isArray(result) ? result : result.segments;
+      const metadata = Array.isArray(result) ? undefined : result.metadata;
       console.log(`[transcript] ${videoId}: ${source} succeeded in ${Date.now() - raceStart}ms (${segments.length} segments)`);
-      return { segments, source };
+      return { segments, source, metadata };
     }).catch((err) => {
       console.warn(`[transcript] ${videoId}: ${source} failed in ${Date.now() - raceStart}ms:`, err instanceof Error ? err.message : err);
       throw err;
@@ -900,7 +934,17 @@ export function cleanSegments(segments: TranscriptSegment[]): TranscriptSegment[
 
     // Only keep segments that still have meaningful text
     if (text.length > 0) {
-      result.push({ ...seg, text, words: seg.text !== text ? undefined : seg.words });
+      let words = seg.words;
+      if (words && seg.text !== text) {
+        // Re-align words: keep only words whose trimmed text appears in cleaned text
+        const cleanedLower = text.toLowerCase();
+        words = words.filter(w => {
+          const wt = w.text.trim().toLowerCase();
+          return wt.length > 0 && cleanedLower.includes(wt);
+        });
+        if (words.length === 0) words = undefined;
+      }
+      result.push({ ...seg, text, words });
     }
   }
 

@@ -23,32 +23,74 @@ export type TranscriptSource =
 export interface TranscriptResult {
   segments: TranscriptSegment[];
   source: TranscriptSource;
+  metadata?: {
+    title?: string;
+    lengthSeconds?: number;
+    channelId?: string;
+    description?: string;
+    author?: string;
+  };
+}
+
+export interface ExtractedVideo {
+  videoId: string;
+  startTime?: number;
 }
 
 /**
- * Extract YouTube video ID from various URL formats.
+ * Parse a YouTube `t` parameter value into seconds.
+ * Handles: `120`, `120s`, `2m30s`, `1h2m30s`
  */
-export function extractVideoId(input: string): string | null {
+function parseTimeParam(t: string): number | undefined {
+  if (!t) return undefined;
+  // Pure number (seconds)
+  if (/^\d+$/.test(t)) return parseInt(t, 10);
+  // Number with trailing 's'
+  if (/^\d+s$/.test(t)) return parseInt(t, 10);
+  // Compound format: 1h2m30s, 2m30s, etc.
+  const match = t.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);
+  if (match && (match[1] || match[2] || match[3])) {
+    return (parseInt(match[1] || '0') * 3600) +
+           (parseInt(match[2] || '0') * 60) +
+           parseInt(match[3] || '0');
+  }
+  return undefined;
+}
+
+/**
+ * Extract YouTube video ID (and optional start time) from various URL formats.
+ */
+export function extractVideoId(input: string): ExtractedVideo | null {
   // Already a plain video ID (11 chars)
   if (/^[a-zA-Z0-9_-]{11}$/.test(input.trim())) {
-    return input.trim();
+    return { videoId: input.trim() };
   }
 
   try {
     const url = new URL(input);
+    let videoId: string | null = null;
+
     if (url.hostname.includes('youtube.com')) {
       // youtube.com/watch?v=ID
       const v = url.searchParams.get('v');
-      if (v) return v;
-      // youtube.com/shorts/ID or youtube.com/embed/ID or youtube.com/v/ID
-      const pathMatch = url.pathname.match(/^\/(shorts|embed|v)\/([a-zA-Z0-9_-]{11})/);
-      if (pathMatch) return pathMatch[2];
-      return null;
+      if (v) {
+        videoId = v;
+      } else {
+        // youtube.com/shorts/ID or youtube.com/embed/ID or youtube.com/v/ID
+        const pathMatch = url.pathname.match(/^\/(shorts|embed|v)\/([a-zA-Z0-9_-]{11})/);
+        if (pathMatch) videoId = pathMatch[2];
+      }
+    } else if (url.hostname === 'youtu.be') {
+      videoId = url.pathname.slice(1) || null;
     }
-    // youtu.be/ID
-    if (url.hostname === 'youtu.be') {
-      return url.pathname.slice(1) || null;
-    }
+
+    if (!videoId) return null;
+
+    // Parse optional timestamp param (t=120, t=2m30s, etc.)
+    const tParam = url.searchParams.get('t');
+    const startTime = tParam ? parseTimeParam(tParam) : undefined;
+
+    return { videoId, startTime };
   } catch {
     // Not a URL
   }
