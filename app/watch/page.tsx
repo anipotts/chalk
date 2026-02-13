@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { TranscriptPanel } from "@/components/TranscriptPanel";
 import { InteractionOverlay } from "@/components/InteractionOverlay";
@@ -9,7 +9,7 @@ import { useTranscriptStream } from "@/hooks/useTranscriptStream";
 import { useVideoTitle } from "@/hooks/useVideoTitle";
 import { formatTimestamp } from "@/lib/video-utils";
 import { storageKey } from "@/lib/brand";
-import { ChalkboardSimple, Play, Microphone, ArrowBendUpLeft } from "@phosphor-icons/react";
+import { ChalkboardSimple, Play, Microphone, ArrowBendUpLeft, MagnifyingGlass } from "@phosphor-icons/react";
 import { KaraokeCaption } from "@/components/KaraokeCaption";
 import type { MediaPlayerInstance } from "@vidstack/react";
 
@@ -195,6 +195,8 @@ function MobileChatTrigger({
 function WatchContent() {
   const searchParams = useSearchParams();
   const videoId = searchParams.get("v") || "";
+  const navRouter = useRouter();
+  const [navSearchValue, setNavSearchValue] = useState("");
 
   const { segments, status, statusMessage, error, source, progress } =
     useTranscriptStream(videoId || null);
@@ -527,16 +529,38 @@ function WatchContent() {
       {/* Main area */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* Top bar — hidden on mobile, z-20 so speed dropdown escapes above the video area */}
-        <div className="hidden md:flex flex-none items-center gap-3 px-4 py-2.5 border-b border-chalk-border/30 bg-chalk-bg/80 backdrop-blur-md relative z-20">
+        <div className="hidden md:flex flex-none items-center gap-3 px-4 py-2 border-b border-chalk-border/30 bg-chalk-bg/80 backdrop-blur-md relative z-20">
+          {/* Left: chalk icon + compact search */}
           <a
             href="/"
-            className="flex items-center gap-1.5 text-lg font-semibold text-chalk-text hover:text-chalk-accent transition-colors"
+            className="flex items-center gap-1.5 text-chalk-text hover:text-chalk-accent transition-colors shrink-0"
+            title="Home"
           >
-            <ChalkboardSimple size={20} />
-            chalk
+            <ChalkboardSimple size={18} />
+            <span className="text-sm font-semibold">chalk</span>
           </a>
-          <span className="hidden text-slate-600 sm:inline">|</span>
-          <div className="flex-1 min-w-0 hidden sm:flex flex-col gap-0.5">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              const val = navSearchValue.trim();
+              if (val) {
+                navRouter.push(`/?q=${encodeURIComponent(val)}`);
+                setNavSearchValue("");
+              }
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] focus-within:ring-1 focus-within:ring-chalk-accent/40 focus-within:border-chalk-accent/30 transition-colors w-48"
+          >
+            <MagnifyingGlass size={13} className="text-slate-500 shrink-0" />
+            <input
+              type="text"
+              value={navSearchValue}
+              onChange={(e) => setNavSearchValue(e.target.value)}
+              placeholder="Search videos, channels..."
+              className="flex-1 bg-transparent text-xs text-chalk-text placeholder:text-slate-600 focus:outline-none min-w-0"
+            />
+          </form>
+          <span className="text-slate-600/50">|</span>
+          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
             {channelName && (
               <span className="text-[10px] text-slate-500 truncate">
                 {channelName}
@@ -549,7 +573,7 @@ function WatchContent() {
 
           {/* Centered hint — absolutely positioned so it doesn't shift the flex layout */}
           {!interactionVisible && channelName && (
-            <span className="hidden absolute left-1/2 text-xs whitespace-nowrap -translate-x-1/2 pointer-events-none text-slate-500 sm:inline">
+            <span className="hidden absolute left-1/2 text-xs whitespace-nowrap -translate-x-1/2 pointer-events-none text-slate-500 lg:inline">
               Pause or start typing to talk to {channelName}
             </span>
           )}
@@ -651,8 +675,8 @@ function WatchContent() {
                 )}
               </div>
 
-              {/* Desktop caption strip — below border */}
-              <div className="hidden md:flex items-center justify-center mt-3 min-h-[44px]">
+              {/* Desktop caption strip — fixed height so video never shifts */}
+              <div className="hidden md:flex items-center justify-center mt-3 h-[52px] overflow-hidden">
                 {hasSegments && !interactionVisible && (
                   <KaraokeCaption
                     segments={segments}
@@ -667,7 +691,7 @@ function WatchContent() {
           <div className="hidden md:flex absolute inset-0 flex-col items-center justify-center p-4 pointer-events-none z-[35]">
             <div className={`w-full ${viewMaxWidth} transition-[max-width] duration-[250ms] ease-out`}>
               <div className="aspect-video rounded-xl border-[3px] border-chalk-accent" />
-              <div className="min-h-[44px] mt-3" />
+              <div className="h-[52px] mt-3" />
             </div>
           </div>
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { storageKey } from '@/lib/brand';
 
 interface RecentVideo {
   id: string;
@@ -19,7 +20,7 @@ const TRENDING_TOPICS = [
   'linear algebra',
 ];
 
-const RECENT_VIDEOS_KEY = 'chalk-recent-videos';
+const RECENT_VIDEOS_KEY = storageKey('recent-videos');
 
 function getRecentVideos(): RecentVideo[] {
   if (typeof window === 'undefined') return [];

@@ -85,7 +85,7 @@ export function KaraokeCaption({ segments, currentTime }: KaraokeCaptionProps) {
 
   return (
     <div className="w-full text-center py-1 select-none">
-      <p className="text-base md:text-lg leading-relaxed font-light tracking-wide">
+      <p className="text-base md:text-lg leading-relaxed font-light tracking-wide md:line-clamp-2">
         {displayWords.map((word, i) => (
           <span
             key={`${segment.offset}-${i}`}

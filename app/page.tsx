@@ -8,7 +8,7 @@ import { SearchResults } from '@/components/SearchResults';
 import type { AnySearchResult } from '@/components/SearchResults';
 import { storageKey } from '@/lib/brand';
 import { motion, AnimatePresence } from 'framer-motion';
-import OrbitAnimation from '@/components/OrbitAnimation';
+
 import SearchDropdown from '@/components/SearchDropdown';
 
 const RECENT_VIDEOS_KEY = storageKey('recent-videos');
@@ -373,9 +373,9 @@ function HomePage() {
 
   return (
     <div className="h-screen bg-chalk-bg flex flex-col overflow-hidden">
-      {/* Header area */}
+      {/* Header area — vertically centered when idle, slides to top when searching */}
       <motion.div
-        className="flex flex-col items-center px-4 shrink-0"
+        className={`flex flex-col items-center px-4 transition-[flex] duration-300 ${isSearchMode ? 'shrink-0' : 'flex-1 justify-center'}`}
         animate={{
           paddingTop: isMobile ? 48 : (isSearchMode ? 48 : 0),
           paddingBottom: isSearchMode ? 8 : 0,
@@ -412,32 +412,8 @@ function HomePage() {
             )}
           </motion.div>
 
-          {/* Orbit animation (visible only in home state) */}
-          <AnimatePresence>
-            {!isSearchMode && (
-              <motion.div
-                className="flex justify-center"
-                initial={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-              >
-                <OrbitAnimation isInputFocused={isInputFocused}>
-                  {searchInput}
-                </OrbitAnimation>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Raised search input (visible only in search mode) */}
-          {isSearchMode && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-            >
-              {searchInput}
-            </motion.div>
-          )}
+          {/* Search input — always shown */}
+          {searchInput}
 
           {/* Search type filter pills + sort — show when searching */}
           {activeTab === 'search' && inputValue.length >= 2 && (
