@@ -1,5 +1,7 @@
 'use client';
 
+import { Waveform } from '@phosphor-icons/react';
+
 interface VoiceModeButtonProps {
   active: boolean;
   onClick: () => void;
@@ -18,11 +20,7 @@ export function VoiceModeButton({ active, onClick, isCloning, hasClone }: VoiceM
       }`}
       title={active ? 'Voice mode active (V)' : 'Toggle voice mode (V)'}
     >
-      {/* Mic icon */}
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-        <path d="M8 1a2.5 2.5 0 0 0-2.5 2.5v4a2.5 2.5 0 0 0 5 0v-4A2.5 2.5 0 0 0 8 1Z" />
-        <path d="M4 7a.75.75 0 0 0-1.5 0 5.5 5.5 0 0 0 4.75 5.45v1.8a.75.75 0 0 0 1.5 0v-1.8A5.5 5.5 0 0 0 13.5 7a.75.75 0 0 0-1.5 0 4 4 0 0 1-8 0Z" />
-      </svg>
+      <Waveform size={12} weight="bold" />
       Voice
       {/* Clone status indicator */}
       {isCloning && (

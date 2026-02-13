@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { storageKey } from '@/lib/brand';
 
 interface UseReadAloudOptions {
   voiceId: string | null;
@@ -16,7 +17,7 @@ export interface UseReadAloudReturn {
   stopReadAloud: () => void;
 }
 
-const STORAGE_KEY = 'chalk-auto-read-aloud';
+const STORAGE_KEY = storageKey('auto-read-aloud');
 
 export function useReadAloud({ voiceId, voiceSpeaking }: UseReadAloudOptions): UseReadAloudReturn {
   const [autoReadAloud, setAutoReadAloudState] = useState(false);

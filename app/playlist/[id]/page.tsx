@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ChalkboardSimple, ArrowLeft } from '@phosphor-icons/react';
+import { ChalkboardSimple, ArrowBendUpLeft } from '@phosphor-icons/react';
 
 interface PlaylistInfo {
   title: string;
@@ -159,7 +159,7 @@ export default function PlaylistPage() {
       <div className="sticky top-0 z-10 bg-chalk-bg/80 backdrop-blur-sm border-b border-chalk-border/20 px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center gap-3">
           <Link href="/" className="text-slate-400 hover:text-chalk-text transition-colors" aria-label="Back to home">
-            <ArrowLeft size={20} />
+            <ArrowBendUpLeft size={20} weight="bold" />
           </Link>
           <Link href="/" className="flex items-center gap-1.5 text-chalk-text">
             <ChalkboardSimple size={20} />

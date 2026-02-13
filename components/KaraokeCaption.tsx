@@ -84,7 +84,7 @@ export function KaraokeCaption({ segments, currentTime }: KaraokeCaptionProps) {
     : fallbackWords;
 
   return (
-    <div className="w-full text-center py-3 px-6 select-none">
+    <div className="w-full text-center py-1 select-none">
       <p className="text-base md:text-lg leading-relaxed font-light tracking-wide">
         {displayWords.map((word, i) => (
           <span

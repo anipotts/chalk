@@ -2,44 +2,12 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Atom, CaretUp } from '@phosphor-icons/react';
 
 interface ReasoningPanelProps {
   thinking: string;
   thinkingDuration?: number;
   isStreaming?: boolean;
-}
-
-function BrainIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      className="w-3.5 h-3.5"
-    >
-      <path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7Z" />
-      <path d="M10 21h4" />
-    </svg>
-  );
-}
-
-function ChevronUpIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="w-3.5 h-3.5"
-    >
-      <path d="m18 15-6-6-6 6" />
-    </svg>
-  );
 }
 
 function formatDuration(ms: number): string {
@@ -78,7 +46,7 @@ export function ReasoningPanel({
         `}
       >
         <span className="flex items-center gap-1.5">
-          {isExpanded ? <ChevronUpIcon /> : <BrainIcon />}
+          {isExpanded ? <CaretUp size={14} weight="bold" /> : <Atom size={14} weight="duotone" />}
           <span>{isExpanded ? 'Hide reasoning' : 'View Opus 4.6 reasoning'}</span>
         </span>
 

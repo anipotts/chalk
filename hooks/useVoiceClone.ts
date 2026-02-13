@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { storageKey } from '@/lib/brand';
 
 interface UseVoiceCloneOptions {
   videoId: string | null;
@@ -31,10 +32,10 @@ export function useVoiceClone({ videoId, channelName, enabled }: UseVoiceCloneOp
     if (!videoId) return;
     try {
       if (channelName) {
-        const cached = localStorage.getItem(`chalk-voice-clone-ch-${channelName}`);
+        const cached = localStorage.getItem(storageKey(`voice-clone-ch-${channelName}`));
         if (cached) { setVoiceId(cached); return; }
       }
-      const cached = localStorage.getItem(`chalk-voice-clone-${videoId}`);
+      const cached = localStorage.getItem(storageKey(`voice-clone-${videoId}`));
       if (cached) { setVoiceId(cached); }
     } catch { /* ignore */ }
   }, [videoId, channelName]);
@@ -46,10 +47,10 @@ export function useVoiceClone({ videoId, channelName, enabled }: UseVoiceCloneOp
     // Check localStorage again in case it was set between renders
     try {
       if (channelName) {
-        const cached = localStorage.getItem(`chalk-voice-clone-ch-${channelName}`);
+        const cached = localStorage.getItem(storageKey(`voice-clone-ch-${channelName}`));
         if (cached) { setVoiceId(cached); return; }
       }
-      const cached = localStorage.getItem(`chalk-voice-clone-${videoId}`);
+      const cached = localStorage.getItem(storageKey(`voice-clone-${videoId}`));
       if (cached) { setVoiceId(cached); return; }
     } catch { /* ignore */ }
 
@@ -74,9 +75,9 @@ export function useVoiceClone({ videoId, channelName, enabled }: UseVoiceCloneOp
       // Cache in localStorage — both channel and video keys
       try {
         if (channelName) {
-          localStorage.setItem(`chalk-voice-clone-ch-${channelName}`, data.voiceId);
+          localStorage.setItem(storageKey(`voice-clone-ch-${channelName}`), data.voiceId);
         }
-        localStorage.setItem(`chalk-voice-clone-${videoId}`, data.voiceId);
+        localStorage.setItem(storageKey(`voice-clone-${videoId}`), data.voiceId);
       } catch { /* ignore */ }
     } catch {
       // Voice cloning is optional — silently fall back to default voice

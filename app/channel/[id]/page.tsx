@@ -5,10 +5,10 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   ChalkboardSimple,
-  ArrowLeft,
-  MagnifyingGlass,
-  SealCheck,
-  X,
+  ArrowBendUpLeft,
+  Binoculars,
+  ShieldCheck,
+  XCircle,
   CaretDown,
 } from '@phosphor-icons/react';
 import { formatViewCount } from '@/lib/youtube-search';
@@ -306,7 +306,7 @@ export default function ChannelPage() {
       <div className="sticky top-0 z-20 bg-chalk-bg/80 backdrop-blur-sm border-b border-chalk-border/20 px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center gap-3">
           <Link href="/" className="text-slate-400 hover:text-chalk-text transition-colors" aria-label="Back to home">
-            <ArrowLeft size={20} />
+            <ArrowBendUpLeft size={20} weight="bold" />
           </Link>
           <Link href="/" className="flex items-center gap-1.5 text-chalk-text">
             <ChalkboardSimple size={20} />
@@ -363,7 +363,7 @@ export default function ChannelPage() {
                       {channel.name}
                     </h1>
                     {channel.isVerified && (
-                      <SealCheck size={18} weight="fill" className="text-slate-400 shrink-0" />
+                      <ShieldCheck size={18} weight="fill" className="text-slate-400 shrink-0" />
                     )}
                   </div>
                   <p className="text-xs text-slate-400 mt-0.5">
@@ -412,7 +412,7 @@ export default function ChannelPage() {
                 {/* Search toggle / input */}
                 {searchOpen ? (
                   <div className="flex items-center gap-1.5 bg-chalk-surface/20 border border-chalk-border/30 rounded-full px-3 py-1">
-                    <MagnifyingGlass size={14} className="text-slate-400 shrink-0" />
+                    <Binoculars size={14} className="text-slate-400 shrink-0" />
                     <input
                       ref={searchInputRef}
                       type="text"
@@ -425,7 +425,7 @@ export default function ChannelPage() {
                       onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
                       className="text-slate-400 hover:text-chalk-text"
                     >
-                      <X size={12} />
+                      <XCircle size={12} weight="bold" />
                     </button>
                   </div>
                 ) : (
@@ -434,7 +434,7 @@ export default function ChannelPage() {
                     className="text-slate-400 hover:text-chalk-text p-1.5 rounded-full hover:bg-chalk-surface/30 transition-colors"
                     aria-label="Search this channel"
                   >
-                    <MagnifyingGlass size={16} />
+                    <Binoculars size={16} weight="bold" />
                   </button>
                 )}
 

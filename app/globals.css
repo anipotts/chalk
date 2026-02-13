@@ -28,6 +28,11 @@ body {
   margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+.px-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
 /* Scrollbar styling */
 * {
   scrollbar-color: #222222 transparent;
@@ -155,6 +160,7 @@ body {
 .karaoke-word {
   transition: color 0.15s ease-out, text-shadow 0.15s ease-out;
 }
+
 
 /* Mafs overrides for dark theme */
 .MafsView {

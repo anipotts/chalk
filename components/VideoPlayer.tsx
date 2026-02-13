@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MediaPlayer, MediaProvider, type MediaPlayerInstance } from '@vidstack/react';
+import { storageKey } from '@/lib/brand';
 import { DefaultVideoLayout, defaultLayoutIcons } from '@vidstack/react/player/layouts/default';
 import '@vidstack/react/player/styles/default/theme.css';
 import '@vidstack/react/player/styles/default/layouts/video.css';
@@ -100,7 +101,7 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
         safePlayerCall(p, (pl) => {
           pl.playbackRate = Math.max(0.25, pl.playbackRate - 0.25);
           showSpeed(`${pl.playbackRate}x`);
-          try { localStorage.setItem('chalk-playback-speed', String(pl.playbackRate)); } catch { /* ignore */ }
+          try { localStorage.setItem(storageKey('playback-speed'), String(pl.playbackRate)); } catch { /* ignore */ }
         });
         break;
       case '.':
@@ -109,7 +110,7 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
         safePlayerCall(p, (pl) => {
           pl.playbackRate = Math.min(10, pl.playbackRate + 0.25);
           showSpeed(`${pl.playbackRate}x`);
-          try { localStorage.setItem('chalk-playback-speed', String(pl.playbackRate)); } catch { /* ignore */ }
+          try { localStorage.setItem(storageKey('playback-speed'), String(pl.playbackRate)); } catch { /* ignore */ }
         });
         break;
     }
@@ -133,6 +134,8 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
       ref={player}
       src={`youtube/${videoId}`}
       playsInline
+      keyDisabled
+      autoPlay
       aspectRatio="16/9"
       onPause={() => onPause?.()}
       onPlay={() => onPlay?.()}
@@ -148,7 +151,7 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
       }}
       onCanPlay={() => {
         try {
-          const savedSpeed = localStorage.getItem('chalk-playback-speed');
+          const savedSpeed = localStorage.getItem(storageKey('playback-speed'));
           if (savedSpeed && player.current) {
             safePlayerCall(player.current, (pl) => { pl.playbackRate = parseFloat(savedSpeed); });
           }

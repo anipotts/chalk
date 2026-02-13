@@ -6,7 +6,9 @@ import { VideoAIMessage } from './VideoAIMessage';
 import { ModelSelector, type ModelChoice } from './ModelSelector';
 import { splitReasoningFromText } from '@/lib/stream-parser';
 import { pickSuggestions } from '@/lib/suggestions';
+import { storageKey } from '@/lib/brand';
 import { type TranscriptSegment, type TranscriptSource } from '@/lib/video-utils';
+import { ChatsTeardrop, PaperPlaneTilt, StopCircle, CaretDoubleDown, XCircle } from '@phosphor-icons/react';
 
 interface ChatMessage {
   id: string;
@@ -33,39 +35,7 @@ interface ChatOverlayProps {
   onMetaChange?: (meta: { messageCount: number; isStreaming: boolean }) => void;
 }
 
-/* --- Inline icons --- */
-
-function ChatBubbleIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-      <path d="M1 8.74c0 1.36.49 2.6 1.3 3.56-.13.77-.45 1.48-.91 2.08a.38.38 0 0 0 .3.62c1.07 0 2-.37 2.74-.93A6.47 6.47 0 0 0 7.5 15.5c3.59 0 6.5-2.98 6.5-6.76S11.09 2 7.5 2 1 4.96 1 8.74Z" />
-    </svg>
-  );
-}
-
-function ArrowRightIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-      <path fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />
-    </svg>
-  );
-}
-
-function StopIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-      <rect x="3.5" y="3.5" width="9" height="9" rx="1.5" />
-    </svg>
-  );
-}
-
-function DownArrowIcon() {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
-      <path fillRule="evenodd" d="M8 2a.75.75 0 0 1 .75.75v8.69l3.22-3.22a.75.75 0 1 1 1.06 1.06l-4.5 4.5a.75.75 0 0 1-1.06 0l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.22 3.22V2.75A.75.75 0 0 1 8 2Z" clipRule="evenodd" />
-    </svg>
-  );
-}
+/* --- Inline icons (Phosphor) --- */
 
 /* --- Suggestion rows --- */
 
@@ -122,7 +92,7 @@ function SuggestionRows({
         >
           <span className="flex-1">{renderSuggestionText(text)}</span>
           <span className="text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-            <ArrowRightIcon />
+            <PaperPlaneTilt size={14} weight="bold" />
           </span>
         </button>
       ))}
@@ -142,7 +112,7 @@ type ToneId = typeof TONE_PRESETS[number]['id'] | null;
 
 /* --- Chat storage --- */
 
-const CHAT_STORAGE_PREFIX = 'chalk-video-chat-';
+const CHAT_STORAGE_PREFIX = storageKey('video-chat-');
 
 function loadChatHistory(videoId?: string): ChatMessage[] {
   if (!videoId || typeof window === 'undefined') return [];
@@ -207,13 +177,13 @@ export function ChatOverlay({
   // Load saved model preference after mount to avoid hydration mismatch
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('chalk-chat-model');
+      const stored = localStorage.getItem(storageKey('chat-model'));
       if (stored) setSelectedModelRaw(stored as ModelChoice);
     } catch { /* ignore */ }
   }, []);
   const setSelectedModel = useCallback((m: ModelChoice) => {
     setSelectedModelRaw(m);
-    try { localStorage.setItem('chalk-chat-model', m); } catch { /* ignore */ }
+    try { localStorage.setItem(storageKey('chat-model'), m); } catch { /* ignore */ }
   }, []);
   const [activeTone, setActiveTone] = useState<ToneId>(null);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
@@ -446,7 +416,7 @@ export function ChatOverlay({
       {!isMobile && (
         <div className={`flex items-center justify-between px-4 py-2.5 border-b ${isSidebar ? 'border-chalk-border/30' : 'border-white/[0.06]'}`}>
           <div className="flex items-center gap-2 text-slate-300">
-            <ChatBubbleIcon />
+            <ChatsTeardrop size={14} weight="fill" />
             <span className="text-xs font-medium">Ask about this video</span>
           </div>
           <div className="flex items-center gap-1.5">
@@ -465,9 +435,7 @@ export function ChatOverlay({
               title="Close (Esc)"
               aria-label="Close chat"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5">
-                <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
-              </svg>
+              <XCircle size={14} weight="bold" />
             </button>
           </div>
         </div>
@@ -512,7 +480,7 @@ export function ChatOverlay({
             onClick={scrollToBottom}
             className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-chalk-surface/90 border border-chalk-border/40 text-[11px] text-slate-400 hover:text-slate-200 shadow-lg transition-colors"
           >
-            <DownArrowIcon />
+            <CaretDoubleDown size={12} weight="bold" />
             New messages
           </button>
         </div>
@@ -581,7 +549,7 @@ export function ChatOverlay({
               className="shrink-0 w-9 h-9 rounded-xl bg-red-500/15 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500/25 transition-colors"
               title="Stop"
             >
-              <StopIcon />
+              <StopCircle size={14} weight="fill" />
             </button>
           ) : (
             <button
@@ -590,7 +558,7 @@ export function ChatOverlay({
               className="shrink-0 w-9 h-9 rounded-xl bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30 flex items-center justify-center hover:bg-chalk-accent/25 disabled:opacity-30 disabled:hover:bg-chalk-accent/15 transition-colors"
               title="Send"
             >
-              <ArrowRightIcon />
+              <PaperPlaneTilt size={14} weight="fill" />
             </button>
           )}
         </form>

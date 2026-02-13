@@ -49,3 +49,8 @@ test-results/
 
 # UI prototypes / scratch
 ui-prototypes/
+
+# project-specific config
+greptile.json
+
+.internal/

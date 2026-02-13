@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useVoiceMode, type VoiceState } from './useVoiceMode';
 import { useReadAloud, type UseReadAloudReturn } from './useReadAloud';
 import type { TranscriptSegment, TranscriptSource } from '@/lib/video-utils';
+import { storageKey } from '@/lib/brand';
 
 export interface UnifiedExchange {
   id: string;
@@ -55,7 +56,7 @@ interface UseUnifiedModeReturn {
   clearHistory: () => void;
 }
 
-const STORAGE_PREFIX = 'chalk-interaction-history-';
+const STORAGE_PREFIX = storageKey('interaction-history-');
 
 function loadHistory(videoId: string): UnifiedExchange[] {
   if (typeof window === 'undefined') return [];

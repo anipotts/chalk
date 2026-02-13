@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { extractVideoId } from '@/lib/video-utils';
-import { ChalkboardSimple, MagnifyingGlass } from '@phosphor-icons/react';
+import { ChalkboardSimple, Binoculars } from '@phosphor-icons/react';
 import { SearchResults } from '@/components/SearchResults';
 import type { AnySearchResult } from '@/components/SearchResults';
+import { storageKey } from '@/lib/brand';
 
-const RECENT_VIDEOS_KEY = 'chalk-recent-videos';
+const RECENT_VIDEOS_KEY = storageKey('recent-videos');
 
 type SearchType = 'video' | 'channel' | 'playlist';
 
@@ -304,7 +305,7 @@ export default function HomePage() {
               ) : showTabs ? (
                 <div className="flex gap-1 pr-1 shrink-0">
                   <button onClick={() => handleTabSwitch('search')} className={pillClasses('search')}>
-                    <MagnifyingGlass size={14} weight="bold" />
+                    <Binoculars size={14} weight="bold" />
                     Search
                   </button>
                   <button onClick={() => handleTabSwitch('url')} className={pillClasses('url')}>
