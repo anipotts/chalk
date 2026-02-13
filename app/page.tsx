@@ -7,7 +7,7 @@ import { ChalkboardSimple, Binoculars } from '@phosphor-icons/react';
 import { SearchResults } from '@/components/SearchResults';
 import type { AnySearchResult } from '@/components/SearchResults';
 import { storageKey } from '@/lib/brand';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 
 import SearchDropdown from '@/components/SearchDropdown';
 
@@ -373,33 +373,17 @@ function HomePage() {
 
   return (
     <div className="h-screen bg-chalk-bg flex flex-col overflow-hidden">
-      {/* Header area — vertically centered when idle, slides to top when searching */}
-      <motion.div
-        className={`flex flex-col items-center px-4 transition-[flex] duration-300 ${isSearchMode ? 'shrink-0' : 'flex-1 justify-center'}`}
-        animate={{
-          paddingTop: isMobile ? 48 : (isSearchMode ? 48 : 0),
-          paddingBottom: isSearchMode ? 8 : 0,
-        }}
-        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-      >
+      {/* Header area — vertically centered when idle, snaps to top when searching */}
+      <div className={`flex flex-col items-center px-4 ${isSearchMode ? 'shrink-0 pt-12 pb-2' : 'flex-1 justify-center'}`}>
         <div className="w-full max-w-2xl">
           {/* Logo and tagline */}
-          <motion.div
-            className="text-center"
-            animate={{
-              marginBottom: isSearchMode ? 16 : 8,
-              marginTop: isSearchMode ? 0 : 0,
-            }}
-            transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-          >
+          <div className="text-center mb-2">
             {isSearchMode ? (
-              /* Compact header when searching */
               <div className="flex items-center justify-center gap-2 mb-2">
                 <ChalkboardSimple size={20} className="text-chalk-text" />
                 <h1 className="text-lg font-bold text-chalk-text">chalk</h1>
               </div>
             ) : (
-              /* Full header on home state */
               <>
                 <h1 className="text-2xl font-bold text-chalk-text mb-1.5 flex items-center justify-center gap-2">
                   <ChalkboardSimple size={28} />
@@ -410,19 +394,14 @@ function HomePage() {
                 </p>
               </>
             )}
-          </motion.div>
+          </div>
 
-          {/* Search input — always shown */}
+          {/* Search input */}
           {searchInput}
 
-          {/* Search type filter pills + sort — show when searching */}
+          {/* Search type filter pills + sort */}
           {activeTab === 'search' && inputValue.length >= 2 && (
-            <motion.div
-              className="flex items-center gap-1.5 mt-3 justify-center flex-wrap"
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-            >
+            <div className="flex items-center gap-1.5 mt-3 justify-center flex-wrap">
               {(['video', 'channel', 'playlist'] as SearchType[]).map((type) => {
                 const label = type === 'video' ? 'Videos' : type === 'channel' ? 'Channels' : 'Playlists';
                 return (
@@ -438,7 +417,6 @@ function HomePage() {
                 );
               })}
 
-              {/* Sort dropdown */}
               {searchResults.length > 0 && (
                 <select
                   value={sortBy}
@@ -450,10 +428,10 @@ function HomePage() {
                   <option value="date">Upload date</option>
                 </select>
               )}
-            </motion.div>
+            </div>
           )}
         </div>
-      </motion.div>
+      </div>
 
       {/* Below-input content area — search results */}
       <div className="flex-1 px-4 pb-8 overflow-y-auto">
