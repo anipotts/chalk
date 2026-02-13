@@ -6,6 +6,7 @@
 
 const ELEVENLABS_BASE_URL = 'https://api.elevenlabs.io/v1';
 const DEFAULT_MODEL = 'eleven_turbo_v2_5';
+const CLONED_VOICE_MODEL = 'eleven_multilingual_v2';
 const DEFAULT_VOICE = 'JBFqnCBsd6RMkjVDRZzb'; // "George" — clear male voice
 
 /**
@@ -31,6 +32,7 @@ function getDefaultVoice(): string {
 export async function textToSpeech(
   text: string,
   voiceId?: string,
+  isClonedVoice?: boolean,
 ): Promise<Buffer> {
   const apiKey = getApiKey();
   const voice = voiceId || getDefaultVoice();
@@ -48,13 +50,10 @@ export async function textToSpeech(
       },
       body: JSON.stringify({
         text: text.slice(0, 5000),
-        model_id: DEFAULT_MODEL,
-        voice_settings: {
-          stability: 0.5,
-          similarity_boost: 0.75,
-          style: 0.0,
-          use_speaker_boost: true,
-        },
+        model_id: isClonedVoice ? CLONED_VOICE_MODEL : DEFAULT_MODEL,
+        voice_settings: isClonedVoice
+          ? { stability: 0.55, similarity_boost: 0.85, style: 0.0, use_speaker_boost: true }
+          : { stability: 0.5, similarity_boost: 0.75, style: 0.0, use_speaker_boost: true },
       }),
       signal: controller.signal,
     });
@@ -78,6 +77,7 @@ export async function textToSpeech(
 export async function textToSpeechStream(
   text: string,
   voiceId?: string,
+  isClonedVoice?: boolean,
 ): Promise<ReadableStream<Uint8Array>> {
   const apiKey = getApiKey();
   const voice = voiceId || getDefaultVoice();
@@ -90,13 +90,10 @@ export async function textToSpeechStream(
     },
     body: JSON.stringify({
       text: text.slice(0, 5000),
-      model_id: DEFAULT_MODEL,
-      voice_settings: {
-        stability: 0.5,
-        similarity_boost: 0.75,
-        style: 0.0,
-        use_speaker_boost: true,
-      },
+      model_id: isClonedVoice ? CLONED_VOICE_MODEL : DEFAULT_MODEL,
+      voice_settings: isClonedVoice
+        ? { stability: 0.55, similarity_boost: 0.85, style: 0.0, use_speaker_boost: true }
+        : { stability: 0.5, similarity_boost: 0.75, style: 0.0, use_speaker_boost: true },
     }),
   });
 

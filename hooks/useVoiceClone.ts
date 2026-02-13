@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface UseVoiceCloneOptions {
   videoId: string | null;
+  channelName?: string | null;
   enabled: boolean; // only clone when voice mode is activated
 }
 
@@ -14,22 +15,29 @@ interface UseVoiceCloneReturn {
   triggerClone: () => void;
 }
 
-export function useVoiceClone({ videoId, enabled }: UseVoiceCloneOptions): UseVoiceCloneReturn {
+export function useVoiceClone({ videoId, channelName, enabled }: UseVoiceCloneOptions): UseVoiceCloneReturn {
   const [voiceId, setVoiceId] = useState<string | null>(null);
   const [isCloning, setIsCloning] = useState(false);
   const [cloneError, setCloneError] = useState<string | null>(null);
   const cloneAttempted = useRef(false);
 
-  // Check localStorage cache on mount
+  // Reset when channelName changes (it loads async from noembed)
+  useEffect(() => {
+    cloneAttempted.current = false;
+  }, [channelName]);
+
+  // Check localStorage cache on mount — try channel key first, then video key
   useEffect(() => {
     if (!videoId) return;
     try {
-      const cached = localStorage.getItem(`chalk-voice-clone-${videoId}`);
-      if (cached) {
-        setVoiceId(cached);
+      if (channelName) {
+        const cached = localStorage.getItem(`chalk-voice-clone-ch-${channelName}`);
+        if (cached) { setVoiceId(cached); return; }
       }
+      const cached = localStorage.getItem(`chalk-voice-clone-${videoId}`);
+      if (cached) { setVoiceId(cached); }
     } catch { /* ignore */ }
-  }, [videoId]);
+  }, [videoId, channelName]);
 
   const triggerClone = useCallback(async () => {
     if (!videoId || voiceId || isCloning || cloneAttempted.current) return;
@@ -37,11 +45,12 @@ export function useVoiceClone({ videoId, enabled }: UseVoiceCloneOptions): UseVo
 
     // Check localStorage again in case it was set between renders
     try {
-      const cached = localStorage.getItem(`chalk-voice-clone-${videoId}`);
-      if (cached) {
-        setVoiceId(cached);
-        return;
+      if (channelName) {
+        const cached = localStorage.getItem(`chalk-voice-clone-ch-${channelName}`);
+        if (cached) { setVoiceId(cached); return; }
       }
+      const cached = localStorage.getItem(`chalk-voice-clone-${videoId}`);
+      if (cached) { setVoiceId(cached); return; }
     } catch { /* ignore */ }
 
     setIsCloning(true);
@@ -51,7 +60,7 @@ export function useVoiceClone({ videoId, enabled }: UseVoiceCloneOptions): UseVo
       const resp = await fetch('/api/voice-clone', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ videoId }),
+        body: JSON.stringify({ videoId, channelName: channelName || undefined }),
       });
 
       if (!resp.ok) {
@@ -62,8 +71,11 @@ export function useVoiceClone({ videoId, enabled }: UseVoiceCloneOptions): UseVo
       const data = await resp.json();
       setVoiceId(data.voiceId);
 
-      // Cache in localStorage
+      // Cache in localStorage — both channel and video keys
       try {
+        if (channelName) {
+          localStorage.setItem(`chalk-voice-clone-ch-${channelName}`, data.voiceId);
+        }
         localStorage.setItem(`chalk-voice-clone-${videoId}`, data.voiceId);
       } catch { /* ignore */ }
     } catch {
@@ -71,7 +83,7 @@ export function useVoiceClone({ videoId, enabled }: UseVoiceCloneOptions): UseVo
     } finally {
       setIsCloning(false);
     }
-  }, [videoId, voiceId, isCloning]);
+  }, [videoId, channelName, voiceId, isCloning]);
 
   // Auto-trigger clone when enabled
   useEffect(() => {

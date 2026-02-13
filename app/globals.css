@@ -29,6 +29,11 @@ body {
 }
 
 /* Scrollbar styling */
+* {
+  scrollbar-color: #222222 transparent;
+  scrollbar-width: thin;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -112,7 +117,7 @@ body {
 
 .katex {
   white-space: normal;
-  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 /* Prevent inline LaTeX from forcing container wider */
@@ -133,6 +138,17 @@ body {
 [data-media-provider] .vds-blocker {
   z-index: 2 !important;
   pointer-events: auto !important;
+}
+
+/* Mobile: block all iframe pointer events so taps go through Vidstack's blocker (inline play/pause) */
+@media (max-width: 767px) {
+  [data-media-provider] iframe {
+    pointer-events: none !important;
+  }
+  [data-media-provider] .vds-blocker {
+    position: absolute !important;
+    inset: 0 !important;
+  }
 }
 
 /* Karaoke caption word transitions */

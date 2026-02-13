@@ -1,32 +1,36 @@
 'use client';
 
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { ParsedQuiz, ParsedExplanation, Difficulty, LearnModePhase } from '@/hooks/useLearnMode';
+import { renderRichContent } from './ExchangeMessage';
+import type { ParsedQuiz, ParsedExplanation, LearnModePhase, LearnAction } from '@/hooks/useLearnMode';
+import type { LearnOption } from '@/hooks/useLearnOptions';
 
 interface LearnModeQuizProps {
   phase: LearnModePhase;
   quiz: ParsedQuiz | null;
   explanation: ParsedExplanation | null;
   introText: string;
+  responseContent: string;
+  exportableContent: string | null;
   answers: Map<number, string>;
   score: { correct: number; total: number };
-  difficulty: Difficulty | null;
+  selectedAction: LearnAction | null;
   thinking: string | null;
   thinkingDuration: number | null;
   isLoading: boolean;
   error: string | null;
+  learnOptions: LearnOption[];
+  learnOptionsLoading: boolean;
+  videoTitle?: string;
+  videoId: string;
   onSelectAnswer: (questionIndex: number, optionId: string) => void;
-  onSelectDifficulty: (difficulty: Difficulty) => void;
+  onSelectAction: (action: LearnAction) => void;
+  onFocusInput?: () => void;
   onNextBatch: () => void;
   onStop: () => void;
   onSeek: (seconds: number) => void;
 }
-
-const DIFFICULTY_OPTIONS: { id: Difficulty; label: string; description: string }[] = [
-  { id: 'beginner', label: 'Beginner', description: 'Foundational concepts' },
-  { id: 'intermediate', label: 'Intermediate', description: 'Apply and analyze' },
-  { id: 'advanced', label: 'Advanced', description: 'Evaluate and synthesize' },
-];
 
 /**
  * Parse [M:SS] timestamps in text and return clickable elements.
@@ -101,34 +105,120 @@ function ThinkingPanel({ thinking, duration }: { thinking: string; duration: num
   );
 }
 
-function DifficultySelector({ onSelect }: { onSelect: (d: Difficulty) => void }) {
+function ActionSelector({
+  options,
+  isLoading: optionsLoading,
+  onSelect,
+  onFocusInput,
+}: {
+  options: LearnOption[];
+  isLoading: boolean;
+  onSelect: (action: LearnAction) => void;
+  onFocusInput?: () => void;
+}) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [showHint, setShowHint] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Show keyboard hint after 1s
+  useEffect(() => {
+    const timer = setTimeout(() => setShowHint(true), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Auto-hide hint after 3s
+  useEffect(() => {
+    if (!showHint) return;
+    const timer = setTimeout(() => setShowHint(false), 3000);
+    return () => clearTimeout(timer);
+  }, [showHint]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex((i) => (i + 1) % options.length);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex((i) => (i - 1 + options.length) % options.length);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        const opt = options[selectedIndex];
+        if (opt) {
+          if (opt.id === 'custom') {
+            onFocusInput?.();
+          } else {
+            onSelect({ id: opt.id, label: opt.label, intent: opt.intent });
+          }
+        }
+      } else if (e.key === 'Escape') {
+        // Let parent handle escape
+      }
+    }
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [options, selectedIndex, onSelect, onFocusInput]);
+
   return (
     <motion.div
+      ref={containerRef}
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full flex flex-col items-center gap-4"
+      className="w-full flex flex-col items-center gap-3"
     >
       <div className="text-center">
-        <p className="text-sm text-slate-300 font-medium mb-1">Choose your level</p>
-        <p className="text-xs text-slate-500">Based on the video content you have watched so far</p>
+        <p className="text-sm text-slate-300 font-medium mb-1">What would you like to do?</p>
+        {optionsLoading && (
+          <p className="text-[10px] text-slate-600">Generating options...</p>
+        )}
       </div>
-      <div className="flex flex-col gap-2 w-full max-w-sm">
-        {DIFFICULTY_OPTIONS.map((opt) => (
+      <div className="flex flex-col gap-1.5 w-full">
+        {options.map((opt, i) => (
           <button
             key={opt.id}
-            onClick={() => onSelect(opt.id)}
-            className="group w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] active:scale-[0.98] transition-all text-left"
+            onClick={() => {
+              if (opt.id === 'custom') {
+                onFocusInput?.();
+              } else {
+                onSelect({ id: opt.id, label: opt.label, intent: opt.intent });
+              }
+            }}
+            className={`group w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all text-left active:scale-[0.98] ${
+              i === selectedIndex
+                ? 'bg-chalk-accent/10 border-chalk-accent/30 ring-1 ring-chalk-accent/20'
+                : 'bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15]'
+            }`}
           >
-            <div className="flex-1">
-              <p className="text-sm text-slate-200 font-medium">{opt.label}</p>
-              <p className="text-[11px] text-slate-500">{opt.description}</p>
+            <div className="flex-1 min-w-0">
+              <p className={`text-sm font-medium ${i === selectedIndex ? 'text-chalk-accent' : 'text-slate-200'}`}>
+                {opt.label}
+              </p>
+              <p className="text-[11px] text-slate-500 truncate">{opt.description}</p>
             </div>
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity">
-              <path fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />
-            </svg>
+            {i === selectedIndex && (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3.5 h-3.5 text-chalk-accent flex-shrink-0">
+                <path fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />
+              </svg>
+            )}
           </button>
         ))}
       </div>
+
+      {/* Keyboard hint */}
+      <AnimatePresence>
+        {showHint && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="text-[10px] text-slate-600 text-center"
+          >
+            &uarr;&darr; to navigate &middot; Enter to select
+          </motion.p>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -151,6 +241,61 @@ function LoadingState() {
         ))}
       </div>
       <p className="text-xs text-slate-500">Opus 4.6 is analyzing the video content...</p>
+    </motion.div>
+  );
+}
+
+function ExportBar({ content, videoTitle }: { content: string; videoTitle?: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(content).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [content]);
+
+  const handleDownload = useCallback(() => {
+    const filename = videoTitle
+      ? `${videoTitle.replace(/[^a-zA-Z0-9 ]/g, '').slice(0, 50).trim()}.md`
+      : 'chalk-notes.md';
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [content, videoTitle]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex items-center gap-2 pt-2"
+    >
+      <button
+        onClick={handleCopy}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-slate-400 hover:text-slate-200 hover:bg-white/[0.08] transition-colors"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+          <path d="M5.5 3.5A1.5 1.5 0 0 1 7 2h2.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 1 .439 1.061V9.5A1.5 1.5 0 0 1 12 11V3.5A1.5 1.5 0 0 0 10.5 2H7a1.5 1.5 0 0 0-1.5 1.5Z" />
+          <path d="M3.5 6A1.5 1.5 0 0 1 5 4.5h4.879a1.5 1.5 0 0 1 1.06.44l2.122 2.12a1.5 1.5 0 0 1 .439 1.061V12.5A1.5 1.5 0 0 1 12 14H5a1.5 1.5 0 0 1-1.5-1.5V6Z" />
+        </svg>
+        {copied ? 'Copied!' : 'Copy'}
+      </button>
+      <button
+        onClick={handleDownload}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-xs text-slate-400 hover:text-slate-200 hover:bg-white/[0.08] transition-colors"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+          <path d="M8.75 2.75a.75.75 0 0 0-1.5 0v5.69L5.03 6.22a.75.75 0 0 0-1.06 1.06l3.5 3.5a.75.75 0 0 0 1.06 0l3.5-3.5a.75.75 0 0 0-1.06-1.06L8.75 8.44V2.75Z" />
+          <path d="M3.5 9.75a.75.75 0 0 0-1.5 0v1.5A2.75 2.75 0 0 0 4.75 14h6.5A2.75 2.75 0 0 0 14 11.25v-1.5a.75.75 0 0 0-1.5 0v1.5c0 .69-.56 1.25-1.25 1.25h-6.5c-.69 0-1.25-.56-1.25-1.25v-1.5Z" />
+        </svg>
+        Download .md
+      </button>
     </motion.div>
   );
 }
@@ -184,14 +329,12 @@ function QuizCard({
       transition={{ delay: questionIndex * 0.1 }}
       className="w-full rounded-xl border border-white/[0.08] bg-white/[0.02] overflow-hidden"
     >
-      {/* Question */}
       <div className="px-4 py-3 border-b border-white/[0.06]">
         <p className="text-sm text-slate-200 leading-relaxed">
           {renderTimestampText(question.question, onSeek)}
         </p>
       </div>
 
-      {/* Options */}
       <div className="p-2 space-y-1.5">
         {question.options.map((opt) => {
           let optionStyle = 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.15] text-slate-300';
@@ -240,7 +383,6 @@ function QuizCard({
         })}
       </div>
 
-      {/* Explanation (after answering) */}
       <AnimatePresence>
         {answered && (
           <motion.div
@@ -266,24 +408,36 @@ export function LearnModeQuiz({
   quiz,
   explanation,
   introText,
+  responseContent,
+  exportableContent,
   answers,
   score,
-  difficulty,
+  selectedAction,
   thinking,
   thinkingDuration,
   isLoading,
   error,
+  learnOptions,
+  learnOptionsLoading,
+  videoTitle,
+  videoId,
   onSelectAnswer,
-  onSelectDifficulty,
+  onSelectAction,
+  onFocusInput,
   onNextBatch,
   onStop,
   onSeek,
 }: LearnModeQuizProps) {
-  // Difficulty selector
-  if (phase === 'selecting_difficulty') {
+  // Action selector
+  if (phase === 'selecting_action') {
     return (
       <div className="w-full space-y-4">
-        <DifficultySelector onSelect={onSelectDifficulty} />
+        <ActionSelector
+          options={learnOptions}
+          isLoading={learnOptionsLoading}
+          onSelect={onSelectAction}
+          onFocusInput={onFocusInput}
+        />
         <div className="flex justify-center">
           <button
             onClick={onStop}
@@ -312,19 +466,18 @@ export function LearnModeQuiz({
       ? quiz.questions.every((_, i) => answers.has(i))
       : true;
 
+    // Non-quiz response content (markdown rendering)
+    const hasMarkdownResponse = !quiz && responseContent && phase === 'reviewing';
+
     return (
       <div className="w-full space-y-4">
-        {/* Score and difficulty badge */}
+        {/* Score badge */}
         {score.total > 0 && (
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {difficulty && (
-                <span className={`px-2 py-0.5 rounded-md text-[10px] font-medium border ${
-                  difficulty === 'beginner' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                    : difficulty === 'intermediate' ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
-                      : 'bg-red-500/10 border-red-500/30 text-red-400'
-                }`}>
-                  {difficulty}
+              {selectedAction && (
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-medium border bg-chalk-accent/10 border-chalk-accent/30 text-chalk-accent">
+                  {selectedAction.label}
                 </span>
               )}
             </div>
@@ -338,14 +491,23 @@ export function LearnModeQuiz({
         {thinking && <ThinkingPanel thinking={thinking} duration={thinkingDuration} />}
 
         {/* Intro text */}
-        {introText && (
+        {introText && !hasMarkdownResponse && (
           <p className="text-sm text-slate-300 leading-relaxed">
             {renderTimestampText(introText, onSeek)}
           </p>
         )}
 
-        {/* Explanation (non-quiz response) */}
-        {explanation && (
+        {/* Markdown response content (non-quiz) */}
+        {hasMarkdownResponse && (
+          <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4">
+            <div className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
+              {renderRichContent(responseContent, onSeek, videoId)}
+            </div>
+          </div>
+        )}
+
+        {/* Explanation (structured) */}
+        {explanation && !hasMarkdownResponse && (
           <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4">
             <p className="text-sm text-slate-300 leading-relaxed mb-3">
               {renderTimestampText(explanation.content, onSeek)}
@@ -378,6 +540,11 @@ export function LearnModeQuiz({
               />
             ))}
           </div>
+        )}
+
+        {/* Export bar for markdown responses */}
+        {exportableContent && (
+          <ExportBar content={exportableContent} videoTitle={videoTitle} />
         )}
 
         {/* Error */}

@@ -51,33 +51,54 @@ export function KaraokeCaption({ segments, currentTime }: KaraokeCaptionProps) {
   const { segment, index } = result;
   const next = index + 1 < segments.length ? segments[index + 1] : undefined;
   const duration = getSegmentDuration(segment, next);
-  const words = segment.text.trim().split(/\s+/);
+  const wordTimings = segment.words;
+  const fallbackWords = segment.text.trim().split(/\s+/);
 
-  if (words.length === 0 || (words.length === 1 && words[0] === '')) return null;
+  if (fallbackWords.length === 0 || (fallbackWords.length === 1 && fallbackWords[0] === '')) return null;
 
-  const elapsed = currentTime - segment.offset;
-  const progress = Math.min(1, Math.max(0, elapsed / duration));
-  const currentWordIndex = Math.min(
-    Math.floor(progress * words.length),
-    words.length - 1,
-  );
+  // Use word-level timings from json3 if available, otherwise character-count interpolation
+  let currentWordIndex: number;
+  if (wordTimings && wordTimings.length > 0) {
+    const currentMs = currentTime * 1000;
+    currentWordIndex = 0;
+    for (let i = wordTimings.length - 1; i >= 0; i--) {
+      if (currentMs >= wordTimings[i].startMs) { currentWordIndex = i; break; }
+    }
+  } else {
+    // Character-count interpolation fallback
+    const elapsed = currentTime - segment.offset;
+    const progress = Math.min(1, Math.max(0, elapsed / duration));
+    const totalChars = fallbackWords.reduce((sum, w) => sum + w.length, 0);
+    const targetChar = Math.floor(progress * totalChars);
+    let charCount = 0;
+    currentWordIndex = 0;
+    for (let i = 0; i < fallbackWords.length; i++) {
+      charCount += fallbackWords[i].length;
+      if (charCount > targetChar) { currentWordIndex = i; break; }
+      if (i === fallbackWords.length - 1) currentWordIndex = i;
+    }
+  }
+
+  const displayWords = wordTimings && wordTimings.length > 0
+    ? wordTimings.map((w) => w.text)
+    : fallbackWords;
 
   return (
     <div className="w-full text-center py-3 px-6 select-none">
-      <p className="text-base md:text-lg leading-relaxed font-medium tracking-wide">
-        {words.map((word, i) => (
+      <p className="text-base md:text-lg leading-relaxed font-light tracking-wide">
+        {displayWords.map((word, i) => (
           <span
             key={`${segment.offset}-${i}`}
             className={`karaoke-word inline-block mr-[0.3em] ${
               i < currentWordIndex
-                ? 'text-white/45'
+                ? 'text-white/70'
                 : i === currentWordIndex
-                  ? 'text-white'
+                  ? 'text-blue-400'
                   : 'text-white/20'
             }`}
             style={
               i === currentWordIndex
-                ? { textShadow: '0 0 14px rgba(99, 140, 255, 0.55)' }
+                ? { textShadow: '0 0 14px rgba(96, 165, 250, 0.6)' }
                 : undefined
             }
           >

@@ -11,10 +11,11 @@ import { formatTimestamp } from '@/lib/video-utils';
 import { ChalkboardSimple } from '@phosphor-icons/react';
 import { KaraokeCaption } from '@/components/KaraokeCaption';
 import type { MediaPlayerInstance } from '@vidstack/react';
-import { VoiceModeButton } from '@/components/VoiceModeButton';
+
 import { useUnifiedMode } from '@/hooks/useUnifiedMode';
 import { useVoiceClone } from '@/hooks/useVoiceClone';
 import { useLearnMode } from '@/hooks/useLearnMode';
+import { useLearnOptions } from '@/hooks/useLearnOptions';
 
 const VideoPlayer = dynamic(
   () => import('@/components/VideoPlayer').then((m) => ({ default: m.VideoPlayer })),
@@ -145,12 +146,14 @@ function MobileChatBar({
   onStop,
   voiceState,
   onStartRecording,
+  channelName,
 }: {
   onSubmit: (text: string) => void;
   isStreaming: boolean;
   onStop: () => void;
   voiceState: string;
   onStartRecording: () => void;
+  channelName?: string | null;
 }) {
   const [text, setText] = useState('');
   const canSend = text.trim().length > 0 && !isStreaming;
@@ -171,16 +174,15 @@ function MobileChatBar({
   return (
     <div
       className="md:hidden flex-none flex items-end gap-2 px-3 py-2 border-t border-chalk-border/30 bg-chalk-bg/95 backdrop-blur-md"
-      style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}
     >
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Ask about the video..."
+        placeholder={channelName ? `Type to talk to ${channelName}` : "Ask about the video..."}
         disabled={isStreaming}
         rows={1}
-        className="flex-1 min-w-0 resize-none rounded-xl bg-chalk-surface/40 border border-chalk-border/30 px-3 py-2.5 text-sm text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-chalk-accent/40 focus:border-chalk-accent/30 disabled:opacity-40"
+        className="flex-1 min-w-0 resize-none rounded-xl bg-chalk-surface/40 border border-chalk-border/30 px-3 py-2.5 text-xs text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-chalk-accent/40 focus:border-chalk-accent/30 disabled:opacity-40"
       />
 
       {/* Mic button */}
@@ -248,6 +250,10 @@ function WatchContent() {
   const [continueFrom, setContinueFrom] = useState<number | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [transcriptCollapsed, setTranscriptCollapsed] = useState(false);
+  const [pendingKey, setPendingKey] = useState<string | null>(null);
+  const VIEW_SIZE_CYCLE = ['expanded', 'default', 'compact', 'default'] as const;
+  const [viewSizeIndex, setViewSizeIndex] = useState(1); // start at 'default'
+  const viewSize = VIEW_SIZE_CYCLE[viewSizeIndex];
 
   // Load preferences after mount to avoid hydration mismatch
   useEffect(() => {
@@ -257,6 +263,10 @@ function WatchContent() {
         const { tc } = JSON.parse(layout);
         if (tc) setTranscriptCollapsed(true);
       }
+      const savedSize = localStorage.getItem('chalk-overlay-size');
+      if (savedSize === 'expanded') setViewSizeIndex(0);
+      else if (savedSize === 'compact') setViewSizeIndex(2);
+      else if (savedSize === 'default') setViewSizeIndex(1);
     } catch { /* ignore */ }
   }, []);
 
@@ -273,16 +283,49 @@ function WatchContent() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const hasSegments = segments.length > 0;
-  currentTimeRef.current = currentTime;
-  segmentsRef.current = segments;
 
-  // Voice clone hook
-  const { voiceId, isCloning, cloneError } = useVoiceClone({
+  const cycleViewSize = useCallback(() => {
+    setViewSizeIndex(prev => {
+      const next = (prev + 1) % VIEW_SIZE_CYCLE.length;
+      try { localStorage.setItem('chalk-overlay-size', VIEW_SIZE_CYCLE[next]); } catch { /* ignore */ }
+      return next;
+    });
+  }, [VIEW_SIZE_CYCLE]);
+
+  const viewMaxWidth = viewSize === 'compact' ? 'max-w-2xl' : viewSize === 'expanded' ? 'max-w-6xl' : 'max-w-4xl';
+
+  // Sync refs outside of render (React 19 safe)
+  useEffect(() => { currentTimeRef.current = currentTime; }, [currentTime]);
+  useEffect(() => { segmentsRef.current = segments; }, [segments]);
+
+  // Save to recent videos (localStorage) so landing page shows them
+  useEffect(() => {
+    if (!videoId) return;
+    try {
+      const key = 'chalk-recent-videos';
+      const recent: Array<{ id: string; url: string; title?: string; channelName?: string; timestamp: number }> =
+        JSON.parse(localStorage.getItem(key) || '[]');
+      const existing = recent.find((v) => v.id === videoId);
+      const filtered = recent.filter((v) => v.id !== videoId);
+      filtered.unshift({
+        id: videoId,
+        url: `https://www.youtube.com/watch?v=${videoId}`,
+        title: videoTitle || existing?.title,
+        channelName: channelName || existing?.channelName,
+        timestamp: Date.now(),
+      });
+      localStorage.setItem(key, JSON.stringify(filtered.slice(0, 10)));
+    } catch { /* ignore */ }
+  }, [videoId, videoTitle, channelName]);
+
+  // Voice clone hook — now channel-level
+  const { voiceId, isCloning } = useVoiceClone({
     videoId: videoId || null,
+    channelName,
     enabled: interactionVisible,
   });
 
-  // Unified interaction mode (text + voice)
+  // Unified interaction mode (text + voice + read aloud)
   const unified = useUnifiedMode({
     segments,
     currentTime,
@@ -292,12 +335,19 @@ function WatchContent() {
     transcriptSource: source ?? undefined,
   });
 
-  // Learn mode (Opus 4.6 adaptive quizzes)
+  // Learn mode (Opus 4.6 adaptive learning)
   const learnMode = useLearnMode({
     segments,
     currentTime,
     videoId: videoId || '',
     videoTitle: videoTitle ?? undefined,
+  });
+
+  // Pre-generated learn options (background Haiku call)
+  const { options: learnOptions, isLoading: learnOptionsLoading } = useLearnOptions({
+    segments,
+    videoTitle: videoTitle ?? undefined,
+    channelName,
   });
 
   // Load saved progress
@@ -361,17 +411,13 @@ function WatchContent() {
     return () => vv.removeEventListener('resize', handleResize);
   }, []);
 
-  // Transcript stays closed by default - user must manually open it
-
   const handlePause = useCallback(() => {
     setIsPaused(true);
-    // Auto-open overlay on pause
     setInteractionVisible(true);
   }, []);
 
   const handlePlay = useCallback(() => {
     setIsPaused(false);
-    // Keep overlay open if user is actively using it
   }, []);
 
   const handleTimeUpdate = useCallback((time: number) => {
@@ -392,26 +438,26 @@ function WatchContent() {
   }, []);
 
   const startVoiceMode = useCallback(() => {
-    // Auto-pause video when entering voice mode
     if (playerRef.current) {
       try { playerRef.current.pause(); } catch { /* ignore */ }
     }
     setInteractionVisible(true);
-    // Voice mode will start when user presses mic button in overlay
-    // (removed auto-start recording)
   }, []);
 
   const handleMobileChatSubmit = useCallback(async (text: string) => {
     setInteractionVisible(true);
     await unified.handleTextSubmit(text);
-  }, [unified]);
+  }, [unified.handleTextSubmit]);
 
-  const handleAskAbout = useCallback((timestamp: number, text: string) => {
-    // Open interaction overlay
+  const handleAskAbout = useCallback((_timestamp: number, _text: string) => {
     setInteractionVisible(true);
-    // Focus input after a short delay
     setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
+
+  const handleFocusInput = useCallback(() => {
+    learnMode.stopLearnMode();
+    setTimeout(() => inputRef.current?.focus(), 100);
+  }, [learnMode.stopLearnMode]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -421,12 +467,9 @@ function WatchContent() {
 
       // Any alphanumeric key or space: open text mode and focus input
       if (/^[a-z0-9 ]$/i.test(e.key) && !e.metaKey && !e.ctrlKey && !e.altKey && !interactionVisible) {
-        // Open overlay immediately
+        e.preventDefault();
+        setPendingKey(e.key);
         setInteractionVisible(true);
-        // Focus input as soon as it mounts
-        requestAnimationFrame(() => {
-          inputRef.current?.focus();
-        });
         return;
       }
 
@@ -467,8 +510,10 @@ function WatchContent() {
     );
   }
 
-  // Blur level: full when paused or in voice mode, light when playing + text
-  const blurLevel: 'light' | 'full' = isPaused || unified.voiceState !== 'idle' ? 'full' : 'light';
+  // Blur: transparent while typing, subtle blur only when AI responses are visible
+  const blurLevel: 'none' | 'active' =
+    (unified.exchanges.length > 0 || unified.isTextStreaming || learnMode.phase !== 'idle')
+      ? 'active' : 'none';
 
   return (
     <div className="flex h-[100dvh] bg-chalk-bg overflow-hidden animate-in fade-in duration-300">
@@ -490,7 +535,25 @@ function WatchContent() {
             </span>
           </div>
 
+          {/* Centered hint — absolutely positioned so it doesn't shift the flex layout */}
+          {!interactionVisible && channelName && (
+            <span className="absolute left-1/2 -translate-x-1/2 text-xs text-slate-500 hidden sm:inline whitespace-nowrap pointer-events-none">
+              Start typing or pause to talk to {channelName}
+            </span>
+          )}
+
           <div className="flex items-center gap-2 ml-auto">
+            <button
+              onClick={cycleViewSize}
+              className={`px-1.5 py-1 rounded-lg text-[11px] font-mono font-medium transition-colors ${
+                viewSize !== 'default'
+                  ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                  : 'text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30'
+              }`}
+              title={`View size: ${viewSize}`}
+            >
+              {viewSize === 'compact' ? 'S' : viewSize === 'expanded' ? 'L' : 'M'}
+            </button>
             <SpeedControlButton playerRef={playerRef} />
 
             <button
@@ -504,31 +567,24 @@ function WatchContent() {
               Transcript
             </button>
 
-            <VoiceModeButton
-              active={interactionVisible && unified.voiceState !== 'idle'}
-              onClick={startVoiceMode}
-              isCloning={isCloning}
-              hasClone={!!voiceId}
-            />
           </div>
         </div>
 
-        {/* Video area */}
-        <div className={`flex-none md:flex-1 flex flex-col overflow-hidden relative md:max-h-none transition-[height] duration-200 ease-out motion-reduce:transition-none pt-[env(safe-area-inset-top)] md:pt-0 ${
-          keyboardOpen ? 'h-0' : transcriptCollapsed ? 'h-[calc(100dvh-136px)]' : 'h-[28dvh]'
-        }`}>
-          {/* Mobile back button */}
-          <a
-            href="/"
-            className="md:hidden absolute top-2 left-2 z-10 w-8 h-8 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center text-white/80 active:scale-95 transition-transform"
-            aria-label="Back to home"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+        {/* Mobile back bar */}
+        <div className="md:hidden flex-none flex items-center px-2 pt-[env(safe-area-inset-top)] bg-chalk-bg">
+          <a href="/" className="flex items-center p-2 -ml-1 text-white/60 active:text-white/90 transition-colors" aria-label="Back to home">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
               <path fillRule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clipRule="evenodd" />
             </svg>
           </a>
-          <div className="flex-1 md:flex md:flex-col md:items-center md:justify-start p-0 md:p-4 md:pt-6 overflow-hidden relative z-0">
-            <div className="w-full max-w-5xl">
+        </div>
+
+        {/* Video area */}
+        <div className={`flex-none md:flex-1 flex flex-col overflow-hidden relative md:max-h-none transition-[height] duration-200 ease-out motion-reduce:transition-none ${
+          keyboardOpen ? 'h-0' : transcriptCollapsed ? 'h-[calc(100dvh-128px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]' : 'h-[28dvh]'
+        }`}>
+          <div className="flex-1 md:flex md:flex-col md:items-center md:justify-start p-0 md:p-4 md:pt-12 overflow-hidden relative z-0">
+            <div className={`w-full ${viewMaxWidth} md:rounded-xl md:overflow-hidden md:border-[3px] md:border-chalk-accent transition-[max-width] duration-300 ease-out`}>
               <VideoPlayer
                 playerRef={playerRef}
                 videoId={videoId}
@@ -540,24 +596,17 @@ function WatchContent() {
 
             {/* Karaoke captions - show when segments loaded and overlay is closed */}
             {hasSegments && !interactionVisible && (
-              <div className="w-full max-w-5xl">
+              <div className={`w-full ${viewMaxWidth} transition-[max-width] duration-300 ease-out`}>
                 <KaraokeCaption segments={segments} currentTime={currentTime} />
               </div>
             )}
 
-            {/* Hint text - only show when overlay is closed */}
-            {!interactionVisible && channelName && (
-              <div className="absolute bottom-2 md:bottom-8 left-1/2 -translate-x-1/2 z-[5] pointer-events-none">
-                <p className="text-slate-400 text-sm whitespace-nowrap text-center">
-                  Start typing to talk to {channelName}
-                </p>
-              </div>
-            )}
           </div>
 
-          {/* Unified interaction overlay (text + voice) */}
+          {/* Unified interaction overlay (text + voice + learn) */}
           <InteractionOverlay
             visible={interactionVisible}
+            viewSize={viewSize}
             segments={segments}
             currentTime={currentTime}
             videoId={videoId}
@@ -581,6 +630,12 @@ function WatchContent() {
             textError={unified.textError}
             onTextSubmit={unified.handleTextSubmit}
             onStopTextStream={unified.stopTextStream}
+            // Read aloud
+            autoReadAloud={unified.autoReadAloud}
+            onToggleAutoReadAloud={unified.setAutoReadAloud}
+            playingMessageId={unified.playingMessageId}
+            onPlayMessage={unified.playMessage}
+            isReadAloudLoading={unified.isReadAloudLoading}
             // Unified state
             exchanges={unified.exchanges}
             onClearHistory={unified.clearHistory}
@@ -588,20 +643,27 @@ function WatchContent() {
             onSeek={handleSeek}
             onClose={() => setInteractionVisible(false)}
             inputRef={inputRef}
+            pendingKey={pendingKey}
+            onConsumePendingKey={() => setPendingKey(null)}
             // Learn mode
             learnPhase={learnMode.phase}
-            learnDifficulty={learnMode.difficulty}
+            learnSelectedAction={learnMode.selectedAction}
             learnQuiz={learnMode.currentQuiz}
             learnExplanation={learnMode.currentExplanation}
             learnIntroText={learnMode.introText}
+            learnResponseContent={learnMode.responseContent}
+            learnExportableContent={learnMode.exportableContent}
             learnAnswers={learnMode.answers}
             learnScore={learnMode.score}
             learnThinking={learnMode.thinking}
             learnThinkingDuration={learnMode.thinkingDuration}
             learnLoading={learnMode.isLoading}
             learnError={learnMode.error}
-            onOpenLearnMode={learnMode.openDifficultySelector}
-            onSelectDifficulty={learnMode.startLearnMode}
+            learnOptions={learnOptions}
+            learnOptionsLoading={learnOptionsLoading}
+            onOpenLearnMode={learnMode.openActionSelector}
+            onSelectAction={learnMode.executeAction}
+            onFocusInput={handleFocusInput}
             onSelectAnswer={learnMode.selectAnswer}
             onNextBatch={learnMode.requestNextBatch}
             onStopLearnMode={learnMode.stopLearnMode}
@@ -612,7 +674,7 @@ function WatchContent() {
         <div className={`md:hidden flex flex-col border-t border-chalk-border/40 overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none ${
           keyboardOpen ? 'h-0'
             : transcriptCollapsed ? 'h-10'
-            : 'h-[calc(72dvh-96px)]'
+            : 'h-[calc(72dvh-88px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]'
         }`}>
           {transcriptCollapsed && !keyboardOpen ? (
             <WhisperBar
@@ -649,13 +711,17 @@ function WatchContent() {
 
         {/* Persistent mobile chat bar — hidden when InteractionOverlay is open */}
         {!interactionVisible && (
-          <MobileChatBar
-            onSubmit={handleMobileChatSubmit}
-            isStreaming={unified.isTextStreaming}
-            onStop={unified.stopTextStream}
-            voiceState={unified.voiceState}
-            onStartRecording={() => { setInteractionVisible(true); unified.startRecording(); }}
-          />
+          <>
+            <MobileChatBar
+              onSubmit={handleMobileChatSubmit}
+              isStreaming={unified.isTextStreaming}
+              onStop={unified.stopTextStream}
+              voiceState={unified.voiceState}
+              onStartRecording={() => { setInteractionVisible(true); unified.startRecording(); }}
+              channelName={channelName}
+            />
+            <div className="md:hidden flex-none bg-chalk-bg pb-safe" />
+          </>
         )}
 
       </div>

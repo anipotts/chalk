@@ -60,8 +60,23 @@ interface Json3Response {
   events?: Array<{
     tStartMs: number;
     dDurationMs?: number;
-    segs?: Array<{ utf8: string }>;
+    segs?: Array<{ utf8: string; tOffsetMs?: number }>;
   }>;
+}
+
+function extractWords(
+  segs: Array<{ utf8: string; tOffsetMs?: number }>,
+  eventStartMs: number,
+): Array<{ text: string; startMs: number }> | undefined {
+  const hasOffsets = segs.some((s) => s.tOffsetMs !== undefined);
+  if (!hasOffsets) return undefined;
+  const words: Array<{ text: string; startMs: number }> = [];
+  for (const s of segs) {
+    const text = s.utf8.trim();
+    if (!text || text === '\n') continue;
+    words.push({ text, startMs: eventStartMs + (s.tOffsetMs ?? 0) });
+  }
+  return words.length > 0 ? words : undefined;
 }
 
 /**
@@ -194,6 +209,7 @@ async function fetchTranscriptInnertube(videoId: string): Promise<TranscriptSegm
           text: e.segs!.map((s) => s.utf8).join(''),
           offset: e.tStartMs / 1000,
           duration: (e.dDurationMs || 0) / 1000,
+          words: extractWords(e.segs!, e.tStartMs),
         }));
     } else {
       segments = [];
@@ -280,6 +296,7 @@ async function fetchTranscriptWebScrape(videoId: string): Promise<TranscriptSegm
           text: e.segs!.map((s) => s.utf8).join(''),
           offset: e.tStartMs / 1000,
           duration: (e.dDurationMs || 0) / 1000,
+          words: extractWords(e.segs!, e.tStartMs),
         }));
     } else {
       segments = [];
@@ -325,6 +342,7 @@ async function fetchTranscriptYtDlp(videoId: string): Promise<TranscriptSegment[
         text: e.segs!.map((s) => s.utf8).join(''),
         offset: e.tStartMs / 1000,
         duration: (e.dDurationMs || 0) / 1000,
+        words: extractWords(e.segs!, e.tStartMs),
       }));
 
     if (segments.length === 0) throw new Error('yt-dlp: json3 had 0 segments');
@@ -862,6 +880,9 @@ export function cleanSegments(segments: TranscriptSegment[]): TranscriptSegment[
     // Remove bracket annotations like [Music], [Applause], etc.
     text = text.replace(BRACKET_ANNOTATIONS, '');
 
+    // Remove subtitle service watermarks and URLs in brackets
+    text = text.replace(/\[.*?(?:\.com|\.org|\.net|https?:\/\/|subtitles?\s+by|powered\s+by|corrections?\s+at).*?\]/gi, '');
+
     // Remove music note characters
     text = text.replace(MUSIC_NOTES, '');
 
@@ -879,7 +900,7 @@ export function cleanSegments(segments: TranscriptSegment[]): TranscriptSegment[
 
     // Only keep segments that still have meaningful text
     if (text.length > 0) {
-      result.push({ ...seg, text });
+      result.push({ ...seg, text, words: seg.text !== text ? undefined : seg.words });
     }
   }
 
@@ -922,6 +943,7 @@ export function mergeIntoSentences(segments: TranscriptSegment[]): TranscriptSeg
   let accText = '';
   let accStart = 0;
   let accEnd = 0;
+  let accWords: Array<{ text: string; startMs: number }> = [];
 
   for (let i = 0; i < segments.length; i++) {
     const seg = segments[i];
@@ -935,6 +957,7 @@ export function mergeIntoSentences(segments: TranscriptSegment[]): TranscriptSeg
       accText = text;
       accStart = seg.offset;
       accEnd = segEnd;
+      if (seg.words) accWords.push(...seg.words);
       continue;
     }
 
@@ -950,14 +973,17 @@ export function mergeIntoSentences(segments: TranscriptSegment[]): TranscriptSeg
         text: accText,
         offset: accStart,
         duration: accEnd - accStart,
+        words: accWords.length > 0 ? accWords : undefined,
       });
       accText = text;
       accStart = seg.offset;
       accEnd = segEnd;
+      accWords = seg.words ? [...seg.words] : [];
     } else {
       // Append to accumulator
       accText += ' ' + text;
       accEnd = segEnd;
+      if (seg.words) accWords.push(...seg.words);
     }
   }
 
@@ -967,6 +993,7 @@ export function mergeIntoSentences(segments: TranscriptSegment[]): TranscriptSeg
       text: accText,
       offset: accStart,
       duration: accEnd - accStart,
+      words: accWords.length > 0 ? accWords : undefined,
     });
   }
 

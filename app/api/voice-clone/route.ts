@@ -14,6 +14,10 @@ function getSupabaseClient() {
   return null;
 }
 
+function sanitizeChannelName(name: string): string {
+  return name.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 60);
+}
+
 export async function POST(req: Request) {
   if (!isElevenLabsAvailable()) {
     return Response.json(
@@ -29,15 +33,43 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { videoId } = body;
+  const { videoId, channelName } = body;
   if (!videoId || typeof videoId !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
     return Response.json({ error: 'Invalid video ID' }, { status: 400 });
   }
 
-  // Check Supabase cache first
+  const safeChannelName = typeof channelName === 'string' && channelName.trim()
+    ? channelName.trim().slice(0, 200)
+    : null;
+
+  // Check Supabase cache first — channel-level then video-level fallback
   const supabase = getSupabaseClient();
   if (supabase) {
     try {
+      // Try channel-level cache first
+      if (safeChannelName) {
+        const { data } = await supabase
+          .from('voice_clones')
+          .select('voice_id, voice_name')
+          .eq('channel_name', safeChannelName)
+          .single();
+
+        if (data?.voice_id) {
+          supabase
+            .from('voice_clones')
+            .update({ last_used_at: new Date().toISOString() })
+            .eq('channel_name', safeChannelName)
+            .then(() => {});
+
+          return Response.json({
+            voiceId: data.voice_id,
+            name: data.voice_name,
+            cached: true,
+          });
+        }
+      }
+
+      // Fallback: video-level cache (legacy)
       const { data } = await supabase
         .from('voice_clones')
         .select('voice_id, voice_name')
@@ -45,12 +77,20 @@ export async function POST(req: Request) {
         .single();
 
       if (data?.voice_id) {
-        // Update last_used_at
-        supabase
-          .from('voice_clones')
-          .update({ last_used_at: new Date().toISOString() })
-          .eq('video_id', videoId)
-          .then(() => {});
+        // Upgrade legacy entry with channel_name if available
+        if (safeChannelName) {
+          supabase
+            .from('voice_clones')
+            .update({ channel_name: safeChannelName, last_used_at: new Date().toISOString() })
+            .eq('video_id', videoId)
+            .then(() => {});
+        } else {
+          supabase
+            .from('voice_clones')
+            .update({ last_used_at: new Date().toISOString() })
+            .eq('video_id', videoId)
+            .then(() => {});
+        }
 
         return Response.json({
           voiceId: data.voice_id,
@@ -81,7 +121,9 @@ export async function POST(req: Request) {
   }
 
   // Clone the voice via ElevenLabs
-  const voiceName = `chalk-${videoId}`;
+  const voiceName = safeChannelName
+    ? `chalk-${sanitizeChannelName(safeChannelName)}`
+    : `chalk-${videoId}`;
   let voiceId: string;
   try {
     voiceId = await cloneVoice(audioBuffer, voiceName);
@@ -101,6 +143,7 @@ export async function POST(req: Request) {
         video_id: videoId,
         voice_id: voiceId,
         voice_name: voiceName,
+        channel_name: safeChannelName,
         created_at: new Date().toISOString(),
         last_used_at: new Date().toISOString(),
       })

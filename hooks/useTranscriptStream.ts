@@ -72,7 +72,7 @@ export function useTranscriptStream(videoId: string | null): TranscriptStreamSta
   useEffect(() => {
     if (!videoId) return;
 
-    const controller = new AbortController();
+    let cancelled = false;
 
     setSegments([]);
     setStatus('connecting');
@@ -85,9 +85,9 @@ export function useTranscriptStream(videoId: string | null): TranscriptStreamSta
       try {
         const res = await fetch(
           `/api/transcript/stream?videoId=${encodeURIComponent(videoId)}`,
-          { signal: controller.signal },
         );
 
+        if (cancelled) return;
         if (!res.ok || !res.body) {
           throw new Error(`HTTP ${res.status}`);
         }
@@ -95,14 +95,13 @@ export function useTranscriptStream(videoId: string | null): TranscriptStreamSta
         const reader = res.body.getReader();
 
         for await (const { event, data } of parseSSE(reader)) {
-          if (controller.signal.aborted) break;
+          if (cancelled) break;
 
           switch (event) {
             case 'status': {
               const payload = JSON.parse(data) as { phase: string; message: string };
               setStatus('extracting');
               setStatusMessage(payload.message);
-              // Progress is indeterminate — don't show fake percentages
               break;
             }
             case 'meta': {
@@ -137,16 +136,14 @@ export function useTranscriptStream(videoId: string | null): TranscriptStreamSta
           }
         }
       } catch (err) {
-        if (err instanceof DOMException && err.name === 'AbortError') return;
+        if (cancelled) return;
         setStatus('error');
         setError(err instanceof Error ? err.message : 'Failed to fetch transcript');
         setStatusMessage('');
       }
     })();
 
-    return () => {
-      controller.abort();
-    };
+    return () => { cancelled = true; };
   }, [videoId]);
 
   return { segments, status, statusMessage, error, source, progress };

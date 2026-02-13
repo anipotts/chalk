@@ -212,6 +212,7 @@ export function useVoiceMode({
         body: JSON.stringify({
           text: aiText,
           voiceId: voiceId || undefined,
+          isClonedVoice: !!voiceId,
         }),
         signal: controller.signal,
       });

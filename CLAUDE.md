@@ -97,3 +97,4 @@ Required in `.env.local`:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `NEXT_PUBLIC_BASE_URL` (for share URLs; defaults to localhost:3000)
+- `ELEVENLABS_API_KEY` (voice cloning + TTS via ElevenLabs)

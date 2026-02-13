@@ -18,6 +18,9 @@ interface ExchangeMessageProps {
   exchange: UnifiedExchange;
   onSeek: (seconds: number) => void;
   videoId: string;
+  onPlayMessage?: (id: string, text: string) => void;
+  isPlaying?: boolean;
+  isReadAloudLoading?: boolean;
 }
 
 /**
@@ -179,7 +182,33 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-export function ExchangeMessage({ exchange, onSeek, videoId }: ExchangeMessageProps) {
+function SpeakerButton({ exchange, onPlay, isPlaying, isLoading }: { exchange: UnifiedExchange; onPlay: (id: string, text: string) => void; isPlaying: boolean; isLoading: boolean }) {
+  return (
+    <button
+      onClick={() => onPlay(exchange.id, exchange.aiText)}
+      className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-white/[0.06] ${
+        isPlaying ? 'opacity-100 text-emerald-400' : isLoading ? 'opacity-100 text-chalk-accent' : 'text-slate-500 hover:text-slate-300'
+      }`}
+      aria-label={isPlaying ? 'Playing...' : 'Read aloud'}
+      title={isPlaying ? 'Playing...' : 'Read aloud'}
+    >
+      {isLoading ? (
+        <div className="w-3 h-3 border border-chalk-accent/50 border-t-chalk-accent rounded-full animate-spin" />
+      ) : isPlaying ? (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+          <path d="M8.5 4.75a.75.75 0 0 0-1.107-.66l-3.5 1.88A.75.75 0 0 0 3.5 6.62v2.76a.75.75 0 0 0 .393.66l3.5 1.88a.75.75 0 0 0 1.107-.66V4.75Z" />
+          <path d="M11.26 5.73a.75.75 0 0 1 1.01.31 5.003 5.003 0 0 1 0 3.92.75.75 0 1 1-1.32-.71 3.503 3.503 0 0 0 0-2.5.75.75 0 0 1 .31-1.02Z" />
+        </svg>
+      ) : (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3">
+          <path d="M8.5 4.75a.75.75 0 0 0-1.107-.66l-3.5 1.88A.75.75 0 0 0 3.5 6.62v2.76a.75.75 0 0 0 .393.66l3.5 1.88a.75.75 0 0 0 1.107-.66V4.75Z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
+export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPlaying, isReadAloudLoading }: ExchangeMessageProps) {
   return (
     <div className="space-y-3">
       {/* User message - right aligned with max width */}
@@ -206,9 +235,17 @@ export function ExchangeMessage({ exchange, onSeek, videoId }: ExchangeMessagePr
             {renderRichContent(exchange.aiText, onSeek, videoId)}
           </div>
 
-          {/* Copy button */}
-          <div className="mt-1 flex items-center">
+          {/* Action buttons */}
+          <div className="mt-1 flex items-center gap-0.5">
             <CopyButton text={exchange.aiText} />
+            {onPlayMessage && (
+              <SpeakerButton
+                exchange={exchange}
+                onPlay={onPlayMessage}
+                isPlaying={!!isPlaying}
+                isLoading={!!isReadAloudLoading}
+              />
+            )}
           </div>
         </div>
       </motion.div>

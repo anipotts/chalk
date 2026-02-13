@@ -132,7 +132,6 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
     <MediaPlayer
       ref={player}
       src={`youtube/${videoId}`}
-      autoPlay
       playsInline
       aspectRatio="16/9"
       onPause={() => onPause?.()}
@@ -148,13 +147,15 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
         }
       }}
       onCanPlay={() => {
-        const savedSpeed = localStorage.getItem('chalk-playback-speed');
-        if (savedSpeed && player.current) {
-          safePlayerCall(player.current, (pl) => { pl.playbackRate = parseFloat(savedSpeed); });
-        }
+        try {
+          const savedSpeed = localStorage.getItem('chalk-playback-speed');
+          if (savedSpeed && player.current) {
+            safePlayerCall(player.current, (pl) => { pl.playbackRate = parseFloat(savedSpeed); });
+          }
+        } catch { /* localStorage may throw in private browsing */ }
         onReady?.();
       }}
-      className="w-full rounded-none md:rounded-xl overflow-hidden bg-black"
+      className="w-full rounded-none md:rounded-2xl overflow-hidden bg-black"
     >
       <MediaProvider />
       <DefaultVideoLayout icons={defaultLayoutIcons} />

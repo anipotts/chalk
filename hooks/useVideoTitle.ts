@@ -18,15 +18,15 @@ export function useVideoTitle(videoId: string | null): {
   useEffect(() => {
     if (!videoId) return;
 
+    let cancelled = false;
     setLoading(true);
-    const controller = new AbortController();
 
     fetch(
       `https://noembed.com/embed?url=https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,
-      { signal: controller.signal }
     )
       .then((res) => res.json())
       .then((data: { title?: string; author_name?: string }) => {
+        if (cancelled) return;
         if (data.title) {
           setTitle(data.title);
         }
@@ -34,13 +34,16 @@ export function useVideoTitle(videoId: string | null): {
           setChannelName(data.author_name);
         }
       })
-      .catch((err) => {
-        if (err instanceof DOMException && err.name === 'AbortError') return;
+      .catch(() => {
+        if (cancelled) return;
         // Silently fail — title is optional
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (cancelled) return;
+        setLoading(false);
+      });
 
-    return () => controller.abort();
+    return () => { cancelled = true; };
   }, [videoId]);
 
   return { title, channelName, loading };

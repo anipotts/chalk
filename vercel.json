@@ -19,6 +19,9 @@
     },
     "app/api/youtube/warm-cache/route.ts": {
       "maxDuration": 300
+    },
+    "app/api/learn-options/route.ts": {
+      "maxDuration": 60
     }
   }
 }

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { splitReasoningFromText } from '@/lib/stream-parser';
 import type { TranscriptSegment } from '@/lib/video-utils';
+import type { LearnOption } from './useLearnOptions';
 
 export interface QuizOption {
   id: string;
@@ -33,12 +34,19 @@ export type ParsedAction = ParsedQuiz | ParsedExplanation;
 
 export type LearnModePhase =
   | 'idle'
-  | 'selecting_difficulty'
+  | 'selecting_action'
   | 'loading'
   | 'quiz_active'
   | 'reviewing';
 
+// Keep Difficulty type for backward compat but it's no longer primary
 export type Difficulty = 'beginner' | 'intermediate' | 'advanced';
+
+export interface LearnAction {
+  id: string;
+  label: string;
+  intent: 'patient' | 'impatient';
+}
 
 interface UseLearnModeOptions {
   segments: TranscriptSegment[];
@@ -49,13 +57,15 @@ interface UseLearnModeOptions {
 
 export interface UseLearnModeReturn {
   phase: LearnModePhase;
-  difficulty: Difficulty | null;
-  openDifficultySelector: () => void;
-  startLearnMode: (difficulty: Difficulty) => void;
+  selectedAction: LearnAction | null;
+  openActionSelector: () => void;
+  executeAction: (action: LearnAction) => void;
   stopLearnMode: () => void;
   currentQuiz: ParsedQuiz | null;
   currentExplanation: ParsedExplanation | null;
   introText: string;
+  responseContent: string;
+  exportableContent: string | null;
   selectAnswer: (questionIndex: number, optionId: string) => void;
   answers: Map<number, string>;
   requestNextBatch: () => void;
@@ -64,11 +74,10 @@ export interface UseLearnModeReturn {
   thinking: string | null;
   thinkingDuration: number | null;
   error: string | null;
+  // Legacy compat
+  difficulty: Difficulty | null;
 }
 
-/**
- * Extract JSON from a fenced code block in the response text.
- */
 function extractJsonFromResponse(text: string): { intro: string; action: ParsedAction | null } {
   const jsonMatch = text.match(/```json\s*([\s\S]*?)```/);
   if (!jsonMatch) {
@@ -99,10 +108,12 @@ export function useLearnMode({
   videoTitle,
 }: UseLearnModeOptions): UseLearnModeReturn {
   const [phase, setPhase] = useState<LearnModePhase>('idle');
-  const [difficulty, setDifficulty] = useState<Difficulty | null>(null);
+  const [selectedAction, setSelectedAction] = useState<LearnAction | null>(null);
   const [currentQuiz, setCurrentQuiz] = useState<ParsedQuiz | null>(null);
   const [currentExplanation, setCurrentExplanation] = useState<ParsedExplanation | null>(null);
   const [introText, setIntroText] = useState('');
+  const [responseContent, setResponseContent] = useState('');
+  const [exportableContent, setExportableContent] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Map<number, string>>(new Map());
   const [score, setScore] = useState({ correct: 0, total: 0 });
   const [thinking, setThinking] = useState<string | null>(null);
@@ -114,10 +125,10 @@ export function useLearnMode({
   const historyRef = useRef<Array<{ role: 'user' | 'assistant'; content: string }>>([]);
   const currentTimeRef = useRef(currentTime);
   const segmentsRef = useRef(segments);
-  currentTimeRef.current = currentTime;
-  segmentsRef.current = segments;
+  useEffect(() => { currentTimeRef.current = currentTime; }, [currentTime]);
+  useEffect(() => { segmentsRef.current = segments; }, [segments]);
 
-  const fetchQuiz = useCallback(async (diff: Difficulty, userMessage?: string) => {
+  const executeLearnAction = useCallback(async (action: LearnAction, userMessage?: string) => {
     abortRef.current?.abort();
     const abortController = new AbortController();
     abortRef.current = abortController;
@@ -129,10 +140,11 @@ export function useLearnMode({
     setCurrentQuiz(null);
     setCurrentExplanation(null);
     setIntroText('');
+    setResponseContent('');
+    setExportableContent(null);
     setAnswers(new Map());
     setPhase('loading');
 
-    // Add user message to history if provided
     if (userMessage) {
       historyRef.current.push({ role: 'user', content: userMessage });
     }
@@ -146,7 +158,7 @@ export function useLearnMode({
           currentTimestamp: currentTimeRef.current,
           videoTitle,
           history: historyRef.current,
-          difficulty: diff,
+          action: { id: action.id, label: action.label, intent: action.intent },
           score,
         }),
         signal: abortController.signal,
@@ -172,7 +184,6 @@ export function useLearnMode({
 
         const { reasoning, text, hasSeparator } = splitReasoningFromText(fullRaw);
 
-        // Update thinking display
         if (reasoning) {
           setThinking(reasoning);
         }
@@ -181,15 +192,15 @@ export function useLearnMode({
           thinkingDone = true;
         }
 
-        // Try to parse the text content as it streams
         if (hasSeparator && text) {
-          const { intro, action } = extractJsonFromResponse(text);
+          const { intro, action: parsedAction } = extractJsonFromResponse(text);
           setIntroText(intro);
-          if (action?.type === 'quiz') {
-            setCurrentQuiz(action);
+          setResponseContent(text);
+          if (parsedAction?.type === 'quiz') {
+            setCurrentQuiz(parsedAction);
             setPhase('quiz_active');
-          } else if (action?.type === 'explanation') {
-            setCurrentExplanation(action);
+          } else if (parsedAction?.type === 'explanation') {
+            setCurrentExplanation(parsedAction);
             setPhase('reviewing');
           }
         }
@@ -203,21 +214,24 @@ export function useLearnMode({
         setThinkingDuration(Date.now() - thinkingStart);
       }
 
-      const { intro, action } = extractJsonFromResponse(finalText);
+      const { intro, action: parsedAction } = extractJsonFromResponse(finalText);
       setIntroText(intro);
+      setResponseContent(finalText);
 
-      if (action?.type === 'quiz') {
-        setCurrentQuiz(action);
+      if (parsedAction?.type === 'quiz') {
+        setCurrentQuiz(parsedAction);
         setPhase('quiz_active');
-      } else if (action?.type === 'explanation') {
-        setCurrentExplanation(action);
+        setExportableContent(null); // quizzes aren't exported as markdown
+      } else if (parsedAction?.type === 'explanation') {
+        setCurrentExplanation(parsedAction);
         setPhase('reviewing');
+        setExportableContent(parsedAction.content);
       } else {
-        // Fallback: show the text as intro even without structured action
+        // Non-quiz response — show as markdown content
         setPhase('reviewing');
+        setExportableContent(finalText);
       }
 
-      // Save assistant response to history
       historyRef.current.push({ role: 'assistant', content: finalText });
     } catch (err) {
       if (abortController.signal.aborted) return;
@@ -229,12 +243,14 @@ export function useLearnMode({
     }
   }, [videoTitle, score]);
 
-  const openDifficultySelector = useCallback(() => {
-    setPhase('selecting_difficulty');
-    setDifficulty(null);
+  const openActionSelector = useCallback(() => {
+    setPhase('selecting_action');
+    setSelectedAction(null);
     setCurrentQuiz(null);
     setCurrentExplanation(null);
     setIntroText('');
+    setResponseContent('');
+    setExportableContent(null);
     setAnswers(new Map());
     setScore({ correct: 0, total: 0 });
     setThinking(null);
@@ -243,18 +259,22 @@ export function useLearnMode({
     historyRef.current = [];
   }, []);
 
-  const startLearnMode = useCallback((diff: Difficulty) => {
-    setDifficulty(diff);
-    fetchQuiz(diff);
-  }, [fetchQuiz]);
+  const executeAction = useCallback((action: LearnAction) => {
+    setSelectedAction(action);
+    const userMsg = `${action.label}. Focus on what I've watched so far.`;
+    historyRef.current.push({ role: 'user', content: userMsg });
+    executeLearnAction(action);
+  }, [executeLearnAction]);
 
   const stopLearnMode = useCallback(() => {
     abortRef.current?.abort();
     setPhase('idle');
-    setDifficulty(null);
+    setSelectedAction(null);
     setCurrentQuiz(null);
     setCurrentExplanation(null);
     setIntroText('');
+    setResponseContent('');
+    setExportableContent(null);
     setAnswers(new Map());
     setScore({ correct: 0, total: 0 });
     setThinking(null);
@@ -270,7 +290,6 @@ export function useLearnMode({
       if (!next.has(questionIndex)) {
         next.set(questionIndex, optionId);
 
-        // Update score
         if (currentQuiz?.questions[questionIndex]?.correctId === optionId) {
           setScore((s) => ({ correct: s.correct + 1, total: s.total + 1 }));
         } else {
@@ -282,9 +301,8 @@ export function useLearnMode({
   }, [currentQuiz]);
 
   const requestNextBatch = useCallback(() => {
-    if (!difficulty) return;
+    if (!selectedAction) return;
 
-    // Build a summary of the user's answers for context
     const answerSummary = currentQuiz?.questions.map((q, i) => {
       const selected = answers.get(i);
       const isCorrect = selected === q.correctId;
@@ -292,18 +310,20 @@ export function useLearnMode({
     }).join('\n') || '';
 
     const userMessage = `Here are my answers:\n${answerSummary}\n\nGive me the next batch of questions, adapting difficulty based on my performance.`;
-    fetchQuiz(difficulty, userMessage);
-  }, [difficulty, currentQuiz, answers, fetchQuiz]);
+    executeLearnAction(selectedAction, userMessage);
+  }, [selectedAction, currentQuiz, answers, executeLearnAction]);
 
   return {
     phase,
-    difficulty,
-    openDifficultySelector,
-    startLearnMode,
+    selectedAction,
+    openActionSelector,
+    executeAction,
     stopLearnMode,
     currentQuiz,
     currentExplanation,
     introText,
+    responseContent,
+    exportableContent,
     selectAnswer,
     answers,
     requestNextBatch,
@@ -312,5 +332,7 @@ export function useLearnMode({
     thinking,
     thinkingDuration,
     error,
+    // Legacy compat
+    difficulty: null,
   };
 }

@@ -1,6 +1,6 @@
 import { streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { buildLearnModePrompt, buildTranscriptContext } from '@/lib/prompts/learn-mode';
+import { getLearnModeSystemPrompt, buildLearnModePrompt, buildTranscriptContext } from '@/lib/prompts/learn-mode';
 import { formatTimestamp, type TranscriptSegment } from '@/lib/video-utils';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { segments, currentTimestamp, videoTitle, history, difficulty, score } = body;
+  const { segments, currentTimestamp, videoTitle, history, action, difficulty, score } = body;
 
   // Validate
   if (segments && !Array.isArray(segments)) {
@@ -26,18 +26,52 @@ export async function POST(req: Request) {
 
   const typedSegments = (segments || []) as TranscriptSegment[];
   const currentTime = typeof currentTimestamp === 'number' ? currentTimestamp : 0;
+  const safeVideoTitle = typeof videoTitle === 'string' ? videoTitle.slice(0, 200) : undefined;
 
   // Build transcript context
   const transcriptContext = buildTranscriptContext(typedSegments, currentTime);
 
-  // Build system prompt
-  const systemPrompt = buildLearnModePrompt({
-    transcriptContext,
-    currentTimestamp: formatTimestamp(currentTime),
-    videoTitle: typeof videoTitle === 'string' ? videoTitle.slice(0, 200) : undefined,
-    difficulty: typeof difficulty === 'string' ? difficulty : undefined,
-    score: score && typeof score.correct === 'number' ? score : undefined,
-  });
+  // Determine if using new action-based or legacy difficulty-based mode
+  const hasAction = action && typeof action === 'object' && action.id;
+
+  const cacheOpts = { anthropic: { cacheControl: { type: 'ephemeral' as const } } };
+
+  let systemInput: string | Array<{ role: 'system'; content: string; providerOptions?: typeof cacheOpts }>;
+
+  if (hasAction) {
+    // New action-based mode with prompt caching
+    const basePrompt = getLearnModeSystemPrompt(action.id, action.intent || 'patient');
+    const videoTitleBlock = safeVideoTitle ? `\n<video_title>${safeVideoTitle}</video_title>` : '';
+    const scoreBlock = score && typeof score.correct === 'number' && score.total > 0
+      ? `\n<student_performance>The student has answered ${score.correct} out of ${score.total} questions correctly so far. Adjust difficulty accordingly.</student_performance>`
+      : '';
+
+    systemInput = [
+      {
+        role: 'system' as const,
+        content: basePrompt + videoTitleBlock + scoreBlock,
+        providerOptions: cacheOpts,
+      },
+      {
+        role: 'system' as const,
+        content: `<transcript>\n${transcriptContext}\n</transcript>`,
+        providerOptions: cacheOpts,
+      },
+      {
+        role: 'system' as const,
+        content: `<current_position>${formatTimestamp(currentTime)}</current_position>`,
+      },
+    ];
+  } else {
+    // Legacy difficulty-based mode (single string, no caching)
+    systemInput = buildLearnModePrompt({
+      transcriptContext,
+      currentTimestamp: formatTimestamp(currentTime),
+      videoTitle: safeVideoTitle,
+      difficulty: typeof difficulty === 'string' ? difficulty : undefined,
+      score: score && typeof score.correct === 'number' ? score : undefined,
+    });
+  }
 
   // Build messages array (cap at 20)
   const MAX_HISTORY = 20;
@@ -54,26 +88,36 @@ export async function POST(req: Request) {
 
   // Always add a user message if history is empty
   if (messages.length === 0) {
-    const diffLabel = difficulty || 'intermediate';
-    messages.push({
-      role: 'user',
-      content: `Start Learn Mode at ${diffLabel} difficulty. Generate a quiz about what I've watched so far.`,
-    });
+    if (hasAction) {
+      messages.push({
+        role: 'user',
+        content: `${action.label}. Focus on what I've watched so far.`,
+      });
+    } else {
+      const diffLabel = difficulty || 'intermediate';
+      messages.push({
+        role: 'user',
+        content: `Start Learn Mode at ${diffLabel} difficulty. Generate a quiz about what I've watched so far.`,
+      });
+    }
   }
 
-  // Use Opus 4.6 with thinking enabled -- this is THE hackathon showcase
-  const model = anthropic('claude-opus-4-6', {
-    thinking: { type: 'enabled', budgetTokens: 10000 },
-  });
+  // Use Opus 4.6 with thinking enabled
+  const model = anthropic('claude-opus-4-6');
 
   const result = streamText({
     model,
-    system: systemPrompt,
+    system: systemInput,
     messages,
     maxOutputTokens: 4000,
+    providerOptions: {
+      anthropic: {
+        thinking: { type: 'enabled', budgetTokens: 10000 },
+      },
+    },
   });
 
-  // Stream with reasoning separator protocol (same as /api/generate)
+  // Stream with reasoning separator protocol
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {

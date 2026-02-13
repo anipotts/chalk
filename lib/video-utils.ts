@@ -7,6 +7,7 @@ export interface TranscriptSegment {
   text: string;
   offset: number; // seconds
   duration: number; // seconds
+  words?: Array<{ text: string; startMs: number }>;
 }
 
 export type TranscriptSource =

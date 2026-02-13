@@ -7,10 +7,12 @@ import { ExchangeMessage, renderRichContent, type UnifiedExchange } from './Exch
 import { LearnModeQuiz } from './LearnModeQuiz';
 import type { VoiceState } from '@/hooks/useVoiceMode';
 import type { TranscriptSegment, TranscriptSource } from '@/lib/video-utils';
-import type { ParsedQuiz, ParsedExplanation, Difficulty, LearnModePhase } from '@/hooks/useLearnMode';
+import type { ParsedQuiz, ParsedExplanation, LearnModePhase, LearnAction } from '@/hooks/useLearnMode';
+import type { LearnOption } from '@/hooks/useLearnOptions';
 
 interface InteractionOverlayProps {
   visible: boolean;
+  viewSize?: 'compact' | 'default' | 'expanded';
   segments: TranscriptSegment[];
   currentTime: number;
   videoId: string;
@@ -37,29 +39,43 @@ interface InteractionOverlayProps {
   onTextSubmit: (text: string) => Promise<void>;
   onStopTextStream: () => void;
 
+  // Read aloud
+  autoReadAloud: boolean;
+  onToggleAutoReadAloud: (enabled: boolean) => void;
+  playingMessageId: string | null;
+  onPlayMessage: (id: string, text: string) => void;
+  isReadAloudLoading: boolean;
+
   // Unified state
   exchanges: UnifiedExchange[];
   onClearHistory: () => void;
 
-  blurLevel: 'light' | 'full';
+  blurLevel: 'none' | 'active';
   onSeek: (seconds: number) => void;
   onClose: () => void;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
+  pendingKey?: string | null;
+  onConsumePendingKey?: () => void;
 
   // Learn mode
   learnPhase: LearnModePhase;
-  learnDifficulty: Difficulty | null;
+  learnSelectedAction: LearnAction | null;
   learnQuiz: ParsedQuiz | null;
   learnExplanation: ParsedExplanation | null;
   learnIntroText: string;
+  learnResponseContent: string;
+  learnExportableContent: string | null;
   learnAnswers: Map<number, string>;
   learnScore: { correct: number; total: number };
   learnThinking: string | null;
   learnThinkingDuration: number | null;
   learnLoading: boolean;
   learnError: string | null;
+  learnOptions: LearnOption[];
+  learnOptionsLoading: boolean;
   onOpenLearnMode: () => void;
-  onSelectDifficulty: (difficulty: Difficulty) => void;
+  onSelectAction: (action: LearnAction) => void;
+  onFocusInput?: () => void;
   onSelectAnswer: (questionIndex: number, optionId: string) => void;
   onNextBatch: () => void;
   onStopLearnMode: () => void;
@@ -72,23 +88,6 @@ function formatDuration(seconds: number): string {
 }
 
 /* --- Voice mode visual elements --- */
-
-function PulsingRings() {
-  return (
-    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-      <motion.div
-        className="absolute w-32 h-32 rounded-full border border-rose-500/30"
-        animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0, 0.5] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        className="absolute w-32 h-32 rounded-full border border-rose-500/20"
-        animate={{ scale: [1, 1.8, 1], opacity: [0.3, 0, 0.3] }}
-        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-      />
-    </div>
-  );
-}
 
 function SoundWaveBars() {
   const bars = [0.4, 0.7, 1, 0.6, 0.9, 0.5, 0.8];
@@ -138,6 +137,7 @@ function DownArrowIcon() {
 
 export function InteractionOverlay({
   visible,
+  viewSize = 'default',
   videoId,
   videoTitle,
   voiceId,
@@ -161,6 +161,13 @@ export function InteractionOverlay({
   onTextSubmit,
   onStopTextStream,
 
+  // Read aloud
+  autoReadAloud,
+  onToggleAutoReadAloud,
+  playingMessageId,
+  onPlayMessage,
+  isReadAloudLoading,
+
   // Unified
   exchanges,
   onClearHistory,
@@ -169,21 +176,28 @@ export function InteractionOverlay({
   onSeek,
   onClose,
   inputRef,
+  pendingKey,
+  onConsumePendingKey,
 
   // Learn mode
   learnPhase,
-  learnDifficulty,
+  learnSelectedAction,
   learnQuiz,
   learnExplanation,
   learnIntroText,
+  learnResponseContent,
+  learnExportableContent,
   learnAnswers,
   learnScore,
   learnThinking,
   learnThinkingDuration,
   learnLoading,
   learnError,
+  learnOptions,
+  learnOptionsLoading,
   onOpenLearnMode,
-  onSelectDifficulty,
+  onSelectAction,
+  onFocusInput,
   onSelectAnswer,
   onNextBatch,
   onStopLearnMode,
@@ -192,14 +206,14 @@ export function InteractionOverlay({
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const viewMaxWidth = viewSize === 'compact' ? 'max-w-2xl' : viewSize === 'expanded' ? 'max-w-6xl' : 'max-w-4xl';
+
   const handleTimestampSeek = useCallback((seconds: number) => {
     onSeek(seconds);
     onClose();
   }, [onSeek, onClose]);
 
   const isTextMode = voiceState === 'idle';
-  const isProcessing = voiceState === 'transcribing' || voiceState === 'thinking';
-  const hasClone = Boolean(voiceId) && !isVoiceCloning;
 
   // One-time cleanup of old localStorage keys
   useEffect(() => {
@@ -209,28 +223,21 @@ export function InteractionOverlay({
     } catch { /* ignore */ }
   }, []);
 
+  // Consume pending key from keyboard shortcut that opened the overlay
+  useEffect(() => {
+    if (pendingKey) {
+      setInput((prev) => prev + pendingKey);
+      onConsumePendingKey?.();
+      // Focus after the character is set
+      requestAnimationFrame(() => inputRef?.current?.focus());
+    }
+  }, [pendingKey, onConsumePendingKey, inputRef]);
+
   const isLearnModeActive = learnPhase !== 'idle';
+  const hasContent = exchanges.length > 0 || isTextStreaming || !!currentUserText || !!currentAiText || !!voiceTranscript || !!voiceResponseText || isLearnModeActive;
 
   // Show idle hint when: text mode + no exchanges + no input + no current text exchange + not in learn mode
   const showIdleHint = isTextMode && exchanges.length === 0 && !input && !currentUserText && !currentAiText && !isTextStreaming && !isLearnModeActive;
-
-  // Show text input area - always visible (voice button can change states independently)
-  const showTextInput = true;
-
-  // Activate text mode (open input)
-  const activateTextMode = useCallback(() => {
-    if (showIdleHint) {
-      setTimeout(() => inputRef?.current?.focus(), 100);
-    }
-  }, [showIdleHint, inputRef]);
-
-  const stateLabel = {
-    idle: 'Hold to speak',
-    recording: 'Listening...',
-    transcribing: 'Hearing you...',
-    thinking: 'Thinking...',
-    speaking: 'Hold mic to interrupt',
-  };
 
   // Auto-scroll
   const scrollToBottom = useCallback(() => {
@@ -260,79 +267,62 @@ export function InteractionOverlay({
     <AnimatePresence>
       {visible && (
         <motion.div
-          className="absolute inset-0 z-30 flex flex-col items-center justify-center"
+          className="absolute inset-0 z-30 flex flex-col items-center md:justify-start md:p-4 md:pt-12"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {/* Backdrop with dynamic blur - clickable to close */}
+          {/* Backdrop - clickable to close only when blur is active, otherwise clicks pass through to video */}
           <div
-            className={`absolute inset-0 ${blurLevel === 'full' ? 'bg-black/70' : 'bg-black/30'} backdrop-blur-xl cursor-pointer`}
+            className={`absolute inset-0 transition-all duration-300 ${
+              blurLevel === 'active'
+                ? 'bg-black/40 backdrop-blur-md cursor-pointer'
+                : 'pointer-events-none'
+            }`}
             onClick={(e) => {
-              if (e.target === e.currentTarget) {
+              if (blurLevel === 'active' && e.target === e.currentTarget) {
                 onClose();
               }
             }}
           />
 
-          {/* Close button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition-colors pointer-events-auto"
-            title="Close (Esc)"
-            aria-label="Close overlay"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
-            </svg>
-          </button>
 
-
-          {/* UNIFIED INPUT MODE */}
+          {/* UNIFIED INPUT MODE — swipe down to dismiss */}
           <motion.div
             key="text-mode"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="relative z-10 flex flex-col items-center w-full max-w-2xl mx-auto px-6 h-[80vh] max-h-[700px] pointer-events-none"
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.5 }}
+            onDragEnd={(_, info) => {
+              if (info.offset.y > 100 || info.velocity.y > 500) onClose();
+            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className={`relative z-10 flex flex-col w-full ${viewMaxWidth} mx-auto pointer-events-none flex-1 min-h-0 md:flex-none md:aspect-video md:overflow-hidden md:rounded-xl md:border-[3px] md:border-chalk-accent md:bg-black/70 md:backdrop-blur-2xl md:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.5)] transition-[max-width] duration-300 ease-out ${
+              hasContent ? 'items-center' : 'items-center justify-end'
+            }`}
           >
+              {/* Mobile grip indicator for swipe-to-close */}
+              <div className="md:hidden w-8 h-1 rounded-full bg-white/20 mx-auto mb-3 flex-shrink-0 pointer-events-auto" />
 
               {/* Messages - unified container for all messages */}
-              <div
+              {hasContent && <div
                 ref={scrollRef}
                 onScroll={handleScroll}
-                className="flex-1 w-full overflow-y-auto scroll-smooth space-y-3 mb-4 pointer-events-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                className="flex-1 w-full overflow-y-auto scroll-smooth space-y-3 md:space-y-4 px-2 md:px-5 py-2 md:py-4 pointer-events-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
               >
-                {/* Learn mode UI - replaces chat when active */}
-                {isLearnModeActive ? (
-                  <LearnModeQuiz
-                    phase={learnPhase}
-                    quiz={learnQuiz}
-                    explanation={learnExplanation}
-                    introText={learnIntroText}
-                    answers={learnAnswers}
-                    score={learnScore}
-                    difficulty={learnDifficulty}
-                    thinking={learnThinking}
-                    thinkingDuration={learnThinkingDuration}
-                    isLoading={learnLoading}
-                    error={learnError}
-                    onSelectAnswer={onSelectAnswer}
-                    onSelectDifficulty={onSelectDifficulty}
-                    onNextBatch={onNextBatch}
-                    onStop={onStopLearnMode}
-                    onSeek={handleTimestampSeek}
-                  />
-                ) : (
-                <>
-                {/* Past exchanges */}
+                {/* Past exchanges — always shown */}
                 {exchanges.map((exchange) => (
                   <ExchangeMessage
                     key={exchange.id}
                     exchange={exchange}
                     onSeek={handleTimestampSeek}
                     videoId={videoId}
+                    onPlayMessage={onPlayMessage}
+                    isPlaying={playingMessageId === exchange.id}
+                    isReadAloudLoading={isReadAloudLoading && playingMessageId === exchange.id}
                   />
                 ))}
 
@@ -381,13 +371,40 @@ export function InteractionOverlay({
                     {textError || voiceError}
                   </motion.div>
                 )}
-                </>
-                )}
-              </div>
 
-              {/* Scroll to bottom button - only when there are exchanges */}
+                {/* Learn mode content — shown below chat, not replacing it */}
+                {isLearnModeActive && (
+                  <LearnModeQuiz
+                    phase={learnPhase}
+                    quiz={learnQuiz}
+                    explanation={learnExplanation}
+                    introText={learnIntroText}
+                    responseContent={learnResponseContent}
+                    exportableContent={learnExportableContent}
+                    answers={learnAnswers}
+                    score={learnScore}
+                    selectedAction={learnSelectedAction}
+                    thinking={learnThinking}
+                    thinkingDuration={learnThinkingDuration}
+                    isLoading={learnLoading}
+                    error={learnError}
+                    learnOptions={learnOptions}
+                    learnOptionsLoading={learnOptionsLoading}
+                    videoTitle={videoTitle}
+                    videoId={videoId}
+                    onSelectAnswer={onSelectAnswer}
+                    onSelectAction={onSelectAction}
+                    onFocusInput={onFocusInput}
+                    onNextBatch={onNextBatch}
+                    onStop={onStopLearnMode}
+                    onSeek={handleTimestampSeek}
+                  />
+                )}
+              </div>}
+
+              {/* Scroll to bottom button */}
               {exchanges.length > 0 && isScrolledUp && (
-                <div className="absolute bottom-[72px] left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
                   <button
                     onClick={scrollToBottom}
                     className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-chalk-surface/90 border border-chalk-border/40 text-[11px] text-slate-400 hover:text-slate-200 shadow-lg transition-colors"
@@ -397,394 +414,164 @@ export function InteractionOverlay({
                   </button>
                 </div>
               )}
+            </motion.div>
 
-              {/* Input row: Text input | Mic button | Send button */}
-              {showTextInput && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.97 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.97 }}
-                  transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-                  className={`pointer-events-auto ${exchanges.length > 0 || isLearnModeActive ? 'flex-none w-full' : 'w-full max-w-md'}`}
-                >
-                  {/* Unified input row */}
-                  <div className="flex items-center gap-2">
-                    <TextInput
-                      value={input}
-                      onChange={setInput}
-                      onSubmit={handleSubmit}
-                      isStreaming={isTextStreaming}
-                      onStop={onStopTextStream}
-                      placeholder="Ask about this video..."
-                      inputRef={inputRef}
-                      autoFocus={true}
-                    />
-
-                    {/* Learn mode button */}
-                    {!isLearnModeActive && (
+            {/* Input area — below the messages frame */}
+            <div className={`relative z-10 flex-none w-full ${viewMaxWidth} mx-auto pointer-events-none md:mt-3 transition-[max-width] duration-300 ease-out`}>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                className={`pointer-events-auto ${exchanges.length > 0 || isLearnModeActive ? 'flex-none w-full' : 'w-full max-w-md mx-auto'}`}
+              >
+                {/* Unified input row */}
+                <div className="flex items-center gap-2">
+                  <TextInput
+                    value={input}
+                    onChange={setInput}
+                    onSubmit={handleSubmit}
+                    isStreaming={isTextStreaming}
+                    onStop={onStopTextStream}
+                    placeholder="Ask about this video..."
+                    inputRef={inputRef}
+                    autoFocus={true}
+                    rightSlot={
                       <button
                         type="button"
-                        onClick={onOpenLearnMode}
+                        onClick={isLearnModeActive ? onStopLearnMode : onOpenLearnMode}
                         disabled={isTextStreaming}
-                        className="flex-shrink-0 h-11 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.15] text-white/70 hover:text-white transition-all text-xs font-medium disabled:opacity-30"
-                        title="Start Learn Mode"
-                        aria-label="Start Learn Mode"
+                        className={`h-7 px-2.5 rounded-lg text-[11px] font-medium transition-all disabled:opacity-30 ${
+                          isLearnModeActive
+                            ? 'bg-chalk-accent/15 text-chalk-accent hover:bg-chalk-accent/25'
+                            : 'bg-white/[0.06] hover:bg-white/[0.12] text-white/50 hover:text-white/80'
+                        }`}
+                        title={isLearnModeActive ? 'Exit Learn Mode' : 'Start Learn Mode'}
+                        aria-label={isLearnModeActive ? 'Exit Learn Mode' : 'Start Learn Mode'}
                       >
                         Learn
                       </button>
-                    )}
+                    }
+                  />
 
-                    {/* Mic button */}
-                    <motion.button
-                      className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-all ${
-                        voiceState === 'recording'
-                          ? 'bg-rose-500 shadow-lg shadow-rose-500/30'
-                          : voiceState === 'speaking'
-                            ? 'bg-emerald-500/20 border border-emerald-500/40'
-                            : voiceState === 'transcribing' || voiceState === 'thinking'
-                              ? 'bg-chalk-accent/20 border border-chalk-accent/40'
-                              : 'bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.15]'
-                      }`}
-                      onPointerDown={(e) => {
-                        e.preventDefault();
-                        if (voiceState === 'idle') onStartRecording();
-                      }}
-                      onPointerUp={(e) => {
-                        e.preventDefault();
-                        if (voiceState === 'recording') onStopRecording();
-                      }}
-                      onPointerLeave={(e) => {
-                        e.preventDefault();
-                        if (voiceState === 'recording') onStopRecording();
-                      }}
-                      whileTap={{ scale: 0.95 }}
-                      title="Hold to record voice"
-                      aria-label={voiceState === 'recording' ? 'Recording — release to stop' : voiceState === 'speaking' ? 'Speaker is responding' : 'Hold to record voice'}
-                    >
-                      {voiceState === 'speaking' ? (
-                        <div className="scale-75">
-                          <SoundWaveBars />
-                        </div>
-                      ) : (voiceState === 'transcribing' || voiceState === 'thinking') ? (
-                        <ThinkingDots />
-                      ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                          className={`w-5 h-5 ${voiceState === 'recording' ? 'text-white' : 'text-white/70'}`}
-                        >
-                          <path d="M12 2a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4Z" />
-                          <path d="M6 11a.75.75 0 0 0-1.5 0 7.5 7.5 0 0 0 6.75 7.46v2.79a.75.75 0 0 0 1.5 0v-2.79A7.5 7.5 0 0 0 19.5 11a.75.75 0 0 0-1.5 0 6 6 0 0 1-12 0Z" />
-                        </svg>
-                      )}
-                    </motion.button>
-
-                    {/* Send/Stop button */}
-                    {isTextStreaming ? (
-                      <button
-                        type="button"
-                        onClick={onStopTextStream}
-                        className="flex-shrink-0 w-11 h-11 rounded-xl bg-red-500/15 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500/25 transition-colors"
-                        title="Stop"
-                        aria-label="Stop response"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
-                          <rect x="3.5" y="3.5" width="9" height="9" rx="1.5" />
-                        </svg>
-                      </button>
+                  {/* Mic button */}
+                  <motion.button
+                    className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-all ${
+                      voiceState === 'recording'
+                        ? 'bg-rose-500 shadow-lg shadow-rose-500/30'
+                        : voiceState === 'speaking'
+                          ? 'bg-emerald-500/20 border border-emerald-500/40'
+                          : voiceState === 'transcribing' || voiceState === 'thinking'
+                            ? 'bg-chalk-accent/20 border border-chalk-accent/40'
+                            : 'bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.15]'
+                    }`}
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      if (voiceState === 'idle') onStartRecording();
+                    }}
+                    onPointerUp={(e) => {
+                      e.preventDefault();
+                      if (voiceState === 'recording') onStopRecording();
+                    }}
+                    onPointerLeave={(e) => {
+                      e.preventDefault();
+                      if (voiceState === 'recording') onStopRecording();
+                    }}
+                    whileTap={{ scale: 0.95 }}
+                    title="Hold to record voice"
+                    aria-label={voiceState === 'recording' ? 'Recording — release to stop' : voiceState === 'speaking' ? 'Speaker is responding' : 'Hold to record voice'}
+                  >
+                    {voiceState === 'speaking' ? (
+                      <div className="scale-75">
+                        <SoundWaveBars />
+                      </div>
+                    ) : (voiceState === 'transcribing' || voiceState === 'thinking') ? (
+                      <ThinkingDots />
                     ) : (
-                      <button
-                        type="button"
-                        onClick={handleSubmit}
-                        disabled={!input.trim()}
-                        className="flex-shrink-0 w-11 h-11 rounded-xl bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30 flex items-center justify-center hover:bg-chalk-accent/25 disabled:opacity-30 disabled:hover:bg-chalk-accent/15 transition-colors"
-                        title="Send"
-                        aria-label="Send message"
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                        className={`w-5 h-5 ${voiceState === 'recording' ? 'text-white' : 'text-white/70'}`}
                       >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
-                          <path fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />
-                        </svg>
-                      </button>
+                        <path d="M12 2a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4Z" />
+                        <path d="M6 11a.75.75 0 0 0-1.5 0 7.5 7.5 0 0 0 6.75 7.46v2.79a.75.75 0 0 0 1.5 0v-2.79A7.5 7.5 0 0 0 19.5 11a.75.75 0 0 0-1.5 0 6 6 0 0 1-12 0Z" />
+                      </svg>
                     )}
-                  </div>
+                  </motion.button>
 
-                  {/* Voice state indicator when recording/processing */}
-                  {voiceState !== 'idle' && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -5 }}
-                      className="mt-3 text-center"
+                  {/* Send/Stop button */}
+                  {isTextStreaming ? (
+                    <button
+                      type="button"
+                      onClick={onStopTextStream}
+                      className="flex-shrink-0 w-11 h-11 rounded-xl bg-red-500/15 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-500/25 transition-colors"
+                      title="Stop"
+                      aria-label="Stop response"
                     >
-                      <p className={`text-sm font-medium ${
-                        voiceState === 'recording' ? 'text-rose-400'
-                          : voiceState === 'speaking' ? 'text-emerald-400'
-                            : 'text-chalk-accent'
-                      }`}>
-                        {voiceState === 'recording' && `Recording... ${formatDuration(recordingDuration)}`}
-                        {voiceState === 'transcribing' && 'Transcribing...'}
-                        {voiceState === 'thinking' && 'Thinking...'}
-                        {voiceState === 'speaking' && 'Speaking...'}
-                      </p>
-                    </motion.div>
-                  )}
-
-                  {/* Voice error */}
-                  {voiceError && (
-                    <motion.div
-                      initial={{ opacity: 0, y: -5 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="mt-3 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2"
-                    >
-                      {voiceError}
-                    </motion.div>
-                  )}
-
-                  {/* Clear button - at bottom */}
-                  {exchanges.length > 0 && (
-                    <div className="mt-4 flex justify-center">
-                      <button
-                        onClick={onClearHistory}
-                        className="text-xs text-slate-500 hover:text-slate-300 px-3 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors"
-                        title="Clear conversation history"
-                      >
-                        Clear history
-                      </button>
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </motion.div>
-
-          {/* VOICE MODE STATE - Now unified with text mode, keeping this for voice transcript display */}
-          {false && !isTextMode && (
-            <motion.div
-              key="voice-mode"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className={`relative z-10 flex flex-col items-center gap-6 pointer-events-none ${
-                exchanges.length > 0 ? 'w-full max-w-2xl mx-auto px-6 h-[80vh] max-h-[600px]' : 'max-w-md px-6'
-              }`}
-            >
-              {/* Header - show when there are exchanges */}
-              {exchanges.length > 0 && (
-                <div className="w-full flex items-center justify-between mb-0 pointer-events-auto">
-                  <div className="text-white/70 text-xs">
-                    {videoTitle && <span className="font-medium">{videoTitle}</span>}
-                  </div>
-                  <button
-                    onClick={onClearHistory}
-                    className="text-[10px] text-slate-600 hover:text-slate-400 transition-colors px-1.5 py-0.5"
-                    title="Clear history"
-                  >
-                    Clear
-                  </button>
-                </div>
-              )}
-
-              {/* Speaker info - show when no exchanges */}
-              {exchanges.length === 0 && videoTitle && (
-                <div className="text-center">
-                  <p className="text-xs text-white/40 mb-1">Talking to</p>
-                  <p className="text-sm text-white/80 font-medium truncate max-w-[300px]">{videoTitle}</p>
-                </div>
-              )}
-
-              {/* Voice clone status */}
-              {isVoiceCloning && (
-                <div className="flex items-center gap-2 text-xs text-amber-400/80">
-                  <div className="w-3 h-3 border-2 border-amber-400/50 border-t-amber-400 rounded-full animate-spin" />
-                  Cloning speaker voice...
-                </div>
-              )}
-              {hasClone && (
-                <div className="flex items-center gap-1.5 text-xs text-emerald-400/70">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                  Voice cloned
-                </div>
-              )}
-
-              {/* Messages - show when there are exchanges */}
-              {exchanges.length > 0 && (
-                <div
-                  ref={scrollRef}
-                  onScroll={handleScroll}
-                  className="w-full max-h-[40vh] overflow-y-auto scroll-smooth space-y-4 mb-6 pointer-events-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-                >
-                  {/* Past exchanges */}
-                  {exchanges.map((exchange) => (
-                    <ExchangeMessage
-                      key={exchange.id}
-                      exchange={exchange}
-                      onSeek={handleTimestampSeek}
-                      videoId={videoId}
-                    />
-                  ))}
-
-                  {/* Current voice exchange */}
-                  {(voiceTranscript || voiceResponseText) && (
-                    <div className="space-y-3">
-                      {voiceTranscript && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex justify-end w-full"
-                        >
-                          <div className="max-w-[85%] px-3.5 py-2 rounded-2xl bg-chalk-accent/90 text-white text-sm leading-relaxed break-words">
-                            {voiceTranscript}
-                          </div>
-                        </motion.div>
-                      )}
-                      {voiceResponseText && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex justify-start w-full"
-                        >
-                          <div className="max-w-[85%] text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-                            {voiceResponseText}
-                          </div>
-                        </motion.div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Scroll to bottom button - only when there are exchanges */}
-              {exchanges.length > 0 && isScrolledUp && (
-                <div className="absolute bottom-[200px] left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
-                  <button
-                    onClick={scrollToBottom}
-                    className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-chalk-surface/90 border border-chalk-border/40 text-[11px] text-slate-400 hover:text-slate-200 shadow-lg transition-colors"
-                  >
-                    <DownArrowIcon />
-                    New messages
-                  </button>
-                </div>
-              )}
-
-              {/* Central visualization area */}
-              <div className="relative flex items-center justify-center w-40 h-40 pointer-events-auto">
-                {voiceState === 'recording' && <PulsingRings />}
-
-                {/* Mic button — push to talk */}
-                <motion.button
-                  className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-colors pointer-events-auto ${
-                    voiceState === 'recording'
-                      ? 'bg-rose-500 shadow-lg shadow-rose-500/30'
-                      : voiceState === 'speaking'
-                        ? 'bg-emerald-500/20 border-2 border-emerald-500/40 hover:bg-emerald-500/30'
-                        : isProcessing
-                          ? 'bg-chalk-accent/20 border-2 border-chalk-accent/40'
-                          : 'bg-white/10 hover:bg-white/20 border-2 border-white/20 hover:border-white/40'
-                  }`}
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    if (voiceState !== 'recording') onStartRecording();
-                  }}
-                  onPointerUp={(e) => {
-                    e.preventDefault();
-                    if (voiceState === 'recording') onStopRecording();
-                  }}
-                  onPointerLeave={(e) => {
-                    e.preventDefault();
-                    if (voiceState === 'recording') onStopRecording();
-                  }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {voiceState === 'speaking' ? (
-                    <SoundWaveBars />
-                  ) : isProcessing ? (
-                    <ThinkingDots />
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                        <rect x="3.5" y="3.5" width="9" height="9" rx="1.5" />
+                      </svg>
+                    </button>
                   ) : (
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
-                      className={`w-8 h-8 ${voiceState === 'recording' ? 'text-white' : 'text-white/70'}`}
+                    <button
+                      type="button"
+                      onClick={handleSubmit}
+                      disabled={!input.trim()}
+                      className="flex-shrink-0 w-11 h-11 rounded-xl bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30 flex items-center justify-center hover:bg-chalk-accent/25 disabled:opacity-30 disabled:hover:bg-chalk-accent/15 transition-colors"
+                      title="Send"
+                      aria-label="Send message"
                     >
-                      <path d="M12 2a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4Z" />
-                      <path d="M6 11a.75.75 0 0 0-1.5 0 7.5 7.5 0 0 0 6.75 7.46v2.79a.75.75 0 0 0 1.5 0v-2.79A7.5 7.5 0 0 0 19.5 11a.75.75 0 0 0-1.5 0 6 6 0 0 1-12 0Z" />
-                    </svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="w-4 h-4">
+                        <path fillRule="evenodd" d="M2 8a.75.75 0 0 1 .75-.75h8.69L8.22 4.03a.75.75 0 0 1 1.06-1.06l4.5 4.5a.75.75 0 0 1 0 1.06l-4.5 4.5a.75.75 0 0 1-1.06-1.06l3.22-3.22H2.75A.75.75 0 0 1 2 8Z" clipRule="evenodd" />
+                      </svg>
+                    </button>
                   )}
-                </motion.button>
-              </div>
+                </div>
 
-              {/* State label + duration */}
-              <div className="text-center">
-                <p className={`text-sm font-medium ${
-                  voiceState === 'recording' ? 'text-rose-400'
-                    : voiceState === 'speaking' ? 'text-emerald-400'
-                      : isProcessing ? 'text-chalk-accent'
-                        : 'text-white/50'
-                }`}>
-                  {stateLabel[voiceState]}
-                </p>
-                {voiceState === 'recording' && (
-                  <p className="text-xs text-white/30 mt-1 font-mono">{formatDuration(recordingDuration)}</p>
+                {/* Voice state indicator when recording/processing */}
+                {voiceState !== 'idle' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    className="mt-3 text-center"
+                  >
+                    <p className={`text-sm font-medium ${
+                      voiceState === 'recording' ? 'text-rose-400'
+                        : voiceState === 'speaking' ? 'text-emerald-400'
+                          : 'text-chalk-accent'
+                    }`}>
+                      {voiceState === 'recording' && `Recording... ${formatDuration(recordingDuration)}`}
+                      {voiceState === 'transcribing' && 'Transcribing...'}
+                      {voiceState === 'thinking' && 'Thinking...'}
+                      {voiceState === 'speaking' && 'Speaking...'}
+                    </p>
+                  </motion.div>
                 )}
-              </div>
 
-              {/* Error message */}
-              {voiceError && (
-                <motion.div
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2 text-center max-w-[280px] pointer-events-auto"
-                >
-                  {voiceError}
-                </motion.div>
-              )}
+                {/* Voice error */}
+                {voiceError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-3 text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2"
+                  >
+                    {voiceError}
+                  </motion.div>
+                )}
 
-              {/* Live transcript / response */}
-              {(voiceTranscript || voiceResponseText) && (
-                <div className="w-full max-w-sm space-y-3 pointer-events-auto">
-                  {voiceTranscript && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-right"
+                {/* Clear button - at bottom */}
+                {exchanges.length > 0 && (
+                  <div className="mt-4 flex justify-center">
+                    <button
+                      onClick={onClearHistory}
+                      className="text-xs text-slate-500 hover:text-slate-300 px-3 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors"
+                      title="Clear conversation history"
                     >
-                      <span className="inline-block text-sm text-white/90 bg-white/10 rounded-2xl rounded-br-md px-3 py-2 max-w-[260px]">
-                        {voiceTranscript}
-                      </span>
-                    </motion.div>
-                  )}
-                  {voiceResponseText && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 }}
-                      className="text-left"
-                    >
-                      <span className="inline-block text-sm text-white/90 bg-chalk-accent/15 border border-chalk-accent/20 rounded-2xl rounded-bl-md px-3 py-2 max-w-[260px]">
-                        {voiceResponseText}
-                      </span>
-                    </motion.div>
-                  )}
-                </div>
-              )}
-
-              {/* Recent exchanges (last 2) */}
-              {exchanges.length > 0 && !voiceTranscript && !voiceResponseText && (
-                <div className="w-full max-w-sm space-y-2 opacity-50 pointer-events-auto">
-                  {exchanges.slice(-2).map((ex) => (
-                    <div key={ex.id} className="space-y-1">
-                      <p className="text-xs text-white/50 text-right truncate">{ex.userText}</p>
-                      <p className="text-xs text-white/40 text-left truncate">{ex.aiText}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Cancel button during processing */}
-              {isProcessing && (
-                <button
-                  onClick={onCancelRecording}
-                  className="text-xs text-white/40 hover:text-white/70 transition-colors pointer-events-auto"
-                >
-                  Cancel
-                </button>
-              )}
-            </motion.div>
-          )}
+                      Clear history
+                    </button>
+                  </div>
+                )}
+              </motion.div>
+            </div>
         </motion.div>
       )}
     </AnimatePresence>

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useVoiceMode, type VoiceState } from './useVoiceMode';
+import { useReadAloud, type UseReadAloudReturn } from './useReadAloud';
 import type { TranscriptSegment, TranscriptSource } from '@/lib/video-utils';
 
 export interface UnifiedExchange {
@@ -40,6 +41,14 @@ interface UseUnifiedModeReturn {
   currentUserText: string;
   currentAiText: string;
   textError: string | null;
+
+  // Read aloud
+  autoReadAloud: boolean;
+  setAutoReadAloud: (enabled: boolean) => void;
+  playingMessageId: string | null;
+  isReadAloudLoading: boolean;
+  playMessage: (id: string, text: string) => void;
+  stopReadAloud: () => void;
 
   // Unified history
   exchanges: UnifiedExchange[];
@@ -128,6 +137,12 @@ export function useUnifiedMode({
     onExchangeComplete: handleVoiceExchangeComplete,
   });
 
+  // Read aloud — TTS playback for text mode responses
+  const readAloud = useReadAloud({
+    voiceId,
+    voiceSpeaking: voice.voiceState === 'speaking',
+  });
+
   // Load history on mount
   useEffect(() => {
     setExchanges(loadHistory(videoId));
@@ -204,8 +219,9 @@ export function useUnifiedMode({
       }
 
       // Add to exchanges
+      const exchangeId = String(Date.now());
       const exchange: UnifiedExchange = {
-        id: String(Date.now()),
+        id: exchangeId,
         type: 'text',
         userText: text,
         aiText: fullText,
@@ -216,6 +232,11 @@ export function useUnifiedMode({
       setExchanges((prev) => [...prev, exchange]);
       setCurrentUserText('');
       setCurrentAiText('');
+
+      // Auto-play read aloud if enabled
+      if (readAloud.autoReadAloud && fullText) {
+        readAloud.playMessage(exchangeId, fullText);
+      }
     } catch (error) {
       if (abortController.signal.aborted) return;
       const errMsg = error instanceof Error ? error.message : 'Something went wrong';
@@ -252,6 +273,14 @@ export function useUnifiedMode({
     currentUserText,
     currentAiText,
     textError,
+
+    // Read aloud
+    autoReadAloud: readAloud.autoReadAloud,
+    setAutoReadAloud: readAloud.setAutoReadAloud,
+    playingMessageId: readAloud.playingMessageId,
+    isReadAloudLoading: readAloud.isReadAloudLoading,
+    playMessage: readAloud.playMessage,
+    stopReadAloud: readAloud.stopReadAloud,
 
     // Unified
     exchanges,

@@ -1,6 +1,6 @@
 import { streamText } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
-import { buildVideoSystemPrompt } from '@/lib/prompts/video-assistant';
+import { buildVideoSystemPromptParts } from '@/lib/prompts/video-assistant';
 import { formatTimestamp, type TranscriptSegment } from '@/lib/video-utils';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { message, currentTimestamp, segments, history, model: modelChoice, videoTitle, personality, transcriptSource, voiceMode } = body;
+  const { message, currentTimestamp, segments, history, videoTitle, personality, transcriptSource, voiceMode } = body;
 
   if (!message || typeof message !== 'string') {
     return Response.json({ error: 'Missing message' }, { status: 400 });
@@ -32,15 +32,13 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Too many segments (max 5000)' }, { status: 400 });
   }
 
-  // Always use Sonnet for all interactions (simplified from model choice)
-  const resolvedModel = 'sonnet';
+  // Always use Sonnet for all interactions
   const model = anthropic('claude-sonnet-4-5');
 
   // Build full transcript context with priority markers around current position
   const typedSegments = (segments || []) as TranscriptSegment[];
   const currentTime = typeof currentTimestamp === 'number' ? currentTimestamp : 0;
 
-  // Always send the full transcript, partitioned into watched (high priority) and upcoming (awareness)
   const watched = typedSegments.filter((s) => s.offset <= currentTime);
   const upcoming = typedSegments.filter((s) => s.offset > currentTime);
 
@@ -59,9 +57,9 @@ export async function POST(req: Request) {
     transcriptContext = '(No transcript available)';
   }
 
-  // Build system prompt with video context
+  // Build system prompt as cached parts
   const safeVideoTitle = typeof videoTitle === 'string' ? videoTitle.slice(0, 200) : undefined;
-  let systemPrompt = buildVideoSystemPrompt({
+  const systemParts = buildVideoSystemPromptParts({
     transcriptContext,
     currentTimestamp: formatTimestamp(currentTime),
     videoTitle: safeVideoTitle,
@@ -69,14 +67,15 @@ export async function POST(req: Request) {
     voiceMode: !!voiceMode,
   });
 
-  // Apply personality modifier
+  // Apply personality modifier to the last (uncached) part
   const PERSONALITY_PROMPTS: Record<string, string> = {
     encouraging: '\n\nAdopt an encouraging, supportive teaching style. Praise the user for good questions, celebrate their understanding, and use positive reinforcement. Be warm and enthusiastic.',
     strict: '\n\nAdopt a direct, no-nonsense teaching style. Be concise and challenging. Point out gaps in understanding directly. Push the user to think deeper. No fluff.',
     socratic: '\n\nAdopt the Socratic method. Instead of giving direct answers, guide the user with probing questions. Help them discover answers themselves. Only reveal answers if they are truly stuck.',
   };
   if (typeof personality === 'string' && PERSONALITY_PROMPTS[personality]) {
-    systemPrompt += PERSONALITY_PROMPTS[personality];
+    const lastPart = systemParts[systemParts.length - 1];
+    lastPart.content += PERSONALITY_PROMPTS[personality];
   }
 
   // Build messages array from history (cap at 20 messages to limit cost)
@@ -96,7 +95,7 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model,
-    system: systemPrompt,
+    system: systemParts,
     messages,
     maxOutputTokens: voiceMode ? 500 : 8000,
   });

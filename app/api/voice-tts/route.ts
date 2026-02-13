@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { text, voiceId } = body;
+  const { text, voiceId, isClonedVoice } = body;
 
   if (!text || typeof text !== 'string') {
     return Response.json({ error: 'Missing text' }, { status: 400 });
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const stream = await textToSpeechStream(text, voiceId || undefined);
+    const stream = await textToSpeechStream(text, voiceId || undefined, !!isClonedVoice);
     return new Response(stream, {
       headers: {
         'Content-Type': 'audio/mpeg',
