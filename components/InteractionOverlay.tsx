@@ -403,7 +403,7 @@ export function InteractionOverlay({
       } else {
         setExplorePills([]);
         if (exploreAbortRef.current) {
-          exploreAbortRef.current.abort();
+          exploreAbortRef.current.abort('explore toggled');
           exploreAbortRef.current = null;
         }
         setExploreStreaming(false);
@@ -796,7 +796,7 @@ export function InteractionOverlay({
                       isStreaming={activeStreaming}
                       onStop={showExploreUI ? () => {
                         if (exploreAbortRef.current) {
-                          exploreAbortRef.current.abort();
+                          exploreAbortRef.current.abort('stopped');
                           exploreAbortRef.current = null;
                         }
                         setExploreStreaming(false);
@@ -870,7 +870,7 @@ export function InteractionOverlay({
                         type="button"
                         onClick={showExploreUI ? () => {
                           if (exploreAbortRef.current) {
-                            exploreAbortRef.current.abort();
+                            exploreAbortRef.current.abort('stopped');
                             exploreAbortRef.current = null;
                           }
                           setExploreStreaming(false);

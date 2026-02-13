@@ -193,7 +193,7 @@ export function ChatOverlay({
 
   // Abort any active stream on unmount to prevent resource leaks
   useEffect(() => {
-    return () => { abortRef.current?.abort(); };
+    return () => { abortRef.current?.abort('cleanup'); };
   }, []);
 
   // Video progress
@@ -240,13 +240,13 @@ export function ChatOverlay({
   }, []);
 
   const handleStop = useCallback(() => {
-    abortRef.current?.abort();
+    abortRef.current?.abort('stopped');
   }, []);
 
   const submitMessage = useCallback(async (prompt: string) => {
     if (!prompt || isStreaming) return;
 
-    abortRef.current?.abort();
+    abortRef.current?.abort('new message');
     const abortController = new AbortController();
     abortRef.current = abortController;
 
@@ -277,7 +277,7 @@ export function ChatOverlay({
           currentTimestamp: currentTime,
           segments,
           history,
-          model: selectedModel,
+          modelChoice: selectedModel,
           videoTitle,
           transcriptSource,
         }),

@@ -78,7 +78,7 @@ export function useLearnOptions({ segments, videoTitle, channelName, enabled = f
     })();
 
     return () => {
-      controller.abort();
+      controller.abort('cleanup');
       fetchedRef.current = false; // Allow retry on StrictMode remount
     };
   }, [segments, videoTitle, channelName]);

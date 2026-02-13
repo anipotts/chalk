@@ -180,7 +180,7 @@ export default function PlaylistSidebar({ playlistId, currentVideoId, onVideoSel
       })
       .finally(() => setIsLoading(false));
 
-    return () => controller.abort();
+    return () => controller.abort('cleanup');
   }, [playlistId]);
 
   // Load more

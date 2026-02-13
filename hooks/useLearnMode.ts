@@ -129,7 +129,7 @@ export function useLearnMode({
   useEffect(() => { segmentsRef.current = segments; }, [segments]);
 
   const executeLearnAction = useCallback(async (action: LearnAction, userMessage?: string) => {
-    abortRef.current?.abort();
+    abortRef.current?.abort('new action');
     const abortController = new AbortController();
     abortRef.current = abortController;
 
@@ -267,7 +267,7 @@ export function useLearnMode({
   }, [executeLearnAction]);
 
   const stopLearnMode = useCallback(() => {
-    abortRef.current?.abort();
+    abortRef.current?.abort('stopped');
     setPhase('idle');
     setSelectedAction(null);
     setCurrentQuiz(null);

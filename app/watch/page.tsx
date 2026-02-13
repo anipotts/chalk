@@ -195,12 +195,17 @@ function MobileChatTrigger({
 function WatchContent() {
   const searchParams = useSearchParams();
   const videoId = searchParams.get("v") || "";
+  const urlStartTime = searchParams.get("t");
   const navRouter = useRouter();
   const [navSearchValue, setNavSearchValue] = useState("");
 
-  const { segments, status, statusMessage, error, source, progress } =
+  const { segments, status, statusMessage, error, source, progress, durationSeconds, metadata } =
     useTranscriptStream(videoId || null);
   const { title: videoTitle, channelName } = useVideoTitle(videoId || null);
+
+  // Prefer hook title/channel, fall back to transcript metadata
+  const effectiveTitle = videoTitle || metadata?.title || null;
+  const effectiveChannel = channelName || metadata?.author || null;
 
   const [currentTime, setCurrentTime] = useState(0);
   const [isPaused, setIsPaused] = useState(true);
@@ -283,20 +288,20 @@ function WatchContent() {
       filtered.unshift({
         id: videoId,
         url: `https://www.youtube.com/watch?v=${videoId}`,
-        title: videoTitle || existing?.title,
-        channelName: channelName || existing?.channelName,
+        title: effectiveTitle || existing?.title,
+        channelName: effectiveChannel || existing?.channelName,
         timestamp: Date.now(),
       });
       localStorage.setItem(key, JSON.stringify(filtered.slice(0, 10)));
     } catch {
       /* ignore */
     }
-  }, [videoId, videoTitle, channelName]);
+  }, [videoId, effectiveTitle, effectiveChannel]);
 
   // Voice clone hook — now channel-level
   const { voiceId, isCloning } = useVoiceClone({
     videoId: videoId || null,
-    channelName,
+    channelName: effectiveChannel,
     enabled: interactionVisible,
   });
 
@@ -305,7 +310,7 @@ function WatchContent() {
     segments,
     currentTime,
     videoId: videoId || "",
-    videoTitle: videoTitle ?? undefined,
+    videoTitle: effectiveTitle ?? undefined,
     voiceId,
     transcriptSource: source ?? undefined,
   });
@@ -315,22 +320,30 @@ function WatchContent() {
     segments,
     currentTime,
     videoId: videoId || "",
-    videoTitle: videoTitle ?? undefined,
+    videoTitle: effectiveTitle ?? undefined,
   });
 
   // Pre-generated learn options (lazy — only fetched when learn mode is first opened)
   const { options: learnOptions, isLoading: learnOptionsLoading } =
     useLearnOptions({
       segments,
-      videoTitle: videoTitle ?? undefined,
-      channelName,
+      videoTitle: effectiveTitle ?? undefined,
+      channelName: effectiveChannel,
       enabled: learnEverOpened,
     });
 
-  // Load saved progress
+  // Load saved progress (priority: ?t= param > #t= hash > localStorage)
   useEffect(() => {
     if (!videoId) return;
     try {
+      // URL ?t= param (e.g. ?t=120, ?t=2m30s)
+      if (urlStartTime) {
+        const parsed = parseFloat(urlStartTime);
+        if (!isNaN(parsed) && parsed > 0) {
+          setContinueFrom(parsed);
+          return;
+        }
+      }
       const hash = window.location.hash;
       const hashMatch = hash.match(/^#t=(\d+(?:\.\d+)?)$/);
       if (hashMatch) {
@@ -348,24 +361,24 @@ function WatchContent() {
     } catch {
       /* ignore */
     }
-  }, [videoId]);
+  }, [videoId, urlStartTime]);
 
   // Save progress every 5s (refs avoid interval churn on every time update)
+  const durationSecondsRef = useRef(durationSeconds);
+  useEffect(() => { durationSecondsRef.current = durationSeconds; }, [durationSeconds]);
+
   useEffect(() => {
     if (!videoId) return;
     progressSaveRef.current = setInterval(() => {
       const t = currentTimeRef.current;
-      const segs = segmentsRef.current;
       if (t > 5) {
         localStorage.setItem(storageKey(`progress-${videoId}`), String(t));
-        if (segs.length > 0) {
-          const lastSeg = segs[segs.length - 1];
-          const dur = lastSeg.offset + (lastSeg.duration || 0);
-          if (dur > 0)
-            localStorage.setItem(
-              storageKey(`duration-${videoId}`),
-              String(dur),
-            );
+        const dur = durationSecondsRef.current;
+        if (dur && dur > 0) {
+          localStorage.setItem(
+            storageKey(`duration-${videoId}`),
+            String(dur),
+          );
         }
       }
     }, 5000);
@@ -561,20 +574,20 @@ function WatchContent() {
           </form>
           <span className="text-slate-600/50">|</span>
           <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-            {channelName && (
+            {effectiveChannel && (
               <span className="text-[10px] text-slate-500 truncate">
-                {channelName}
+                {effectiveChannel}
               </span>
             )}
             <span className="text-xs truncate text-slate-400">
-              {videoTitle || videoId}
+              {effectiveTitle || videoId}
             </span>
           </div>
 
           {/* Centered hint — absolutely positioned so it doesn't shift the flex layout */}
-          {!interactionVisible && channelName && (
+          {!interactionVisible && effectiveChannel && (
             <span className="hidden absolute left-1/2 text-xs whitespace-nowrap -translate-x-1/2 pointer-events-none text-slate-500 lg:inline">
-              Pause or start typing to talk to {channelName}
+              Pause or start typing to talk to {effectiveChannel}
             </span>
           )}
 
@@ -631,13 +644,13 @@ function WatchContent() {
             className="flex-shrink-0 text-chalk-text"
           />
           <div className="flex flex-col flex-1 min-w-0">
-            {channelName && (
+            {effectiveChannel && (
               <span className="text-[10px] text-slate-500 truncate leading-tight">
-                {channelName}
+                {effectiveChannel}
               </span>
             )}
             <span className="text-xs leading-tight truncate text-slate-400">
-              {videoTitle || videoId}
+              {effectiveTitle || videoId}
             </span>
           </div>
           <SpeedControlButton playerRef={playerRef} />
@@ -703,7 +716,7 @@ function WatchContent() {
             segments={segments}
             currentTime={currentTime}
             videoId={videoId}
-            videoTitle={videoTitle ?? undefined}
+            videoTitle={effectiveTitle ?? undefined}
             transcriptSource={source ?? undefined}
             voiceId={voiceId}
             isVoiceCloning={isCloning}
@@ -804,7 +817,7 @@ function WatchContent() {
                   variant="mobile"
                   onAskAbout={handleAskAbout}
                   videoId={videoId}
-                  videoTitle={videoTitle ?? undefined}
+                  videoTitle={effectiveTitle ?? undefined}
                 />
               </div>
             </>
@@ -816,7 +829,7 @@ function WatchContent() {
           <>
             <MobileChatTrigger
               onTap={() => setInteractionVisible(true)}
-              channelName={channelName}
+              channelName={effectiveChannel}
             />
             <div className="flex-none md:hidden bg-chalk-bg pb-safe" />
           </>
@@ -843,7 +856,7 @@ function WatchContent() {
             onClose={() => setShowTranscript(false)}
             onAskAbout={handleAskAbout}
             videoId={videoId}
-            videoTitle={videoTitle ?? undefined}
+            videoTitle={effectiveTitle ?? undefined}
           />
         </div>
       </div>

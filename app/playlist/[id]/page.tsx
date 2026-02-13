@@ -179,7 +179,7 @@ export default function PlaylistPage() {
       })
       .finally(() => setIsLoading(false));
 
-    return () => controller.abort();
+    return () => controller.abort('cleanup');
   }, [playlistId]);
 
   // Load more

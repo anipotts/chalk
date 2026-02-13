@@ -160,7 +160,7 @@ export function useUnifiedMode({
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      textAbortRef.current?.abort();
+      textAbortRef.current?.abort('cleanup');
     };
   }, []);
 
@@ -168,7 +168,7 @@ export function useUnifiedMode({
     if (!text.trim() || isTextStreaming) return;
 
     // Abort any previous stream
-    textAbortRef.current?.abort();
+    textAbortRef.current?.abort('new submission');
     const abortController = new AbortController();
     textAbortRef.current = abortController;
 
@@ -193,7 +193,7 @@ export function useUnifiedMode({
           currentTimestamp: currentTimeRef.current,
           segments: segmentsRef.current,
           history,
-          model: 'sonnet',
+          modelChoice: 'sonnet',
           videoTitle,
           transcriptSource,
           voiceMode: false,
@@ -248,7 +248,7 @@ export function useUnifiedMode({
   }, [isTextStreaming, videoTitle, transcriptSource]);
 
   const stopTextStream = useCallback(() => {
-    textAbortRef.current?.abort();
+    textAbortRef.current?.abort('user stopped');
   }, []);
 
   const clearHistory = useCallback(() => {

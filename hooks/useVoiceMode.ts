@@ -67,7 +67,7 @@ export function useVoiceMode({
       streamRef.current?.getTracks().forEach((t) => t.stop());
       audioRef.current?.pause();
       clearInterval(timerRef.current);
-      abortRef.current?.abort();
+      abortRef.current?.abort('cleanup');
     };
   }, []);
 
@@ -79,7 +79,7 @@ export function useVoiceMode({
       audioRef.current = null;
     }
     if (abortRef.current) {
-      abortRef.current.abort();
+      abortRef.current.abort('interrupted');
       abortRef.current = null;
     }
     const recorder = mediaRecorderRef.current;
@@ -173,7 +173,7 @@ export function useVoiceMode({
           currentTimestamp: currentTimeRef.current,
           segments: segmentsRef.current,
           history,
-          model: 'sonnet',
+          modelChoice: 'sonnet',
           videoTitle,
           transcriptSource,
           voiceMode: true,

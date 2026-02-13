@@ -12,14 +12,6 @@ interface RecentVideo {
   timestamp: number;
 }
 
-const TRENDING_TOPICS = [
-  'machine learning basics',
-  'calculus explained',
-  'how transformers work',
-  'python tutorial',
-  'linear algebra',
-];
-
 const RECENT_VIDEOS_KEY = storageKey('recent-videos');
 
 function getRecentVideos(): RecentVideo[] {
@@ -61,16 +53,15 @@ export default function SearchDropdown({ isVisible, onSelectTopic }: SearchDropd
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      initial={{ opacity: 0, y: -8, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -8, scale: 0.98 }}
+      transition={{ duration: 0.15, ease: 'easeOut' }}
       className="absolute top-full left-0 right-0 mt-2 bg-chalk-surface/95 backdrop-blur-xl border border-chalk-border/50 rounded-xl shadow-2xl shadow-black/50 z-50 overflow-hidden"
     >
       <div className="p-3 max-h-[360px] overflow-y-auto">
-        {/* Recent videos */}
-        {recentVideos.length > 0 && (
-          <div className="mb-3">
+        {recentVideos.length > 0 ? (
+          <div>
             <h3 className="text-[11px] uppercase tracking-wider text-slate-500 font-medium font-mono px-1 mb-2">
               Recent
             </h3>
@@ -96,25 +87,9 @@ export default function SearchDropdown({ isVisible, onSelectTopic }: SearchDropd
               ))}
             </div>
           </div>
+        ) : (
+          <p className="text-xs text-slate-600 text-center py-3">No recent videos</p>
         )}
-
-        {/* Trending topics */}
-        <div>
-          <h3 className="text-[11px] uppercase tracking-wider text-slate-500 font-medium font-mono px-1 mb-2">
-            Trending Topics
-          </h3>
-          <div className="flex flex-wrap gap-1.5 px-1">
-            {TRENDING_TOPICS.map((topic) => (
-              <button
-                key={topic}
-                onClick={() => onSelectTopic(topic)}
-                className="px-3 py-1.5 rounded-lg text-xs text-slate-400 bg-white/[0.03] border border-chalk-border/30 hover:bg-white/[0.06] hover:text-chalk-text hover:border-chalk-border/50 transition-all"
-              >
-                {topic}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </motion.div>
   );

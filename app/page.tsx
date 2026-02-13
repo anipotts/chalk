@@ -84,6 +84,10 @@ function HomePage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Smooth transition: delayed return to center
+  const [isVisuallyRaised, setIsVisuallyRaised] = useState(false);
+  const raiseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Abort controller for canceling in-flight requests
   const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -105,6 +109,22 @@ function HomePage() {
     return () => mq.removeEventListener('change', handler);
   }, []);
 
+  const hasSearchContent = isSearching || searchResults.length > 0 || searchError;
+  const isSearchMode = !!(hasSearchContent && inputValue.length >= 2);
+
+  // Smooth raise/lower: instant up, 2s delayed return to center
+  useEffect(() => {
+    if (isSearchMode) {
+      if (raiseTimerRef.current) clearTimeout(raiseTimerRef.current);
+      setIsVisuallyRaised(true);
+    } else {
+      raiseTimerRef.current = setTimeout(() => setIsVisuallyRaised(false), 2000);
+    }
+    return () => {
+      if (raiseTimerRef.current) clearTimeout(raiseTimerRef.current);
+    };
+  }, [isSearchMode]);
+
   // Debounced search effect
   useEffect(() => {
     if (activeTab !== 'search' || inputValue.length < 2) {
@@ -114,10 +134,6 @@ function HomePage() {
         setContinuationToken(null);
       }
       return;
-    }
-
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
     }
 
     const timeoutId = setTimeout(async () => {
@@ -181,13 +197,15 @@ function HomePage() {
 
     return () => {
       clearTimeout(timeoutId);
+      abortControllerRef.current?.abort('search cancelled');
+      abortControllerRef.current = null;
     };
   }, [inputValue, activeTab, searchType, sortBy]);
 
   // Cancel search when switching to URL tab
   useEffect(() => {
     if (activeTab === 'url' && abortControllerRef.current) {
-      abortControllerRef.current.abort();
+      abortControllerRef.current.abort('tab switch');
     }
   }, [activeTab]);
 
@@ -198,7 +216,7 @@ function HomePage() {
     setShowDropdown(val.length === 0);
 
     // Auto-detect URL paste while in search mode
-    if (activeTab === 'search' && extractVideoId(val.trim())) {
+    if (activeTab === 'search' && extractVideoId(val.trim())?.videoId) {
       setActiveTab('url');
     }
   };
@@ -208,14 +226,14 @@ function HomePage() {
     const trimmed = inputValue.trim();
     if (!trimmed) return;
 
-    const videoId = extractVideoId(trimmed);
-    if (!videoId) {
+    const extracted = extractVideoId(trimmed);
+    if (!extracted) {
       setError('Please enter a valid YouTube URL');
       return;
     }
 
-    saveRecentVideo(videoId, trimmed);
-    router.push(`/watch?v=${videoId}`);
+    saveRecentVideo(extracted.videoId, trimmed);
+    router.push(`/watch?v=${extracted.videoId}${extracted.startTime ? `&t=${extracted.startTime}` : ''}`);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -302,8 +320,6 @@ function HomePage() {
     }
   }, [continuationToken, isLoadingMore, inputValue, searchType]);
 
-  const hasSearchContent = isSearching || searchResults.length > 0 || searchError;
-  const isSearchMode = !!(hasSearchContent && inputValue.length >= 2);
   const showTabs = !inputValue;
 
   const pillClasses = (tab: 'search' | 'url') =>
@@ -371,65 +387,63 @@ function HomePage() {
     </div>
   );
 
+  const showFilterPills = activeTab === 'search' && inputValue.length >= 2;
+
   return (
     <div className="h-screen bg-chalk-bg flex flex-col overflow-hidden">
-      {/* Header area — vertically centered when idle, snaps to top when searching */}
-      <div className={`flex flex-col items-center px-4 ${isSearchMode ? 'shrink-0 pt-12 pb-2' : 'flex-1 justify-center'}`}>
+      {/* Header area — smooth paddingTop transition between centered and raised */}
+      <div
+        className="flex flex-col items-center px-4 shrink-0 transition-[padding] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+        style={{ paddingTop: isVisuallyRaised ? '3rem' : 'calc(50vh - 80px)', paddingBottom: isVisuallyRaised ? '0.5rem' : '0' }}
+      >
         <div className="w-full max-w-2xl">
-          {/* Logo and tagline */}
-          <div className="text-center mb-2">
-            {isSearchMode ? (
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <ChalkboardSimple size={20} className="text-chalk-text" />
-                <h1 className="text-lg font-bold text-chalk-text">chalk</h1>
-              </div>
-            ) : (
-              <>
-                <h1 className="text-2xl font-bold text-chalk-text mb-1.5 flex items-center justify-center gap-2">
-                  <ChalkboardSimple size={28} />
-                  chalk
-                </h1>
-                <p className="text-sm text-slate-500 mb-2">
-                  Learn from any YouTube video with AI
-                </p>
-              </>
-            )}
+          {/* Logo and tagline — single element with smooth scale/opacity */}
+          <div className={`text-center mb-2 transition-all duration-500 origin-center ${isVisuallyRaised ? 'scale-75' : 'scale-100'}`}>
+            <h1 className="text-2xl font-bold text-chalk-text mb-1.5 flex items-center justify-center gap-2">
+              <ChalkboardSimple size={28} />
+              chalk
+            </h1>
+            <div className={`transition-all duration-500 overflow-hidden ${isVisuallyRaised ? 'opacity-0 max-h-0' : 'opacity-100 max-h-8'}`}>
+              <p className="text-sm text-slate-500 mb-2">
+                Learn from any YouTube video with AI
+              </p>
+            </div>
           </div>
 
           {/* Search input */}
           {searchInput}
 
-          {/* Search type filter pills + sort */}
-          {activeTab === 'search' && inputValue.length >= 2 && (
-            <div className="flex items-center gap-1.5 mt-3 justify-center flex-wrap">
-              {(['video', 'channel', 'playlist'] as SearchType[]).map((type) => {
-                const label = type === 'video' ? 'Videos' : type === 'channel' ? 'Channels' : 'Playlists';
-                return (
-                  <button
-                    key={type}
-                    onClick={() => handleSearchTypeChange(type)}
-                    aria-label={`Filter by ${label}`}
-                    aria-pressed={searchType === type}
-                    className={`rounded-lg px-3 py-1 text-xs font-medium transition-all duration-200 ${searchTypePillClasses(type)}`}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-
-              {searchResults.length > 0 && (
-                <select
-                  value={sortBy}
-                  onChange={(e) => handleSortChange(e.target.value as SortBy)}
-                  className="ml-2 text-xs bg-chalk-surface/60 border border-chalk-border/30 rounded-lg px-2 py-1 text-slate-400 focus:outline-none focus:ring-1 focus:ring-chalk-accent/40 cursor-pointer"
+          {/* Search type filter pills + sort — always rendered, visibility controlled */}
+          <div className={`flex items-center gap-1.5 mt-3 justify-center flex-wrap transition-all duration-300 overflow-hidden ${
+            showFilterPills ? 'opacity-100 max-h-20' : 'opacity-0 max-h-0 mt-0'
+          }`}>
+            {(['video', 'channel', 'playlist'] as SearchType[]).map((type) => {
+              const label = type === 'video' ? 'Videos' : type === 'channel' ? 'Channels' : 'Playlists';
+              return (
+                <button
+                  key={type}
+                  onClick={() => handleSearchTypeChange(type)}
+                  aria-label={`Filter by ${label}`}
+                  aria-pressed={searchType === type}
+                  className={`rounded-lg px-3 py-1 text-xs font-medium transition-all duration-200 ${searchTypePillClasses(type)}`}
                 >
-                  <option value="relevance">Relevance</option>
-                  <option value="viewCount">Most viewed</option>
-                  <option value="date">Upload date</option>
-                </select>
-              )}
-            </div>
-          )}
+                  {label}
+                </button>
+              );
+            })}
+
+            {searchResults.length > 0 && (
+              <select
+                value={sortBy}
+                onChange={(e) => handleSortChange(e.target.value as SortBy)}
+                className="ml-2 text-xs bg-chalk-surface/60 border border-chalk-border/30 rounded-lg px-2 py-1 text-slate-400 focus:outline-none focus:ring-1 focus:ring-chalk-accent/40 cursor-pointer"
+              >
+                <option value="relevance">Relevance</option>
+                <option value="viewCount">Most viewed</option>
+                <option value="date">Upload date</option>
+              </select>
+            )}
+          </div>
         </div>
       </div>
 

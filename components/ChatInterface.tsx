@@ -101,7 +101,7 @@ export function ChatInterface() {
   );
 
   const handleNewChat = useCallback(() => {
-    abortRef.current?.abort();
+    abortRef.current?.abort('new chat');
     setMessages([]);
     setActiveConvId(null);
     setIsStreaming(false);
@@ -110,7 +110,7 @@ export function ChatInterface() {
   }, []);
 
   const handleSelectConversation = useCallback((id: string) => {
-    abortRef.current?.abort();
+    abortRef.current?.abort('switch conversation');
     setIsStreaming(false);
     const conv = getConversation(id);
     if (conv) {
@@ -146,7 +146,7 @@ export function ChatInterface() {
     if (!prompt || isStreaming) return;
 
     // Abort any previous in-flight stream
-    abortRef.current?.abort();
+    abortRef.current?.abort('new message');
     const abortController = new AbortController();
     abortRef.current = abortController;
 

@@ -42,7 +42,7 @@ export function useReadAloud({ voiceId, voiceSpeaking }: UseReadAloudOptions): U
   }, []);
 
   const stopReadAloud = useCallback(() => {
-    abortRef.current?.abort();
+    abortRef.current?.abort('stopped');
     abortRef.current = null;
     if (audioRef.current) {
       audioRef.current.pause();
@@ -60,7 +60,7 @@ export function useReadAloud({ voiceId, voiceSpeaking }: UseReadAloudOptions): U
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      abortRef.current?.abort();
+      abortRef.current?.abort('cleanup');
       if (audioRef.current) {
         audioRef.current.pause();
         const src = audioRef.current.src;

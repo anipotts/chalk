@@ -10,6 +10,12 @@ export type TranscriptStatus =
   | 'complete'
   | 'error';
 
+export interface TranscriptMetadata {
+  title?: string;
+  author?: string;
+  lengthSeconds?: number;
+}
+
 interface TranscriptStreamState {
   segments: TranscriptSegment[];
   status: TranscriptStatus;
@@ -17,6 +23,8 @@ interface TranscriptStreamState {
   error: string | null;
   source: TranscriptSource | null;
   progress: number;
+  durationSeconds: number | null;
+  metadata: TranscriptMetadata | null;
 }
 
 /**
@@ -68,6 +76,8 @@ export function useTranscriptStream(videoId: string | null): TranscriptStreamSta
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<TranscriptSource | null>(null);
   const [progress, setProgress] = useState(0);
+  const [durationSeconds, setDurationSeconds] = useState<number | null>(null);
+  const [metadata, setMetadata] = useState<TranscriptMetadata | null>(null);
 
   useEffect(() => {
     if (!videoId) return;
@@ -80,6 +90,8 @@ export function useTranscriptStream(videoId: string | null): TranscriptStreamSta
     setError(null);
     setSource(null);
     setProgress(0);
+    setDurationSeconds(null);
+    setMetadata(null);
 
     (async () => {
       try {
@@ -105,8 +117,11 @@ export function useTranscriptStream(videoId: string | null): TranscriptStreamSta
               break;
             }
             case 'meta': {
-              const payload = JSON.parse(data) as { source: TranscriptSource; cached: boolean };
+              const payload = JSON.parse(data) as { source: TranscriptSource; cached: boolean; metadata?: TranscriptMetadata };
               setSource(payload.source);
+              if (payload.metadata) {
+                setMetadata(payload.metadata);
+              }
               if (payload.cached) {
                 setStatusMessage('Loaded from cache');
               }
@@ -123,6 +138,7 @@ export function useTranscriptStream(videoId: string | null): TranscriptStreamSta
               setStatus('complete');
               setStatusMessage(`${payload.total} segments loaded`);
               setSource(payload.source);
+              setDurationSeconds(payload.durationSeconds);
               setProgress(100);
               break;
             }
@@ -146,5 +162,5 @@ export function useTranscriptStream(videoId: string | null): TranscriptStreamSta
     return () => { cancelled = true; };
   }, [videoId]);
 
-  return { segments, status, statusMessage, error, source, progress };
+  return { segments, status, statusMessage, error, source, progress, durationSeconds, metadata };
 }
