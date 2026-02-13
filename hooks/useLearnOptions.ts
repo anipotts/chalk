@@ -68,14 +68,18 @@ export function useLearnOptions({ segments, videoTitle, channelName }: UseLearnO
         if (Array.isArray(data.options) && data.options.length > 0) {
           setOptions([...data.options, CUSTOM_OPTION]);
         }
-      } catch {
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         // Keep fallback options — they're still good
       } finally {
-        setIsLoading(false);
+        if (!controller.signal.aborted) setIsLoading(false);
       }
     })();
 
-    return () => controller.abort();
+    return () => {
+      controller.abort();
+      fetchedRef.current = false; // Allow retry on StrictMode remount
+    };
   }, [segments, videoTitle, channelName]);
 
   return { options, isLoading };
