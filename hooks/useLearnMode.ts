@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { splitReasoningFromText } from '@/lib/stream-parser';
+import { classifyThinkingBudget } from '@/lib/thinking-budget';
 import type { TranscriptSegment } from '@/lib/video-utils';
 import type { LearnOption } from './useLearnOptions';
 
@@ -160,6 +161,12 @@ export function useLearnMode({
           history: historyRef.current,
           action: { id: action.id, label: action.label, intent: action.intent },
           score,
+          thinkingBudget: classifyThinkingBudget(
+            action.label || 'quiz',
+            historyRef.current.length,
+            score.total > 0 ? score : undefined,
+            'learn',
+          ).budgetTokens,
         }),
         signal: abortController.signal,
       });

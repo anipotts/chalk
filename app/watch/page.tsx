@@ -17,6 +17,7 @@ import { useUnifiedMode } from "@/hooks/useUnifiedMode";
 import { useVoiceClone } from "@/hooks/useVoiceClone";
 import { useLearnMode } from "@/hooks/useLearnMode";
 import { useLearnOptions } from "@/hooks/useLearnOptions";
+import { useCurriculumContext } from "@/hooks/useCurriculumContext";
 
 const VideoPlayer = dynamic(
   () =>
@@ -196,6 +197,7 @@ function WatchContent() {
   const searchParams = useSearchParams();
   const videoId = searchParams.get("v") || "";
   const urlStartTime = searchParams.get("t");
+  const playlistId = searchParams.get("list") || null;
   const navRouter = useRouter();
   const [navSearchValue, setNavSearchValue] = useState("");
 
@@ -322,6 +324,9 @@ function WatchContent() {
     videoId: videoId || "",
     videoTitle: effectiveTitle ?? undefined,
   });
+
+  // Cross-video curriculum context (loads sibling video transcripts for playlist)
+  const curriculum = useCurriculumContext(playlistId, videoId);
 
   // Pre-generated learn options (lazy — only fetched when learn mode is first opened)
   const { options: learnOptions, isLoading: learnOptionsLoading } =
@@ -457,10 +462,6 @@ function WatchContent() {
   const handleAskAbout = useCallback((_timestamp: number, _text: string) => {
     setInteractionVisible(true);
     setTimeout(() => inputRef.current?.focus(), 100);
-  }, []);
-
-  const handleEnsureLearnOptions = useCallback(() => {
-    setLearnEverOpened(true);
   }, []);
 
   const handleOpenLearnMode = useCallback(() => {
@@ -771,13 +772,14 @@ function WatchContent() {
             learnError={learnMode.error}
             learnOptions={learnOptions}
             learnOptionsLoading={learnOptionsLoading}
-            onEnsureLearnOptions={handleEnsureLearnOptions}
             onOpenLearnMode={handleOpenLearnMode}
             onSelectAction={learnMode.executeAction}
             onFocusInput={handleFocusInput}
             onSelectAnswer={learnMode.selectAnswer}
             onNextBatch={learnMode.requestNextBatch}
             onStopLearnMode={learnMode.stopLearnMode}
+            curriculumContext={curriculum.curriculumContext}
+            curriculumVideoCount={curriculum.videoCount}
           />
         </div>
 

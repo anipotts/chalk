@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { message, currentTimestamp, segments, history, videoTitle, personality, transcriptSource, voiceMode, exploreMode, exploreGoal, modelChoice } = body;
+  const { message, currentTimestamp, segments, history, videoTitle, personality, transcriptSource, voiceMode, exploreMode, exploreGoal, modelChoice, thinkingBudget, curriculumContext } = body;
 
   if (!message || typeof message !== 'string') {
     return Response.json({ error: 'Missing message' }, { status: 400 });
@@ -56,17 +56,27 @@ export async function POST(req: Request) {
 
   const safeVideoTitle = typeof videoTitle === 'string' ? videoTitle.slice(0, 200) : undefined;
 
-  // Explore Mode: use Opus with extended thinking
+  // Explore Mode: use Opus with adaptive thinking budget
   if (exploreMode) {
-    const model = anthropic('claude-opus-4-6-20250414');
+    const model = anthropic('claude-opus-4-6');
 
-    const systemPrompt = buildExploreSystemPrompt({
+    // Dynamic thinking budget: client classifies complexity and sends the value
+    const budgetTokens = Math.max(1024, Math.min(16000,
+      typeof thinkingBudget === 'number' ? thinkingBudget : 10000
+    ));
+
+    let systemPrompt = buildExploreSystemPrompt({
       transcriptContext,
       currentTimestamp: formatTimestamp(currentTime),
       videoTitle: safeVideoTitle,
       exploreGoal: typeof exploreGoal === 'string' ? exploreGoal : undefined,
       transcriptSource: typeof transcriptSource === 'string' ? transcriptSource : undefined,
     });
+
+    // Inject curriculum context if provided (cross-video playlist context)
+    if (typeof curriculumContext === 'string' && curriculumContext.length > 0) {
+      systemPrompt += `\n\n<curriculum_context>\nThe student is watching this video as part of a playlist/course. Here are transcripts from related videos in the series. You may reference content from other lectures using "In [Video Title] at [M:SS]..." to draw connections.\n${curriculumContext}\n</curriculum_context>`;
+    }
 
     const MAX_HISTORY = 20;
     const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [];
@@ -89,13 +99,52 @@ export async function POST(req: Request) {
       maxOutputTokens: 1500,
       providerOptions: {
         anthropic: {
-          thinking: { type: 'enabled', budgetTokens: 10000 },
+          thinking: { type: 'enabled', budgetTokens },
         },
       },
     });
 
-    // Stream text response; client parses <options>...</options> from the final text
-    return result.toTextStreamResponse();
+    // Stream reasoning tokens + \x1E separator + text (enables ThinkingDepthIndicator on client)
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        let reasoningSent = false;
+
+        try {
+          for await (const chunk of result.fullStream) {
+            if (chunk.type === 'reasoning-delta') {
+              controller.enqueue(encoder.encode(chunk.text));
+            } else if (chunk.type === 'reasoning-end') {
+              if (!reasoningSent) {
+                controller.enqueue(encoder.encode('\x1E'));
+                reasoningSent = true;
+              }
+            } else if (chunk.type === 'text-delta') {
+              if (!reasoningSent) {
+                controller.enqueue(encoder.encode('\x1E'));
+                reasoningSent = true;
+              }
+              controller.enqueue(encoder.encode(chunk.text));
+            }
+          }
+
+          if (!reasoningSent) {
+            controller.enqueue(encoder.encode('\x1E'));
+          }
+        } catch (err) {
+          console.error('Explore mode stream error:', err instanceof Error ? err.message : err);
+          if (!reasoningSent) {
+            controller.enqueue(encoder.encode('\x1E'));
+          }
+          controller.enqueue(encoder.encode('\n\n[An error occurred while generating the response.]'));
+        }
+        controller.close();
+      },
+    });
+
+    return new Response(stream, {
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    });
   }
 
   // Normal mode: resolve model from client choice (default Sonnet)
@@ -114,6 +163,16 @@ export async function POST(req: Request) {
     transcriptSource: typeof transcriptSource === 'string' ? transcriptSource : undefined,
     voiceMode: !!voiceMode,
   });
+
+  // Inject curriculum context if provided (cross-video playlist context)
+  if (typeof curriculumContext === 'string' && curriculumContext.length > 0) {
+    const cacheOpts = { anthropic: { cacheControl: { type: 'ephemeral' as const } } };
+    systemParts.splice(1, 0, {
+      role: 'system' as const,
+      content: `<curriculum_context>\nThe student is watching this video as part of a playlist/course. Here are transcripts from related videos in the series. You may reference content from other lectures using "In [Video Title] at [M:SS]..." to draw connections.\n${curriculumContext}\n</curriculum_context>`,
+      providerOptions: cacheOpts,
+    });
+  }
 
   // Apply personality modifier to the last (uncached) part
   const PERSONALITY_PROMPTS: Record<string, string> = {

@@ -57,7 +57,7 @@ export function TextInput({
   };
 
   const resolvedPlaceholder = exploreMode
-    ? 'What do you want to explore in this video?'
+    ? 'Ask anything...'
     : placeholder;
 
   return (
@@ -77,7 +77,7 @@ export function TextInput({
         <button
           type="button"
           onClick={onToggleExplore}
-          className={`h-7 px-2.5 rounded-lg text-[11px] font-medium transition-all ${
+          className={`h-7 px-2.5 mr-1.5 rounded-md text-[11px] font-medium transition-all ${
             exploreMode
               ? 'bg-chalk-accent/15 text-chalk-accent hover:bg-chalk-accent/25'
               : 'bg-white/[0.06] hover:bg-white/[0.12] text-white/50 hover:text-white/80'
