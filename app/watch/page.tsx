@@ -570,20 +570,28 @@ function WatchContent() {
           </div>
         </div>
 
-        {/* Mobile back bar */}
-        <div className="md:hidden flex-none flex items-center px-2 pt-[env(safe-area-inset-top)] bg-chalk-bg">
-          <a href="/" className="flex items-center p-2 -ml-1 text-white/60 active:text-white/90 transition-colors" aria-label="Back to home">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+        {/* Mobile header */}
+        <div className="md:hidden flex-none flex items-center gap-2 px-2 pb-2 pt-[calc(env(safe-area-inset-top)+8px)] bg-chalk-bg/95 backdrop-blur-md border-b border-chalk-border/30">
+          <a href="/" className="flex items-center p-1.5 -ml-0.5 text-white/60 active:text-white/90 transition-colors" aria-label="Back to home">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4.5 h-4.5">
               <path fillRule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clipRule="evenodd" />
             </svg>
           </a>
+          <ChalkboardSimple size={16} className="text-chalk-text flex-shrink-0" />
+          <div className="flex-1 min-w-0 flex flex-col">
+            {channelName && (
+              <span className="text-[10px] text-slate-500 truncate leading-tight">{channelName}</span>
+            )}
+            <span className="text-xs text-slate-400 truncate leading-tight">{videoTitle || videoId}</span>
+          </div>
+          <SpeedControlButton playerRef={playerRef} />
         </div>
 
         {/* Video area */}
         <div className={`flex-none md:flex-1 flex flex-col overflow-hidden relative md:max-h-none transition-[height] duration-200 ease-out motion-reduce:transition-none ${
-          keyboardOpen ? 'h-0' : transcriptCollapsed ? 'h-[calc(100dvh-128px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]' : 'h-[28dvh]'
+          keyboardOpen ? 'h-0' : transcriptCollapsed ? 'h-[calc(100dvh-140px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]' : 'h-[28dvh]'
         }`}>
-          <div className="flex-1 md:flex md:flex-col md:items-center md:justify-start p-0 md:p-4 md:pt-12 overflow-hidden relative z-0">
+          <div className="flex-1 md:flex md:flex-col md:items-center md:justify-center p-0 md:p-4 overflow-hidden relative z-0">
             <div className={`w-full ${viewMaxWidth} md:rounded-xl md:overflow-hidden md:border-[3px] md:border-chalk-accent transition-[max-width] duration-300 ease-out`}>
               <VideoPlayer
                 playerRef={playerRef}
@@ -674,7 +682,7 @@ function WatchContent() {
         <div className={`md:hidden flex flex-col border-t border-chalk-border/40 overflow-hidden transition-[height] duration-200 ease-out motion-reduce:transition-none ${
           keyboardOpen ? 'h-0'
             : transcriptCollapsed ? 'h-10'
-            : 'h-[calc(72dvh-88px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]'
+            : 'h-[calc(72dvh-100px-env(safe-area-inset-top)-env(safe-area-inset-bottom))]'
         }`}>
           {transcriptCollapsed && !keyboardOpen ? (
             <WhisperBar

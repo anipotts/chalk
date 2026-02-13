@@ -267,7 +267,7 @@ export function InteractionOverlay({
     <AnimatePresence>
       {visible && (
         <motion.div
-          className="absolute inset-0 z-30 flex flex-col items-center md:justify-start md:p-4 md:pt-12"
+          className="absolute inset-0 z-30 flex flex-col items-center md:justify-center md:p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -416,8 +416,8 @@ export function InteractionOverlay({
               )}
             </motion.div>
 
-            {/* Input area — below the messages frame */}
-            <div className={`relative z-10 flex-none w-full ${viewMaxWidth} mx-auto pointer-events-none md:mt-3 transition-[max-width] duration-300 ease-out`}>
+            {/* Input area — below the messages frame; absolutely positioned on desktop so it doesn't shift centering */}
+            <div className={`relative z-10 flex-none w-full ${viewMaxWidth} mx-auto pointer-events-none md:absolute md:bottom-4 md:left-0 md:right-0 transition-[max-width] duration-300 ease-out`}>
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}

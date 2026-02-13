@@ -1,0 +1,45 @@
+{
+  "customContext": {
+    "rules": [
+      {
+        "rule": "Never import from `lib/transcript.ts` in client components or files without 'use server'. This module uses `child_process` (via youtube-dl-exec) and will break the browser bundle. Use `lib/video-utils.ts` for client-safe video utilities instead.",
+        "scope": ["components/**", "app/**/page.tsx", "hooks/**"]
+      },
+      {
+        "rule": "Opus streaming mode must use the `\\x1E` (record separator, U+001E) character to separate reasoning tokens from text content. Fast mode (Sonnet/Haiku) must NOT use this separator — it streams plain text only via `toTextStreamResponse()`. Mixing these protocols will break client-side parsing in `splitReasoningFromText()`.",
+        "scope": ["app/api/generate/**", "app/api/video-chat/**", "lib/prompts.ts"]
+      },
+      {
+        "rule": "The Vidstack video player (`@vidstack/react`) and `ThreeDSurface` (React Three Fiber) must always be dynamically imported with `{ ssr: false }`. Rendering these server-side will crash because they depend on browser APIs (DOM, WebGL). Check that any new component wrapping these also uses dynamic import.",
+        "scope": ["components/**", "app/**"]
+      },
+      {
+        "rule": "React 19 requires `useRef` to have an explicit initial value. Always write `useRef<T>(null)` or `useRef<T>(undefined)`, never bare `useRef<T>()`. Missing the initial value is a type error in React 19.",
+        "scope": ["**/*.tsx", "**/*.ts"]
+      },
+      {
+        "rule": "AI-generated timestamp citations must use the `[M:SS]` format (e.g., `[2:34]`). The client parses these with `parseTimestampLinks()` from `lib/video-utils.ts` to create clickable seek links. Using other formats like `[MM:SS]`, `[H:MM:SS]`, or `(2:34)` will not be parsed correctly.",
+        "scope": ["lib/prompts/**", "app/api/video-chat/**"]
+      },
+      {
+        "rule": "Use Chalk theme colors (`chalk-bg`, `chalk-surface`, `chalk-border`, `chalk-text`, `chalk-accent`) instead of raw Tailwind colors (e.g., `bg-gray-900`, `text-white`). Raw colors break the dark theme and visual consistency.",
+        "scope": ["components/**", "app/**/*.tsx"]
+      },
+      {
+        "rule": "ChalkSpec visualization JSON must be a flat element map with a `root` key pointing to the top-level element ID, and an `elements` object mapping IDs to element definitions. Do NOT use nested component structures. Element types are: `vizContainer`, `plot2d`, `plot3d`, `latex`, `textBlock`. Schemas are in `lib/schemas/`.",
+        "scope": ["lib/schemas/**", "lib/prompts.ts", "components/ChatMessage.tsx"]
+      }
+    ],
+    "files": [
+      {
+        "path": "CLAUDE.md",
+        "scope": ["**"]
+      }
+    ],
+    "other": [
+      {
+        "context": "This is a Next.js 16 hackathon project called Chalk with two features: a YouTube Video Learning Assistant (primary, at /watch?v={id}) and a Math Visualizer (secondary, at /math). The critical architectural boundary is between client-safe code (lib/video-utils.ts) and server-only code (lib/transcript.ts). The app uses @vidstack/react@1.12.13 for video playback and React Three Fiber for 3D visualizations."
+      }
+    ]
+  }
+}
