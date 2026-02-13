@@ -135,6 +135,11 @@ body {
   pointer-events: auto !important;
 }
 
+/* Karaoke caption word transitions */
+.karaoke-word {
+  transition: color 0.15s ease-out, text-shadow 0.15s ease-out;
+}
+
 /* Mafs overrides for dark theme */
 .MafsView {
   --mafs-bg: transparent !important;

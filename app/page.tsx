@@ -340,6 +340,21 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* Bookmarklet — drag to bookmark bar for quick YouTube-to-Chalk */}
+      <div className="flex justify-center px-4 pb-3">
+        <a
+          href={`javascript:void(window.location='${typeof window !== 'undefined' ? window.location.origin : ''}/watch?v='+new URLSearchParams(window.location.search).get('v'))`}
+          onClick={(e) => e.preventDefault()}
+          draggable
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] text-[11px] text-slate-500 hover:text-slate-300 hover:border-white/[0.15] transition-colors cursor-grab active:cursor-grabbing"
+          title="Drag this to your bookmark bar, then click it on any YouTube video to open it in Chalk"
+        >
+          <ChalkboardSimple size={12} />
+          <span>Open in Chalk</span>
+          <span className="text-slate-600 ml-1">- drag to bookmarks bar</span>
+        </a>
+      </div>
+
       {/* Below-input content area — recent videos or search results */}
       <div className="flex-1 px-4 pb-8 overflow-y-auto">
         <div className="max-w-2xl mx-auto">

@@ -9,10 +9,12 @@ import { useTranscriptStream } from '@/hooks/useTranscriptStream';
 import { useVideoTitle } from '@/hooks/useVideoTitle';
 import { formatTimestamp } from '@/lib/video-utils';
 import { ChalkboardSimple } from '@phosphor-icons/react';
+import { KaraokeCaption } from '@/components/KaraokeCaption';
 import type { MediaPlayerInstance } from '@vidstack/react';
 import { VoiceModeButton } from '@/components/VoiceModeButton';
 import { useUnifiedMode } from '@/hooks/useUnifiedMode';
 import { useVoiceClone } from '@/hooks/useVoiceClone';
+import { useLearnMode } from '@/hooks/useLearnMode';
 
 const VideoPlayer = dynamic(
   () => import('@/components/VideoPlayer').then((m) => ({ default: m.VideoPlayer })),
@@ -290,6 +292,14 @@ function WatchContent() {
     transcriptSource: source ?? undefined,
   });
 
+  // Learn mode (Opus 4.6 adaptive quizzes)
+  const learnMode = useLearnMode({
+    segments,
+    currentTime,
+    videoId: videoId || '',
+    videoTitle: videoTitle ?? undefined,
+  });
+
   // Load saved progress
   useEffect(() => {
     if (!videoId) return;
@@ -517,7 +527,7 @@ function WatchContent() {
               <path fillRule="evenodd" d="M17 10a.75.75 0 0 1-.75.75H5.612l4.158 3.96a.75.75 0 1 1-1.04 1.08l-5.5-5.25a.75.75 0 0 1 0-1.08l5.5-5.25a.75.75 0 1 1 1.04 1.08L5.612 9.25H16.25A.75.75 0 0 1 17 10Z" clipRule="evenodd" />
             </svg>
           </a>
-          <div className="flex-1 md:flex md:items-center md:justify-center p-0 md:p-4 overflow-hidden relative z-0">
+          <div className="flex-1 md:flex md:flex-col md:items-center md:justify-start p-0 md:p-4 md:pt-6 overflow-hidden relative z-0">
             <div className="w-full max-w-5xl">
               <VideoPlayer
                 playerRef={playerRef}
@@ -527,6 +537,13 @@ function WatchContent() {
                 onTimeUpdate={handleTimeUpdate}
               />
             </div>
+
+            {/* Karaoke captions - show when segments loaded and overlay is closed */}
+            {hasSegments && !interactionVisible && (
+              <div className="w-full max-w-5xl">
+                <KaraokeCaption segments={segments} currentTime={currentTime} />
+              </div>
+            )}
 
             {/* Hint text - only show when overlay is closed */}
             {!interactionVisible && channelName && (
@@ -571,6 +588,23 @@ function WatchContent() {
             onSeek={handleSeek}
             onClose={() => setInteractionVisible(false)}
             inputRef={inputRef}
+            // Learn mode
+            learnPhase={learnMode.phase}
+            learnDifficulty={learnMode.difficulty}
+            learnQuiz={learnMode.currentQuiz}
+            learnExplanation={learnMode.currentExplanation}
+            learnIntroText={learnMode.introText}
+            learnAnswers={learnMode.answers}
+            learnScore={learnMode.score}
+            learnThinking={learnMode.thinking}
+            learnThinkingDuration={learnMode.thinkingDuration}
+            learnLoading={learnMode.isLoading}
+            learnError={learnMode.error}
+            onOpenLearnMode={learnMode.openDifficultySelector}
+            onSelectDifficulty={learnMode.startLearnMode}
+            onSelectAnswer={learnMode.selectAnswer}
+            onNextBatch={learnMode.requestNextBatch}
+            onStopLearnMode={learnMode.stopLearnMode}
           />
         </div>
 

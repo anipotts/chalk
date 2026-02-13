@@ -81,6 +81,18 @@ export function parseTimestampLinks(text: string): Array<{ match: string; second
 /**
  * Format seconds as M:SS or H:MM:SS.
  */
+/**
+ * Get the effective duration of a segment, handling missing/zero durations.
+ */
+export function getSegmentDuration(
+  segment: TranscriptSegment,
+  nextSegment?: TranscriptSegment,
+): number {
+  if (segment.duration > 0) return segment.duration;
+  if (nextSegment) return nextSegment.offset - segment.offset;
+  return 3; // fallback for last segment
+}
+
 export function formatTimestamp(seconds: number): string {
   const s = Math.round(seconds);
   const h = Math.floor(s / 3600);

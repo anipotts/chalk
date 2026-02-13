@@ -4,8 +4,10 @@ import { useState, useRef, useEffect, useCallback, type RefObject } from 'react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { TextInput } from './TextInput';
 import { ExchangeMessage, renderRichContent, type UnifiedExchange } from './ExchangeMessage';
+import { LearnModeQuiz } from './LearnModeQuiz';
 import type { VoiceState } from '@/hooks/useVoiceMode';
 import type { TranscriptSegment, TranscriptSource } from '@/lib/video-utils';
+import type { ParsedQuiz, ParsedExplanation, Difficulty, LearnModePhase } from '@/hooks/useLearnMode';
 
 interface InteractionOverlayProps {
   visible: boolean;
@@ -43,6 +45,24 @@ interface InteractionOverlayProps {
   onSeek: (seconds: number) => void;
   onClose: () => void;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
+
+  // Learn mode
+  learnPhase: LearnModePhase;
+  learnDifficulty: Difficulty | null;
+  learnQuiz: ParsedQuiz | null;
+  learnExplanation: ParsedExplanation | null;
+  learnIntroText: string;
+  learnAnswers: Map<number, string>;
+  learnScore: { correct: number; total: number };
+  learnThinking: string | null;
+  learnThinkingDuration: number | null;
+  learnLoading: boolean;
+  learnError: string | null;
+  onOpenLearnMode: () => void;
+  onSelectDifficulty: (difficulty: Difficulty) => void;
+  onSelectAnswer: (questionIndex: number, optionId: string) => void;
+  onNextBatch: () => void;
+  onStopLearnMode: () => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -149,6 +169,24 @@ export function InteractionOverlay({
   onSeek,
   onClose,
   inputRef,
+
+  // Learn mode
+  learnPhase,
+  learnDifficulty,
+  learnQuiz,
+  learnExplanation,
+  learnIntroText,
+  learnAnswers,
+  learnScore,
+  learnThinking,
+  learnThinkingDuration,
+  learnLoading,
+  learnError,
+  onOpenLearnMode,
+  onSelectDifficulty,
+  onSelectAnswer,
+  onNextBatch,
+  onStopLearnMode,
 }: InteractionOverlayProps) {
   const [input, setInput] = useState('');
   const [isScrolledUp, setIsScrolledUp] = useState(false);
@@ -171,8 +209,10 @@ export function InteractionOverlay({
     } catch { /* ignore */ }
   }, []);
 
-  // Show idle hint when: text mode + no exchanges + no input + no current text exchange
-  const showIdleHint = isTextMode && exchanges.length === 0 && !input && !currentUserText && !currentAiText && !isTextStreaming;
+  const isLearnModeActive = learnPhase !== 'idle';
+
+  // Show idle hint when: text mode + no exchanges + no input + no current text exchange + not in learn mode
+  const showIdleHint = isTextMode && exchanges.length === 0 && !input && !currentUserText && !currentAiText && !isTextStreaming && !isLearnModeActive;
 
   // Show text input area - always visible (voice button can change states independently)
   const showTextInput = true;
@@ -264,6 +304,28 @@ export function InteractionOverlay({
                 onScroll={handleScroll}
                 className="flex-1 w-full overflow-y-auto scroll-smooth space-y-3 mb-4 pointer-events-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
               >
+                {/* Learn mode UI - replaces chat when active */}
+                {isLearnModeActive ? (
+                  <LearnModeQuiz
+                    phase={learnPhase}
+                    quiz={learnQuiz}
+                    explanation={learnExplanation}
+                    introText={learnIntroText}
+                    answers={learnAnswers}
+                    score={learnScore}
+                    difficulty={learnDifficulty}
+                    thinking={learnThinking}
+                    thinkingDuration={learnThinkingDuration}
+                    isLoading={learnLoading}
+                    error={learnError}
+                    onSelectAnswer={onSelectAnswer}
+                    onSelectDifficulty={onSelectDifficulty}
+                    onNextBatch={onNextBatch}
+                    onStop={onStopLearnMode}
+                    onSeek={handleTimestampSeek}
+                  />
+                ) : (
+                <>
                 {/* Past exchanges */}
                 {exchanges.map((exchange) => (
                   <ExchangeMessage
@@ -319,6 +381,8 @@ export function InteractionOverlay({
                     {textError || voiceError}
                   </motion.div>
                 )}
+                </>
+                )}
               </div>
 
               {/* Scroll to bottom button - only when there are exchanges */}
@@ -337,11 +401,11 @@ export function InteractionOverlay({
               {/* Input row: Text input | Mic button | Send button */}
               {showTextInput && (
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  transition={{ duration: 0.3, ease: 'easeOut' }}
-                  className={`pointer-events-auto ${exchanges.length > 0 ? 'flex-none w-full' : 'w-full max-w-md'}`}
+                  initial={{ opacity: 0, y: 10, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.97 }}
+                  transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                  className={`pointer-events-auto ${exchanges.length > 0 || isLearnModeActive ? 'flex-none w-full' : 'w-full max-w-md'}`}
                 >
                   {/* Unified input row */}
                   <div className="flex items-center gap-2">
@@ -355,6 +419,20 @@ export function InteractionOverlay({
                       inputRef={inputRef}
                       autoFocus={true}
                     />
+
+                    {/* Learn mode button */}
+                    {!isLearnModeActive && (
+                      <button
+                        type="button"
+                        onClick={onOpenLearnMode}
+                        disabled={isTextStreaming}
+                        className="flex-shrink-0 h-11 px-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.15] text-white/70 hover:text-white transition-all text-xs font-medium disabled:opacity-30"
+                        title="Start Learn Mode"
+                        aria-label="Start Learn Mode"
+                      >
+                        Learn
+                      </button>
+                    )}
 
                     {/* Mic button */}
                     <motion.button
