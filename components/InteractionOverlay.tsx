@@ -70,8 +70,7 @@ class LearnErrorBoundary extends React.Component<
 }
 
 interface InteractionOverlayProps {
-  visible: boolean;
-  autoDismiss?: boolean;
+  expanded: boolean;
   viewSize?: "compact" | "default" | "expanded";
   segments: TranscriptSegment[];
   currentTime: number;
@@ -123,8 +122,8 @@ interface InteractionOverlayProps {
   onSeek: (seconds: number) => void;
   onClose: () => void;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
-  pendingKey?: string | null;
-  onConsumePendingKey?: () => void;
+  onInputFocus?: () => void;
+  onInputBlur?: () => void;
 
   // Learn mode
   learnPhase: LearnModePhase;
@@ -153,6 +152,17 @@ interface InteractionOverlayProps {
   // Curriculum context (cross-video playlist)
   curriculumContext?: string | null;
   curriculumVideoCount?: number;
+
+  // External streaming control (unified model)
+  onAddExchange?: (exchange: UnifiedExchange) => void;
+  onSetStreamingState?: (state: {
+    userText?: string;
+    aiText?: string;
+    isStreaming?: boolean;
+    toolCalls?: ToolCallData[];
+  }) => void;
+  currentMode?: 'chat' | 'explore';
+  onSetCurrentMode?: (mode: 'chat' | 'explore') => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -316,8 +326,7 @@ function TimestampTooltip({
 }
 
 export function InteractionOverlay({
-  visible,
-  autoDismiss,
+  expanded,
   viewSize = "default",
   segments,
   currentTime,
@@ -362,8 +371,8 @@ export function InteractionOverlay({
   onSeek,
   onClose,
   inputRef,
-  pendingKey,
-  onConsumePendingKey,
+  onInputFocus,
+  onInputBlur,
 
   // Learn mode
   learnPhase,
@@ -390,6 +399,9 @@ export function InteractionOverlay({
   onStopLearnMode,
   curriculumContext,
   curriculumVideoCount,
+  onAddExchange,
+  onSetStreamingState,
+  onSetCurrentMode,
 }: InteractionOverlayProps) {
   const [input, setInput] = useState("");
   const [canScrollUp, setCanScrollUp] = useState(false);
@@ -403,25 +415,14 @@ export function InteractionOverlay({
         ? "max-w-6xl"
         : "max-w-4xl";
 
-  // Explore Mode state
+  // Explore Mode state (UI-only; exchange data flows through unified model)
   const [exploreMode, setExploreMode] = useState(false);
   const [explorePills, setExplorePills] = useState<string[]>([]);
   const [exploreGoal, setExploreGoal] = useState<string | null>(null);
-  const [exploreExchanges, setExploreExchanges] = useState<
-    Array<{
-      role: "user" | "assistant";
-      text: string;
-      thinking?: string;
-      thinkingDuration?: number;
-    }>
-  >([]);
-  const [exploreStreaming, setExploreStreaming] = useState(false);
-  const [exploreCurrentAiText, setExploreCurrentAiText] = useState("");
-  const [exploreCurrentUserText, setExploreCurrentUserText] = useState("");
   const [exploreError, setExploreError] = useState<string | null>(null);
   const exploreAbortRef = useRef<AbortController | null>(null);
 
-  // Adaptive thinking state
+  // Adaptive thinking state (UI-only during streaming)
   const [exploreIsThinking, setExploreIsThinking] = useState(false);
   const [exploreThinkingDuration, setExploreThinkingDuration] = useState<
     number | null
@@ -455,21 +456,7 @@ export function InteractionOverlay({
     }
   }, []);
 
-  // Consume pending key from keyboard shortcut that opened the overlay
-  useEffect(() => {
-    if (pendingKey) {
-      setInput((prev) => prev + pendingKey);
-      onConsumePendingKey?.();
-      // Focus after the character is set
-      requestAnimationFrame(() => inputRef?.current?.focus());
-    }
-  }, [pendingKey, onConsumePendingKey, inputRef]);
-
   const isLearnModeActive = learnPhase !== "idle";
-  const hasExploreContent =
-    exploreExchanges.length > 0 ||
-    exploreCurrentAiText ||
-    exploreCurrentUserText;
   const hasContent =
     exchanges.length > 0 ||
     isTextStreaming ||
@@ -478,20 +465,9 @@ export function InteractionOverlay({
     !!voiceTranscript ||
     !!voiceResponseText ||
     isLearnModeActive ||
-    hasExploreContent ||
     exploreMode;
 
-  // Auto-dismiss: when video is playing (autoDismiss), no content, and no input, close after 5s
-  useEffect(() => {
-    if (!autoDismiss || !visible) return;
-    if (hasContent || input.trim()) return;
-    const timer = setTimeout(() => {
-      onClose();
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, [autoDismiss, visible, hasContent, input, onClose]);
-
-  // Show idle hint when: text mode + no exchanges + no input + no current text exchange + not in learn mode + no explore content
+  // Show idle hint when: text mode + no exchanges + no input + no current text exchange + not in learn mode
   const showIdleHint =
     isTextMode &&
     exchanges.length === 0 &&
@@ -500,7 +476,6 @@ export function InteractionOverlay({
     !currentAiText &&
     !isTextStreaming &&
     !isLearnModeActive &&
-    !hasExploreContent &&
     !exploreMode;
 
   // Auto-scroll
@@ -525,18 +500,16 @@ export function InteractionOverlay({
   }, [
     exchanges,
     currentAiText,
-    exploreExchanges,
-    exploreCurrentAiText,
     scrollToBottom,
     canScrollDown,
   ]);
 
-  // Always scroll to bottom when overlay becomes visible
+  // Always scroll to bottom when messages area expands
   useEffect(() => {
-    if (visible) {
+    if (expanded) {
       requestAnimationFrame(() => scrollToBottom());
     }
-  }, [visible, scrollToBottom]);
+  }, [expanded, scrollToBottom]);
 
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
@@ -571,16 +544,12 @@ export function InteractionOverlay({
         onEnsureLearnOptions?.();
         setExplorePills([]);
       } else {
-        // Exiting explore mode — clean up everything
+        // Exiting explore mode — clean up UI state only (exchanges persist in unified model)
         setExplorePills([]);
         if (exploreAbortRef.current) {
           exploreAbortRef.current.abort("explore toggled");
           exploreAbortRef.current = null;
         }
-        setExploreStreaming(false);
-        setExploreCurrentAiText("");
-        setExploreCurrentUserText("");
-        setExploreExchanges([]);
         setExploreGoal(null);
         setExploreError(null);
         // Also stop learn mode if active
@@ -595,16 +564,22 @@ export function InteractionOverlay({
   // Submit explore message (calls API directly with adaptive thinking budget)
   const submitExploreMessage = useCallback(
     async (text: string) => {
-      if (exploreStreaming) return;
+      if (isTextStreaming) return;
 
       if (!exploreGoal) {
         setExploreGoal(text);
       }
 
+      // Set mode to explore
+      onSetCurrentMode?.("explore");
+
       // Classify thinking budget based on message complexity
+      const exploreExchangeCount = exchanges.filter(
+        (e) => e.mode === "explore",
+      ).length;
       const budget = classifyThinkingBudget(
         text,
-        exploreExchanges.length,
+        exploreExchangeCount,
         undefined,
         "explore",
       );
@@ -613,19 +588,25 @@ export function InteractionOverlay({
       setExploreThinking(null);
       exploreThinkingStartRef.current = Date.now();
 
-      setExploreCurrentUserText(text);
-      setExploreCurrentAiText("");
+      // Use unified streaming state
+      onSetStreamingState?.({
+        userText: text,
+        aiText: "",
+        isStreaming: true,
+        toolCalls: [],
+      });
       setExplorePills([]);
       setExploreError(null);
-      setExploreStreaming(true);
 
-      const history = [
-        ...exploreExchanges.map((ex) => ({
-          role: ex.role,
-          content: ex.text,
-        })),
-        { role: "user" as const, content: text },
-      ];
+      // Build history from unified explore exchanges
+      const history = exchanges
+        .filter((e) => e.mode === "explore")
+        .slice(-10)
+        .flatMap((ex) => [
+          { role: "user" as const, content: ex.userText },
+          { role: "assistant" as const, content: ex.aiText },
+        ]);
+      history.push({ role: "user" as const, content: text });
 
       const controller = new AbortController();
       exploreAbortRef.current = controller;
@@ -687,12 +668,11 @@ export function InteractionOverlay({
             setExploreThinking(reasoning || null);
 
             // Show the text content (after separator), parse options progressively
-            // Strip complete <options>...</options> AND partial <options> at end of stream
             let cleaned = textContent;
             const [stripped] = parseExploreOptions(cleaned);
             cleaned = stripped;
             cleaned = cleaned.replace(/<options>[^<]*$/, "").trimEnd();
-            setExploreCurrentAiText(cleaned);
+            onSetStreamingState?.({ aiText: cleaned });
           } else {
             // Still in reasoning phase — update thinking text
             setExploreThinking(reasoning || null);
@@ -707,41 +687,57 @@ export function InteractionOverlay({
           ? Date.now() - exploreThinkingStartRef.current
           : null;
 
-        setExploreExchanges((prev) => [
-          ...prev,
-          { role: "user", text },
-          {
-            role: "assistant",
-            text: cleanText,
-            thinking: finalReasoning || undefined,
-            thinkingDuration: thinkDuration ?? undefined,
-          },
-        ]);
-        setExploreCurrentUserText("");
-        setExploreCurrentAiText("");
+        // Add to unified exchanges
+        const exchange: UnifiedExchange = {
+          id: String(Date.now()),
+          type: "text",
+          mode: "explore",
+          userText: text,
+          aiText: cleanText,
+          timestamp: currentTime,
+          model: "opus",
+          thinking: finalReasoning || undefined,
+          thinkingDuration: thinkDuration ?? undefined,
+          explorePills: options.length > 0 ? options : undefined,
+        };
+        onAddExchange?.(exchange);
+        onSetStreamingState?.({
+          userText: "",
+          aiText: "",
+          isStreaming: false,
+          toolCalls: [],
+        });
         setExplorePills(options);
       } catch (err: unknown) {
         if (err instanceof Error && err.name === "AbortError") return;
         setExploreError(
           err instanceof Error ? err.message : "Something went wrong",
         );
+        onSetStreamingState?.({
+          userText: "",
+          aiText: "",
+          isStreaming: false,
+          toolCalls: [],
+        });
       } finally {
-        setExploreStreaming(false);
         setExploreIsThinking(false);
         exploreAbortRef.current = null;
         exploreThinkingStartRef.current = null;
       }
     },
     [
-      exploreStreaming,
+      isTextStreaming,
       exploreGoal,
-      exploreExchanges,
+      exchanges,
       currentTime,
       segments,
       videoTitle,
       transcriptSource,
       curriculumContext,
       exploreIsThinking,
+      onSetCurrentMode,
+      onSetStreamingState,
+      onAddExchange,
     ],
   );
 
@@ -802,298 +798,247 @@ export function InteractionOverlay({
     }
   }, []);
 
-  // Determine which exchanges and streaming text to show
+  // Streaming state is now unified — no mode switching needed
   const showExploreUI = exploreMode;
-  const activeStreaming = showExploreUI ? exploreStreaming : isTextStreaming;
-  const activeUserText = showExploreUI
-    ? exploreCurrentUserText
-    : currentUserText;
-  const activeAiText = showExploreUI ? exploreCurrentAiText : currentAiText;
 
   return (
-    <AnimatePresence>
-      {visible && (
-        <div className="flex absolute inset-0 z-30 flex-col items-center md:justify-center md:p-4">
-          {/* Backdrop - clickable when content exists, otherwise transparent pass-through */}
-          <motion.div
-            className={`absolute inset-0 ${
-              hasContent
-                ? `cursor-pointer ${blurLevel === "active" ? "bg-black/40 backdrop-blur-md" : ""}`
-                : "pointer-events-none"
-            }`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                onClose();
-              }
-            }}
-          />
-
-          {/* Wrapper — groups border frame + input strip for centering */}
-          <div
-            className={`flex relative z-10 flex-col flex-1 mx-auto w-full min-h-0 ease-out pointer-events-none ${viewMaxWidth} md:flex-none transition-[max-width] duration-[250ms]`}
-          >
-            {/* Content frame */}
-            <div
-              className={`relative flex flex-col flex-1 min-h-0 md:flex-none md:aspect-video md:overflow-hidden md:rounded-xl md:border-[3px] md:border-transparent ${
+    <>
+      {/* Expandable message overlay — gated by expanded */}
+      <AnimatePresence>
+        {expanded && (
+          <div className="flex absolute inset-0 z-30 flex-col items-center md:justify-center md:p-4">
+            {/* Backdrop - clickable to close */}
+            <motion.div
+              key="overlay-backdrop"
+              className={`absolute inset-0 ${
                 hasContent
-                  ? "md:bg-black/70 md:backdrop-blur-2xl md:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.5)] items-center"
-                  : "items-center justify-end"
+                  ? `cursor-pointer ${blurLevel === "active" ? "bg-black/40 backdrop-blur-md" : ""}`
+                  : "pointer-events-none"
               }`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  onClose();
+                }
+              }}
+            />
+
+            {/* Centering wrapper */}
+            <div
+              className={`flex relative z-10 flex-col flex-1 mx-auto w-full min-h-0 ease-out pointer-events-none ${viewMaxWidth} md:flex-none transition-[max-width] duration-[250ms]`}
             >
-              {/* UNIFIED INPUT MODE — swipe down to dismiss; content fades in/out */}
-              <motion.div
-                key="text-mode"
-                drag="y"
-                dragConstraints={{ top: 0, bottom: 0 }}
-                dragElastic={{ top: 0, bottom: 0.5 }}
-                onDragEnd={(_, info) => {
-                  if (info.offset.y > 100 || info.velocity.y > 500) onClose();
-                }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className={`flex flex-col w-full flex-1 min-h-0 ${
-                  hasContent ? "items-center" : "justify-end items-center"
+              {/* Content frame — messages + scroll badges */}
+              <div
+                className={`relative flex flex-col flex-1 min-h-0 md:flex-none md:aspect-video md:overflow-hidden md:rounded-xl md:border-[3px] md:border-transparent ${
+                  hasContent
+                    ? "md:bg-black/70 md:backdrop-blur-2xl md:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.5)] items-center"
+                    : "items-center justify-end"
                 }`}
               >
-                {/* Mobile grip indicator for swipe-to-close */}
-                <div className="flex-shrink-0 mx-auto mb-3 w-8 h-1 rounded-full pointer-events-auto md:hidden bg-white/20" />
+                <motion.div
+                  key="text-mode"
+                  drag="y"
+                  dragConstraints={{ top: 0, bottom: 0 }}
+                  dragElastic={{ top: 0, bottom: 0.5 }}
+                  onDragEnd={(_, info) => {
+                    if (info.offset.y > 100 || info.velocity.y > 500) onClose();
+                  }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className={`flex flex-col w-full flex-1 min-h-0 ${
+                    hasContent ? "items-center" : "justify-end items-center"
+                  }`}
+                >
+                  {/* Mobile grip indicator for swipe-to-close */}
+                  <div className="flex-shrink-0 mx-auto mb-3 w-8 h-1 rounded-full pointer-events-auto md:hidden bg-white/20" />
 
-                {/* Messages - unified container for all messages */}
-                {hasContent && (
-                  <div
-                    ref={scrollRef}
-                    onScroll={handleScroll}
-                    onMouseOver={handleMouseOver}
-                    onMouseOut={handleMouseOut}
-                    className="flex-1 w-full overflow-y-auto scroll-smooth space-y-3 md:space-y-4 px-3 md:px-4 py-3 md:py-4 pointer-events-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-                  >
-                    {/* Explore mode: initial options */}
-                    {showExploreUI &&
-                      !hasExploreContent &&
-                      !exploreStreaming &&
-                      !isLearnModeActive && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 6 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex flex-col justify-end w-full h-full"
-                        >
-                          <p className="mb-3 text-sm text-slate-400">
-                            Pick a starting point, or just ask.
-                          </p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {[
-                              "Summarize with timestamps",
-                              "Quiz me on this",
-                              "Key takeaways so far",
-                            ].map((label) => (
-                              <button
-                                key={label}
-                                onClick={() => submitExploreMessage(label)}
-                                className="px-3 py-1.5 rounded-lg text-xs text-slate-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white transition-all active:scale-[0.97]"
-                              >
-                                {label}
-                              </button>
-                            ))}
-                          </div>
-                        </motion.div>
-                      )}
+                  {/* Messages - unified container for all messages */}
+                  {hasContent && (
+                    <div
+                      ref={scrollRef}
+                      onScroll={handleScroll}
+                      onMouseOver={handleMouseOver}
+                      onMouseOut={handleMouseOut}
+                      className="flex-1 w-full overflow-y-auto scroll-smooth space-y-3 md:space-y-4 px-3 md:px-4 py-3 md:py-4 pointer-events-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                    >
+                      {/* Explore mode: initial options */}
+                      {showExploreUI &&
+                        !exchanges.some((e) => e.mode === "explore") &&
+                        !isTextStreaming &&
+                        !isLearnModeActive && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex flex-col justify-end w-full h-full"
+                          >
+                            <p className="mb-3 text-sm text-slate-400">
+                              Pick a starting point, or just ask.
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {[
+                                "Summarize with timestamps",
+                                "Quiz me on this",
+                                "Key takeaways so far",
+                              ].map((label) => (
+                                <button
+                                  key={label}
+                                  onClick={() => submitExploreMessage(label)}
+                                  className="px-3 py-1.5 rounded-lg text-xs text-slate-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white transition-all active:scale-[0.97]"
+                                >
+                                  {label}
+                                </button>
+                              ))}
+                            </div>
+                          </motion.div>
+                        )}
 
-                    {/* Explore mode conversation history */}
-                    {showExploreUI &&
-                      exploreExchanges.map((ex, i) => {
-                        if (ex.role === "user") {
-                          return (
+                      {/* Unified conversation history — all exchanges in chronological order */}
+                      {exchanges.map((exchange, i) => {
+                        const isLastExplore =
+                          exchange.mode === "explore" &&
+                          !exchanges
+                            .slice(i + 1)
+                            .some((e) => e.mode === "explore");
+                        return (
+                          <ExchangeMessage
+                            key={exchange.id}
+                            exchange={exchange}
+                            onSeek={handleTimestampSeek}
+                            videoId={videoId}
+                            onPlayMessage={onPlayMessage}
+                            isPlaying={playingMessageId === exchange.id}
+                            isReadAloudLoading={
+                              isReadAloudLoading &&
+                              playingMessageId === exchange.id
+                            }
+                            onOpenVideo={onOpenVideo}
+                            isLastExploreExchange={isLastExplore}
+                            onPillSelect={handlePillSelect}
+                            onFocusInput={focusInput}
+                            exploreMode={exploreMode}
+                          />
+                        );
+                      })}
+
+                      {/* Thinking timer for explore mode */}
+                      {showExploreUI &&
+                        isTextStreaming &&
+                        (exploreIsThinking || exploreThinkingDuration) && (
+                          <TalkingTimer
+                            isThinking={exploreIsThinking}
+                            thinkingDuration={exploreThinkingDuration}
+                          />
+                        )}
+
+                      {/* Current streaming exchange */}
+                      {(currentUserText ||
+                        currentAiText ||
+                        (!showExploreUI &&
+                          (voiceTranscript || voiceResponseText))) && (
+                        <div className="space-y-3">
+                          {(currentUserText ||
+                            (!showExploreUI && voiceTranscript)) && (
                             <motion.div
-                              key={`explore-${i}`}
                               initial={{ opacity: 0, y: 6 }}
                               animate={{ opacity: 1, y: 0 }}
                               className="flex justify-end w-full"
                             >
                               <div className="max-w-[85%] px-3.5 py-2 rounded-2xl bg-chalk-accent/90 text-white text-sm leading-relaxed break-words">
-                                {ex.text}
+                                {currentUserText || voiceTranscript}
                               </div>
                             </motion.div>
-                          );
-                        }
-                        const isLastAssistant =
-                          i === exploreExchanges.length - 1;
-                        return (
-                          <motion.div
-                            key={`explore-${i}`}
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex justify-start w-full"
-                          >
-                            <div className="max-w-[85%]">
-                              <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-                                {renderRichContent(
-                                  ex.text,
-                                  handleTimestampSeek,
-                                  videoId,
-                                )}
+                          )}
+                          {(currentAiText ||
+                            (!showExploreUI && voiceResponseText)) && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="flex justify-start w-full"
+                            >
+                              <div className="max-w-[85%]">
+                                <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
+                                  {renderRichContent(
+                                    currentAiText || voiceResponseText,
+                                    handleTimestampSeek,
+                                    videoId,
+                                  )}
+                                  {(isTextStreaming ||
+                                    voiceState === "thinking") && (
+                                    <span className="inline-block w-0.5 h-4 bg-chalk-accent animate-pulse ml-0.5 align-middle" />
+                                  )}
+                                </div>
+                                {!showExploreUI &&
+                                  currentToolCalls &&
+                                  currentToolCalls.length > 0 && (
+                                    <div className="mt-2 space-y-1">
+                                      {currentToolCalls.map((tc, i) => (
+                                        <ToolResultRenderer
+                                          key={`stream-tool-${i}`}
+                                          toolCall={tc}
+                                          onSeek={handleTimestampSeek}
+                                          onOpenVideo={onOpenVideo}
+                                        />
+                                      ))}
+                                    </div>
+                                  )}
                               </div>
-                              {ex.thinkingDuration && (
-                                <span className="text-[11px] text-slate-500 font-mono mt-1 block">
-                                  thought for{" "}
-                                  {(ex.thinkingDuration / 1000).toFixed(1)}s
-                                </span>
-                              )}
-                              {isLastAssistant &&
-                                explorePills.length > 0 &&
-                                !exploreStreaming && (
-                                  <ExplorePills
-                                    options={explorePills}
-                                    onSelect={handlePillSelect}
-                                    onFocusInput={focusInput}
-                                  />
-                                )}
-                            </div>
-                          </motion.div>
-                        );
-                      })}
-
-                    {/* Normal mode: past exchanges */}
-                    {!showExploreUI &&
-                      exchanges.map((exchange) => (
-                        <ExchangeMessage
-                          key={exchange.id}
-                          exchange={exchange}
-                          onSeek={handleTimestampSeek}
-                          videoId={videoId}
-                          onPlayMessage={onPlayMessage}
-                          isPlaying={playingMessageId === exchange.id}
-                          isReadAloudLoading={
-                            isReadAloudLoading &&
-                            playingMessageId === exchange.id
-                          }
-                          onOpenVideo={onOpenVideo}
-                        />
-                      ))}
-
-                    {/* Thinking timer for explore mode */}
-                    {showExploreUI &&
-                      exploreStreaming &&
-                      (exploreIsThinking || exploreThinkingDuration) && (
-                        <TalkingTimer
-                          isThinking={exploreIsThinking}
-                          thinkingDuration={exploreThinkingDuration}
-                        />
+                            </motion.div>
+                          )}
+                        </div>
                       )}
 
-                    {/* Current streaming exchange */}
-                    {(activeUserText ||
-                      activeAiText ||
-                      (!showExploreUI &&
-                        (voiceTranscript || voiceResponseText))) && (
-                      <div className="space-y-3">
-                        {/* User message (text or voice transcript) */}
-                        {(activeUserText ||
-                          (!showExploreUI && voiceTranscript)) && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex justify-end w-full"
-                          >
-                            <div className="max-w-[85%] px-3.5 py-2 rounded-2xl bg-chalk-accent/90 text-white text-sm leading-relaxed break-words">
-                              {activeUserText || voiceTranscript}
-                            </div>
-                          </motion.div>
-                        )}
-                        {/* AI response */}
-                        {(activeAiText ||
-                          (!showExploreUI && voiceResponseText)) && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 6 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex justify-start w-full"
-                          >
-                            <div className="max-w-[85%]">
-                              <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-                                {renderRichContent(
-                                  activeAiText || voiceResponseText,
-                                  handleTimestampSeek,
-                                  videoId,
-                                )}
-                                {(activeStreaming ||
-                                  voiceState === "thinking") && (
-                                  <span className="inline-block w-0.5 h-4 bg-chalk-accent animate-pulse ml-0.5 align-middle" />
-                                )}
-                              </div>
-                              {/* Tool results during streaming */}
-                              {!showExploreUI &&
-                                currentToolCalls &&
-                                currentToolCalls.length > 0 && (
-                                  <div className="mt-2 space-y-1">
-                                    {currentToolCalls.map((tc, i) => (
-                                      <ToolResultRenderer
-                                        key={`stream-tool-${i}`}
-                                        toolCall={tc}
-                                        onSeek={handleTimestampSeek}
-                                        onOpenVideo={onOpenVideo}
-                                      />
-                                    ))}
-                                  </div>
-                                )}
-                            </div>
-                          </motion.div>
-                        )}
-                      </div>
-                    )}
+                      {/* Error message */}
+                      {(textError || voiceError || exploreError) && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="px-3 py-2 text-xs text-rose-400 rounded-lg border bg-rose-500/10 border-rose-500/20"
+                        >
+                          {textError || voiceError || exploreError}
+                        </motion.div>
+                      )}
 
-                    {/* Error message */}
-                    {(textError || voiceError || exploreError) && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 5 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="px-3 py-2 text-xs text-rose-400 rounded-lg border bg-rose-500/10 border-rose-500/20"
-                      >
-                        {textError || voiceError || exploreError}
-                      </motion.div>
-                    )}
+                      {/* Learn mode content */}
+                      {isLearnModeActive && (
+                        <LearnErrorBoundary onReset={onStopLearnMode}>
+                          <LearnModeQuiz
+                            phase={learnPhase}
+                            quiz={learnQuiz}
+                            explanation={learnExplanation}
+                            introText={learnIntroText}
+                            responseContent={learnResponseContent}
+                            exportableContent={learnExportableContent}
+                            answers={learnAnswers}
+                            score={learnScore}
+                            selectedAction={learnSelectedAction}
+                            thinking={learnThinking}
+                            thinkingDuration={learnThinkingDuration}
+                            isLoading={learnLoading}
+                            error={learnError}
+                            learnOptions={learnOptions}
+                            learnOptionsLoading={learnOptionsLoading}
+                            videoTitle={videoTitle}
+                            videoId={videoId}
+                            onSelectAnswer={onSelectAnswer}
+                            onSelectAction={onSelectAction}
+                            onFocusInput={onFocusInput}
+                            onNextBatch={onNextBatch}
+                            onStop={onStopLearnMode}
+                            onSeek={handleTimestampSeek}
+                          />
+                        </LearnErrorBoundary>
+                      )}
+                    </div>
+                  )}
 
-                    {/* Learn mode content — shown below chat, not replacing it */}
-                    {isLearnModeActive && (
-                      <LearnErrorBoundary onReset={onStopLearnMode}>
-                        <LearnModeQuiz
-                          phase={learnPhase}
-                          quiz={learnQuiz}
-                          explanation={learnExplanation}
-                          introText={learnIntroText}
-                          responseContent={learnResponseContent}
-                          exportableContent={learnExportableContent}
-                          answers={learnAnswers}
-                          score={learnScore}
-                          selectedAction={learnSelectedAction}
-                          thinking={learnThinking}
-                          thinkingDuration={learnThinkingDuration}
-                          isLoading={learnLoading}
-                          error={learnError}
-                          learnOptions={learnOptions}
-                          learnOptionsLoading={learnOptionsLoading}
-                          videoTitle={videoTitle}
-                          videoId={videoId}
-                          onSelectAnswer={onSelectAnswer}
-                          onSelectAction={onSelectAction}
-                          onFocusInput={onFocusInput}
-                          onNextBatch={onNextBatch}
-                          onStop={onStopLearnMode}
-                          onSeek={handleTimestampSeek}
-                        />
-                      </LearnErrorBoundary>
-                    )}
-                  </div>
-                )}
-
-                {/* Scroll badges — desktop only, flush with blue border corners */}
-                <AnimatePresence>
-                  {canScrollDown &&
-                    (exchanges.length > 0 || exploreExchanges.length > 0) && (
+                  {/* Scroll badges — desktop only, tabs growing from blue border */}
+                  <AnimatePresence>
+                    {canScrollDown && exchanges.length > 0 && (
                       <motion.button
                         key="scroll-down-badge"
                         initial={{ opacity: 0, y: -6 }}
@@ -1104,17 +1049,16 @@ export function InteractionOverlay({
                           ease: [0.23, 1, 0.32, 1],
                         }}
                         onClick={scrollToBottom}
-                        className="hidden md:flex absolute top-0 left-0 z-20 items-center gap-1 px-2.5 py-1.5 rounded-none rounded-br-lg bg-chalk-accent text-white text-[11px] font-medium shadow-lg shadow-blue-500/20 pointer-events-auto hover:bg-blue-400 transition-colors"
+                        className="hidden md:flex absolute top-0 left-0 z-[40] items-center gap-1 px-2.5 py-1.5 rounded-none rounded-br-lg bg-chalk-accent text-white text-[11px] font-medium shadow-lg shadow-blue-500/20 pointer-events-auto hover:bg-blue-400 transition-colors"
                         aria-label="Scroll to latest"
                       >
                         <CaretDown size={11} weight="bold" />
                         Latest
                       </motion.button>
                     )}
-                </AnimatePresence>
-                <AnimatePresence>
-                  {canScrollUp &&
-                    (exchanges.length > 0 || exploreExchanges.length > 0) && (
+                  </AnimatePresence>
+                  <AnimatePresence>
+                    {canScrollUp && exchanges.length > 0 && (
                       <motion.button
                         key="scroll-up-badge"
                         initial={{ opacity: 0, y: -6 }}
@@ -1125,226 +1069,218 @@ export function InteractionOverlay({
                           ease: [0.23, 1, 0.32, 1],
                         }}
                         onClick={scrollToTop}
-                        className="hidden md:flex absolute top-0 right-0 z-20 items-center gap-1 px-2.5 py-1.5 rounded-none rounded-bl-lg bg-chalk-accent text-white text-[11px] font-medium shadow-lg shadow-blue-500/20 pointer-events-auto hover:bg-blue-400 transition-colors"
+                        className="hidden md:flex absolute top-0 right-0 z-[40] items-center gap-1 px-2.5 py-1.5 rounded-none rounded-bl-lg bg-chalk-accent text-white text-[11px] font-medium shadow-lg shadow-blue-500/20 pointer-events-auto hover:bg-blue-400 transition-colors"
                         aria-label="Scroll to top"
                       >
                         Top
                         <CaretUp size={11} weight="bold" />
                       </motion.button>
                     )}
-                </AnimatePresence>
-              </motion.div>
-            </div>
+                  </AnimatePresence>
+                </motion.div>
+              </div>
 
-            {/* Input strip — below border on desktop, bottom of overlay on mobile */}
-            <div className="flex-none px-3 pb-3 w-full pointer-events-auto md:px-0 md:pb-0 md:mt-3">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-                className="w-full"
-              >
-                {/* Unified input row */}
-                <div className="flex gap-2 items-center">
-                  {/* Curriculum context badge */}
-                  {curriculumContext &&
-                    curriculumVideoCount &&
-                    curriculumVideoCount > 0 && (
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <span className="text-[10px] font-medium text-slate-500 bg-white/[0.04] border border-white/[0.06] rounded-full px-2 py-0.5">
-                          Curriculum: {curriculumVideoCount} videos loaded
-                        </span>
-                      </div>
-                    )}
-
-                  <TextInput
-                    value={input}
-                    onChange={setInput}
-                    onSubmit={handleSubmit}
-                    isStreaming={activeStreaming}
-                    onStop={
-                      showExploreUI
-                        ? () => {
-                            if (exploreAbortRef.current) {
-                              exploreAbortRef.current.abort("stopped");
-                              exploreAbortRef.current = null;
-                            }
-                            setExploreStreaming(false);
-                          }
-                        : onStopTextStream
-                    }
-                    placeholder="Ask about this video..."
-                    inputRef={inputRef}
-                    autoFocus={true}
-                    exploreMode={exploreMode}
-                    onToggleExplore={toggleExploreMode}
-                  />
-
-                  {/* Mic button */}
-                  <motion.button
-                    className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-all ${
-                      voiceState === "recording"
-                        ? "bg-rose-500 shadow-lg shadow-rose-500/30"
-                        : voiceState === "speaking"
-                          ? "bg-emerald-500/20 border border-emerald-500/40"
-                          : voiceState === "transcribing" ||
-                              voiceState === "thinking"
-                            ? "bg-chalk-accent/20 border border-chalk-accent/40"
-                            : "bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.15]"
-                    }`}
-                    onPointerDown={(e) => {
-                      e.preventDefault();
-                      if (voiceState === "idle") onStartRecording();
-                    }}
-                    onPointerUp={(e) => {
-                      e.preventDefault();
-                      if (voiceState === "recording") onStopRecording();
-                    }}
-                    onPointerLeave={(e) => {
-                      e.preventDefault();
-                      if (voiceState === "recording") onStopRecording();
-                    }}
-                    whileTap={{ scale: 0.95 }}
-                    title="Hold to record voice"
-                    aria-label={
-                      voiceState === "recording"
-                        ? "Recording — release to stop"
-                        : voiceState === "speaking"
-                          ? "Speaker is responding"
-                          : "Hold to record voice"
-                    }
-                  >
-                    {voiceState === "speaking" ? (
-                      <div className="scale-75">
-                        <SoundWaveBars />
-                      </div>
-                    ) : voiceState === "transcribing" ||
-                      voiceState === "thinking" ? (
-                      <ThinkingDots />
-                    ) : (
-                      <Microphone
-                        size={20}
-                        weight="fill"
-                        className={
-                          voiceState === "recording"
-                            ? "text-white"
-                            : "text-white/70"
-                        }
-                      />
-                    )}
-                  </motion.button>
-
-                  {/* Send/Stop button */}
-                  {activeStreaming ? (
-                    <button
-                      type="button"
-                      onClick={
-                        showExploreUI
-                          ? () => {
-                              if (exploreAbortRef.current) {
-                                exploreAbortRef.current.abort("stopped");
-                                exploreAbortRef.current = null;
-                              }
-                              setExploreStreaming(false);
-                            }
-                          : onStopTextStream
-                      }
-                      className="flex flex-shrink-0 justify-center items-center w-11 h-11 text-red-400 rounded-xl border transition-colors bg-red-500/15 border-red-500/30 hover:bg-red-500/25"
-                      title="Stop"
-                      aria-label="Stop response"
-                    >
-                      <StopCircle size={16} weight="fill" />
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleSubmit}
-                      disabled={!input.trim()}
-                      className="flex flex-shrink-0 justify-center items-center w-11 h-11 rounded-xl border transition-colors bg-chalk-accent/15 text-chalk-accent border-chalk-accent/30 hover:bg-chalk-accent/25 disabled:opacity-30 disabled:hover:bg-chalk-accent/15"
-                      title="Send"
-                      aria-label="Send message"
-                    >
-                      <PaperPlaneTilt size={16} weight="fill" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Voice state indicator when recording/processing */}
-                {voiceState !== "idle" && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    className="mt-3 text-center"
-                  >
-                    <p
-                      className={`text-sm font-medium ${
-                        voiceState === "recording"
-                          ? "text-rose-400"
-                          : voiceState === "speaking"
-                            ? "text-emerald-400"
-                            : "text-chalk-accent"
-                      }`}
-                    >
-                      {voiceState === "recording" &&
-                        `Recording... ${formatDuration(recordingDuration)}`}
-                      {voiceState === "transcribing" && "Transcribing..."}
-                      {voiceState === "thinking" && "Thinking..."}
-                      {voiceState === "speaking" && "Speaking..."}
-                    </p>
-                  </motion.div>
-                )}
-
-                {/* Voice error */}
-                {voiceError && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="px-3 py-2 mt-3 text-xs text-rose-400 rounded-lg border bg-rose-500/10 border-rose-500/20"
-                  >
-                    {voiceError}
-                  </motion.div>
-                )}
-
-                {/* Clear button - at bottom (mobile only; desktop uses header) */}
-                {(exchanges.length > 0 || exploreExchanges.length > 0) && (
-                  <div className="flex justify-center mt-4 md:hidden">
-                    <button
-                      onClick={() => {
-                        onClearHistory();
-                        if (exploreMode) {
-                          setExploreExchanges([]);
-                          setExploreGoal(null);
-                          setExplorePills([]);
-                          setExploreCurrentAiText("");
-                          setExploreCurrentUserText("");
-                          setExploreError(null);
-                        }
-                      }}
-                      className="text-xs text-slate-500 hover:text-slate-300 px-3 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors"
-                      title="Clear conversation history"
-                    >
-                      Clear history
-                    </button>
-                  </div>
-                )}
-              </motion.div>
+              {/* Spacer for input strip below the message frame */}
+              <div className="hidden md:block flex-none h-[52px] mt-3" />
+              <div className="md:hidden flex-none h-[72px]" />
             </div>
           </div>
+        )}
+      </AnimatePresence>
 
-          {/* Timestamp tooltip */}
-          <AnimatePresence>
-            {tooltipInfo && (
-              <TimestampTooltip
-                seconds={tooltipInfo.seconds}
-                segments={segments}
-                position={tooltipInfo.position}
-              />
-            )}
-          </AnimatePresence>
+      {/* Always-visible input strip — positioned at bottom, above overlay backdrop */}
+      <div className="absolute bottom-0 left-0 right-0 z-[32] pointer-events-none">
+        <div className="flex flex-col items-center md:p-4 md:pb-0">
+          <div className={`w-full ${viewMaxWidth} pointer-events-auto transition-[max-width] duration-[250ms] ease-out`}>
+            <div className={`px-3 pb-3 md:px-0 md:pb-0 ${!expanded ? 'pt-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent md:from-transparent md:via-transparent md:pt-0' : ''}`}>
+              {/* Unified input row */}
+              <div className="flex gap-2 items-center">
+                {/* Curriculum context badge */}
+                {curriculumContext &&
+                  curriculumVideoCount &&
+                  curriculumVideoCount > 0 && (
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <span className="text-[10px] font-medium text-slate-500 bg-white/[0.04] border border-white/[0.06] rounded-full px-2 py-0.5">
+                        Curriculum: {curriculumVideoCount} videos loaded
+                      </span>
+                    </div>
+                  )}
+
+                <TextInput
+                  value={input}
+                  onChange={setInput}
+                  onSubmit={handleSubmit}
+                  isStreaming={isTextStreaming}
+                  onStop={() => {
+                    if (exploreAbortRef.current) {
+                      exploreAbortRef.current.abort("stopped");
+                      exploreAbortRef.current = null;
+                    }
+                    onStopTextStream();
+                  }}
+                  placeholder="Ask about this video..."
+                  inputRef={inputRef}
+                  autoFocus={false}
+                  exploreMode={exploreMode}
+                  onToggleExplore={toggleExploreMode}
+                  onFocus={onInputFocus}
+                  onBlur={onInputBlur}
+                />
+
+                {/* Mic button */}
+                <motion.button
+                  className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-all ${
+                    voiceState === "recording"
+                      ? "bg-rose-500 shadow-lg shadow-rose-500/30"
+                      : voiceState === "speaking"
+                        ? "bg-emerald-500/20 border border-emerald-500/40"
+                        : voiceState === "transcribing" ||
+                            voiceState === "thinking"
+                          ? "bg-chalk-accent/20 border border-chalk-accent/40"
+                          : "bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/[0.15]"
+                  }`}
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    if (voiceState === "idle") onStartRecording();
+                  }}
+                  onPointerUp={(e) => {
+                    e.preventDefault();
+                    if (voiceState === "recording") onStopRecording();
+                  }}
+                  onPointerLeave={(e) => {
+                    e.preventDefault();
+                    if (voiceState === "recording") onStopRecording();
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  title="Hold to record voice"
+                  aria-label={
+                    voiceState === "recording"
+                      ? "Recording — release to stop"
+                      : voiceState === "speaking"
+                        ? "Speaker is responding"
+                        : "Hold to record voice"
+                  }
+                >
+                  {voiceState === "speaking" ? (
+                    <div className="scale-75">
+                      <SoundWaveBars />
+                    </div>
+                  ) : voiceState === "transcribing" ||
+                    voiceState === "thinking" ? (
+                    <ThinkingDots />
+                  ) : (
+                    <Microphone
+                      size={20}
+                      weight="fill"
+                      className={
+                        voiceState === "recording"
+                          ? "text-white"
+                          : "text-white/70"
+                      }
+                    />
+                  )}
+                </motion.button>
+
+                {/* Send/Stop button */}
+                {isTextStreaming ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (exploreAbortRef.current) {
+                        exploreAbortRef.current.abort("stopped");
+                        exploreAbortRef.current = null;
+                      }
+                      onStopTextStream();
+                    }}
+                    className="flex flex-shrink-0 justify-center items-center w-11 h-11 text-red-400 rounded-xl border transition-colors bg-red-500/15 border-red-500/30 hover:bg-red-500/25"
+                    title="Stop"
+                    aria-label="Stop response"
+                  >
+                    <StopCircle size={16} weight="fill" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={!input.trim()}
+                    className="flex flex-shrink-0 justify-center items-center w-11 h-11 rounded-xl border transition-colors bg-chalk-accent/15 text-chalk-accent border-chalk-accent/30 hover:bg-chalk-accent/25 disabled:opacity-30 disabled:hover:bg-chalk-accent/15"
+                    title="Send"
+                    aria-label="Send message"
+                  >
+                    <PaperPlaneTilt size={16} weight="fill" />
+                  </button>
+                )}
+              </div>
+
+              {/* Voice state indicator when recording/processing */}
+              {voiceState !== "idle" && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  className="mt-3 text-center"
+                >
+                  <p
+                    className={`text-sm font-medium ${
+                      voiceState === "recording"
+                        ? "text-rose-400"
+                        : voiceState === "speaking"
+                          ? "text-emerald-400"
+                          : "text-chalk-accent"
+                    }`}
+                  >
+                    {voiceState === "recording" &&
+                      `Recording... ${formatDuration(recordingDuration)}`}
+                    {voiceState === "transcribing" && "Transcribing..."}
+                    {voiceState === "thinking" && "Thinking..."}
+                    {voiceState === "speaking" && "Speaking..."}
+                  </p>
+                </motion.div>
+              )}
+
+              {/* Voice error */}
+              {voiceError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="px-3 py-2 mt-3 text-xs text-rose-400 rounded-lg border bg-rose-500/10 border-rose-500/20"
+                >
+                  {voiceError}
+                </motion.div>
+              )}
+
+              {/* Clear button - mobile only when expanded */}
+              {expanded && exchanges.length > 0 && (
+                <div className="flex justify-center mt-4 md:hidden">
+                  <button
+                    onClick={() => {
+                      onClearHistory();
+                      setExploreGoal(null);
+                      setExplorePills([]);
+                      setExploreError(null);
+                    }}
+                    className="text-xs text-slate-500 hover:text-slate-300 px-3 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors"
+                    title="Clear conversation history"
+                  >
+                    Clear history
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      )}
-    </AnimatePresence>
+      </div>
+
+      {/* Timestamp tooltip */}
+      <AnimatePresence>
+        {tooltipInfo && (
+          <TimestampTooltip
+            seconds={tooltipInfo.seconds}
+            segments={segments}
+            position={tooltipInfo.position}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 }

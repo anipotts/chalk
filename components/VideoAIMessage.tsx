@@ -2,9 +2,8 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TimestampLink } from './TimestampLink';
-import { parseTimestampLinks } from '@/lib/video-utils';
 import { ClipboardText, CheckCircle } from '@phosphor-icons/react';
+import { renderRichContent } from './ExchangeMessage';
 
 interface VideoAIMessageProps {
   role: 'user' | 'assistant';
@@ -14,138 +13,6 @@ interface VideoAIMessageProps {
   thinkingDuration?: number;
   onSeek?: (seconds: number) => void;
   videoId?: string;
-}
-
-/**
- * Apply inline formatting: **bold** and `code`
- */
-function applyInlineFormatting(text: string, keyPrefix: string): React.ReactNode[] {
-  const parts: React.ReactNode[] = [];
-  // Match **bold** or `code`
-  const regex = /(\*\*(.+?)\*\*|`([^`]+)`)/g;
-  let lastIdx = 0;
-  let match;
-
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIdx) {
-      parts.push(text.slice(lastIdx, match.index));
-    }
-    if (match[2]) {
-      // Bold
-      parts.push(<strong key={`${keyPrefix}-b-${match.index}`} className="font-semibold text-chalk-text">{match[2]}</strong>);
-    } else if (match[3]) {
-      // Inline code
-      parts.push(<code key={`${keyPrefix}-c-${match.index}`} className="px-1 py-0.5 rounded bg-white/[0.06] text-[13px] font-mono text-slate-200">{match[3]}</code>);
-    }
-    lastIdx = match.index + match[0].length;
-  }
-
-  if (lastIdx < text.length) {
-    parts.push(text.slice(lastIdx));
-  }
-
-  return parts;
-}
-
-/**
- * Renders a text segment with both timestamp links and inline formatting.
- */
-function renderInlineContent(text: string, onSeek: ((seconds: number) => void) | undefined, keyPrefix: string, videoId?: string): React.ReactNode[] {
-  // Strip bold markers wrapping timestamps (e.g. **[5:32]** → [5:32])
-  text = text.replace(/\*\*(\[\d{1,2}:\d{2}(?::\d{2})?\])\*\*/g, '$1');
-  // First pass: extract timestamps
-  const timestamps = onSeek ? parseTimestampLinks(text) : [];
-  if (timestamps.length === 0) {
-    return applyInlineFormatting(text, keyPrefix);
-  }
-
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-
-  for (const ts of timestamps) {
-    if (ts.index > lastIndex) {
-      parts.push(...applyInlineFormatting(text.slice(lastIndex, ts.index), `${keyPrefix}-${ts.index}`));
-    }
-    const display = ts.match.slice(1, -1);
-    parts.push(
-      <TimestampLink
-        key={`ts-${keyPrefix}-${ts.index}`}
-        timestamp={display}
-        seconds={ts.seconds}
-        onSeek={onSeek!}
-        videoId={videoId}
-      />
-    );
-    lastIndex = ts.index + ts.match.length;
-  }
-
-  if (lastIndex < text.length) {
-    parts.push(...applyInlineFormatting(text.slice(lastIndex), `${keyPrefix}-end`));
-  }
-
-  return parts;
-}
-
-/**
- * Renders AI message content with markdown-like formatting:
- * - **bold** text
- * - `inline code`
- * - Bullet lists (- item or * item)
- * - Numbered lists (1. item)
- * - [M:SS] timestamp citations as clickable pills
- */
-function renderRichContent(content: string, onSeek?: (seconds: number) => void, videoId?: string): React.ReactNode {
-  const lines = content.split('\n');
-  const blocks: React.ReactNode[] = [];
-  let currentList: { type: 'ul' | 'ol'; items: string[] } | null = null;
-  let blockIdx = 0;
-
-  function flushList() {
-    if (!currentList) return;
-    const items = currentList.items.map((item, i) => (
-      <li key={i} className="ml-4">{renderInlineContent(item, onSeek, `li-${blockIdx}-${i}`, videoId)}</li>
-    ));
-    if (currentList.type === 'ul') {
-      blocks.push(<ul key={`bl-${blockIdx++}`} className="list-disc space-y-0.5 my-1">{items}</ul>);
-    } else {
-      blocks.push(<ol key={`bl-${blockIdx++}`} className="list-decimal space-y-0.5 my-1">{items}</ol>);
-    }
-    currentList = null;
-  }
-
-  for (const line of lines) {
-    const bulletMatch = line.match(/^[\s]*[-*]\s+(.+)/);
-    const numberMatch = line.match(/^[\s]*\d+[.)]\s+(.+)/);
-
-    if (bulletMatch) {
-      if (currentList?.type !== 'ul') {
-        flushList();
-        currentList = { type: 'ul', items: [] };
-      }
-      currentList!.items.push(bulletMatch[1]);
-    } else if (numberMatch) {
-      if (currentList?.type !== 'ol') {
-        flushList();
-        currentList = { type: 'ol', items: [] };
-      }
-      currentList!.items.push(numberMatch[1]);
-    } else {
-      flushList();
-      if (line.trim()) {
-        blocks.push(
-          <span key={`bl-${blockIdx++}`}>
-            {renderInlineContent(line, onSeek, `p-${blockIdx}`, videoId)}
-            {'\n'}
-          </span>
-        );
-      } else {
-        blocks.push(<span key={`bl-${blockIdx++}`}>{'\n'}</span>);
-      }
-    }
-  }
-
-  flushList();
-  return blocks;
 }
 
 function ThinkingTimer() {

@@ -6,16 +6,44 @@ import { TimestampLink } from './TimestampLink';
 import { parseTimestampLinks } from '@/lib/video-utils';
 import { ClipboardText, CheckCircle, SpeakerSimpleHigh, SpeakerSimpleLow } from '@phosphor-icons/react';
 import { ToolResultRenderer, type ToolCallData } from './ToolRenderers';
+import { ExplorePills } from './ExplorePills';
 import katex from 'katex';
+import hljs from 'highlight.js/lib/core';
+import javascript from 'highlight.js/lib/languages/javascript';
+import typescript from 'highlight.js/lib/languages/typescript';
+import python from 'highlight.js/lib/languages/python';
+import bash from 'highlight.js/lib/languages/bash';
+import json from 'highlight.js/lib/languages/json';
+import xml from 'highlight.js/lib/languages/xml';
+import css from 'highlight.js/lib/languages/css';
+import 'highlight.js/styles/github-dark.css';
+
+hljs.registerLanguage('javascript', javascript);
+hljs.registerLanguage('js', javascript);
+hljs.registerLanguage('typescript', typescript);
+hljs.registerLanguage('ts', typescript);
+hljs.registerLanguage('python', python);
+hljs.registerLanguage('py', python);
+hljs.registerLanguage('bash', bash);
+hljs.registerLanguage('sh', bash);
+hljs.registerLanguage('shell', bash);
+hljs.registerLanguage('json', json);
+hljs.registerLanguage('html', xml);
+hljs.registerLanguage('xml', xml);
+hljs.registerLanguage('css', css);
 
 export interface UnifiedExchange {
   id: string;
   type: 'text' | 'voice';
+  mode: 'chat' | 'explore';
   userText: string;
   aiText: string;
   timestamp: number;
   model?: string;
   toolCalls?: ToolCallData[];
+  thinking?: string;
+  thinkingDuration?: number;
+  explorePills?: string[];
 }
 
 interface ExchangeMessageProps {
@@ -26,6 +54,10 @@ interface ExchangeMessageProps {
   isPlaying?: boolean;
   isReadAloudLoading?: boolean;
   onOpenVideo?: (videoId: string, title: string, channelName: string, seekTo?: number) => void;
+  isLastExploreExchange?: boolean;
+  onPillSelect?: (option: string) => void;
+  onFocusInput?: () => void;
+  exploreMode?: boolean;
 }
 
 /**
@@ -52,12 +84,68 @@ function renderInlineLatex(expr: string, key: string): React.ReactNode {
 }
 
 /**
- * Apply inline formatting: **bold**, `code`, and $LaTeX$
+ * Render a display LaTeX block ($$...$$).
+ */
+function renderDisplayLatex(expr: string, key: string): React.ReactNode {
+  try {
+    const html = katex.renderToString(expr, {
+      displayMode: true,
+      throwOnError: false,
+      trust: true,
+    });
+    return (
+      <div
+        key={key}
+        className="my-2 flex justify-center overflow-x-auto"
+        style={{ color: '#e2e8f0' }}
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
+    );
+  } catch {
+    return <div key={key} className="text-rose-400 my-2 text-center">{`$$${expr}$$`}</div>;
+  }
+}
+
+/**
+ * Render a fenced code block with syntax highlighting.
+ */
+function renderCodeBlock(lang: string, code: string, key: string): React.ReactNode {
+  let highlighted: string;
+  try {
+    if (lang && hljs.getLanguage(lang)) {
+      highlighted = hljs.highlight(code, { language: lang }).value;
+    } else {
+      highlighted = hljs.highlightAuto(code).value;
+    }
+  } catch {
+    highlighted = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  return (
+    <div key={key} className="my-2 rounded-lg overflow-hidden border border-white/[0.08]">
+      {lang && (
+        <div className="px-3 py-1 text-[11px] font-mono text-slate-500 bg-white/[0.03] border-b border-white/[0.06]">
+          {lang}
+        </div>
+      )}
+      <pre className="p-3 overflow-x-auto bg-white/[0.04]">
+        <code
+          className="hljs text-[13px] font-mono leading-relaxed"
+          dangerouslySetInnerHTML={{ __html: highlighted }}
+        />
+      </pre>
+    </div>
+  );
+}
+
+/**
+ * Apply inline formatting: **bold**, *italic*, _italic_, `code`, $LaTeX$, [text](url)
  */
 function applyInlineFormatting(text: string, keyPrefix: string): React.ReactNode[] {
   const parts: React.ReactNode[] = [];
-  // Match: **bold**, `code`, or $latex$ (non-greedy, no nested $)
-  const regex = /(\*\*(.+?)\*\*|`([^`]+)`|\$([^$]+?)\$)/g;
+  // Match: **bold**, *italic*, _italic_, `code`, $latex$, [text](url)
+  // Order matters: ** before * to avoid conflict
+  const regex = /(\*\*(.+?)\*\*|\*(?!\*)(.+?)(?<!\*)\*|_([^_\s][^_]*?[^_\s])_|`([^`]+)`|\$([^$]+?)\$|\[([^\]]+)\]\(([^)]+)\))/g;
   let lastIdx = 0;
   let match;
 
@@ -66,11 +154,33 @@ function applyInlineFormatting(text: string, keyPrefix: string): React.ReactNode
       parts.push(text.slice(lastIdx, match.index));
     }
     if (match[2]) {
+      // **bold**
       parts.push(<strong key={`${keyPrefix}-b-${match.index}`} className="font-semibold text-chalk-text">{match[2]}</strong>);
     } else if (match[3]) {
-      parts.push(<code key={`${keyPrefix}-c-${match.index}`} className="px-1 py-0.5 rounded bg-white/[0.06] text-[13px] font-mono text-slate-200">{match[3]}</code>);
+      // *italic*
+      parts.push(<em key={`${keyPrefix}-i-${match.index}`} className="italic text-slate-300">{match[3]}</em>);
     } else if (match[4]) {
-      parts.push(renderInlineLatex(match[4], `${keyPrefix}-l-${match.index}`));
+      // _italic_
+      parts.push(<em key={`${keyPrefix}-u-${match.index}`} className="italic text-slate-300">{match[4]}</em>);
+    } else if (match[5]) {
+      // `code`
+      parts.push(<code key={`${keyPrefix}-c-${match.index}`} className="px-1 py-0.5 rounded bg-white/[0.06] text-[13px] font-mono text-slate-200">{match[5]}</code>);
+    } else if (match[6]) {
+      // $latex$
+      parts.push(renderInlineLatex(match[6], `${keyPrefix}-l-${match.index}`));
+    } else if (match[7] && match[8]) {
+      // [text](url)
+      parts.push(
+        <a
+          key={`${keyPrefix}-a-${match.index}`}
+          href={match[8]}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-chalk-accent hover:text-blue-300 hover:underline transition-colors"
+        >
+          {match[7]}
+        </a>
+      );
     }
     lastIdx = match.index + match[0].length;
   }
@@ -122,32 +232,90 @@ function renderInlineContent(text: string, onSeek: (seconds: number) => void, ke
 
 /**
  * Renders content with markdown-like formatting:
- * - **bold** text
+ * - Fenced code blocks with syntax highlighting
+ * - Display LaTeX ($$...$$)
+ * - **bold**, *italic*, _italic_ text
  * - `inline code`
+ * - [text](url) links
  * - Bullet lists (- item or * item)
  * - Numbered lists (1. item)
  * - [M:SS] timestamp citations as clickable pills
+ *
+ * Parsing order: code blocks → display latex → line-by-line → inline formatting
  */
-export function renderRichContent(content: string, onSeek: (seconds: number) => void, videoId: string): React.ReactNode {
-  const lines = content.split('\n');
+export function renderRichContent(content: string, onSeek?: (seconds: number) => void, videoId?: string): React.ReactNode {
+  const seekFn = onSeek ?? (() => {});
+  const vid = videoId ?? '';
+
+  // Phase 1: Extract fenced code blocks and replace with placeholders
+  const codeBlocks: Array<{ lang: string; code: string }> = [];
+  let processed = content.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    const idx = codeBlocks.length;
+    codeBlocks.push({ lang: lang || '', code: code.replace(/\n$/, '') });
+    return `\n__CODE_BLOCK_${idx}__\n`;
+  });
+
+  // Phase 2: Extract display LaTeX ($$...$$) and replace with placeholders
+  const displayLatexBlocks: string[] = [];
+  processed = processed.replace(/\$\$([\s\S]+?)\$\$/g, (_, expr) => {
+    const idx = displayLatexBlocks.length;
+    displayLatexBlocks.push(expr.trim());
+    return `\n__DISPLAY_LATEX_${idx}__\n`;
+  });
+
+  // Phase 3: Line-by-line parsing
+  const lines = processed.split('\n');
   const blocks: React.ReactNode[] = [];
   let currentList: { type: 'ul' | 'ol'; items: string[] } | null = null;
   let blockIdx = 0;
 
   function flushList() {
     if (!currentList) return;
-    const items = currentList.items.map((item, i) => (
-      <li key={i} className="ml-4">{renderInlineContent(item, onSeek, `li-${blockIdx}-${i}`, videoId)}</li>
-    ));
     if (currentList.type === 'ul') {
-      blocks.push(<ul key={`bl-${blockIdx++}`} className="list-disc space-y-0.5 my-1">{items}</ul>);
+      const items = currentList.items.map((item, i) => (
+        <li key={i} className="flex items-start gap-2">
+          <span className="mt-[7px] w-1.5 h-1.5 rounded-full bg-chalk-accent flex-shrink-0" />
+          <span className="text-slate-300">{renderInlineContent(item, seekFn, `li-${blockIdx}-${i}`, vid)}</span>
+        </li>
+      ));
+      blocks.push(<ul key={`bl-${blockIdx++}`} className="space-y-1 my-1.5 ml-1">{items}</ul>);
     } else {
-      blocks.push(<ol key={`bl-${blockIdx++}`} className="list-decimal space-y-0.5 my-1">{items}</ol>);
+      const items = currentList.items.map((item, i) => (
+        <li key={i} className="flex items-start gap-2">
+          <span className="text-chalk-accent text-sm font-medium flex-shrink-0 w-5 text-right">{i + 1}.</span>
+          <span className="text-slate-300">{renderInlineContent(item, seekFn, `li-${blockIdx}-${i}`, vid)}</span>
+        </li>
+      ));
+      blocks.push(<ol key={`bl-${blockIdx++}`} className="space-y-1 my-1.5 ml-1">{items}</ol>);
     }
     currentList = null;
   }
 
   for (const line of lines) {
+    // Check for code block placeholder
+    const codeMatch = line.match(/^\s*__CODE_BLOCK_(\d+)__\s*$/);
+    if (codeMatch) {
+      flushList();
+      const idx = parseInt(codeMatch[1]);
+      const block = codeBlocks[idx];
+      if (block) {
+        blocks.push(renderCodeBlock(block.lang, block.code, `cb-${blockIdx++}`));
+      }
+      continue;
+    }
+
+    // Check for display LaTeX placeholder
+    const latexMatch = line.match(/^\s*__DISPLAY_LATEX_(\d+)__\s*$/);
+    if (latexMatch) {
+      flushList();
+      const idx = parseInt(latexMatch[1]);
+      const expr = displayLatexBlocks[idx];
+      if (expr) {
+        blocks.push(renderDisplayLatex(expr, `dl-${blockIdx++}`));
+      }
+      continue;
+    }
+
     const bulletMatch = line.match(/^[\s]*[-*]\s+(.+)/);
     const numberMatch = line.match(/^[\s]*\d+[.)]\s+(.+)/);
 
@@ -168,7 +336,7 @@ export function renderRichContent(content: string, onSeek: (seconds: number) => 
       if (line.trim()) {
         blocks.push(
           <span key={`bl-${blockIdx++}`}>
-            {renderInlineContent(line, onSeek, `p-${blockIdx}`, videoId)}
+            {renderInlineContent(line, seekFn, `p-${blockIdx}`, vid)}
             {'\n'}
           </span>
         );
@@ -229,7 +397,9 @@ function SpeakerButton({ exchange, onPlay, isPlaying, isLoading }: { exchange: U
   );
 }
 
-export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPlaying, isReadAloudLoading, onOpenVideo }: ExchangeMessageProps) {
+export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPlaying, isReadAloudLoading, onOpenVideo, isLastExploreExchange, onPillSelect, onFocusInput, exploreMode }: ExchangeMessageProps) {
+  const isExplore = exchange.mode === 'explore';
+
   return (
     <div className="space-y-3">
       {/* User message - right aligned with max width */}
@@ -251,7 +421,19 @@ export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPl
         transition={{ duration: 0.2, delay: 0.1 }}
         className="flex justify-start group w-full"
       >
-        <div className="max-w-[85%]">
+        <div className={`max-w-[85%] ${isExplore ? 'relative pl-3' : ''}`}>
+          {/* Explore mode left accent bar */}
+          {isExplore && (
+            <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-chalk-accent/40 rounded-full" />
+          )}
+
+          {/* Thinking duration */}
+          {exchange.thinkingDuration && (
+            <span className="text-[11px] text-slate-500 font-mono mb-1 block">
+              thought for {(exchange.thinkingDuration / 1000).toFixed(1)}s
+            </span>
+          )}
+
           <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
             {renderRichContent(exchange.aiText, onSeek, videoId)}
           </div>
@@ -268,6 +450,15 @@ export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPl
                 />
               ))}
             </div>
+          )}
+
+          {/* Explore pills — only on last explore exchange when explore mode is active */}
+          {isLastExploreExchange && exploreMode && exchange.explorePills && exchange.explorePills.length > 0 && onPillSelect && (
+            <ExplorePills
+              options={exchange.explorePills}
+              onSelect={onPillSelect}
+              onFocusInput={onFocusInput}
+            />
           )}
 
           {/* Action buttons */}

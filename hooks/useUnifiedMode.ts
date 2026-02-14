@@ -11,11 +11,15 @@ import type { KnowledgeContext } from '@/hooks/useKnowledgeContext';
 export interface UnifiedExchange {
   id: string;
   type: 'text' | 'voice';
+  mode: 'chat' | 'explore';
   userText: string;
   aiText: string;
   timestamp: number;
   model?: string;
   toolCalls?: ToolCallData[];
+  thinking?: string;
+  thinkingDuration?: number;
+  explorePills?: string[];
 }
 
 interface UseUnifiedModeOptions {
@@ -59,6 +63,17 @@ interface UseUnifiedModeReturn {
   // Unified history
   exchanges: UnifiedExchange[];
   clearHistory: () => void;
+
+  // External streaming control (for explore mode)
+  addExchange: (exchange: UnifiedExchange) => void;
+  setStreamingState: (state: {
+    userText?: string;
+    aiText?: string;
+    isStreaming?: boolean;
+    toolCalls?: ToolCallData[];
+  }) => void;
+  currentMode: 'chat' | 'explore';
+  setCurrentMode: (mode: 'chat' | 'explore') => void;
 }
 
 const STORAGE_PREFIX = storageKey('interaction-history-');
@@ -97,6 +112,9 @@ export function useUnifiedMode({
   const [exchanges, setExchanges] = useState<UnifiedExchange[]>([]);
   const [hydrated, setHydrated] = useState(false);
 
+  // Current mode tracking
+  const [currentMode, setCurrentMode] = useState<'chat' | 'explore'>('chat');
+
   // Text-specific state
   const [isTextStreaming, setIsTextStreaming] = useState(false);
   const [currentUserText, setCurrentUserText] = useState('');
@@ -127,6 +145,7 @@ export function useUnifiedMode({
     const exchange: UnifiedExchange = {
       id: String(Date.now()),
       type: 'voice',
+      mode: 'chat',
       userText: data.userText,
       aiText: data.aiText,
       timestamp: data.timestamp,
@@ -241,6 +260,7 @@ export function useUnifiedMode({
       const exchange: UnifiedExchange = {
         id: exchangeId,
         type: 'text',
+        mode: 'chat',
         userText: text,
         aiText: finalText,
         timestamp: currentTimeRef.current,
@@ -275,6 +295,22 @@ export function useUnifiedMode({
     saveHistory(videoId, []);
   }, [videoId]);
 
+  const addExchange = useCallback((exchange: UnifiedExchange) => {
+    setExchanges((prev) => [...prev, exchange]);
+  }, []);
+
+  const setStreamingState = useCallback((state: {
+    userText?: string;
+    aiText?: string;
+    isStreaming?: boolean;
+    toolCalls?: ToolCallData[];
+  }) => {
+    if (state.userText !== undefined) setCurrentUserText(state.userText);
+    if (state.aiText !== undefined) setCurrentAiText(state.aiText);
+    if (state.isStreaming !== undefined) setIsTextStreaming(state.isStreaming);
+    if (state.toolCalls !== undefined) setCurrentToolCalls(state.toolCalls);
+  }, []);
+
   return {
     // Voice
     voiceState: voice.voiceState,
@@ -306,5 +342,11 @@ export function useUnifiedMode({
     // Unified
     exchanges,
     clearHistory,
+
+    // External streaming control
+    addExchange,
+    setStreamingState,
+    currentMode,
+    setCurrentMode,
   };
 }
