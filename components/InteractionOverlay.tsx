@@ -122,6 +122,9 @@ interface InteractionOverlayProps {
   onSeek: (seconds: number) => void;
   onClose: () => void;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
+  inputVisible?: boolean;
+  pendingChar?: string | null;
+  onPendingCharConsumed?: () => void;
   onInputFocus?: () => void;
   onInputBlur?: () => void;
 
@@ -371,6 +374,9 @@ export function InteractionOverlay({
   onSeek,
   onClose,
   inputRef,
+  inputVisible,
+  pendingChar,
+  onPendingCharConsumed,
   onInputFocus,
   onInputBlur,
 
@@ -414,6 +420,14 @@ export function InteractionOverlay({
       : viewSize === "expanded"
         ? "max-w-6xl"
         : "max-w-4xl";
+
+  // Inject pending character from type-to-activate
+  useEffect(() => {
+    if (pendingChar) {
+      setInput(prev => prev + pendingChar);
+      onPendingCharConsumed?.();
+    }
+  }, [pendingChar, onPendingCharConsumed]);
 
   // Explore Mode state (UI-only; exchange data flows through unified model)
   const [exploreMode, setExploreMode] = useState(false);
@@ -806,25 +820,38 @@ export function InteractionOverlay({
       {/* Expandable message overlay — gated by expanded */}
       <AnimatePresence>
         {expanded && (
-          <div className="flex absolute inset-0 z-30 flex-col items-center md:justify-center md:p-4">
-            {/* Backdrop - clickable to close */}
+          <div className="flex absolute inset-0 z-30 flex-col items-center md:justify-center md:p-4 md:pb-24">
+            {/* Backdrop - clickable to close — dark overlay with film grain */}
             <motion.div
               key="overlay-backdrop"
               className={`absolute inset-0 ${
                 hasContent
-                  ? `cursor-pointer ${blurLevel === "active" ? "bg-black/40 backdrop-blur-md" : ""}`
+                  ? `cursor-pointer ${blurLevel === "active" ? "bg-black/50" : ""}`
                   : "pointer-events-none"
               }`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.5, ease: "easeInOut" }}
               onClick={(e) => {
                 if (e.target === e.currentTarget) {
                   onClose();
                 }
               }}
-            />
+            >
+              {/* Film grain overlay */}
+              {hasContent && blurLevel === "active" && (
+                <div className="absolute inset-0 opacity-[0.07] pointer-events-none mix-blend-overlay">
+                  <svg width="100%" height="100%">
+                    <filter id="chalk-grain">
+                      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" stitchTiles="stitch" />
+                      <feColorMatrix type="saturate" values="0" />
+                    </filter>
+                    <rect width="100%" height="100%" filter="url(#chalk-grain)" />
+                  </svg>
+                </div>
+              )}
+            </motion.div>
 
             {/* Centering wrapper */}
             <div
@@ -834,7 +861,7 @@ export function InteractionOverlay({
               <div
                 className={`relative flex flex-col flex-1 min-h-0 md:flex-none md:aspect-video md:overflow-hidden md:rounded-xl md:border-[3px] md:border-transparent ${
                   hasContent
-                    ? "md:bg-black/70 md:backdrop-blur-2xl md:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.5)] items-center"
+                    ? "md:bg-black/80 md:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.5)] items-center"
                     : "items-center justify-end"
                 }`}
               >
@@ -849,7 +876,7 @@ export function InteractionOverlay({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+                  transition={{ duration: 0.4, ease: "easeInOut" }}
                   className={`flex flex-col w-full flex-1 min-h-0 ${
                     hasContent ? "items-center" : "justify-end items-center"
                   }`}
@@ -1080,19 +1107,20 @@ export function InteractionOverlay({
                 </motion.div>
               </div>
 
-              {/* Spacer for input strip below the message frame */}
-              <div className="hidden md:block flex-none h-[52px] mt-3" />
+              {/* Spacer for input strip on mobile (still absolute-positioned there) */}
               <div className="md:hidden flex-none h-[72px]" />
             </div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Always-visible input strip — positioned at bottom, above overlay backdrop */}
-      <div className="absolute bottom-0 left-0 right-0 z-[32] pointer-events-none">
-        <div className="flex flex-col items-center md:p-4 md:pb-0">
-          <div className={`w-full ${viewMaxWidth} pointer-events-auto transition-[max-width] duration-[250ms] ease-out`}>
-            <div className={`px-3 pb-3 md:px-0 md:pb-0 ${!expanded ? 'pt-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent md:from-transparent md:via-transparent md:pt-0' : ''}`}>
+      {/* Input strip — below video on desktop, bottom-pinned on mobile */}
+      <div className="absolute bottom-0 left-0 right-0 z-[32] pointer-events-none md:relative md:inset-auto md:w-full md:z-auto">
+        <div className={`flex flex-col items-center md:px-4 transition-opacity duration-200 ease-out ${
+          inputVisible === false ? 'md:opacity-0 md:pointer-events-none' : 'md:opacity-100'
+        }`}>
+          <div className={`w-full ${viewMaxWidth} md:mx-auto pointer-events-auto transition-[max-width] duration-[250ms] ease-out`}>
+            <div className={`px-3 pb-3 md:px-0 md:pb-0 md:pt-2 ${!expanded ? 'pt-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent md:from-transparent md:via-transparent md:pt-2 md:bg-none' : ''}`}>
               {/* Unified input row */}
               <div className="flex gap-2 items-center">
                 {/* Curriculum context badge */}

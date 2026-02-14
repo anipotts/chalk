@@ -196,6 +196,8 @@ function WatchContent() {
   const [showTranscript, setShowTranscript] = useState(false);
   const [sideStack, setSideStack] = useState<SideVideoEntry[]>([]);
   const [continueFrom, setContinueFrom] = useState<number | null>(null);
+  const [inputVisible, setInputVisible] = useState(false);
+  const [pendingChar, setPendingChar] = useState<string | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [transcriptCollapsed, setTranscriptCollapsed] = useState(false);
   const [viewSizeIndex, setViewSizeIndex] = useState(1); // start at 'default' (M)
@@ -480,28 +482,17 @@ function WatchContent() {
       const tag = (e.target as HTMLElement)?.tagName;
       const inInput = tag === "INPUT" || tag === "TEXTAREA";
 
-      // Escape: collapse chat + blur input
+      // Escape: collapse chat + hide input + blur
       if (e.key === "Escape") {
-        if (chatExpanded) {
-          e.preventDefault();
-          setChatExpanded(false);
-          inputRef.current?.blur();
-        }
+        e.preventDefault();
+        setChatExpanded(false);
+        setInputVisible(false);
+        inputRef.current?.blur();
         return;
       }
 
       // When typing in an input, don't capture shortcuts
       if (inInput) return;
-
-      // C key: toggle chat expanded/collapsed
-      if (e.key === "c" && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        e.preventDefault();
-        setChatExpanded((prev) => !prev);
-        if (!chatExpanded) {
-          setTimeout(() => inputRef.current?.focus(), 100);
-        }
-        return;
-      }
 
       // V key: open voice mode
       if (e.key === "v" && !e.metaKey && !e.ctrlKey && !e.altKey) {
@@ -510,31 +501,79 @@ function WatchContent() {
         return;
       }
 
-      // Tab or / (slash): expand chat + focus input
+      // Player shortcuts — control video directly via playerRef
+      try {
+        const player = playerRef.current;
+        if (player) {
+          if (e.key === " " || e.key === "k") {
+            e.preventDefault();
+            if (player.paused) player.play(); else player.pause();
+            return;
+          }
+          if (e.key === "j") {
+            e.preventDefault();
+            player.currentTime = Math.max(0, player.currentTime - 10);
+            return;
+          }
+          if (e.key === "l") {
+            e.preventDefault();
+            player.currentTime += 10;
+            return;
+          }
+          if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            player.currentTime = Math.max(0, player.currentTime - 5);
+            return;
+          }
+          if (e.key === "ArrowRight") {
+            e.preventDefault();
+            player.currentTime += 5;
+            return;
+          }
+        }
+      } catch { /* Vidstack $state proxy may throw */ }
+      // Other player keys — don't capture as type-to-activate
+      const otherPlayerKeys = new Set(["f", ",", ".", "<", ">", "ArrowUp", "ArrowDown"]);
+      if (otherPlayerKeys.has(e.key)) return;
+
+      // Tab or / (slash): show input + focus (no character injection)
       if (e.key === "Tab" || e.key === "/") {
         e.preventDefault();
-        setChatExpanded(true);
-        setTimeout(() => inputRef.current?.focus(), 100);
+        setInputVisible(true);
+        requestAnimationFrame(() => inputRef.current?.focus());
         return;
       }
 
-      // Player shortcuts — let VideoPlayer handle these
-      const playerKeys = new Set([" ", "k", "j", "l", "f", ",", ".", "<", ">", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]);
-      if (playerKeys.has(e.key)) return;
+      // Any other printable character (no Ctrl/Meta/Alt): type-to-activate
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        setInputVisible(true);
+        setPendingChar(e.key);
+        requestAnimationFrame(() => inputRef.current?.focus());
+        return;
+      }
     }
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [chatExpanded, startVoiceMode]);
+  }, [startVoiceMode]);
 
   // Auto-collapse chat when video is playing and idle for 10s
   useEffect(() => {
     if (isPaused || unified.isTextStreaming || !chatExpanded) return;
     const timer = setTimeout(() => {
       setChatExpanded(false);
+      setInputVisible(false);
       inputRef.current?.blur();
     }, 10000);
     return () => clearTimeout(timer);
   }, [isPaused, unified.isTextStreaming, chatExpanded]);
+
+  // Auto-expand chat when exchanges appear
+  useEffect(() => {
+    if (unified.exchanges.length > 0 || unified.isTextStreaming) {
+      setChatExpanded(true);
+    }
+  }, [unified.exchanges.length, unified.isTextStreaming]);
 
   if (!videoId) {
     return (
@@ -606,10 +645,10 @@ function WatchContent() {
             </span>
           </div>
 
-          {/* Centered hint — absolutely positioned so it doesn't shift the flex layout */}
-          {!chatExpanded && effectiveChannel && (
-            <span className="hidden absolute left-1/2 text-xs whitespace-nowrap -translate-x-1/2 pointer-events-none text-slate-500 lg:inline">
-              Press Tab or C to talk to {effectiveChannel}
+          {/* Hint text — normal flex item, sits to the left of config buttons */}
+          {!inputVisible && effectiveChannel && (
+            <span className="hidden lg:inline text-xs whitespace-nowrap pointer-events-none text-slate-500 shrink-0">
+              Start typing to talk to {effectiveChannel}
             </span>
           )}
 
@@ -680,7 +719,21 @@ function WatchContent() {
 
         {/* Video area — on mobile: flex-none when transcript visible, flex-1 when overlay open or transcript collapsed */}
         <div
-          className={`md:flex-1 flex flex-col overflow-hidden relative md:max-h-none transition-[flex,height] duration-[250ms] ease-out motion-reduce:transition-none ${
+          onClick={(e) => {
+            if (window.innerWidth < 768) return;
+            const target = e.target as HTMLElement;
+            if (target.closest('button') || target.closest('textarea') || target.closest('input') || target.closest('iframe')) return;
+            if (chatExpanded) return;
+
+            if (inputVisible) {
+              setInputVisible(false);
+              inputRef.current?.blur();
+            } else {
+              setInputVisible(true);
+              requestAnimationFrame(() => inputRef.current?.focus());
+            }
+          }}
+          className={`md:flex-1 flex flex-col overflow-hidden relative md:items-center md:justify-center md:max-h-none transition-[flex,height] duration-[250ms] ease-out motion-reduce:transition-none ${
             keyboardOpen
               ? "flex-none h-0"
               : chatExpanded || transcriptCollapsed
@@ -688,10 +741,10 @@ function WatchContent() {
                 : "flex-none h-[28dvh]"
           }`}
         >
-          <div className="overflow-hidden relative z-0 flex-1 p-0 md:flex md:flex-col md:items-center md:justify-center md:p-4">
-            <div className={`w-full ${viewMaxWidth} transition-[max-width] duration-[250ms] ease-out`}>
-              {/* Video — transparent border maintains sizing; visible border from persistent ring */}
-              <div className="relative md:rounded-xl md:overflow-hidden md:border-[3px] md:border-transparent">
+          <div className="overflow-hidden relative z-0 flex-1 md:flex-none p-0 md:w-full md:px-4">
+            <div className={`md:mx-auto w-full ${viewMaxWidth} transition-[max-width] duration-[250ms] ease-out`}>
+              {/* Video + border ring wrapper */}
+              <div className="relative md:rounded-xl md:overflow-hidden">
                 <VideoPlayer
                   playerRef={playerRef}
                   videoId={videoId}
@@ -708,25 +761,18 @@ function WatchContent() {
                     />
                   </div>
                 )}
+                {/* Blue border ring — overlays video exactly */}
+                <div className="hidden md:block absolute inset-0 rounded-xl border-[3px] border-chalk-accent pointer-events-none z-[35]" />
               </div>
 
-              {/* Desktop caption strip — fixed height so video never shifts */}
-              <div className="hidden md:flex items-center justify-center mt-3 h-[52px] overflow-hidden">
-                {hasSegments && !chatExpanded && (
-                  <KaraokeCaption
-                    segments={segments}
-                    currentTime={currentTime}
-                  />
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Persistent blue border ring — always visible, above overlay backdrop */}
-          <div className="hidden md:flex absolute inset-0 flex-col items-center justify-center p-4 pointer-events-none z-[35]">
-            <div className={`w-full ${viewMaxWidth} transition-[max-width] duration-[250ms] ease-out`}>
-              <div className="aspect-video rounded-xl border-[3px] border-chalk-accent" />
-              <div className="h-[52px] mt-3" />
+              {/* Desktop captions — below video in normal flow, fades when input or chat active */}
+              {hasSegments && (
+                <div className={`hidden md:flex items-center justify-center pt-2 transition-opacity duration-200 ${
+                  inputVisible || chatExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'
+                }`}>
+                  <KaraokeCaption segments={segments} currentTime={currentTime} />
+                </div>
+              )}
             </div>
           </div>
 
@@ -774,10 +820,24 @@ function WatchContent() {
             onSetCurrentMode={unified.setCurrentMode}
             blurLevel={blurLevel}
             onSeek={handleSeek}
-            onClose={() => setChatExpanded(false)}
+            onClose={() => {
+              setChatExpanded(false);
+              setInputVisible(false);
+            }}
             inputRef={inputRef}
-            onInputFocus={() => setChatExpanded(true)}
-            onInputBlur={() => {}}
+            inputVisible={inputVisible}
+            pendingChar={pendingChar}
+            onPendingCharConsumed={() => setPendingChar(null)}
+            onInputFocus={() => setInputVisible(true)}
+            onInputBlur={() => {
+              setTimeout(() => {
+                const hasContent = inputRef.current?.value?.trim();
+                const hasExchanges = unified.exchanges.length > 0 || unified.isTextStreaming;
+                if (!hasContent && !hasExchanges) {
+                  setInputVisible(false);
+                }
+              }, 200);
+            }}
             // Learn mode
             learnPhase={learnMode.phase}
             learnSelectedAction={learnMode.selectedAction}

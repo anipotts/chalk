@@ -11,7 +11,7 @@
 process.loadEnvFile('.env.local');
 
 import { generateText, jsonSchema, tool } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
+import { createAnthropic } from '@ai-sdk/anthropic';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { EXTRACTION_SYSTEM_PROMPT, EXTRACTION_TOOL } from '../lib/batch/extraction-prompt';
 import type { ExtractionResult, MentionType } from '../lib/batch/types';
@@ -68,6 +68,37 @@ const STATUS_ORDER: PipelineStatus[] = [
   'connected', 'enriched', 'embedded', 'completed',
 ];
 
+// ─── Anthropic provider with extended timeout for long extractions ─────────
+// Default Node.js fetch has a ~5-10 min headers timeout which is too short for
+// long Opus extractions (116-min Karpathy video takes 15+ min for first response)
+
+const anthropic = createAnthropic({
+  fetch: async (input, init) => {
+    const timeoutMs = 30 * 60 * 1000; // 30 minutes
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort('Extraction timeout'), timeoutMs);
+
+    // Forward abort from caller's signal (if any) to our controller
+    const callerSignal = (init as RequestInit | undefined)?.signal;
+    if (callerSignal) {
+      if (callerSignal.aborted) {
+        controller.abort(callerSignal.reason);
+      } else {
+        callerSignal.addEventListener('abort', () => controller.abort(callerSignal.reason), { once: true });
+      }
+    }
+
+    try {
+      return await globalThis.fetch(input as RequestInfo, {
+        ...(init as RequestInit),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
+  },
+});
+
 // ─── Supabase client ────────────────────────────────────────────────────────
 
 function getClient(): SupabaseClient {
@@ -115,6 +146,46 @@ async function getProgress(client: SupabaseClient, videoId: string): Promise<Pip
 
 function shouldRun(current: PipelineStatus, target: PipelineStatus): boolean {
   return STATUS_ORDER.indexOf(current) < STATUS_ORDER.indexOf(target);
+}
+
+// ─── Retry wrapper for API calls ────────────────────────────────────────────
+
+async function generateTextWithRetry(
+  options: Parameters<typeof generateText>[0],
+  videoId: string,
+  maxAttempts = 3,
+): ReturnType<typeof generateText> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await generateText(options);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      const isRetryable = /timeout|ETIMEDOUT|ECONNRESET|socket hang up|fetch failed/i.test(msg);
+
+      if (isRetryable && attempt < maxAttempts) {
+        const waitSec = attempt * 30;
+        log(videoId, 'EXTRACTION', `attempt ${attempt}/${maxAttempts} failed (${msg.slice(0, 80)}), retrying in ${waitSec}s...`);
+        await new Promise(r => setTimeout(r, waitSec * 1000));
+        continue;
+      }
+      throw new Error(`Failed after ${attempt} attempts. Last error: ${msg.slice(0, 200)}`);
+    }
+  }
+  throw new Error('Unreachable');
+}
+
+// ─── Fallback metadata fetch (oEmbed) ───────────────────────────────────────
+
+async function fetchVideoMetadata(videoId: string): Promise<{ title?: string; author?: string }> {
+  try {
+    const url = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+    const resp = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+    if (!resp.ok) return {};
+    const data = await resp.json() as { title?: string; author_name?: string };
+    return { title: data.title, author: data.author_name };
+  } catch {
+    return {};
+  }
 }
 
 // ─── Enhanced extraction schema (runtime extension, no lib/ changes) ────────
@@ -185,7 +256,11 @@ async function stepTranscript(
         metadata = { ...metadata, ...raceResult.metadata };
       }
     } catch {
-      log(videoId, 'TRANSCRIPT', 'metadata fetch failed, continuing with cached title');
+      // Fallback: oEmbed for title/author
+      const oembed = await fetchVideoMetadata(videoId);
+      if (oembed.title) metadata.title = metadata.title || oembed.title;
+      if (oembed.author) metadata.author = oembed.author;
+      log(videoId, 'TRANSCRIPT', 'metadata fetch failed, used oEmbed fallback');
     }
 
     return { segments: c.segments, metadata };
@@ -271,7 +346,7 @@ async function stepExtraction(
     ? formattedTranscript.slice(0, maxChars) + '\n\n[TRANSCRIPT TRUNCATED — video is very long]'
     : formattedTranscript;
 
-  const userPrompt = `Extract structured knowledge from this video transcript.
+  let userPrompt = `Extract structured knowledge from this video transcript.
 
 VIDEO: "${metadata.title || videoId}"
 CHANNEL: ${metadata.author || 'Unknown'}
@@ -280,9 +355,25 @@ DURATION: ${metadata.lengthSeconds ? Math.round(metadata.lengthSeconds / 60) + '
 TRANSCRIPT:
 ${transcript}`;
 
-  const enhancedSchema = buildEnhancedSchema();
+  // Scale output tokens based on transcript length: short videos (< 15 min) get 16K,
+  // medium videos get 24K, long videos (> 45 min) get 32K
+  const durationMin = (metadata.lengthSeconds || 600) / 60;
+  const maxOutput = durationMin > 45 ? 32000 : durationMin > 15 ? 24000 : 16000;
 
-  const result = await generateText({
+  // For long videos, add conciseness instructions to prevent output truncation.
+  // Without this, concepts can consume all output tokens, leaving 0 moments and 0 quizzes.
+  if (durationMin > 30) {
+    userPrompt += `\n\nIMPORTANT — This is a long video (${Math.round(durationMin)} minutes). To fit all sections within the output limit:
+- Limit concepts to the TOP 30 most important (skip trivial/assumed ones)
+- Keep concept definitions under 50 characters each
+- Keep chapter summaries to 1-2 sentences each
+- Still include ALL moments and quiz questions — these are critical`;
+  }
+
+  const enhancedSchema = buildEnhancedSchema();
+  log(videoId, 'EXTRACTION', `maxOutputTokens: ${maxOutput} (${Math.round(durationMin)} min video)`);
+
+  const result = await generateTextWithRetry({
     model: anthropic(modelId),
     system: EXTRACTION_SYSTEM_PROMPT,
     prompt: userPrompt,
@@ -292,16 +383,16 @@ ${transcript}`;
         inputSchema: jsonSchema(enhancedSchema),
       }),
     },
-    maxOutputTokens: 16000,
+    maxOutputTokens: maxOutput,
     toolChoice: { type: 'tool', toolName: 'extract_video_knowledge' },
-  });
+  }, videoId);
 
   // Extract tool call result
   const toolCall = result.toolCalls?.[0];
   if (!toolCall) {
-    // Retry once
+    // Retry once with stronger instruction
     log(videoId, 'EXTRACTION', 'no tool call in response, retrying...');
-    const retry = await generateText({
+    const retry = await generateTextWithRetry({
       model: anthropic(modelId),
       system: EXTRACTION_SYSTEM_PROMPT,
       prompt: userPrompt + '\n\nIMPORTANT: You MUST call the extract_video_knowledge tool with all extracted data.',
@@ -311,9 +402,9 @@ ${transcript}`;
           inputSchema: jsonSchema(enhancedSchema),
         }),
       },
-      maxOutputTokens: 16000,
+      maxOutputTokens: maxOutput,
       toolChoice: { type: 'tool', toolName: 'extract_video_knowledge' },
-    });
+    }, videoId);
 
     const retryCall = retry.toolCalls?.[0];
     if (!retryCall) throw new Error('No tool call after retry');
@@ -948,6 +1039,16 @@ export async function extractSingleVideo(
       log(videoId, 'PIPELINE', 'transcript already done, resuming...');
     }
 
+    // Backfill title/author via oEmbed if still missing
+    if (!metadata.title || !metadata.author) {
+      const oembed = await fetchVideoMetadata(videoId);
+      if (oembed.title && !metadata.title) metadata.title = oembed.title;
+      if (oembed.author && !metadata.author) metadata.author = oembed.author;
+      if (oembed.title || oembed.author) {
+        log(videoId, 'PIPELINE', `backfilled metadata via oEmbed: "${metadata.title}" by ${metadata.author}`);
+      }
+    }
+
     // Step 2: EXTRACTION
     if (shouldRun(currentStatus, 'extraction_done')) {
       const result = await stepExtraction(client, videoId, segments, metadata, modelChoice);
@@ -1013,14 +1114,18 @@ export async function extractSingleVideo(
       log(videoId, 'PIPELINE', 'enrich already done, resuming...');
     }
 
-    // Step 6: EMBED
+    // Step 6: EMBED (non-fatal — data is still useful without embeddings)
     if (shouldRun(currentStatus, 'embedded')) {
-      const embeddingSuccess = await stepEmbed(client, videoId, extraction, segments);
-      if (embeddingSuccess) {
-        await updateProgress(client, videoId, 'embedded');
-      } else {
-        // Skip embedding but don't fail
-        log(videoId, 'EMBED', 'skipped (no API key), marking enriched');
+      try {
+        const embeddingSuccess = await stepEmbed(client, videoId, extraction, segments);
+        if (embeddingSuccess) {
+          await updateProgress(client, videoId, 'embedded');
+        } else {
+          // Skip embedding but don't fail
+          log(videoId, 'EMBED', 'skipped (no API key), continuing without embeddings');
+        }
+      } catch (embedErr) {
+        log(videoId, 'EMBED', `failed: ${embedErr instanceof Error ? embedErr.message : embedErr} — continuing without embeddings`);
       }
     } else {
       log(videoId, 'PIPELINE', 'embed already done, resuming...');

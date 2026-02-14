@@ -186,7 +186,7 @@ function HomePage() {
         setSearchResults(results);
         setContinuationToken(data.continuation || null);
       } catch (err: any) {
-        if (err.name === 'AbortError') return;
+        if (err.name === 'AbortError' || controller.signal.aborted) return;
         console.error('Search error:', err);
         setSearchError(err.message || 'Unable to search. Please try again.');
         setSearchResults([]);
