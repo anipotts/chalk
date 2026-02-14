@@ -141,7 +141,9 @@ function setL2(
       expires_at: expiresAt,
     })
     .then(({ error }: { error: { message: string } | null }) => {
-      if (error) console.warn('[transcript-cache] Supabase upsert error:', error.message);
+      if (error && !error.message?.includes('schema cache')) {
+        console.warn('[transcript-cache] Supabase upsert error:', error.message);
+      }
     });
 }
 

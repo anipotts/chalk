@@ -135,7 +135,6 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
       src={`youtube/${videoId}`}
       playsInline
       keyDisabled
-      autoPlay
       aspectRatio="16/9"
       onPause={() => onPause?.()}
       onPlay={() => onPlay?.()}
@@ -156,6 +155,13 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
             safePlayerCall(player.current, (pl) => { pl.playbackRate = parseFloat(savedSpeed); });
           }
         } catch { /* localStorage may throw in private browsing */ }
+        // Auto-play after provider is ready (more reliable than autoPlay prop
+        // which can fail on hard reload due to browser autoplay policies)
+        safePlayerCall(player.current, (pl) => {
+          pl.play().catch(() => {
+            // Autoplay blocked — user will click the built-in play button
+          });
+        });
         onReady?.();
       }}
       className="w-full rounded-none md:rounded-2xl overflow-hidden bg-black"

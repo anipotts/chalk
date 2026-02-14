@@ -72,35 +72,14 @@ function renderTimestampText(
   return parts.length > 0 ? parts : text;
 }
 
-function ThinkingPanel({ thinking, duration }: { thinking: string; duration: number | null }) {
+function ThinkingPanel({ duration }: { thinking: string; duration: number | null }) {
+  if (duration === null) return null;
   return (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      className="w-full mb-4"
-    >
-      <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.04] overflow-hidden">
-        <button
-          className="w-full flex items-center gap-2 px-3 py-2 text-left"
-          onClick={(e) => {
-            const content = (e.currentTarget as HTMLElement).nextElementSibling;
-            content?.classList.toggle('hidden');
-          }}
-        >
-          <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-          <span className="text-[11px] text-amber-400/80 font-medium">
-            Opus 4.6 reasoning
-            {duration !== null && ` (${(duration / 1000).toFixed(1)}s)`}
-          </span>
-          <CaretDown size={12} weight="bold" className="text-amber-400/50 ml-auto" />
-        </button>
-        <div className="hidden px-3 pb-3">
-          <p className="text-[12px] text-amber-200/50 leading-relaxed whitespace-pre-wrap max-h-40 overflow-y-auto">
-            {thinking}
-          </p>
-        </div>
-      </div>
-    </motion.div>
+    <div className="mb-4">
+      <span className="text-[11px] text-slate-500 font-mono">
+        thought for {(duration / 1000).toFixed(1)}s
+      </span>
+    </div>
   );
 }
 

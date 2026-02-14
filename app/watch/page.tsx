@@ -508,40 +508,38 @@ function WatchContent() {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA") return;
 
-      // Any alphanumeric key or space: open text mode and focus input
-      if (
-        /^[a-z0-9 ]$/i.test(e.key) &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        !interactionVisible
-      ) {
+      // Escape: close overlay
+      if (e.key === "Escape" && interactionVisible) {
         e.preventDefault();
-        setPendingKey(e.key);
-        setInteractionVisible(true);
+        setInteractionVisible(false);
         return;
       }
+
+      // Don't capture keys when overlay is visible (let input handle them)
+      if (interactionVisible) return;
+
+      // Player shortcuts — let VideoPlayer handle these
+      const playerKeys = new Set([" ", "k", "j", "l", "f", ",", ".", "<", ">", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]);
+      if (playerKeys.has(e.key)) return;
 
       // V key: open voice mode
       if (e.key === "v" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
         startVoiceMode();
+        return;
       }
 
-      // Escape: close overlay
-      if (e.key === "Escape" && interactionVisible) {
+      // Any other alphanumeric key: open text mode and focus input
+      if (
+        /^[a-z0-9]$/i.test(e.key) &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey
+      ) {
         e.preventDefault();
-        setInteractionVisible(false);
-      }
-
-      // F key: fullscreen
-      if (e.key === "f" && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
-        const el = document.querySelector("media-player");
-        if (el && document.fullscreenEnabled) {
-          if (document.fullscreenElement) document.exitFullscreen();
-          else el.requestFullscreen();
-        }
+        setPendingKey(e.key);
+        setInteractionVisible(true);
+        return;
       }
     }
     document.addEventListener("keydown", handleKey);

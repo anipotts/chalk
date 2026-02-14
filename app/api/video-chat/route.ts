@@ -94,10 +94,16 @@ export async function POST(req: Request) {
       const trimmed = history.slice(-MAX_HISTORY);
       for (const msg of trimmed) {
         if (msg.role === 'user' || msg.role === 'assistant') {
-          messages.push({ role: msg.role, content: String(msg.content).slice(0, 4000) });
+          const content = String(msg.content || '').slice(0, 4000);
+          if (content.trim()) {
+            messages.push({ role: msg.role, content });
+          }
         }
       }
-    } else {
+    }
+
+    // Ensure at least the current user message is present
+    if (messages.length === 0 || messages[messages.length - 1].role !== 'user') {
       messages.push({ role: 'user', content: message });
     }
 
@@ -158,10 +164,10 @@ export async function POST(req: Request) {
 
   // Normal mode: resolve model from client choice (default Sonnet)
   const modelId = modelChoice === 'opus'
-    ? 'claude-opus-4-6-20250414'
+    ? 'claude-opus-4-6'
     : modelChoice === 'haiku'
-      ? 'claude-haiku-4-5-20250929'
-      : 'claude-sonnet-4-5-20250514';
+      ? 'claude-haiku-4-5-20251001'
+      : 'claude-sonnet-4-5-20250929';
   const model = anthropic(modelId);
 
   // Build system prompt as cached parts
@@ -211,10 +217,16 @@ export async function POST(req: Request) {
     const trimmed = history.slice(-MAX_HISTORY);
     for (const msg of trimmed) {
       if (msg.role === 'user' || msg.role === 'assistant') {
-        messages.push({ role: msg.role, content: String(msg.content).slice(0, 4000) });
+        const content = String(msg.content || '').slice(0, 4000);
+        if (content.trim()) {
+          messages.push({ role: msg.role, content });
+        }
       }
     }
-  } else {
+  }
+
+  // Ensure at least the current user message is present
+  if (messages.length === 0 || messages[messages.length - 1].role !== 'user') {
     messages.push({ role: 'user', content: message });
   }
 

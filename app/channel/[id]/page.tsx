@@ -284,7 +284,7 @@ export default function ChannelPage() {
       })
       .finally(() => setIsLoading(false));
 
-    return () => controller.abort('cleanup');
+    return () => controller.abort();
   }, [channelId, tab, sort]);
 
   // Load more (infinite scroll)
