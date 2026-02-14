@@ -15,7 +15,7 @@ import {
   renderRichContent,
   type UnifiedExchange,
 } from "./ExchangeMessage";
-import { ToolResultRenderer, type ToolCallData } from "./ToolRenderers";
+import { ToolResultRenderer, parseStreamToSegments, type ToolCallData } from "./ToolRenderers";
 import { LearnModeQuiz } from "./LearnModeQuiz";
 import type { VoiceState } from "@/hooks/useVoiceMode";
 import type { TranscriptSegment, TranscriptSource } from "@/lib/video-utils";
@@ -95,6 +95,7 @@ interface InteractionOverlayProps {
   currentUserText: string;
   currentAiText: string;
   currentToolCalls?: ToolCallData[];
+  currentRawAiText?: string;
   textError: string | null;
   onTextSubmit: (text: string) => Promise<void>;
   onStopTextStream: () => void;
@@ -354,6 +355,7 @@ export function InteractionOverlay({
   currentUserText,
   currentAiText,
   currentToolCalls,
+  currentRawAiText,
   textError,
   onTextSubmit,
   onStopTextStream,
@@ -989,30 +991,48 @@ export function InteractionOverlay({
                             >
                               <div className="max-w-[85%]">
                                 <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-                                  {renderRichContent(
-                                    currentAiText || voiceResponseText,
-                                    handleTimestampSeek,
-                                    videoId,
+                                  {!showExploreUI && currentRawAiText && currentToolCalls && currentToolCalls.length > 0 ? (
+                                    // Segment-based rendering: tool cards at their natural position
+                                    <>
+                                      {parseStreamToSegments(currentRawAiText).map((seg, i) => {
+                                        if (seg.type === 'text') {
+                                          if (!seg.content.trim()) return null;
+                                          return <span key={`stream-seg-${i}`}>{renderRichContent(seg.content, handleTimestampSeek, videoId)}</span>;
+                                        }
+                                        if (seg.toolCall.result.type === 'cite_moment') {
+                                          return (
+                                            <ToolResultRenderer
+                                              key={`stream-tool-${i}`}
+                                              toolCall={seg.toolCall}
+                                              onSeek={handleTimestampSeek}
+                                              onOpenVideo={onOpenVideo}
+                                            />
+                                          );
+                                        }
+                                        return (
+                                          <div key={`stream-tool-${i}`} className="my-2">
+                                            <ToolResultRenderer
+                                              toolCall={seg.toolCall}
+                                              onSeek={handleTimestampSeek}
+                                              onOpenVideo={onOpenVideo}
+                                            />
+                                          </div>
+                                        );
+                                      })}
+                                    </>
+                                  ) : (
+                                    // Plain text rendering (no tool calls or voice mode)
+                                    renderRichContent(
+                                      currentAiText || voiceResponseText,
+                                      handleTimestampSeek,
+                                      videoId,
+                                    )
                                   )}
                                   {(isTextStreaming ||
                                     voiceState === "thinking") && (
                                     <span className="inline-block w-0.5 h-4 bg-chalk-accent animate-pulse ml-0.5 align-middle" />
                                   )}
                                 </div>
-                                {!showExploreUI &&
-                                  currentToolCalls &&
-                                  currentToolCalls.length > 0 && (
-                                    <div className="mt-2 space-y-1">
-                                      {currentToolCalls.map((tc, i) => (
-                                        <ToolResultRenderer
-                                          key={`stream-tool-${i}`}
-                                          toolCall={tc}
-                                          onSeek={handleTimestampSeek}
-                                          onOpenVideo={onOpenVideo}
-                                        />
-                                      ))}
-                                    </div>
-                                  )}
                               </div>
                             </motion.div>
                           )}

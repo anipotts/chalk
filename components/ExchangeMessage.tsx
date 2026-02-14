@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { TimestampLink } from './TimestampLink';
 import { parseTimestampLinks } from '@/lib/video-utils';
 import { ClipboardText, CheckCircle, SpeakerSimpleHigh, SpeakerSimpleLow } from '@phosphor-icons/react';
-import { ToolResultRenderer, type ToolCallData } from './ToolRenderers';
+import { ToolResultRenderer, parseStreamToSegments, type ToolCallData } from './ToolRenderers';
 import { ExplorePills } from './ExplorePills';
 import katex from 'katex';
 import hljs from 'highlight.js/lib/core';
@@ -41,6 +41,7 @@ export interface UnifiedExchange {
   timestamp: number;
   model?: string;
   toolCalls?: ToolCallData[];
+  rawAiText?: string;
   thinking?: string;
   thinkingDuration?: number;
   explorePills?: string[];
@@ -434,23 +435,55 @@ export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPl
             </span>
           )}
 
+          {/* Message content with interleaved tool cards */}
           <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-            {renderRichContent(exchange.aiText, onSeek, videoId)}
+            {exchange.rawAiText ? (
+              // Segment-based rendering: tool cards at their natural position
+              parseStreamToSegments(exchange.rawAiText).map((seg, i) => {
+                if (seg.type === 'text') {
+                  if (!seg.content.trim()) return null;
+                  return <span key={`seg-${exchange.id}-${i}`}>{renderRichContent(seg.content, onSeek, videoId)}</span>;
+                }
+                // Tool segment: inline for cite_moment, block for everything else
+                if (seg.toolCall.result.type === 'cite_moment') {
+                  return (
+                    <ToolResultRenderer
+                      key={`tool-${exchange.id}-${i}`}
+                      toolCall={seg.toolCall}
+                      onSeek={onSeek}
+                      onOpenVideo={onOpenVideo}
+                    />
+                  );
+                }
+                return (
+                  <div key={`tool-${exchange.id}-${i}`} className="my-2">
+                    <ToolResultRenderer
+                      toolCall={seg.toolCall}
+                      onSeek={onSeek}
+                      onOpenVideo={onOpenVideo}
+                    />
+                  </div>
+                );
+              })
+            ) : (
+              // Fallback: text then tool calls (backward compat for exchanges without rawAiText)
+              <>
+                {renderRichContent(exchange.aiText, onSeek, videoId)}
+                {exchange.toolCalls && exchange.toolCalls.length > 0 && (
+                  <div className="mt-2 space-y-1">
+                    {exchange.toolCalls.map((tc, i) => (
+                      <ToolResultRenderer
+                        key={`tool-${exchange.id}-${i}`}
+                        toolCall={tc}
+                        onSeek={onSeek}
+                        onOpenVideo={onOpenVideo}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </div>
-
-          {/* Tool call results */}
-          {exchange.toolCalls && exchange.toolCalls.length > 0 && (
-            <div className="mt-2 space-y-1">
-              {exchange.toolCalls.map((tc, i) => (
-                <ToolResultRenderer
-                  key={`tool-${exchange.id}-${i}`}
-                  toolCall={tc}
-                  onSeek={onSeek}
-                  onOpenVideo={onOpenVideo}
-                />
-              ))}
-            </div>
-          )}
 
           {/* Explore pills — only on last explore exchange when explore mode is active */}
           {isLastExploreExchange && exploreMode && exchange.explorePills && exchange.explorePills.length > 0 && onPillSelect && (

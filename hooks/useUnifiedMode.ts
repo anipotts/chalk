@@ -17,6 +17,7 @@ export interface UnifiedExchange {
   timestamp: number;
   model?: string;
   toolCalls?: ToolCallData[];
+  rawAiText?: string;
   thinking?: string;
   thinkingDuration?: number;
   explorePills?: string[];
@@ -50,6 +51,7 @@ interface UseUnifiedModeReturn {
   currentUserText: string;
   currentAiText: string;
   currentToolCalls: ToolCallData[];
+  currentRawAiText: string;
   textError: string | null;
 
   // Read aloud
@@ -120,6 +122,7 @@ export function useUnifiedMode({
   const [currentUserText, setCurrentUserText] = useState('');
   const [currentAiText, setCurrentAiText] = useState('');
   const [currentToolCalls, setCurrentToolCalls] = useState<ToolCallData[]>([]);
+  const [currentRawAiText, setCurrentRawAiText] = useState('');
   const [textError, setTextError] = useState<string | null>(null);
   const textAbortRef = useRef<AbortController | null>(null);
   const knowledgeContextRef = useRef(knowledgeContext);
@@ -202,6 +205,7 @@ export function useUnifiedMode({
 
     setCurrentUserText(text);
     setCurrentAiText('');
+    setCurrentRawAiText('');
     setCurrentToolCalls([]);
     setTextError(null);
     setIsTextStreaming(true);
@@ -247,6 +251,7 @@ export function useUnifiedMode({
         if (done) break;
 
         rawStream += decoder.decode(value, { stream: true });
+        setCurrentRawAiText(rawStream);
         const { text: cleanText, toolCalls } = parseStreamWithToolCalls(rawStream);
         setCurrentAiText(cleanText);
         if (toolCalls.length > 0) setCurrentToolCalls(toolCalls);
@@ -266,11 +271,13 @@ export function useUnifiedMode({
         timestamp: currentTimeRef.current,
         model: 'sonnet',
         toolCalls: finalToolCalls.length > 0 ? finalToolCalls : undefined,
+        rawAiText: finalToolCalls.length > 0 ? rawStream : undefined,
       };
 
       setExchanges((prev) => [...prev, exchange]);
       setCurrentUserText('');
       setCurrentAiText('');
+      setCurrentRawAiText('');
       setCurrentToolCalls([]);
 
       // Auto-play read aloud if enabled
@@ -329,6 +336,7 @@ export function useUnifiedMode({
     currentUserText,
     currentAiText,
     currentToolCalls,
+    currentRawAiText,
     textError,
 
     // Read aloud
