@@ -6,7 +6,6 @@ import { TimestampLink } from './TimestampLink';
 import { parseTimestampLinks } from '@/lib/video-utils';
 import { ClipboardText, CheckCircle, SpeakerSimpleHigh, SpeakerSimpleLow } from '@phosphor-icons/react';
 import { ToolResultRenderer, parseStreamToSegments, type ToolCallData } from './ToolRenderers';
-import { ExplorePills } from './ExplorePills';
 import katex from 'katex';
 import hljs from 'highlight.js/lib/core';
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -55,10 +54,7 @@ interface ExchangeMessageProps {
   isPlaying?: boolean;
   isReadAloudLoading?: boolean;
   onOpenVideo?: (videoId: string, title: string, channelName: string, seekTo?: number) => void;
-  isLastExploreExchange?: boolean;
-  onPillSelect?: (option: string) => void;
-  onFocusInput?: () => void;
-  exploreMode?: boolean;
+  skipEntrance?: boolean;
 }
 
 /**
@@ -398,14 +394,13 @@ function SpeakerButton({ exchange, onPlay, isPlaying, isLoading }: { exchange: U
   );
 }
 
-export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPlaying, isReadAloudLoading, onOpenVideo, isLastExploreExchange, onPillSelect, onFocusInput, exploreMode }: ExchangeMessageProps) {
-  const isExplore = exchange.mode === 'explore';
+export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPlaying, isReadAloudLoading, onOpenVideo, skipEntrance }: ExchangeMessageProps) {
 
   return (
     <div className="space-y-3">
       {/* User message - right aligned with max width */}
       <motion.div
-        initial={{ opacity: 0, y: 6 }}
+        initial={skipEntrance ? false : { opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
         className="flex justify-end w-full"
@@ -415,24 +410,21 @@ export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPl
         </div>
       </motion.div>
 
-      {/* AI message - left aligned with max width */}
+      {/* AI message - left aligned, full width */}
       <motion.div
-        initial={{ opacity: 0, y: 6 }}
+        initial={skipEntrance ? false : { opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, delay: 0.1 }}
+        transition={skipEntrance ? { duration: 0.2 } : { duration: 0.2, delay: 0.1 }}
         className="flex justify-start group w-full"
       >
-        <div className={`max-w-[85%] ${isExplore ? 'relative pl-3' : ''}`}>
-          {/* Explore mode left accent bar */}
-          {isExplore && (
-            <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-chalk-accent/40 rounded-full" />
-          )}
-
-          {/* Thinking duration */}
-          {exchange.thinkingDuration && (
-            <span className="text-[11px] text-slate-500 font-mono mb-1 block">
-              thought for {(exchange.thinkingDuration / 1000).toFixed(1)}s
-            </span>
+        <div className="w-full">
+          {/* Talking duration */}
+          {exchange.thinkingDuration != null && (
+            <div className="flex items-center gap-1.5 py-1 mb-0.5">
+              <span className="text-[11px] text-slate-500 font-mono">
+                talked for {(exchange.thinkingDuration / 1000).toFixed(1)}s
+              </span>
+            </div>
           )}
 
           {/* Message content with interleaved tool cards */}
@@ -484,15 +476,6 @@ export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPl
               </>
             )}
           </div>
-
-          {/* Explore pills — only on last explore exchange when explore mode is active */}
-          {isLastExploreExchange && exploreMode && exchange.explorePills && exchange.explorePills.length > 0 && onPillSelect && (
-            <ExplorePills
-              options={exchange.explorePills}
-              onSelect={onPillSelect}
-              onFocusInput={onFocusInput}
-            />
-          )}
 
           {/* Action buttons */}
           <div className="mt-1 flex items-center gap-0.5">

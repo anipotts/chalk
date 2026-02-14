@@ -1,20 +1,24 @@
 #!/usr/bin/env npx tsx
 /**
- * Batch knowledge extraction: reads video-list.json, processes sequentially.
+ * Batch knowledge extraction: reads video-manifest.json (from discover-videos.ts),
+ * processes with p-limit parallel concurrency.
  * Includes pre-flight validation, cost estimates, and post-run verification.
  *
  * Usage:
- *   npx tsx scripts/extract-batch.ts [--tier demo|2|all] [--retry-failed] [--dry-run]
+ *   npx tsx scripts/extract-batch.ts [--tier 1|2|3|4|all] [--concurrency N] [--retry-failed] [--dry-run]
  */
 
 process.loadEnvFile('.env.local');
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
+import pLimit from 'p-limit';
 import { extractSingleVideo } from './extract-knowledge';
+import type { VideoManifestEntry } from '../lib/batch/types';
 
+// Legacy format for backward compat with video-list.json
 interface VideoEntry {
   videoId: string;
   channel: string;
@@ -26,7 +30,7 @@ interface VideoList {
   tier2_sonnet: VideoEntry[];
 }
 
-// Cost estimates per video (cents) — based on empirical data
+// Cost estimates per video (cents) — tier-based estimation
 const EST_COST = { opus: 109, sonnet: 16 } as const;
 // Time estimates per video (seconds)
 const EST_TIME = { opus: 180, sonnet: 60 } as const;
@@ -35,8 +39,9 @@ const EST_TIME = { opus: 180, sonnet: 60 } as const;
 
 function getClient(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) throw new Error('Missing SUPABASE env vars');
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url) throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL');
+  if (!key) throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY');
   return createClient(url, key);
 }
 
@@ -222,47 +227,79 @@ async function main() {
   const tierArg = args.find(a => a.startsWith('--tier'))?.split('=')[1]
     || (args.includes('--tier') ? args[args.indexOf('--tier') + 1] : null)
     || 'all';
+  const concurrencyArg = args.find(a => a.startsWith('--concurrency'))?.split('=')[1]
+    || (args.includes('--concurrency') ? args[args.indexOf('--concurrency') + 1] : null);
+  const concurrency = concurrencyArg ? parseInt(concurrencyArg, 10) : 3;
   const retryFailed = args.includes('--retry-failed');
   const dryRun = args.includes('--dry-run');
 
-  // Load video list
-  const listPath = join(import.meta.dirname, 'video-list.json');
-  const videoList: VideoList = JSON.parse(readFileSync(listPath, 'utf-8'));
+  // Load video manifest (prefer video-manifest.json, fall back to video-list.json)
+  const manifestPath = join(import.meta.dirname, 'video-manifest.json');
+  const legacyPath = join(import.meta.dirname, 'video-list.json');
 
-  // Build work list based on tier
   const work: WorkItem[] = [];
 
-  if (tierArg === 'demo' || tierArg === '1' || tierArg === 'all') {
-    for (const v of videoList.demo_opus) {
-      work.push({ ...v, model: 'opus', tier: 'demo' });
+  if (existsSync(manifestPath)) {
+    const manifest: VideoManifestEntry[] = JSON.parse(readFileSync(manifestPath, 'utf-8'));
+    console.log(`Loaded ${manifest.length} videos from video-manifest.json`);
+
+    // Filter by tier
+    const filtered = tierArg === 'all'
+      ? manifest
+      : manifest.filter(v => String(v.tier) === tierArg);
+
+    for (const v of filtered) {
+      work.push({
+        videoId: v.videoId,
+        channel: v.channelName,
+        title: v.title,
+        model: v.tier === 1 ? 'opus' : 'sonnet',
+        tier: String(v.tier),
+      });
     }
-  }
-  if (tierArg === '2' || tierArg === 'all') {
-    for (const v of videoList.tier2_sonnet) {
-      work.push({ ...v, model: 'sonnet', tier: '2' });
+  } else if (existsSync(legacyPath)) {
+    console.log('WARN: video-manifest.json not found, falling back to video-list.json');
+    console.log('  Run: npx tsx scripts/discover-videos.ts to generate the manifest\n');
+    const videoList: VideoList = JSON.parse(readFileSync(legacyPath, 'utf-8'));
+
+    if (tierArg === 'demo' || tierArg === '1' || tierArg === 'all') {
+      for (const v of videoList.demo_opus) {
+        work.push({ ...v, model: 'opus', tier: 'demo' });
+      }
     }
+    if (tierArg === '2' || tierArg === 'all') {
+      for (const v of videoList.tier2_sonnet) {
+        work.push({ ...v, model: 'sonnet', tier: '2' });
+      }
+    }
+  } else {
+    console.error('No video manifest found. Run: npx tsx scripts/discover-videos.ts');
+    process.exit(1);
   }
 
   if (work.length === 0) {
-    console.error('No videos to process. Check --tier argument (demo|2|all).');
+    console.error('No videos to process. Check --tier argument.');
     process.exit(1);
   }
 
   // Pre-flight validation
   const valid = await preflight(work);
   if (dryRun) {
-    // In dry-run mode, also show what would be processed
     const client = getClient();
     const videoIds = work.map(w => w.videoId);
-    const { data: progressData } = await client
-      .from('batch_progress')
-      .select('video_id, status')
-      .in('video_id', videoIds);
 
-    const statusMap = new Map(
-      ((progressData || []) as Array<{ video_id: string; status: string }>)
-        .map(p => [p.video_id, p.status])
-    );
+    // Batch fetch progress in chunks (Supabase .in() limit)
+    const statusMap = new Map<string, string>();
+    for (let i = 0; i < videoIds.length; i += 500) {
+      const chunk = videoIds.slice(i, i + 500);
+      const { data: progressData } = await client
+        .from('batch_progress')
+        .select('video_id, status')
+        .in('video_id', chunk);
+      for (const p of (progressData || []) as Array<{ video_id: string; status: string }>) {
+        statusMap.set(p.video_id, p.status);
+      }
+    }
 
     const completed = work.filter(w => statusMap.get(w.videoId) === 'completed');
     const toProcess = work.filter(w => statusMap.get(w.videoId) !== 'completed');
@@ -270,14 +307,15 @@ async function main() {
     const sonnetCount = toProcess.filter(w => w.model === 'sonnet').length;
 
     const estCost = opusCount * EST_COST.opus + sonnetCount * EST_COST.sonnet;
-    const estTime = opusCount * EST_TIME.opus + sonnetCount * EST_TIME.sonnet;
+    const estTime = (opusCount * EST_TIME.opus + sonnetCount * EST_TIME.sonnet) / concurrency;
 
     console.log(`=== Dry Run Summary ===`);
-    console.log(`  Total in list: ${work.length} videos`);
+    console.log(`  Total in manifest: ${work.length} videos`);
     console.log(`  Already completed: ${completed.length} (skipping)`);
     console.log(`  To process: ${toProcess.length} (${opusCount} opus + ${sonnetCount} sonnet)`);
+    console.log(`  Concurrency: ${concurrency}`);
     console.log(`  Estimated cost: ~$${(estCost / 100).toFixed(0)}-${Math.round(estCost * 1.3 / 100)}`);
-    console.log(`  Estimated time: ~${Math.round(estTime / 3600 * 10) / 10} hours`);
+    console.log(`  Estimated time: ~${Math.round(estTime / 3600 * 10) / 10} hours (with ${concurrency}x parallelism)`);
     console.log(`\n  Pre-flight: ${valid ? 'PASSED' : 'FAILED'}`);
 
     if (!valid) {
@@ -296,15 +334,17 @@ async function main() {
   // Check existing progress
   const client = getClient();
   const videoIds = work.map(w => w.videoId);
-  const { data: progressData } = await client
-    .from('batch_progress')
-    .select('video_id, status')
-    .in('video_id', videoIds);
-
-  const statusMap = new Map(
-    ((progressData || []) as Array<{ video_id: string; status: string }>)
-      .map(p => [p.video_id, p.status])
-  );
+  const statusMap = new Map<string, string>();
+  for (let i = 0; i < videoIds.length; i += 500) {
+    const chunk = videoIds.slice(i, i + 500);
+    const { data: progressData } = await client
+      .from('batch_progress')
+      .select('video_id, status')
+      .in('video_id', chunk);
+    for (const p of (progressData || []) as Array<{ video_id: string; status: string }>) {
+      statusMap.set(p.video_id, p.status);
+    }
+  }
 
   // Filter work
   const filtered = work.filter(w => {
@@ -337,49 +377,52 @@ async function main() {
   const opusCount = filtered.filter(w => w.model === 'opus').length;
   const sonnetCount = filtered.filter(w => w.model === 'sonnet').length;
   const estCost = opusCount * EST_COST.opus + sonnetCount * EST_COST.sonnet;
-  const estTime = opusCount * EST_TIME.opus + sonnetCount * EST_TIME.sonnet;
+  const estTime = (opusCount * EST_TIME.opus + sonnetCount * EST_TIME.sonnet) / concurrency;
 
   console.log(`\n=== Batch Extraction: ${work.length} videos ===`);
   console.log(`  Already completed: ${work.length - filtered.length} (skipping)`);
   console.log(`  Processing: ${filtered.length} (${opusCount} opus + ${sonnetCount} sonnet)`);
+  console.log(`  Concurrency: ${concurrency}`);
   console.log(`  Estimated cost: ~$${(estCost / 100).toFixed(0)}-${Math.round(estCost * 1.3 / 100)}`);
   console.log(`  Estimated time: ~${Math.round(estTime / 3600 * 10) / 10} hours\n`);
 
-  // Process sequentially
+  // Process with p-limit concurrency
   let succeeded = 0;
   let failed = 0;
   let totalCost = 0;
+  let processed = 0;
   const failedIds: string[] = [];
   const startTime = Date.now();
+  const limit = pLimit(concurrency);
 
-  for (let i = 0; i < filtered.length; i++) {
-    const w = filtered[i];
-    const num = `[${i + 1}/${filtered.length}]`;
+  await Promise.allSettled(
+    filtered.map(w =>
+      limit(async () => {
+        const idx = ++processed;
+        const num = `[${idx}/${filtered.length}]`;
 
-    console.log(`${num} ${w.channel} — "${w.title}" (${w.model})`);
+        console.log(`${num} START ${w.channel} — "${w.title}" (${w.model})`);
 
-    const result = await extractSingleVideo(w.videoId, {
-      model: w.model,
-      channelTier: w.tier === 'demo' ? 1 : 2,
-    });
+        const result = await extractSingleVideo(w.videoId, {
+          model: w.model,
+          channelTier: parseInt(w.tier) || 1,
+        });
 
-    if (result.success) {
-      succeeded++;
-      totalCost += result.costCents;
-      console.log(`${num} done ${Math.round(result.durationMs / 1000)}s | ${result.concepts} concepts, ${result.moments} moments, ${result.quizzes} quizzes | ${result.costCents}c\n`);
-    } else {
-      failed++;
-      failedIds.push(w.videoId);
-      totalCost += result.costCents;
-      console.log(`${num} FAILED after ${Math.round(result.durationMs / 1000)}s\n`);
-    }
-
-    // Rate limit: longer delay after Opus calls (they're heavier)
-    if (i < filtered.length - 1) {
-      const delayMs = w.model === 'opus' ? 5000 : 2000;
-      await sleep(delayMs);
-    }
-  }
+        if (result.success) {
+          succeeded++;
+          totalCost += result.costCents;
+          const elapsed = Math.round((Date.now() - startTime) / 1000);
+          const eta = succeeded > 0 ? Math.round(elapsed / succeeded * (filtered.length - idx) / 60) : 0;
+          console.log(`${num} DONE ${Math.round(result.durationMs / 1000)}s | ${result.concepts} concepts, ${result.moments} moments, ${result.quizzes} quizzes | ${result.costCents}c | ETA ~${eta}min`);
+        } else {
+          failed++;
+          failedIds.push(w.videoId);
+          totalCost += result.costCents;
+          console.log(`${num} FAILED ${w.videoId} after ${Math.round(result.durationMs / 1000)}s`);
+        }
+      }),
+    ),
+  );
 
   const elapsedMin = Math.round((Date.now() - startTime) / 60000);
 
@@ -402,8 +445,8 @@ async function main() {
   // Post-run verification
   await postRunSummary(client);
 
-  // Auto-run cross-video linking if we had any successes
-  if (succeeded > 0) {
+  // Auto-run cross-video linking if 2+ videos succeeded
+  if (succeeded >= 2) {
     console.log('\n--- Running cross-video linking ---\n');
     try {
       const linkScript = join(import.meta.dirname, 'link-videos.ts');

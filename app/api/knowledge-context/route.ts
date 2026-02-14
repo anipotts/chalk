@@ -60,7 +60,7 @@ export async function GET(req: Request) {
       .from('cross_video_links')
       .select(`
         relationship, shared_concepts, reason,
-        target:video_knowledge!cross_video_links_target_video_id_fkey(video_id, title, channel_id, thumbnail_url)
+        target:video_knowledge!cross_video_links_target_video_id_fkey(video_id, title, channel_id, thumbnail_url, channels(channel_name))
       `)
       .eq('source_video_id', videoId)
       .order('confidence', { ascending: false })
@@ -117,12 +117,23 @@ export async function GET(req: Request) {
         const videoIds = [...new Set(crossMentions.map(m => m.video_id))];
         const { data: rawTitleData } = await client
           .from('video_knowledge')
-          .select('video_id, title, channel_id')
+          .select('video_id, title, channel_id, channels!inner(channel_name)')
           .in('video_id', videoIds);
 
-        const titleVids = rawTitleData as Array<{ video_id: string; title: string; channel_id: string | null }> | null;
+        // Try with inner join first; fall back to left join if no channels matched
+        let titleVids = rawTitleData as Array<{ video_id: string; title: string; channel_id: string | null; channels: { channel_name: string } | null }> | null;
+        if (!titleVids || titleVids.length === 0) {
+          const { data: fallbackData } = await client
+            .from('video_knowledge')
+            .select('video_id, title, channel_id')
+            .in('video_id', videoIds);
+          titleVids = (fallbackData as Array<{ video_id: string; title: string; channel_id: string | null }> | null)?.map(v => ({
+            ...v,
+            channels: null,
+          })) || null;
+        }
         const titleMap = new Map(titleVids?.map(v => [v.video_id, v.title]) || []);
-        const channelMap = new Map(titleVids?.map(v => [v.video_id, v.channel_id]) || []);
+        const channelMap = new Map(titleVids?.map(v => [v.video_id, v.channels?.channel_name || null]) || []);
 
         // Group by concept
         const conceptGroupMap = new Map<string, Array<{
@@ -160,7 +171,7 @@ export async function GET(req: Request) {
     relationship: string;
     shared_concepts: string[] | null;
     reason: string | null;
-    target: { video_id: string; title: string; channel_id: string | null; thumbnail_url: string | null } | null;
+    target: { video_id: string; title: string; channel_id: string | null; thumbnail_url: string | null; channels: { channel_name: string } | null } | null;
   }> | null;
   if (relatedLinks) {
     for (const link of relatedLinks) {
@@ -168,7 +179,7 @@ export async function GET(req: Request) {
         related_videos.push({
           video_id: link.target.video_id,
           title: link.target.title,
-          channel_name: link.target.channel_id,
+          channel_name: link.target.channels?.channel_name || null,
           relationship: link.relationship,
           shared_concepts: link.shared_concepts || [],
           reason: link.reason,

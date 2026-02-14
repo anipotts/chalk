@@ -10,6 +10,7 @@
 // Load env before any imports that need it
 process.loadEnvFile('.env.local');
 
+import { createHash } from 'crypto';
 import { generateText, jsonSchema, tool } from 'ai';
 import { createAnthropic } from '@ai-sdk/anthropic';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
@@ -103,8 +104,9 @@ const anthropic = createAnthropic({
 
 function getClient(): SupabaseClient {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) throw new Error('Missing SUPABASE env vars');
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url) throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL');
+  if (!key) throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY — anon key cannot bypass RLS for writes');
   return createClient(url, key);
 }
 
@@ -319,6 +321,7 @@ interface ExtractionOutput {
   tokensIn: number;
   tokensOut: number;
   model: string;
+  promptHash: string;
 }
 
 async function stepExtraction(
@@ -346,6 +349,10 @@ async function stepExtraction(
     ? formattedTranscript.slice(0, maxChars) + '\n\n[TRANSCRIPT TRUNCATED — video is very long]'
     : formattedTranscript;
 
+  if (formattedTranscript.length > maxChars) {
+    log(videoId, 'EXTRACTION', `WARNING: transcript truncated from ${formattedTranscript.length} to ${maxChars} chars (${Math.round((maxChars / formattedTranscript.length) * 100)}% retained)`);
+  }
+
   let userPrompt = `Extract structured knowledge from this video transcript.
 
 VIDEO: "${metadata.title || videoId}"
@@ -371,7 +378,8 @@ ${transcript}`;
   }
 
   const enhancedSchema = buildEnhancedSchema();
-  log(videoId, 'EXTRACTION', `maxOutputTokens: ${maxOutput} (${Math.round(durationMin)} min video)`);
+  const promptHash = createHash('sha256').update(EXTRACTION_SYSTEM_PROMPT + userPrompt).digest('hex').slice(0, 16);
+  log(videoId, 'EXTRACTION', `maxOutputTokens: ${maxOutput} (${Math.round(durationMin)} min video), promptHash: ${promptHash}`);
 
   const result = await generateTextWithRetry({
     model: anthropic(modelId),
@@ -415,6 +423,7 @@ ${transcript}`;
       tokensIn: usage.inputTokens || 0,
       tokensOut: usage.outputTokens || 0,
       model: modelId,
+      promptHash,
     };
   }
 
@@ -424,6 +433,7 @@ ${transcript}`;
     tokensIn: usage.inputTokens || 0,
     tokensOut: usage.outputTokens || 0,
     model: modelId,
+    promptHash,
   };
 }
 
@@ -821,6 +831,7 @@ async function stepEmbed(
   videoId: string,
   extraction: EnhancedExtraction,
   segments: TranscriptSegment[],
+  videoMeta: VideoMetadata,
 ) {
   if (!process.env.VOYAGE_API_KEY) {
     log(videoId, 'EMBED', 'VOYAGE_API_KEY not set, skipping embeddings');
@@ -973,6 +984,94 @@ async function stepEmbed(
   }
 
   log(videoId, 'EMBED', `${keRows.length} embeddings inserted`);
+
+  // Populate Upstash Vector (server-side embedding via data field)
+  const upstashUrl = process.env.UPSTASH_VECTOR_REST_URL;
+  const upstashToken = process.env.UPSTASH_VECTOR_REST_TOKEN;
+  if (upstashUrl && upstashToken) {
+    try {
+      const { Index } = await import('@upstash/vector');
+      const vectorIndex = new Index({ url: upstashUrl, token: upstashToken });
+
+      // Build upsert batch: video summary + transcript chunks
+      const vectorUpserts: Array<{ id: string; data: string; metadata: Record<string, unknown> }> = [];
+
+      // Video summary
+      if (extraction.summary) {
+        vectorUpserts.push({
+          id: `${videoId}:summary`,
+          data: `${extraction.summary} Topics: ${(extraction.topics || []).join(', ')}`,
+          metadata: {
+            video_id: videoId,
+            title: videoMeta.title || '',
+            channel_name: videoMeta.author || '',
+            type: 'video',
+            topics: extraction.topics || [],
+            difficulty: extraction.difficulty || null,
+          },
+        });
+      }
+
+      // Transcript chunks (reuse the chunking from above)
+      let upChunkIdx = 0;
+      let upChunkText = '';
+      let upChunkStart = 0;
+      let upChunkEnd = 0;
+
+      for (const seg of segments) {
+        if (upChunkText.length === 0) upChunkStart = seg.offset;
+        upChunkText += seg.text + ' ';
+        upChunkEnd = seg.offset + seg.duration;
+
+        if (upChunkText.length >= 2000) {
+          vectorUpserts.push({
+            id: `${videoId}:${upChunkIdx}`,
+            data: upChunkText.trim(),
+            metadata: {
+              video_id: videoId,
+              title: videoMeta.title || '',
+              channel_name: videoMeta.author || '',
+              chunk_text: upChunkText.trim().slice(0, 200),
+              chunk_index: upChunkIdx,
+              start_timestamp: upChunkStart,
+              end_timestamp: upChunkEnd,
+              type: 'chunk',
+            },
+          });
+          upChunkIdx++;
+          upChunkText = '';
+        }
+      }
+      if (upChunkText.trim().length > 50) {
+        vectorUpserts.push({
+          id: `${videoId}:${upChunkIdx}`,
+          data: upChunkText.trim(),
+          metadata: {
+            video_id: videoId,
+            title: videoMeta.title || '',
+            channel_name: videoMeta.author || '',
+            chunk_text: upChunkText.trim().slice(0, 200),
+            chunk_index: upChunkIdx,
+            start_timestamp: upChunkStart,
+            end_timestamp: upChunkEnd,
+            type: 'chunk',
+          },
+        });
+      }
+
+      // Upsert in batches of 100
+      for (let i = 0; i < vectorUpserts.length; i += 100) {
+        await vectorIndex.upsert(vectorUpserts.slice(i, i + 100));
+      }
+
+      log(videoId, 'EMBED', `Upstash Vector: ${vectorUpserts.length} vectors upserted`);
+    } catch (upErr) {
+      log(videoId, 'EMBED', `Upstash Vector failed: ${upErr instanceof Error ? upErr.message : upErr} — continuing`);
+    }
+  } else {
+    log(videoId, 'EMBED', 'Upstash Vector env vars not set, skipping');
+  }
+
   return true;
 }
 
@@ -1054,7 +1153,7 @@ export async function extractSingleVideo(
       const result = await stepExtraction(client, videoId, segments, metadata, modelChoice);
       extraction = result.extraction;
       costCents = calcCost(result.model, result.tokensIn, result.tokensOut);
-      log(videoId, 'EXTRACTION', `done (${result.tokensIn} in, ${result.tokensOut} out, ${costCents}¢)`);
+      log(videoId, 'EXTRACTION', `done (${result.tokensIn} in, ${result.tokensOut} out, ${costCents}¢, hash: ${result.promptHash})`);
 
       // Save raw extraction for safety
       await client.from('video_knowledge').upsert({
@@ -1065,7 +1164,19 @@ export async function extractSingleVideo(
         extraction_tokens_input: result.tokensIn,
         extraction_tokens_output: result.tokensOut,
         extraction_cost_cents: costCents,
+        extraction_prompt_hash: result.promptHash,
       }, { onConflict: 'video_id' });
+
+      // Store actual cost in batch_progress metadata
+      await client.from('batch_progress').update({
+        metadata: {
+          tokens_in: result.tokensIn,
+          tokens_out: result.tokensOut,
+          cost_cents: costCents,
+          model: result.model,
+          prompt_hash: result.promptHash,
+        },
+      }).eq('video_id', videoId);
 
       await updateProgress(client, videoId, 'extraction_done');
     } else {
@@ -1117,7 +1228,7 @@ export async function extractSingleVideo(
     // Step 6: EMBED (non-fatal — data is still useful without embeddings)
     if (shouldRun(currentStatus, 'embedded')) {
       try {
-        const embeddingSuccess = await stepEmbed(client, videoId, extraction, segments);
+        const embeddingSuccess = await stepEmbed(client, videoId, extraction, segments, metadata);
         if (embeddingSuccess) {
           await updateProgress(client, videoId, 'embedded');
         } else {

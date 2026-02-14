@@ -133,8 +133,8 @@ export function KaraokeCaption({ segments, currentTime }: KaraokeCaptionProps) {
   const { segment, words, activeWordIndex, fading } = renderData;
 
   return (
-    <div className="w-full text-center py-1 select-none">
-      <p className="text-base md:text-lg leading-relaxed font-light tracking-wide md:line-clamp-2">
+    <div className="w-full text-center select-none">
+      <p className="text-[15px] md:text-sm leading-snug font-medium tracking-wide truncate">
         {words.map((wt, i) => {
           const isActive = i === activeWordIndex && !fading;
           const isSpoken = i < activeWordIndex && !fading;
@@ -142,11 +142,13 @@ export function KaraokeCaption({ segments, currentTime }: KaraokeCaptionProps) {
           let className = 'karaoke-word mr-[0.3em] ';
 
           if (fading) {
-            className += 'text-white/25';
+            className += 'text-slate-500/50';
           } else if (isActive) {
-            className += 'karaoke-active text-blue-400';
+            className += 'karaoke-active bg-chalk-accent/90 text-white px-1 rounded';
+          } else if (isSpoken) {
+            className += 'text-slate-400';
           } else {
-            className += 'text-white/30';
+            className += 'text-slate-500';
           }
 
           return (

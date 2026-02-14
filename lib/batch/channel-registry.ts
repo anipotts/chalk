@@ -22,7 +22,7 @@ export const CHANNEL_REGISTRY: ChannelConfig[] = [
   { id: 'UCZHmQk67mSJgfCCTn7xBfew', name: 'Yannic Kilcher', handle: '@yannickilcher', tier: 2, category: 'ai_ml', maxVideos: 20,
     forceInclude: ['iDulhoQ2pro', 'GIolUzi8V5w', '9b2Vqf3i4fU', '-pLN7jgVdfE'] },
   { id: 'UCMLtBahI5DMrt0NPvDSoIRQ', name: 'ML Street Talk', handle: '@MachineLearningStreetTalk', tier: 2, category: 'ai_ml', maxVideos: 20 },
-  { id: 'UCJZnJGpRDMJMN2lmoeQruxQ', name: 'CodeEmporium', tier: 2, category: 'ai_ml', maxVideos: 25,
+  { id: 'UC5_6ZD6s8klmMu9TXEB_1IA', name: 'CodeEmporium', tier: 2, category: 'ai_ml', maxVideos: 25,
     forceInclude: ['JCJk9hoYjJI', '0v0Is3JL834', 'NseBQj16HXE'] },
   { id: 'UCtYLUTtgS3k1Fg4y5tAhLbw', name: 'StatQuest', tier: 2, category: 'math_cs', maxVideos: 30,
     forceInclude: ['5Z9OIYA8He8', 'HMOI_lkzW08', 'J4Wdy0Wc_xQ'] },

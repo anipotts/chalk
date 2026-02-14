@@ -68,7 +68,7 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
   }
 
   const hasContent = content && content.trim().length > 0;
-  const showTypingDots = isStreaming && !hasContent && !thinking;
+  const showTypingDots = isStreaming && !hasContent;
 
   return (
     <motion.div
@@ -94,28 +94,6 @@ export function VideoAIMessage({ role, content, isStreaming, thinking, thinkingD
             </motion.div>
           )}
         </AnimatePresence>
-
-        {thinking && (
-          <div className="mb-2">
-            <div className="flex items-center gap-1.5 mb-1">
-              <span className="text-[10px] uppercase tracking-wider text-slate-600 font-medium">Thinking</span>
-              {thinkingDuration != null && (
-                <span className="text-[10px] text-slate-600 tabular-nums">{(thinkingDuration / 1000).toFixed(1)}s</span>
-              )}
-              {isStreaming && !hasContent && (
-                <span className="w-1.5 h-1.5 rounded-full bg-chalk-accent/60 animate-pulse" />
-              )}
-            </div>
-            <div className="border-l-2 border-chalk-accent/20 pl-3">
-              <p className="text-[13px] text-slate-500 leading-relaxed whitespace-pre-wrap break-words">
-                {thinking}
-                {isStreaming && !hasContent && (
-                  <span className="inline-block w-0.5 h-3.5 bg-chalk-accent/50 animate-pulse ml-0.5 align-middle" />
-                )}
-              </p>
-            </div>
-          </div>
-        )}
 
         {hasContent && (
           <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">

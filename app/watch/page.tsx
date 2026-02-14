@@ -7,6 +7,7 @@ import { TranscriptPanel } from "@/components/TranscriptPanel";
 import { InteractionOverlay } from "@/components/InteractionOverlay";
 import { useTranscriptStream } from "@/hooks/useTranscriptStream";
 import { useVideoTitle } from "@/hooks/useVideoTitle";
+import { useOverlayPhase } from "@/hooks/useOverlayPhase";
 import { formatTimestamp } from "@/lib/video-utils";
 import { storageKey } from "@/lib/brand";
 import { ChalkboardSimple, Play, ArrowBendUpLeft, MagnifyingGlass } from "@phosphor-icons/react";
@@ -192,12 +193,13 @@ function WatchContent() {
 
   const [currentTime, setCurrentTime] = useState(0);
   const [isPaused, setIsPaused] = useState(true);
-  const [chatExpanded, setChatExpanded] = useState(false);
+  const { phase, pendingChar, lingerProgress, dispatch: overlayDispatch } = useOverlayPhase();
+  const chatExpanded = phase === 'conversing' || phase === 'lingering';
+  const inputVisible = phase !== 'dormant';
+
   const [showTranscript, setShowTranscript] = useState(false);
   const [sideStack, setSideStack] = useState<SideVideoEntry[]>([]);
   const [continueFrom, setContinueFrom] = useState<number | null>(null);
-  const [inputVisible, setInputVisible] = useState(false);
-  const [pendingChar, setPendingChar] = useState<string | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [transcriptCollapsed, setTranscriptCollapsed] = useState(false);
   const [viewSizeIndex, setViewSizeIndex] = useState(1); // start at 'default' (M)
@@ -406,12 +408,15 @@ function WatchContent() {
 
   const handlePause = useCallback(() => {
     setIsPaused(true);
-  }, []);
+    overlayDispatch({ type: 'VIDEO_PAUSE' });
+  }, [overlayDispatch]);
 
   const handlePlay = useCallback(() => {
     setIsPaused(false);
     hasPlayedOnce.current = true;
-  }, []);
+    const hasExchanges = unified.exchanges.length > 0 || unified.isTextStreaming;
+    overlayDispatch({ type: 'VIDEO_PLAY', hasExchanges });
+  }, [overlayDispatch, unified.exchanges.length, unified.isTextStreaming]);
 
   const handleTimeUpdate = useCallback((time: number) => {
     setCurrentTime(time);
@@ -436,14 +441,14 @@ function WatchContent() {
         /* ignore */
       }
     }
-    setChatExpanded(true);
+    overlayDispatch({ type: 'VOICE_START' });
     setTimeout(() => inputRef.current?.focus(), 100);
-  }, []);
+  }, [overlayDispatch]);
 
   const handleAskAbout = useCallback((_timestamp: number, _text: string) => {
-    setChatExpanded(true);
+    overlayDispatch({ type: 'CONTENT_ARRIVED' });
     setTimeout(() => inputRef.current?.focus(), 100);
-  }, []);
+  }, [overlayDispatch]);
 
   // Side panel: open a reference video
   const handleOpenVideo = useCallback((vid: string, title: string, channelName: string, seekTo?: number) => {
@@ -482,11 +487,10 @@ function WatchContent() {
       const tag = (e.target as HTMLElement)?.tagName;
       const inInput = tag === "INPUT" || tag === "TEXTAREA";
 
-      // Escape: collapse chat + hide input + blur
+      // Escape: collapse everything
       if (e.key === "Escape") {
         e.preventDefault();
-        setChatExpanded(false);
-        setInputVisible(false);
+        overlayDispatch({ type: 'ESCAPE' });
         inputRef.current?.blur();
         return;
       }
@@ -539,7 +543,7 @@ function WatchContent() {
       // Tab or / (slash): show input + focus (no character injection)
       if (e.key === "Tab" || e.key === "/") {
         e.preventDefault();
-        setInputVisible(true);
+        overlayDispatch({ type: 'FOCUS_INPUT' });
         requestAnimationFrame(() => inputRef.current?.focus());
         return;
       }
@@ -547,33 +551,25 @@ function WatchContent() {
       // Any other printable character (no Ctrl/Meta/Alt): type-to-activate
       if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
         e.preventDefault();
-        setInputVisible(true);
-        setPendingChar(e.key);
+        overlayDispatch({ type: 'KEYPRESS', char: e.key });
         requestAnimationFrame(() => inputRef.current?.focus());
         return;
       }
     }
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [startVoiceMode]);
+  }, [startVoiceMode, overlayDispatch]);
 
-  // Auto-collapse chat when video is playing and idle for 10s
-  useEffect(() => {
-    if (isPaused || unified.isTextStreaming || !chatExpanded) return;
-    const timer = setTimeout(() => {
-      setChatExpanded(false);
-      setInputVisible(false);
-      inputRef.current?.blur();
-    }, 10000);
-    return () => clearTimeout(timer);
-  }, [isPaused, unified.isTextStreaming, chatExpanded]);
+  // Lingering phase auto-clears via rAF in useOverlayPhase — no setTimeout needed.
+  // The VIDEO_PLAY dispatch (in handlePlay) transitions conversing→lingering,
+  // and the progressive fade timer in the hook dispatches LINGER_EXPIRE after 12s.
 
   // Auto-expand chat when exchanges appear
   useEffect(() => {
     if (unified.exchanges.length > 0 || unified.isTextStreaming) {
-      setChatExpanded(true);
+      overlayDispatch({ type: 'CONTENT_ARRIVED' });
     }
-  }, [unified.exchanges.length, unified.isTextStreaming]);
+  }, [unified.exchanges.length, unified.isTextStreaming, overlayDispatch]);
 
   if (!videoId) {
     return (
@@ -588,13 +584,13 @@ function WatchContent() {
     );
   }
 
-  // Blur: transparent while typing, subtle blur only when AI responses are visible
-  const blurLevel: "none" | "active" =
-    unified.exchanges.length > 0 ||
-    unified.isTextStreaming ||
-    learnMode.phase !== "idle"
-      ? "active"
-      : "none";
+  // Single dim level drives all darkening: backdrop, grain, blue border
+  const hasExchangeHistory = unified.exchanges.length > 0;
+  const videoDimLevel =
+    phase === 'dormant' ? 0
+    : phase === 'input' ? (hasExchangeHistory ? 0.65 : 0.15)
+    : phase === 'lingering' ? 0.75 * (1 - lingerProgress)
+    : 0.75; // conversing
 
   return (
     <div className="flex h-[100dvh] bg-chalk-bg overflow-hidden animate-in fade-in duration-300 px-safe">
@@ -646,7 +642,7 @@ function WatchContent() {
           </div>
 
           {/* Hint text — normal flex item, sits to the left of config buttons */}
-          {!inputVisible && effectiveChannel && (
+          {phase === 'dormant' && effectiveChannel && (
             <span className="hidden lg:inline text-xs whitespace-nowrap pointer-events-none text-slate-500 shrink-0">
               Start typing to talk to {effectiveChannel}
             </span>
@@ -725,11 +721,11 @@ function WatchContent() {
             if (target.closest('button') || target.closest('textarea') || target.closest('input') || target.closest('iframe')) return;
             if (chatExpanded) return;
 
-            if (inputVisible) {
-              setInputVisible(false);
+            if (phase === 'input') {
+              overlayDispatch({ type: 'CLICK_VIDEO' });
               inputRef.current?.blur();
-            } else {
-              setInputVisible(true);
+            } else if (phase === 'dormant') {
+              overlayDispatch({ type: 'CLICK_VIDEO' });
               requestAnimationFrame(() => inputRef.current?.focus());
             }
           }}
@@ -765,18 +761,11 @@ function WatchContent() {
                 )}
               </div>
 
-              {/* Desktop captions — normal flow below video, fades when input or chat active */}
-              {hasSegments && (
-                <div className={`hidden md:flex items-center justify-center pt-2 transition-opacity duration-200 ${
-                  inputVisible || chatExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'
-                }`}>
-                  <KaraokeCaption segments={segments} currentTime={currentTime} />
-                </div>
-              )}
-
               {/* Unified interaction overlay (text + voice + learn) — inside container */}
               <InteractionOverlay
             expanded={chatExpanded}
+            phase={phase}
+            lingerProgress={lingerProgress}
             segments={segments}
             currentTime={currentTime}
             videoId={videoId}
@@ -816,25 +805,20 @@ function WatchContent() {
             onSetStreamingState={unified.setStreamingState}
             currentMode={unified.currentMode}
             onSetCurrentMode={unified.setCurrentMode}
-            blurLevel={blurLevel}
+            videoDimLevel={videoDimLevel}
             onSeek={handleSeek}
-            onClose={() => {
-              setChatExpanded(false);
-              setInputVisible(false);
-            }}
+            onClose={() => overlayDispatch({ type: 'CLOSE' })}
+            onExpandOverlay={() => overlayDispatch({ type: 'CONTENT_ARRIVED' })}
+            onInteract={() => overlayDispatch({ type: 'INTERACT' })}
             inputRef={inputRef}
             inputVisible={inputVisible}
             pendingChar={pendingChar}
-            onPendingCharConsumed={() => setPendingChar(null)}
-            onInputFocus={() => setInputVisible(true)}
+            onPendingCharConsumed={() => overlayDispatch({ type: 'PENDING_CHAR_CONSUMED' })}
+            onInputFocus={() => overlayDispatch({ type: 'FOCUS_INPUT' })}
             onInputBlur={() => {
-              setTimeout(() => {
-                const hasContent = inputRef.current?.value?.trim();
-                const hasExchanges = unified.exchanges.length > 0 || unified.isTextStreaming;
-                if (!hasContent && !hasExchanges) {
-                  setInputVisible(false);
-                }
-              }, 200);
+              const hasContent = !!inputRef.current?.value?.trim();
+              const hasExchanges = unified.exchanges.length > 0 || unified.isTextStreaming;
+              overlayDispatch({ type: 'BLUR_INPUT', hasContent, hasExchanges });
             }}
             // Learn mode
             learnPhase={learnMode.phase}
@@ -862,8 +846,21 @@ function WatchContent() {
             curriculumVideoCount={curriculum.videoCount}
           />
 
-              {/* Blue border — matches video exactly, always on top */}
-              <div className="hidden md:block absolute top-0 left-0 right-0 aspect-video rounded-xl border-[3px] border-chalk-accent pointer-events-none z-20" />
+              {/* Desktop captions — single line, fixed height prevents layout shift */}
+              {hasSegments && (
+                <div className={`hidden md:flex items-center justify-center h-8 mt-2 overflow-hidden transition-opacity duration-200 ${
+                  phase === 'dormant' ? 'opacity-100'
+                  : phase === 'input' ? 'opacity-70'
+                  : 'opacity-0 pointer-events-none'
+                }`}>
+                  <KaraokeCaption segments={segments} currentTime={currentTime} />
+                </div>
+              )}
+
+              {/* Blue border — always visible, thicker for presence */}
+              <div
+                className="hidden md:block absolute top-0 left-0 right-0 aspect-video rounded-xl border-[4px] border-chalk-accent/90 pointer-events-none z-30"
+              />
             </div>
           </div>
         </div>

@@ -247,18 +247,33 @@ export function createVideoTools(currentVideoId: string, segments: TranscriptSeg
               const videoIds = [...new Set(mentionData.map(m => m.video_id))];
               const { data: rawTitleData } = await client
                 .from('video_knowledge')
-                .select('video_id, title, difficulty')
+                .select('video_id, title, difficulty, channel_id')
                 .in('video_id', videoIds);
-              const titleVids = rawTitleData as Array<{ video_id: string; title: string; difficulty: string | null }> | null;
+              const titleVids = rawTitleData as Array<{ video_id: string; title: string; difficulty: string | null; channel_id: string | null }> | null;
               const titleMap = new Map(titleVids?.map(v => [v.video_id, v.title]) || []);
               const diffMap = new Map(titleVids?.map(v => [v.video_id, v.difficulty]) || []);
+
+              // Resolve channel_id → channel_name
+              const channelIds = [...new Set(titleVids?.map(v => v.channel_id).filter(Boolean) as string[] || [])];
+              let channelNameMap = new Map<string, string>();
+              if (channelIds.length > 0) {
+                const { data: chData } = await client
+                  .from('channels')
+                  .select('channel_id, channel_name')
+                  .in('channel_id', channelIds);
+                channelNameMap = new Map(
+                  ((chData || []) as Array<{ channel_id: string; channel_name: string }>)
+                    .map(c => [c.channel_id, c.channel_name])
+                );
+              }
+              const videoChannelMap = new Map(titleVids?.map(v => [v.video_id, v.channel_id ? channelNameMap.get(v.channel_id) || null : null]) || []);
 
               for (const m of mentionData) {
                 results.push({
                   kind: 'concept',
                   video_id: m.video_id,
                   title: titleMap.get(m.video_id) || 'Unknown',
-                  channel_name: null,
+                  channel_name: videoChannelMap.get(m.video_id) || null,
                   concept: displayMap.get(m.concept_id) || m.concept_id,
                   mention_type: m.mention_type,
                   timestamp_seconds: m.timestamp_seconds,
@@ -272,7 +287,7 @@ export function createVideoTools(currentVideoId: string, segments: TranscriptSeg
         if (searchType === 'video' || searchType === 'all') {
           let videoQuery = client
             .from('video_knowledge')
-            .select('video_id, title, difficulty, topics')
+            .select('video_id, title, difficulty, topics, channel_id')
             .or(`title.ilike.%${query}%,topics.cs.{${query}}`)
             .limit(5);
 
@@ -282,15 +297,28 @@ export function createVideoTools(currentVideoId: string, segments: TranscriptSeg
 
           const { data: rawVideoData } = await videoQuery;
           const videoData = rawVideoData as Array<{
-            video_id: string; title: string; difficulty: string | null; topics: string[];
+            video_id: string; title: string; difficulty: string | null; topics: string[]; channel_id: string | null;
           }> | null;
           if (videoData) {
+            // Resolve channel_id → channel_name
+            const vChIds = [...new Set(videoData.map(v => v.channel_id).filter(Boolean) as string[])];
+            let vChNameMap = new Map<string, string>();
+            if (vChIds.length > 0) {
+              const { data: chData } = await client
+                .from('channels')
+                .select('channel_id, channel_name')
+                .in('channel_id', vChIds);
+              vChNameMap = new Map(
+                ((chData || []) as Array<{ channel_id: string; channel_name: string }>)
+                  .map(c => [c.channel_id, c.channel_name])
+              );
+            }
             for (const v of videoData) {
               results.push({
                 kind: 'video',
                 video_id: v.video_id,
                 title: v.title,
-                channel_name: null,
+                channel_name: v.channel_id ? vChNameMap.get(v.channel_id) || null : null,
                 difficulty: v.difficulty,
                 relevance: `Topics: ${(v.topics || []).join(', ')}`,
               });
@@ -661,7 +689,21 @@ export function createVideoTools(currentVideoId: string, segments: TranscriptSeg
           .in('video_id', videoIds);
         const videoData = rawVideos as Array<{ video_id: string; title: string; channel_id: string | null }> | null;
         const titleMap = new Map(videoData?.map(v => [v.video_id, v.title]) || []);
-        const channelMap = new Map(videoData?.map(v => [v.video_id, v.channel_id]) || []);
+
+        // Resolve channel_id → channel_name
+        const edChIds = [...new Set(videoData?.map(v => v.channel_id).filter(Boolean) as string[] || [])];
+        let edChNameMap = new Map<string, string>();
+        if (edChIds.length > 0) {
+          const { data: chData } = await client
+            .from('channels')
+            .select('channel_id, channel_name')
+            .in('channel_id', edChIds);
+          edChNameMap = new Map(
+            ((chData || []) as Array<{ channel_id: string; channel_name: string }>)
+              .map(c => [c.channel_id, c.channel_name])
+          );
+        }
+        const channelMap = new Map(videoData?.map(v => [v.video_id, v.channel_id ? edChNameMap.get(v.channel_id) || null : null]) || []);
 
         return {
           type: 'alternative_explanations' as const,

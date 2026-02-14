@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect, type RefObject, type ReactNode } from 'react';
+import type { ViewSize } from './overlay-types';
 
 interface TextInputProps {
   value: string;
@@ -17,6 +18,7 @@ interface TextInputProps {
   onToggleExplore?: () => void;
   onFocus?: () => void;
   onBlur?: () => void;
+  viewSize?: ViewSize;
 }
 
 export function TextInput({
@@ -34,6 +36,7 @@ export function TextInput({
   onToggleExplore,
   onFocus,
   onBlur,
+  viewSize = 'default',
 }: TextInputProps) {
   const internalRef = useRef<HTMLTextAreaElement>(null);
   const textareaRef = externalRef || internalRef;
@@ -65,7 +68,7 @@ export function TextInput({
     : placeholder;
 
   return (
-    <div className="flex-1 flex items-center gap-1.5 rounded-xl bg-white/[0.04] border border-white/[0.08] focus-within:ring-1 focus-within:ring-chalk-accent/40 focus-within:border-chalk-accent/30 transition-colors">
+    <div className="flex-1 flex items-center gap-1.5 rounded-xl bg-white/[0.06] focus-within:bg-white/[0.10] transition-colors duration-200">
       <textarea
         ref={textareaRef}
         value={value}
