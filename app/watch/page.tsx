@@ -9,7 +9,7 @@ import { useTranscriptStream } from "@/hooks/useTranscriptStream";
 import { useVideoTitle } from "@/hooks/useVideoTitle";
 import { formatTimestamp } from "@/lib/video-utils";
 import { storageKey } from "@/lib/brand";
-import { ChalkboardSimple, Play, Microphone, ArrowBendUpLeft, MagnifyingGlass } from "@phosphor-icons/react";
+import { ChalkboardSimple, Play, ArrowBendUpLeft, MagnifyingGlass } from "@phosphor-icons/react";
 import { KaraokeCaption } from "@/components/KaraokeCaption";
 import type { MediaPlayerInstance } from "@vidstack/react";
 
@@ -173,27 +173,6 @@ function WhisperBar({
   );
 }
 
-function MobileChatTrigger({
-  onTap,
-  channelName,
-}: {
-  onTap: () => void;
-  channelName?: string | null;
-}) {
-  return (
-    <button
-      onClick={onTap}
-      className="md:hidden flex-none flex items-center gap-3 px-4 py-3 border-t border-chalk-border/30 bg-chalk-bg/95 backdrop-blur-md w-full active:bg-white/[0.03] transition-colors"
-    >
-      <div className="flex-1 text-xs text-left truncate text-slate-500">
-        {channelName
-          ? `Ask ${channelName} anything...`
-          : "Ask about this video..."}
-      </div>
-      <Microphone size={20} weight="fill" className="flex-shrink-0 text-white/30" />
-    </button>
-  );
-}
 
 function WatchContent() {
   const searchParams = useSearchParams();
@@ -213,13 +192,12 @@ function WatchContent() {
 
   const [currentTime, setCurrentTime] = useState(0);
   const [isPaused, setIsPaused] = useState(true);
-  const [interactionVisible, setInteractionVisible] = useState(false);
+  const [chatExpanded, setChatExpanded] = useState(false);
   const [showTranscript, setShowTranscript] = useState(false);
   const [sideStack, setSideStack] = useState<SideVideoEntry[]>([]);
   const [continueFrom, setContinueFrom] = useState<number | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [transcriptCollapsed, setTranscriptCollapsed] = useState(false);
-  const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [viewSizeIndex, setViewSizeIndex] = useState(1); // start at 'default' (M)
   const viewSize = VIEW_SIZE_CYCLE[viewSizeIndex];
   const [learnEverOpened, setLearnEverOpened] = useState(false);
@@ -307,7 +285,7 @@ function WatchContent() {
   const { voiceId, isCloning } = useVoiceClone({
     videoId: videoId || null,
     channelName: effectiveChannel,
-    enabled: interactionVisible,
+    enabled: chatExpanded,
   });
 
   // Knowledge graph context (populated by batch enrichment)
@@ -426,9 +404,6 @@ function WatchContent() {
 
   const handlePause = useCallback(() => {
     setIsPaused(true);
-    if (hasPlayedOnce.current) {
-      setInteractionVisible(true);
-    }
   }, []);
 
   const handlePlay = useCallback(() => {
@@ -451,10 +426,6 @@ function WatchContent() {
     }
   }, []);
 
-  const toggleInteraction = useCallback(() => {
-    setInteractionVisible((prev) => !prev);
-  }, []);
-
   const startVoiceMode = useCallback(() => {
     if (playerRef.current) {
       try {
@@ -463,11 +434,12 @@ function WatchContent() {
         /* ignore */
       }
     }
-    setInteractionVisible(true);
+    setChatExpanded(true);
+    setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
 
   const handleAskAbout = useCallback((_timestamp: number, _text: string) => {
-    setInteractionVisible(true);
+    setChatExpanded(true);
     setTimeout(() => inputRef.current?.focus(), 100);
   }, []);
 
@@ -506,21 +478,30 @@ function WatchContent() {
     function handleKey(e: KeyboardEvent) {
       if (window.innerWidth < 768) return;
       const tag = (e.target as HTMLElement)?.tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA") return;
+      const inInput = tag === "INPUT" || tag === "TEXTAREA";
 
-      // Escape: close overlay
-      if (e.key === "Escape" && interactionVisible) {
-        e.preventDefault();
-        setInteractionVisible(false);
+      // Escape: collapse chat + blur input
+      if (e.key === "Escape") {
+        if (chatExpanded) {
+          e.preventDefault();
+          setChatExpanded(false);
+          inputRef.current?.blur();
+        }
         return;
       }
 
-      // Don't capture keys when overlay is visible (let input handle them)
-      if (interactionVisible) return;
+      // When typing in an input, don't capture shortcuts
+      if (inInput) return;
 
-      // Player shortcuts — let VideoPlayer handle these
-      const playerKeys = new Set([" ", "k", "j", "l", "f", ",", ".", "<", ">", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]);
-      if (playerKeys.has(e.key)) return;
+      // C key: toggle chat expanded/collapsed
+      if (e.key === "c" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        setChatExpanded((prev) => !prev);
+        if (!chatExpanded) {
+          setTimeout(() => inputRef.current?.focus(), 100);
+        }
+        return;
+      }
 
       // V key: open voice mode
       if (e.key === "v" && !e.metaKey && !e.ctrlKey && !e.altKey) {
@@ -529,22 +510,31 @@ function WatchContent() {
         return;
       }
 
-      // Any other alphanumeric key: open text mode and focus input
-      if (
-        /^[a-z0-9]$/i.test(e.key) &&
-        !e.metaKey &&
-        !e.ctrlKey &&
-        !e.altKey
-      ) {
+      // Tab or / (slash): expand chat + focus input
+      if (e.key === "Tab" || e.key === "/") {
         e.preventDefault();
-        setPendingKey(e.key);
-        setInteractionVisible(true);
+        setChatExpanded(true);
+        setTimeout(() => inputRef.current?.focus(), 100);
         return;
       }
+
+      // Player shortcuts — let VideoPlayer handle these
+      const playerKeys = new Set([" ", "k", "j", "l", "f", ",", ".", "<", ">", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]);
+      if (playerKeys.has(e.key)) return;
     }
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [interactionVisible, startVoiceMode]);
+  }, [chatExpanded, startVoiceMode]);
+
+  // Auto-collapse chat when video is playing and idle for 10s
+  useEffect(() => {
+    if (isPaused || unified.isTextStreaming || !chatExpanded) return;
+    const timer = setTimeout(() => {
+      setChatExpanded(false);
+      inputRef.current?.blur();
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [isPaused, unified.isTextStreaming, chatExpanded]);
 
   if (!videoId) {
     return (
@@ -615,9 +605,9 @@ function WatchContent() {
           </div>
 
           {/* Centered hint — absolutely positioned so it doesn't shift the flex layout */}
-          {!interactionVisible && effectiveChannel && (
+          {!chatExpanded && effectiveChannel && (
             <span className="hidden absolute left-1/2 text-xs whitespace-nowrap -translate-x-1/2 pointer-events-none text-slate-500 lg:inline">
-              Pause or start typing to talk to {effectiveChannel}
+              Press Tab or C to talk to {effectiveChannel}
             </span>
           )}
 
@@ -639,7 +629,7 @@ function WatchContent() {
             </button>
             <SpeedControlButton playerRef={playerRef} />
 
-            {interactionVisible && unified.exchanges.length > 0 && (
+            {chatExpanded && unified.exchanges.length > 0 && (
               <button
                 onClick={unified.clearHistory}
                 className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30 transition-colors"
@@ -691,7 +681,7 @@ function WatchContent() {
           className={`md:flex-1 flex flex-col overflow-hidden relative md:max-h-none transition-[flex,height] duration-[250ms] ease-out motion-reduce:transition-none ${
             keyboardOpen
               ? "flex-none h-0"
-              : interactionVisible || transcriptCollapsed
+              : chatExpanded || transcriptCollapsed
                 ? "flex-1 min-h-0"
                 : "flex-none h-[28dvh]"
           }`}
@@ -708,7 +698,7 @@ function WatchContent() {
                   onTimeUpdate={handleTimeUpdate}
                 />
                 {/* Mobile: absolute overlay captions */}
-                {hasSegments && !interactionVisible && (
+                {hasSegments && !chatExpanded && (
                   <div className="md:hidden absolute right-0 bottom-0 left-0 z-10 px-2 pt-8 pb-2 bg-gradient-to-t to-transparent pointer-events-none from-black/60">
                     <KaraokeCaption
                       segments={segments}
@@ -720,7 +710,7 @@ function WatchContent() {
 
               {/* Desktop caption strip — fixed height so video never shifts */}
               <div className="hidden md:flex items-center justify-center mt-3 h-[52px] overflow-hidden">
-                {hasSegments && !interactionVisible && (
+                {hasSegments && !chatExpanded && (
                   <KaraokeCaption
                     segments={segments}
                     currentTime={currentTime}
@@ -740,8 +730,7 @@ function WatchContent() {
 
           {/* Unified interaction overlay (text + voice + learn) */}
           <InteractionOverlay
-            visible={interactionVisible}
-            autoDismiss={!isPaused}
+            expanded={chatExpanded}
             viewSize={viewSize}
             segments={segments}
             currentTime={currentTime}
@@ -777,12 +766,16 @@ function WatchContent() {
             // Unified state
             exchanges={unified.exchanges}
             onClearHistory={unified.clearHistory}
+            onAddExchange={unified.addExchange}
+            onSetStreamingState={unified.setStreamingState}
+            currentMode={unified.currentMode}
+            onSetCurrentMode={unified.setCurrentMode}
             blurLevel={blurLevel}
             onSeek={handleSeek}
-            onClose={() => setInteractionVisible(false)}
+            onClose={() => setChatExpanded(false)}
             inputRef={inputRef}
-            pendingKey={pendingKey}
-            onConsumePendingKey={() => setPendingKey(null)}
+            onInputFocus={() => setChatExpanded(true)}
+            onInputBlur={() => {}}
             // Learn mode
             learnPhase={learnMode.phase}
             learnSelectedAction={learnMode.selectedAction}
@@ -813,7 +806,7 @@ function WatchContent() {
         {/* Mobile transcript — collapsible; flex-1 fills remaining space, flex-none for collapsed/hidden */}
         <div
           className={`md:hidden flex flex-col border-t border-chalk-border/40 overflow-hidden transition-[flex,height] duration-[250ms] ease-out motion-reduce:transition-none ${
-            keyboardOpen || interactionVisible
+            keyboardOpen || chatExpanded
               ? "flex-none h-0"
               : transcriptCollapsed
                 ? "flex-none h-10"
@@ -858,16 +851,8 @@ function WatchContent() {
           )}
         </div>
 
-        {/* Mobile chat trigger — opens full overlay */}
-        {!interactionVisible && (
-          <>
-            <MobileChatTrigger
-              onTap={() => setInteractionVisible(true)}
-              channelName={effectiveChannel}
-            />
-            <div className="flex-none md:hidden bg-chalk-bg pb-safe" />
-          </>
-        )}
+        {/* Bottom safe area padding on mobile */}
+        <div className="flex-none md:hidden bg-chalk-bg pb-safe" />
       </div>
 
       {/* Side video panel — reference video player (desktop only) */}

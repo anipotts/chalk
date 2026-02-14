@@ -15,6 +15,8 @@ interface TextInputProps {
   rightSlot?: ReactNode;
   exploreMode?: boolean;
   onToggleExplore?: () => void;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }
 
 export function TextInput({
@@ -30,6 +32,8 @@ export function TextInput({
   rightSlot,
   exploreMode = false,
   onToggleExplore,
+  onFocus,
+  onBlur,
 }: TextInputProps) {
   const internalRef = useRef<HTMLTextAreaElement>(null);
   const textareaRef = externalRef || internalRef;
@@ -67,6 +71,8 @@ export function TextInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
+        onFocus={onFocus}
+        onBlur={onBlur}
         placeholder={resolvedPlaceholder}
         aria-label={resolvedPlaceholder}
         rows={1}
