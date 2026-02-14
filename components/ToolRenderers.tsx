@@ -1,7 +1,7 @@
 'use client';
 
 import { formatTimestamp } from '@/lib/video-utils';
-import { ArrowSquareOut, Clock, VideoCamera, TreeStructure, Exam, BookOpen, Shuffle, Path } from '@phosphor-icons/react';
+import { ArrowSquareOut, Clock, VideoCamera, TreeStructure, Exam, BookOpen, Shuffle, Path, SquareHalf } from '@phosphor-icons/react';
 
 // Tool result types matching the server-side tool outputs
 
@@ -155,6 +155,7 @@ export function CiteMomentCard({
 
 /**
  * Card showing a referenced video with thumbnail, title, channel, and reason.
+ * Clicking opens a 55/45 split-screen view alongside the main video.
  */
 export function ReferenceVideoCard({
   result,
@@ -180,7 +181,7 @@ export function ReferenceVideoCard({
   return (
     <div
       onClick={handleClick}
-      className="flex gap-3 p-3 rounded-xl bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.06] cursor-pointer transition-colors group my-2"
+      className="flex gap-3 p-3 rounded-xl bg-white/[0.04] hover:bg-chalk-accent/[0.06] border border-white/[0.06] hover:border-chalk-accent/20 cursor-pointer transition-all group my-2"
     >
       <div className="flex-shrink-0 w-28 h-16 rounded-lg overflow-hidden bg-white/[0.06] relative">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -195,6 +196,10 @@ export function ReferenceVideoCard({
             {formatTimestamp(result.timestamp_seconds)}
           </span>
         )}
+        {/* Split-screen indicator on hover */}
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+          <SquareHalf size={20} weight="bold" className="text-white" />
+        </div>
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start gap-1">
@@ -204,13 +209,15 @@ export function ReferenceVideoCard({
         <div className="text-xs text-slate-400 mt-0.5">{result.channel_name}</div>
         <div className="text-xs text-slate-400 mt-1 line-clamp-2">{result.reason}</div>
       </div>
-      <button
-        onClick={handleNewTab}
-        className="flex-shrink-0 p-1.5 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] opacity-0 group-hover:opacity-100 transition-opacity"
-        title="Open in new tab"
-      >
-        <ArrowSquareOut size={14} />
-      </button>
+      <div className="flex flex-col items-center gap-1 flex-shrink-0">
+        <button
+          onClick={handleNewTab}
+          className="p-1.5 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] opacity-0 group-hover:opacity-100 transition-opacity"
+          title="Open in new tab"
+        >
+          <ArrowSquareOut size={14} />
+        </button>
+      </div>
     </div>
   );
 }

@@ -559,8 +559,10 @@ function WatchContent() {
 
   return (
     <div className="flex h-[100dvh] bg-chalk-bg overflow-hidden animate-in fade-in duration-300 px-safe">
-      {/* Main area */}
-      <div className="flex flex-col flex-1 min-w-0">
+      {/* Main area — shrinks to 55% when side panel is open */}
+      <div className={`flex flex-col min-w-0 transition-[flex,width] duration-300 ease-out ${
+        sideStack.length > 0 ? "w-[55%] flex-none" : "flex-1"
+      }`}>
         {/* Top bar — hidden on mobile, z-20 so speed dropdown escapes above the video area */}
         <div className="hidden md:flex flex-none items-center gap-3 px-4 py-3 border-b border-chalk-border/30 bg-chalk-bg/80 backdrop-blur-md relative z-20">
           {/* Left: chalk icon + compact search */}
@@ -855,18 +857,19 @@ function WatchContent() {
         <div className="flex-none md:hidden bg-chalk-bg pb-safe" />
       </div>
 
-      {/* Side video panel — reference video player (desktop only) */}
+      {/* Side video panel — 45% split when open (desktop only) */}
       <div
-        className={`hidden md:flex flex-none overflow-hidden transition-[width] duration-[250ms] ease-out ${
-          sideStack.length > 0 ? "border-l w-[440px] border-chalk-border/30" : "w-0"
+        className={`hidden md:flex flex-none overflow-hidden transition-[width] duration-300 ease-out ${
+          sideStack.length > 0 ? "border-l w-[45%] border-chalk-border/30" : "w-0"
         }`}
       >
         {sideStack.length > 0 && (
-          <div className="w-[440px] flex-none h-full">
+          <div className="w-full h-full">
             <SideVideoPanel
               stack={sideStack}
               onPop={handleSidePopVideo}
               onClose={handleSideClose}
+              onOpenVideo={handleOpenVideo}
             />
           </div>
         )}

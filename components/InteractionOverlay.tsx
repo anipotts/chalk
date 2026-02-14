@@ -518,49 +518,6 @@ export function InteractionOverlay({
     setCanScrollDown(scrollHeight - scrollTop - clientHeight > 60);
   }, []);
 
-  const handleSubmit = useCallback(async () => {
-    if (!input.trim()) return;
-    const text = input.trim();
-    setInput("");
-
-    // If learn mode was active, exit it first (typing freely enters explore chat)
-    if (isLearnModeActive) {
-      onStopLearnMode();
-    }
-
-    if (exploreMode) {
-      await submitExploreMessage(text);
-    } else {
-      await onTextSubmit(text);
-    }
-  }, [input, exploreMode, isLearnModeActive, onStopLearnMode, onTextSubmit]);
-
-  // Toggle explore mode (unified: subsumes both explore chat and learn mode)
-  const toggleExploreMode = useCallback(() => {
-    setExploreMode((prev) => {
-      const next = !prev;
-      if (next) {
-        // Entering explore mode — trigger lazy loading of learn options
-        onEnsureLearnOptions?.();
-        setExplorePills([]);
-      } else {
-        // Exiting explore mode — clean up UI state only (exchanges persist in unified model)
-        setExplorePills([]);
-        if (exploreAbortRef.current) {
-          exploreAbortRef.current.abort("explore toggled");
-          exploreAbortRef.current = null;
-        }
-        setExploreGoal(null);
-        setExploreError(null);
-        // Also stop learn mode if active
-        if (learnPhase !== "idle") {
-          onStopLearnMode();
-        }
-      }
-      return next;
-    });
-  }, [onEnsureLearnOptions, learnPhase, onStopLearnMode]);
-
   // Submit explore message (calls API directly with adaptive thinking budget)
   const submitExploreMessage = useCallback(
     async (text: string) => {
@@ -740,6 +697,49 @@ export function InteractionOverlay({
       onAddExchange,
     ],
   );
+
+  const handleSubmit = useCallback(async () => {
+    if (!input.trim()) return;
+    const text = input.trim();
+    setInput("");
+
+    // If learn mode was active, exit it first (typing freely enters explore chat)
+    if (isLearnModeActive) {
+      onStopLearnMode();
+    }
+
+    if (exploreMode) {
+      await submitExploreMessage(text);
+    } else {
+      await onTextSubmit(text);
+    }
+  }, [input, exploreMode, isLearnModeActive, onStopLearnMode, onTextSubmit, submitExploreMessage]);
+
+  // Toggle explore mode (unified: subsumes both explore chat and learn mode)
+  const toggleExploreMode = useCallback(() => {
+    setExploreMode((prev) => {
+      const next = !prev;
+      if (next) {
+        // Entering explore mode — trigger lazy loading of learn options
+        onEnsureLearnOptions?.();
+        setExplorePills([]);
+      } else {
+        // Exiting explore mode — clean up UI state only (exchanges persist in unified model)
+        setExplorePills([]);
+        if (exploreAbortRef.current) {
+          exploreAbortRef.current.abort("explore toggled");
+          exploreAbortRef.current = null;
+        }
+        setExploreGoal(null);
+        setExploreError(null);
+        // Also stop learn mode if active
+        if (learnPhase !== "idle") {
+          onStopLearnMode();
+        }
+      }
+      return next;
+    });
+  }, [onEnsureLearnOptions, learnPhase, onStopLearnMode]);
 
   // Handle pill selection (explore chat follow-up pills)
   const handlePillSelect = useCallback(
@@ -1112,11 +1112,12 @@ export function InteractionOverlay({
                   onSubmit={handleSubmit}
                   isStreaming={isTextStreaming}
                   onStop={() => {
-                    if (exploreAbortRef.current) {
+                    if (exploreMode && exploreAbortRef.current) {
                       exploreAbortRef.current.abort("stopped");
                       exploreAbortRef.current = null;
+                    } else {
+                      onStopTextStream();
                     }
-                    onStopTextStream();
                   }}
                   placeholder="Ask about this video..."
                   inputRef={inputRef}
@@ -1186,11 +1187,12 @@ export function InteractionOverlay({
                   <button
                     type="button"
                     onClick={() => {
-                      if (exploreAbortRef.current) {
+                      if (exploreMode && exploreAbortRef.current) {
                         exploreAbortRef.current.abort("stopped");
                         exploreAbortRef.current = null;
+                      } else {
+                        onStopTextStream();
                       }
-                      onStopTextStream();
                     }}
                     className="flex flex-shrink-0 justify-center items-center w-11 h-11 text-red-400 rounded-xl border transition-colors bg-red-500/15 border-red-500/30 hover:bg-red-500/25"
                     title="Stop"

@@ -22,9 +22,10 @@ interface SideVideoPanelProps {
   stack: SideVideoEntry[];
   onPop: () => void;
   onClose: () => void;
+  onOpenVideo?: (videoId: string, title: string, channelName: string, seekTo?: number) => void;
 }
 
-export function SideVideoPanel({ stack, onPop, onClose }: SideVideoPanelProps) {
+export function SideVideoPanel({ stack, onPop, onClose, onOpenVideo }: SideVideoPanelProps) {
   const entry = stack[stack.length - 1];
   if (!entry) return null;
 
@@ -39,7 +40,7 @@ export function SideVideoPanel({ stack, onPop, onClose }: SideVideoPanelProps) {
       />
 
       {/* Content */}
-      <SidePanelContent entry={entry} />
+      <SidePanelContent entry={entry} onOpenVideo={onOpenVideo} />
     </div>
   );
 }
@@ -56,7 +57,7 @@ function SidePanelHeader({
   entry: SideVideoEntry;
 }) {
   return (
-    <div className="flex-none flex items-center gap-2 px-3 py-2 border-b border-chalk-border/30 bg-chalk-bg/95 backdrop-blur-sm">
+    <div className="flex-none flex items-center gap-2 px-4 py-2.5 border-b border-chalk-border/30 bg-chalk-bg/95 backdrop-blur-sm">
       {/* Back button (only if stack depth > 1) */}
       {stack.length > 1 && (
         <button
@@ -75,7 +76,7 @@ function SidePanelHeader({
             <span key={s.videoId} className="flex items-center gap-1 min-w-0">
               {i > 0 && <span className="text-slate-600">&rsaquo;</span>}
               <span className={`truncate ${i === stack.length - 1 ? 'text-slate-300' : ''}`}>
-                {s.title.length > 25 ? s.title.slice(0, 25) + '...' : s.title}
+                {s.title.length > 35 ? s.title.slice(0, 35) + '...' : s.title}
               </span>
             </span>
           ))}
@@ -109,7 +110,10 @@ function SidePanelHeader({
   );
 }
 
-function SidePanelContent({ entry }: { entry: SideVideoEntry }) {
+function SidePanelContent({ entry, onOpenVideo }: {
+  entry: SideVideoEntry;
+  onOpenVideo?: (videoId: string, title: string, channelName: string, seekTo?: number) => void;
+}) {
   const playerRef = useRef<MediaPlayerInstance>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [showTranscript, setShowTranscript] = useState(true);
@@ -139,6 +143,10 @@ function SidePanelContent({ entry }: { entry: SideVideoEntry }) {
     }
   }, []);
 
+  const handleAskAbout = useCallback((_timestamp: number, _text: string) => {
+    // Could integrate with the main chat in the future
+  }, []);
+
   // Seek to entry timestamp on mount
   useEffect(() => {
     if (entry.seekTo && playerRef.current) {
@@ -153,25 +161,25 @@ function SidePanelContent({ entry }: { entry: SideVideoEntry }) {
 
   return (
     <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-      {/* Mini video player */}
+      {/* Video player — full width in the 45% column */}
       <div className="flex-none">
-        <div className="relative rounded-lg overflow-hidden mx-2 mt-2">
+        <div className="relative overflow-hidden">
           <VideoPlayer
             playerRef={playerRef}
             videoId={entry.videoId}
             onTimeUpdate={handleTimeUpdate}
           />
         </div>
-        <div className="px-3 py-2">
+        <div className="px-4 py-2">
           <div className="text-sm font-medium text-slate-200 line-clamp-2">{displayTitle}</div>
         </div>
       </div>
 
       {/* Toggle transcript */}
-      <div className="flex-none flex items-center px-3 pb-1">
+      <div className="flex-none flex items-center px-4 pb-1">
         <button
           onClick={() => setShowTranscript(v => !v)}
-          className={`text-[11px] font-medium px-2 py-1 rounded-md transition-colors ${
+          className={`text-[11px] font-medium px-2.5 py-1 rounded-md transition-colors ${
             showTranscript
               ? 'bg-chalk-accent/15 text-chalk-accent'
               : 'text-slate-500 hover:text-slate-300 bg-white/[0.04]'
@@ -196,6 +204,7 @@ function SidePanelContent({ entry }: { entry: SideVideoEntry }) {
             variant="sidebar"
             videoId={entry.videoId}
             videoTitle={displayTitle}
+            onAskAbout={handleAskAbout}
           />
         </div>
       )}
