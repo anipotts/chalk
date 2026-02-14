@@ -24,6 +24,8 @@ export interface ReferenceVideoResult {
   reason: string;
   thumbnail_url: string;
   caption_excerpt: string | null;
+  relationship?: string;
+  shared_concepts?: string[];
 }
 
 export interface SearchResult {
@@ -153,6 +155,16 @@ export function CiteMomentCard({
   );
 }
 
+const relationshipLabels: Record<string, string> = {
+  prerequisite: 'Prerequisite',
+  follow_up: 'Follow-up',
+  related: 'Related',
+  deeper_dive: 'Deeper Dive',
+  alternative_explanation: 'Alt. Explanation',
+  builds_on: 'Builds On',
+  contrasts: 'Contrasts',
+};
+
 /**
  * Extracts a relationship label from a reason string.
  */
@@ -191,7 +203,9 @@ export function ReferenceVideoCard({
     window.open(url, '_blank');
   };
 
-  const badge = getRelationshipLabel(result.reason);
+  const badge = result.relationship
+    ? (relationshipLabels[result.relationship] || result.relationship)
+    : getRelationshipLabel(result.reason);
 
   return (
     <div
@@ -228,6 +242,15 @@ export function ReferenceVideoCard({
           </span>
         </div>
         <div className="text-xs text-slate-500 mt-1 line-clamp-2">{result.reason}</div>
+        {result.shared_concepts && result.shared_concepts.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {result.shared_concepts.slice(0, 5).map((concept, i) => (
+              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-slate-400">
+                {concept}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
       <div className="flex flex-col items-center gap-1 flex-shrink-0">
         <button
