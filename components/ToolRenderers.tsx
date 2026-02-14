@@ -143,14 +143,27 @@ export function CiteMomentCard({
   return (
     <button
       onClick={() => onSeek(result.timestamp_seconds)}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-chalk-accent/15 hover:bg-chalk-accent/25 text-chalk-accent text-sm transition-colors cursor-pointer border border-chalk-accent/20"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-chalk-accent/15 hover:bg-chalk-accent/25 border border-chalk-accent/20 hover:border-chalk-accent/40 text-chalk-accent hover:shadow-[0_0_8px_rgba(59,130,246,0.3)] transition-all duration-200 ease-out cursor-pointer"
       title={result.context}
     >
-      <Clock size={14} weight="bold" />
-      <span className="font-medium">[{result.timestamp}]</span>
-      <span className="text-slate-300">{result.label}</span>
+      <Clock size={12} weight="bold" />
+      <span className="font-mono text-xs font-medium">[{result.timestamp}]</span>
+      <span className="text-xs text-slate-300">{result.label}</span>
     </button>
   );
+}
+
+/**
+ * Extracts a relationship label from a reason string.
+ */
+function getRelationshipLabel(reason: string): string {
+  const lower = reason.toLowerCase();
+  if (lower.includes('prerequisite')) return 'Prerequisite';
+  if (lower.includes('follow-up') || lower.includes('followup') || lower.includes('follow up')) return 'Follow-up';
+  if (lower.includes('deep dive') || lower.includes('deeper')) return 'Deep Dive';
+  if (lower.includes('alternative')) return 'Alternative';
+  if (lower.includes('supplement') || lower.includes('complementary')) return 'Supplement';
+  return 'Related';
 }
 
 /**
@@ -178,12 +191,14 @@ export function ReferenceVideoCard({
     window.open(url, '_blank');
   };
 
+  const badge = getRelationshipLabel(result.reason);
+
   return (
     <div
       onClick={handleClick}
-      className="flex gap-3 p-3 rounded-xl bg-white/[0.04] hover:bg-chalk-accent/[0.06] border border-white/[0.06] hover:border-chalk-accent/20 cursor-pointer transition-all group my-2"
+      className="flex gap-3 p-3 rounded-xl bg-chalk-surface hover:bg-chalk-accent/[0.06] border border-chalk-border hover:border-chalk-accent/30 cursor-pointer transition-all duration-200 ease-out group my-2 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20"
     >
-      <div className="flex-shrink-0 w-28 h-16 rounded-lg overflow-hidden bg-white/[0.06] relative">
+      <div className="flex-shrink-0 w-28 h-16 rounded-lg overflow-hidden bg-chalk-border relative">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={result.thumbnail_url}
@@ -197,22 +212,27 @@ export function ReferenceVideoCard({
           </span>
         )}
         {/* Split-screen indicator on hover */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <SquareHalf size={20} weight="bold" className="text-white" />
         </div>
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-start gap-1">
           <VideoCamera size={14} className="text-chalk-accent flex-shrink-0 mt-0.5" weight="fill" />
-          <span className="text-sm font-medium text-slate-200 line-clamp-1">{result.video_title}</span>
+          <span className="text-sm font-medium text-slate-200 line-clamp-2">{result.video_title}</span>
         </div>
-        <div className="text-xs text-slate-400 mt-0.5">{result.channel_name}</div>
-        <div className="text-xs text-slate-400 mt-1 line-clamp-2">{result.reason}</div>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-xs text-slate-400">{result.channel_name}</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-chalk-accent/10 text-chalk-accent border border-chalk-accent/20">
+            {badge}
+          </span>
+        </div>
+        <div className="text-xs text-slate-500 mt-1 line-clamp-2">{result.reason}</div>
       </div>
       <div className="flex flex-col items-center gap-1 flex-shrink-0">
         <button
           onClick={handleNewTab}
-          className="p-1.5 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] opacity-0 group-hover:opacity-100 transition-opacity"
+          className="p-1.5 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] opacity-0 group-hover:opacity-100 transition-all duration-200"
           title="Open in new tab"
         >
           <ArrowSquareOut size={14} />
@@ -244,7 +264,7 @@ export function PrerequisiteChainCard({
   }
 
   return (
-    <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] my-2">
+    <div className="p-3 rounded-xl bg-chalk-surface border border-chalk-border my-2">
       <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-2">
         <TreeStructure size={14} weight="bold" />
         <span>Prerequisites for this concept</span>
@@ -260,10 +280,10 @@ export function PrerequisiteChainCard({
                     onOpenVideo(item.best_video_id, item.best_video_title || item.display_name, '', undefined);
                   }
                 }}
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs transition-colors ${
+                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs transition-all duration-200 ease-out ${
                   item.best_video_id
                     ? 'bg-chalk-accent/10 text-chalk-accent hover:bg-chalk-accent/20 cursor-pointer'
-                    : 'bg-white/[0.06] text-slate-300'
+                    : 'bg-chalk-border text-slate-300'
                 }`}
                 title={item.best_video_title ? `Watch: ${item.best_video_title}` : item.display_name}
               >
@@ -309,7 +329,7 @@ function QuizQuestion({
   onSeek: (seconds: number) => void;
 }) {
   return (
-    <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.06]">
+    <div className="p-3 rounded-xl bg-chalk-surface border border-chalk-border">
       <div className="flex items-start gap-2">
         <Exam size={14} className="text-amber-400 flex-shrink-0 mt-0.5" weight="bold" />
         <div className="flex-1">
@@ -330,7 +350,7 @@ function QuizQuestion({
             {q.timestamp_seconds !== null && (
               <button
                 onClick={() => onSeek(q.timestamp_seconds!)}
-                className="text-[10px] px-1.5 py-0.5 rounded bg-chalk-accent/15 text-chalk-accent hover:bg-chalk-accent/25 transition-colors"
+                className="text-[10px] px-1.5 py-0.5 rounded bg-chalk-accent/15 text-chalk-accent hover:bg-chalk-accent/25 transition-all duration-200 ease-out"
               >
                 [{formatTimestamp(q.timestamp_seconds!)}]
               </button>
@@ -363,14 +383,14 @@ export function ChapterContextCard({
   if (!result.chapter && result.moments.length === 0) return null;
 
   return (
-    <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] my-2">
+    <div className="p-3 rounded-xl bg-chalk-surface border border-chalk-border my-2">
       {result.chapter && (
         <div className="mb-2">
           <div className="flex items-center gap-1.5">
             <BookOpen size={14} className="text-blue-400" weight="bold" />
             <button
               onClick={() => onSeek(result.chapter!.start_seconds)}
-              className="text-sm font-medium text-slate-200 hover:text-chalk-accent transition-colors"
+              className="text-sm font-medium text-slate-200 hover:text-chalk-accent transition-all duration-200 ease-out"
             >
               {result.chapter.title}
             </button>
@@ -386,7 +406,7 @@ export function ChapterContextCard({
             <button
               key={i}
               onClick={() => onSeek(m.timestamp_seconds)}
-              className="flex items-start gap-1.5 w-full text-left text-xs hover:bg-white/[0.04] rounded px-1 py-0.5 transition-colors"
+              className="flex items-start gap-1.5 w-full text-left text-xs hover:bg-chalk-accent/[0.06] rounded px-1 py-0.5 transition-all duration-200 ease-out"
             >
               <span className="text-chalk-accent font-mono flex-shrink-0">
                 [{formatTimestamp(m.timestamp_seconds)}]
@@ -426,7 +446,7 @@ export function AlternativeExplanationsCard({
   };
 
   return (
-    <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] my-2">
+    <div className="p-3 rounded-xl bg-chalk-surface border border-chalk-border my-2">
       <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-2">
         <Shuffle size={14} weight="bold" />
         <span>Alternative explanations</span>
@@ -436,7 +456,7 @@ export function AlternativeExplanationsCard({
           <button
             key={i}
             onClick={() => onOpenVideo?.(alt.video_id, alt.video_title, alt.channel_name || '', alt.timestamp_seconds)}
-            className="flex items-start gap-2 w-full text-left hover:bg-white/[0.04] rounded-lg p-1.5 transition-colors"
+            className="flex items-start gap-2 w-full text-left hover:bg-chalk-accent/[0.06] rounded-lg p-1.5 transition-all duration-200 ease-out"
           >
             <div className="flex-1 min-w-0">
               <div className="text-sm text-slate-200 line-clamp-1">{alt.video_title}</div>
@@ -467,7 +487,7 @@ export function LearningPathCard({
   if (result.message || result.steps.length === 0) return null;
 
   return (
-    <div className="p-3 rounded-xl bg-white/[0.04] border border-white/[0.06] my-2">
+    <div className="p-3 rounded-xl bg-chalk-surface border border-chalk-border my-2">
       <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-2">
         <Path size={14} weight="bold" />
         <span>Learning path</span>
@@ -482,10 +502,10 @@ export function LearningPathCard({
                   onOpenVideo(step.best_video_id, step.best_video_title || step.display_name, '', undefined);
                 }
               }}
-              className={`px-2 py-0.5 rounded-md text-xs transition-colors ${
+              className={`px-2 py-0.5 rounded-md text-xs transition-all duration-200 ease-out ${
                 step.best_video_id
                   ? 'bg-chalk-accent/10 text-chalk-accent hover:bg-chalk-accent/20 cursor-pointer'
-                  : 'bg-white/[0.06] text-slate-300'
+                  : 'bg-chalk-border text-slate-300'
               }`}
               title={step.best_video_title || step.display_name}
             >
@@ -530,7 +550,11 @@ export function ToolResultRenderer({
     case 'learning_path':
       return <LearningPathCard result={result} onOpenVideo={onOpenVideo} />;
     case 'search_results':
-      // Search results are internal — the model uses them to make reference_video calls
+      // Search results are internal — the model uses them to make reference_video calls.
+      // Show an empty state if no results were found.
+      if (result.results.length === 0 || result.message) {
+        return <p className="text-xs text-slate-500 italic my-1">No related content found</p>;
+      }
       return null;
     default:
       return null;
@@ -577,4 +601,56 @@ export function parseStreamWithToolCalls(fullText: string): {
   }
 
   return { text: cleanText, toolCalls };
+}
+
+/**
+ * A segment of a parsed stream — either text or a tool call result.
+ * Preserves the ordering so tool cards can be rendered at their natural position.
+ */
+export type StreamSegment =
+  | { type: 'text'; content: string }
+  | { type: 'tool'; toolCall: ToolCallData };
+
+/**
+ * Parses raw stream text into ordered segments of text and tool calls.
+ * Unlike parseStreamWithToolCalls, this preserves positional information
+ * so tool cards can be rendered inline with the surrounding text.
+ */
+export function parseStreamToSegments(rawText: string): StreamSegment[] {
+  const segments: StreamSegment[] = [];
+  let remaining = rawText;
+
+  while (remaining.length > 0) {
+    const startIdx = remaining.indexOf('\x1D');
+    if (startIdx === -1) {
+      if (remaining.length > 0) {
+        segments.push({ type: 'text', content: remaining });
+      }
+      break;
+    }
+
+    if (startIdx > 0) {
+      segments.push({ type: 'text', content: remaining.slice(0, startIdx) });
+    }
+
+    const endIdx = remaining.indexOf('\x1D', startIdx + 1);
+    if (endIdx === -1) {
+      // Incomplete tool call delimiter — treat rest as text
+      break;
+    }
+
+    const jsonStr = remaining.slice(startIdx + 1, endIdx);
+    try {
+      const parsed = JSON.parse(jsonStr) as ToolCallData;
+      if (parsed.toolName && parsed.result) {
+        segments.push({ type: 'tool', toolCall: parsed });
+      }
+    } catch {
+      // Malformed JSON, skip
+    }
+
+    remaining = remaining.slice(endIdx + 1);
+  }
+
+  return segments;
 }

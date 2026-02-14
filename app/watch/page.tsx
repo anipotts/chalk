@@ -798,6 +798,7 @@ function WatchContent() {
             currentUserText={unified.currentUserText}
             currentAiText={unified.currentAiText}
             currentToolCalls={unified.currentToolCalls}
+            currentRawAiText={unified.currentRawAiText}
             textError={unified.textError}
             onTextSubmit={unified.handleTextSubmit}
             onStopTextStream={unified.stopTextStream}
