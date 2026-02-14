@@ -249,7 +249,7 @@ export async function POST(req: Request) {
   // - Text deltas are streamed as-is
   // - Tool results are embedded as \x1D{json}\x1D (group separator delimited)
   // This keeps backward compatibility with the existing text stream parser
-  if (tools && hasKnowledge) {
+  if (tools) {
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
@@ -259,11 +259,20 @@ export async function POST(req: Request) {
               controller.enqueue(encoder.encode(chunk.text));
             } else if (chunk.type === 'tool-result') {
               // Embed tool result as delimited JSON
-              const toolData = JSON.stringify({
-                toolName: chunk.toolName,
-                result: chunk.output,
-              });
-              controller.enqueue(encoder.encode(`\x1D${toolData}\x1D`));
+              try {
+                const toolData = JSON.stringify({
+                  toolName: chunk.toolName,
+                  result: chunk.output,
+                });
+                controller.enqueue(encoder.encode(`\x1D${toolData}\x1D`));
+              } catch (toolErr) {
+                console.error(`Tool result error (${chunk.toolName}):`, toolErr instanceof Error ? toolErr.message : toolErr);
+                const errorData = JSON.stringify({
+                  toolName: chunk.toolName,
+                  result: { type: 'error', message: `Tool "${chunk.toolName}" failed to produce results.` },
+                });
+                controller.enqueue(encoder.encode(`\x1D${errorData}\x1D`));
+              }
             }
           }
         } catch (err) {

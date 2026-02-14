@@ -113,6 +113,8 @@ export function createVideoTools(currentVideoId: string, segments: TranscriptSeg
       reason: string;
       thumbnail_url: string;
       caption_excerpt: string | null;
+      relationship: string | null;
+      shared_concepts: string[];
     }>({
       description: 'Reference another video that covers a related topic. Use when the knowledge graph indicates relevant videos, or when the user asks about topics covered elsewhere.',
       inputSchema: zodSchema(referenceVideoSchema),
@@ -121,6 +123,9 @@ export function createVideoTools(currentVideoId: string, segments: TranscriptSeg
 
         let thumbnail_url: string | null = null;
         let caption_excerpt: string | null = null;
+
+        let relationship: string | null = null;
+        let shared_concepts: string[] = [];
 
         if (client) {
           const { data: rawData } = await client
@@ -134,6 +139,27 @@ export function createVideoTools(currentVideoId: string, segments: TranscriptSeg
             thumbnail_url = data.thumbnail_url;
             caption_excerpt = data.summary?.slice(0, 150) || null;
           }
+
+          // Query cross_video_links for relationship between current and referenced video
+          const { data: linkRaw } = await client
+            .from('cross_video_links')
+            .select('relationship, shared_concepts')
+            .or(
+              `and(source_video_id.eq.${currentVideoId},target_video_id.eq.${video_id}),` +
+              `and(source_video_id.eq.${video_id},target_video_id.eq.${currentVideoId})`
+            )
+            .order('confidence', { ascending: false })
+            .limit(1);
+
+          const linkData = linkRaw as Array<{
+            relationship: string;
+            shared_concepts: string[] | null;
+          }> | null;
+
+          if (linkData && linkData.length > 0) {
+            relationship = linkData[0].relationship;
+            shared_concepts = linkData[0].shared_concepts || [];
+          }
         }
 
         return {
@@ -145,6 +171,8 @@ export function createVideoTools(currentVideoId: string, segments: TranscriptSeg
           reason,
           thumbnail_url: thumbnail_url || `https://i.ytimg.com/vi/${video_id}/mqdefault.jpg`,
           caption_excerpt,
+          relationship,
+          shared_concepts,
         };
       },
     }),
