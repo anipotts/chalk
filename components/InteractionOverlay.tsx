@@ -71,7 +71,6 @@ class LearnErrorBoundary extends React.Component<
 
 interface InteractionOverlayProps {
   expanded: boolean;
-  viewSize?: "compact" | "default" | "expanded";
   segments: TranscriptSegment[];
   currentTime: number;
   videoId: string;
@@ -330,7 +329,6 @@ function TimestampTooltip({
 
 export function InteractionOverlay({
   expanded,
-  viewSize = "default",
   segments,
   currentTime,
   videoId,
@@ -413,13 +411,6 @@ export function InteractionOverlay({
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  const viewMaxWidth =
-    viewSize === "compact"
-      ? "max-w-2xl"
-      : viewSize === "expanded"
-        ? "max-w-6xl"
-        : "max-w-4xl";
 
   // Inject pending character from type-to-activate
   useEffect(() => {
@@ -820,7 +811,9 @@ export function InteractionOverlay({
       {/* Expandable message overlay — gated by expanded */}
       <AnimatePresence>
         {expanded && (
-          <div className="flex absolute inset-0 z-30 flex-col items-center md:justify-center md:p-4 md:pb-24">
+          <div className={`absolute inset-0 md:inset-auto md:top-0 md:left-0 md:right-0 md:aspect-video z-10 flex flex-col md:rounded-xl md:overflow-hidden ${
+            hasContent ? 'md:bg-black/80 md:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.5)]' : ''
+          }`}>
             {/* Backdrop - clickable to close — dark overlay with film grain */}
             <motion.div
               key="overlay-backdrop"
@@ -853,18 +846,6 @@ export function InteractionOverlay({
               )}
             </motion.div>
 
-            {/* Centering wrapper */}
-            <div
-              className={`flex relative z-10 flex-col flex-1 mx-auto w-full min-h-0 ease-out pointer-events-none ${viewMaxWidth} md:flex-none transition-[max-width] duration-[250ms]`}
-            >
-              {/* Content frame — messages + scroll badges */}
-              <div
-                className={`relative flex flex-col flex-1 min-h-0 md:flex-none md:aspect-video md:overflow-hidden md:rounded-xl md:border-[3px] md:border-transparent ${
-                  hasContent
-                    ? "md:bg-black/80 md:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.5)] items-center"
-                    : "items-center justify-end"
-                }`}
-              >
                 <motion.div
                   key="text-mode"
                   drag="y"
@@ -877,7 +858,7 @@ export function InteractionOverlay({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.4, ease: "easeInOut" }}
-                  className={`flex flex-col w-full flex-1 min-h-0 ${
+                  className={`relative z-[1] flex flex-col w-full flex-1 min-h-0 pointer-events-none ${
                     hasContent ? "items-center" : "justify-end items-center"
                   }`}
                 >
@@ -1105,22 +1086,18 @@ export function InteractionOverlay({
                     )}
                   </AnimatePresence>
                 </motion.div>
-              </div>
 
               {/* Spacer for input strip on mobile (still absolute-positioned there) */}
               <div className="md:hidden flex-none h-[72px]" />
-            </div>
           </div>
         )}
       </AnimatePresence>
 
       {/* Input strip — below video on desktop, bottom-pinned on mobile */}
-      <div className="absolute bottom-0 left-0 right-0 z-[32] pointer-events-none md:relative md:inset-auto md:w-full md:z-auto">
-        <div className={`flex flex-col items-center md:px-4 transition-opacity duration-200 ease-out ${
-          inputVisible === false ? 'md:opacity-0 md:pointer-events-none' : 'md:opacity-100'
-        }`}>
-          <div className={`w-full ${viewMaxWidth} md:mx-auto pointer-events-auto transition-[max-width] duration-[250ms] ease-out`}>
-            <div className={`px-3 pb-3 md:px-0 md:pb-0 md:pt-2 ${!expanded ? 'pt-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent md:from-transparent md:via-transparent md:pt-2 md:bg-none' : ''}`}>
+      <div className={`absolute bottom-0 left-0 right-0 z-[32] pointer-events-none md:relative md:inset-auto md:w-full md:z-auto transition-opacity duration-200 ease-out ${
+        inputVisible === false ? 'md:opacity-0 md:pointer-events-none' : 'md:opacity-100'
+      }`}>
+            <div className={`pointer-events-auto px-3 pb-3 md:px-0 md:pb-0 md:pt-2 ${!expanded ? 'pt-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent md:from-transparent md:via-transparent md:pt-2 md:bg-none' : ''}`}>
               {/* Unified input row */}
               <div className="flex gap-2 items-center">
                 {/* Curriculum context badge */}
@@ -1297,8 +1274,6 @@ export function InteractionOverlay({
                 </div>
               )}
             </div>
-          </div>
-        </div>
       </div>
 
       {/* Timestamp tooltip */}

@@ -741,10 +741,12 @@ function WatchContent() {
                 : "flex-none h-[28dvh]"
           }`}
         >
-          <div className="overflow-hidden relative z-0 flex-1 md:flex-none p-0 md:w-full md:px-4">
-            <div className={`md:mx-auto w-full ${viewMaxWidth} transition-[max-width] duration-[250ms] ease-out`}>
-              {/* Video + border ring wrapper */}
-              <div className="relative md:rounded-xl md:overflow-hidden">
+          {/* Wrapper — flex-1 on mobile (fills video area), flex-none on desktop */}
+          <div className="overflow-hidden relative z-0 flex-1 md:flex-none flex flex-col p-0 md:w-full md:px-4">
+            {/* Container — single relative parent for video, overlay, and border */}
+            <div className={`w-full ${viewMaxWidth} md:mx-auto relative flex-1 md:flex-none transition-[max-width] duration-[250ms] ease-out`}>
+              {/* Video */}
+              <div className="relative aspect-video md:rounded-xl md:overflow-hidden">
                 <VideoPlayer
                   playerRef={playerRef}
                   videoId={videoId}
@@ -761,11 +763,9 @@ function WatchContent() {
                     />
                   </div>
                 )}
-                {/* Blue border ring — overlays video exactly */}
-                <div className="hidden md:block absolute inset-0 rounded-xl border-[3px] border-chalk-accent pointer-events-none z-[35]" />
               </div>
 
-              {/* Desktop captions — below video in normal flow, fades when input or chat active */}
+              {/* Desktop captions — normal flow below video, fades when input or chat active */}
               {hasSegments && (
                 <div className={`hidden md:flex items-center justify-center pt-2 transition-opacity duration-200 ${
                   inputVisible || chatExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'
@@ -773,13 +773,10 @@ function WatchContent() {
                   <KaraokeCaption segments={segments} currentTime={currentTime} />
                 </div>
               )}
-            </div>
-          </div>
 
-          {/* Unified interaction overlay (text + voice + learn) */}
-          <InteractionOverlay
+              {/* Unified interaction overlay (text + voice + learn) — inside container */}
+              <InteractionOverlay
             expanded={chatExpanded}
-            viewSize={viewSize}
             segments={segments}
             currentTime={currentTime}
             videoId={videoId}
@@ -863,6 +860,11 @@ function WatchContent() {
             curriculumContext={curriculum.curriculumContext}
             curriculumVideoCount={curriculum.videoCount}
           />
+
+              {/* Blue border — matches video exactly, always on top */}
+              <div className="hidden md:block absolute top-0 left-0 right-0 aspect-video rounded-xl border-[3px] border-chalk-accent pointer-events-none z-20" />
+            </div>
+          </div>
         </div>
 
         {/* Mobile transcript — collapsible; flex-1 fills remaining space, flex-none for collapsed/hidden */}
