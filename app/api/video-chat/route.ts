@@ -230,9 +230,8 @@ export async function POST(req: Request) {
     messages.push({ role: 'user', content: message });
   }
 
-  // Create tools if we have knowledge graph context and a valid video ID
+  // Create tools if we have a valid video ID and not in voice mode
   const safeVideoId = typeof videoId === 'string' && /^[a-zA-Z0-9_-]{11}$/.test(videoId) ? videoId : null;
-  const hasKnowledge = kgCtx?.video || (kgCtx?.related_videos?.length ?? 0) > 0;
   const tools = safeVideoId && !voiceMode
     ? createVideoTools(safeVideoId, typedSegments)
     : undefined;
