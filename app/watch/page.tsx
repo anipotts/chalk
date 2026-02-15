@@ -861,7 +861,7 @@ function WatchContent() {
             <div data-video-container data-playing={!isPaused || undefined} className="w-full md:max-w-[calc((100dvh_-_12rem)*16/9)] md:max-h-full md:mx-auto relative flex-1 md:flex-none">
               {/* Video — aspect-video with max-h constraint to prevent overflow */}
               <div
-                className="group relative aspect-video md:rounded-xl md:overflow-hidden md:max-h-[calc(100dvh-8rem)]"
+                className="group relative aspect-video md:rounded-xl md:overflow-hidden md:max-h-[calc(100dvh-11rem)]"
                 data-paused={isPaused || undefined}
               >
                 <VideoPlayer
