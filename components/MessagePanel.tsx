@@ -465,7 +465,7 @@ export function MessagePanel({
           <div className="flex-1 w-full min-h-0 flex flex-row pointer-events-auto" data-message-panel>
             {/* Knowledge Drawer — desktop only, LEFT side, disabled when side panel is open */}
             <div className={`hidden md:flex flex-none overflow-hidden transition-[width,opacity] duration-300 ease-out ${
-              isDrawerOpen ? 'w-[320px] lg:w-[360px] opacity-100 border-r border-white/[0.06]' : 'w-0 opacity-0'
+              isDrawerOpen ? 'w-[370px] lg:w-[420px] opacity-100 border-r border-white/[0.06]' : 'w-0 opacity-0'
             }`}>
               {drawerCalls.length > 0 && (
                 <KnowledgeDrawer
