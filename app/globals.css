@@ -217,3 +217,34 @@ body {
   max-width: 100%;
   overflow: hidden;
 }
+
+/* 3D Hero Banner scroll animations */
+@layer utilities {
+  .animate-scroll-up {
+    animation: scroll-up linear infinite;
+    will-change: transform;
+  }
+
+  .animate-scroll-down {
+    animation: scroll-down linear infinite;
+    will-change: transform;
+  }
+}
+
+@keyframes scroll-up {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, -50%, 0);
+  }
+}
+
+@keyframes scroll-down {
+  0% {
+    transform: translate3d(0, -50%, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
