@@ -13,7 +13,7 @@ export function OverlayBackdrop({ visible, onClick }: { visible: boolean; onClic
     >
       <div className="absolute inset-0 bg-black/70" />
       <div
-        className="absolute inset-0 opacity-75 pointer-events-none"
+        className="absolute inset-0 opacity-50 pointer-events-none"
         style={{ backgroundImage: noiseUrl, backgroundSize: '300px', mixBlendMode: 'overlay' }}
       />
     </div>

@@ -98,7 +98,7 @@ function TalkingTimer({
       {isThinking && (
         <div className="w-1.5 h-1.5 rounded-full bg-chalk-accent animate-pulse" />
       )}
-      <span className="text-[11px] text-slate-500 font-mono">
+      <span className="text-xs text-slate-400 font-mono">
         {label} for {seconds.toFixed(1)}s
       </span>
     </motion.div>
@@ -321,7 +321,6 @@ export function MessagePanel({
   tooltipSegments,
   storyboardLevels,
   sideOpen,
-  onClearHistory,
 }: MessagePanelProps) {
   const [canScrollDown, setCanScrollDown] = useState(false);
   const [drawerDismissed, setDrawerDismissed] = useState(false);
@@ -465,7 +464,7 @@ export function MessagePanel({
           <div className="flex-1 w-full min-h-0 flex flex-row pointer-events-auto" data-message-panel>
             {/* Knowledge Drawer — desktop only, LEFT side, disabled when side panel is open */}
             <div className={`hidden md:flex flex-none overflow-hidden transition-[width,opacity] duration-300 ease-out ${
-              isDrawerOpen ? 'w-[370px] lg:w-[420px] opacity-100 border-r border-white/[0.06]' : 'w-0 opacity-0'
+              isDrawerOpen ? 'w-[320px] lg:w-[360px] opacity-100 border-r border-white/[0.06]' : 'w-0 opacity-0'
             }`}>
               {drawerCalls.length > 0 && (
                 <KnowledgeDrawer
@@ -499,22 +498,10 @@ export function MessagePanel({
               onMouseOut={handleMouseOut}
               className={`flex-1 min-w-0 overflow-y-auto scroll-smooth flex flex-col gap-3 md:gap-4 px-3 py-3 md:py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] transition-[max-width,padding] duration-300 ease-out ${
                 isDrawerOpen
-                  ? 'md:pr-6 md:pl-4'
+                  ? 'md:px-5'
                   : 'md:max-w-3xl md:mx-auto md:px-4'
               }`}
             >
-              {/* Clear conversation — subtle top-aligned action */}
-              {exchanges.length > 0 && onClearHistory && !isTextStreaming && (
-                <div className="flex justify-center pb-1">
-                  <button
-                    onClick={onClearHistory}
-                    className="text-[11px] text-slate-600 hover:text-slate-400 transition-colors"
-                  >
-                    Clear conversation
-                  </button>
-                </div>
-              )}
-
               {/* Unified conversation history -- all exchanges in chronological order */}
               {exchanges.map((exchange, i) => {
                 const justCommitted = i === exchanges.length - 1 && Date.now() - Number(exchange.id) < 500;
@@ -581,7 +568,7 @@ export function MessagePanel({
                   {(currentUserText ||
                     (!showExploreUI && voiceTranscript)) && (
                     <div className="flex justify-end w-full">
-                      <div className="max-w-[85%] px-3.5 py-2 rounded-lg bg-white/[0.06] border border-white/[0.08] text-white text-sm leading-relaxed break-words">
+                      <div className="max-w-[85%] px-3.5 py-2 rounded-lg bg-white/[0.10] border border-white/[0.12] text-white text-sm leading-relaxed break-words">
                         {currentUserText || voiceTranscript}
                       </div>
                     </div>
@@ -593,7 +580,7 @@ export function MessagePanel({
                   {(currentAiText ||
                     (!showExploreUI && voiceResponseText)) && (
                     <div className="flex justify-start w-full">
-                      <div className="w-full">
+                      <div className="max-w-[90%]">
                         <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
                           {!showExploreUI && currentRawAiText && currentToolCalls && currentToolCalls.length > 0 ? (
                             // Segment-based rendering: route drawer tools to KnowledgeDrawer
@@ -743,6 +730,22 @@ export function MessagePanel({
                   />
                 </LearnErrorBoundary>
               )}
+
+              {/* Scroll to bottom */}
+              <div className={`sticky bottom-3 flex justify-center z-10 transition-opacity duration-200 ${
+                canScrollDown ? 'opacity-100' : 'opacity-0 pointer-events-none'
+              }`}>
+                <button
+                  onClick={() => scrollToBottom(true)}
+                  className="flex items-center justify-center w-8 h-8 rounded-full bg-chalk-surface/90 backdrop-blur-sm border border-white/[0.10] text-slate-400 hover:text-slate-200 shadow-lg shadow-black/30 transition-colors"
+                  aria-label="Scroll to bottom"
+                  tabIndex={canScrollDown ? 0 : -1}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         )}

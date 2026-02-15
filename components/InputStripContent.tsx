@@ -262,7 +262,7 @@ export function InputStripContent({
 
         {/* Clear button - mobile only when expanded */}
         {expanded && exchanges.length > 0 && (
-          <div className="flex justify-center mt-4 md:hidden">
+          <div className="flex justify-center mt-2 md:mt-3">
             <button
               onClick={onClearHistory}
               className="text-xs text-slate-500 hover:text-slate-300 px-3 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors"

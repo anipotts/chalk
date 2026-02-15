@@ -114,7 +114,7 @@ export function ExplorePills({ options, onSelect, onFocusInput, disabled = false
             custom={index}
             variants={pillVariants}
             initial="hidden"
-            animate={isSelecting ? { opacity: 0, scale: 1.08, transition: { duration: 0.15 } } : "visible"}
+            animate={isSelecting ? { opacity: 0, scale: 0.95, transition: { duration: 0.15 } } : "visible"}
             onClick={() => handleSelect(option, index)}
             disabled={disabled}
             className={`
@@ -123,7 +123,7 @@ export function ExplorePills({ options, onSelect, onFocusInput, disabled = false
                 ? 'bg-white/[0.03] border border-dashed border-white/[0.15] text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]'
                 : 'bg-white/[0.06] border border-white/[0.08] text-slate-300 hover:bg-white/[0.1] hover:text-white'
               }
-              ${isFocused ? 'ring-1 ring-chalk-accent/40' : ''}
+              ${isFocused ? 'ring-2 ring-chalk-accent/60' : ''}
               ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
             `}
             role="option"

@@ -122,7 +122,7 @@ function renderCodeBlock(lang: string, code: string, key: string): React.ReactNo
   return (
     <div key={key} className="my-2 rounded-lg overflow-hidden border border-white/[0.08]">
       {lang && (
-        <div className="px-3 py-1 text-[11px] font-mono text-slate-500 bg-white/[0.03] border-b border-white/[0.06]">
+        <div className="px-3 py-1 text-xs font-mono text-slate-500 bg-white/[0.03] border-b border-white/[0.06]">
           {lang}
         </div>
       )}
@@ -174,7 +174,7 @@ function applyInlineFormatting(text: string, keyPrefix: string): React.ReactNode
           href={match[8]}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-chalk-accent hover:text-blue-300 hover:underline transition-colors"
+          className="text-chalk-accent hover:text-blue-400 hover:underline transition-colors"
         >
           {match[7]}
         </a>
@@ -272,11 +272,11 @@ export function renderRichContent(content: string, onSeek?: (seconds: number) =>
     if (currentList.type === 'ul') {
       const items = currentList.items.map((item, i) => (
         <li key={i} className="flex items-start gap-2">
-          <span className="mt-[7px] w-1.5 h-1.5 rounded-full bg-chalk-accent flex-shrink-0" />
+          <span className="mt-[0.45em] w-1.5 h-1.5 rounded-full bg-chalk-accent flex-shrink-0" />
           <span className="text-slate-300">{renderInlineContent(item, seekFn, `li-${blockIdx}-${i}`, vid)}</span>
         </li>
       ));
-      blocks.push(<ul key={`bl-${blockIdx++}`} className="space-y-1 my-1.5 ml-1">{items}</ul>);
+      blocks.push(<ul key={`bl-${blockIdx++}`} className="space-y-1 my-1.5 ml-4">{items}</ul>);
     } else {
       const items = currentList.items.map((item, i) => (
         <li key={i} className="flex items-start gap-2">
@@ -284,7 +284,7 @@ export function renderRichContent(content: string, onSeek?: (seconds: number) =>
           <span className="text-slate-300">{renderInlineContent(item, seekFn, `li-${blockIdx}-${i}`, vid)}</span>
         </li>
       ));
-      blocks.push(<ol key={`bl-${blockIdx++}`} className="space-y-1 my-1.5 ml-1">{items}</ol>);
+      blocks.push(<ol key={`bl-${blockIdx++}`} className="space-y-1 my-1.5 ml-4">{items}</ol>);
     }
     currentList = null;
   }
@@ -340,7 +340,7 @@ export function renderRichContent(content: string, onSeek?: (seconds: number) =>
         );
       } else {
         // Empty line → visual paragraph break spacer
-        blocks.push(<div key={`bl-${blockIdx++}`} className="h-2" />);
+        blocks.push(<div key={`bl-${blockIdx++}`} className="h-3.5" />);
       }
     }
   }
@@ -362,7 +362,7 @@ function CopyButton({ text }: { text: string }) {
   return (
     <button
       onClick={handleCopy}
-      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]"
+      className="opacity-30 group-hover:opacity-100 focus:opacity-100 transition-opacity p-2 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]"
       aria-label={copied ? 'Copied!' : 'Copy response'}
       title={copied ? 'Copied!' : 'Copy'}
     >
@@ -379,8 +379,8 @@ function SpeakerButton({ exchange, onPlay, isPlaying, isLoading }: { exchange: U
   return (
     <button
       onClick={() => onPlay(exchange.id, exchange.aiText)}
-      className={`opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-md hover:bg-white/[0.06] ${
-        isPlaying ? 'opacity-100 text-emerald-400' : isLoading ? 'opacity-100 text-chalk-accent' : 'text-slate-500 hover:text-slate-300'
+      className={`group-hover:opacity-100 focus:opacity-100 transition-opacity p-2 rounded-md hover:bg-white/[0.06] ${
+        isPlaying ? 'opacity-100 text-emerald-400' : isLoading ? 'opacity-100 text-chalk-accent' : 'opacity-30 text-slate-500 hover:text-slate-300'
       }`}
       aria-label={isPlaying ? 'Playing...' : 'Read aloud'}
       title={isPlaying ? 'Playing...' : 'Read aloud'}
@@ -407,7 +407,7 @@ export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPl
         transition={{ duration: 0.2 }}
         className="flex justify-end w-full"
       >
-        <div className="max-w-[85%] px-3.5 py-2 rounded-lg bg-white/[0.06] border border-white/[0.08] text-white text-sm leading-relaxed break-words">
+        <div className="max-w-[85%] px-3.5 py-2 rounded-lg bg-white/[0.10] border border-white/[0.12] text-white text-sm leading-relaxed break-words">
           {exchange.userText}
         </div>
       </motion.div>
@@ -419,11 +419,11 @@ export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPl
         transition={skipEntrance ? { duration: 0.2 } : { duration: 0.2, delay: 0.1 }}
         className="flex justify-start group w-full"
       >
-        <div className="w-full">
+        <div className="max-w-[90%]">
           {/* Talking duration */}
           {exchange.thinkingDuration != null && (
-            <div className="flex items-center gap-1.5 py-1 mb-0.5">
-              <span className="text-[11px] text-slate-500 font-mono">
+            <div className="flex items-center gap-1.5 py-1.5 mb-1">
+              <span className="text-xs text-slate-400 font-mono">
                 talked for {(exchange.thinkingDuration / 1000).toFixed(1)}s
               </span>
             </div>

@@ -383,9 +383,9 @@ function QuizQuestion({
           let optClass = 'bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06] text-slate-300';
           if (isAnswered) {
             if (isCorrectOpt) {
-              optClass = 'bg-chalk-accent/10 border-chalk-accent/30 text-slate-200';
+              optClass = 'bg-emerald-500/15 border-emerald-500/40 text-emerald-200';
             } else if (isThis && !isCorrectOpt) {
-              optClass = 'bg-white/[0.02] border-red-500/20 text-slate-400';
+              optClass = 'bg-red-500/10 border-red-500/30 text-red-300';
             } else {
               optClass = 'bg-white/[0.02] border-white/[0.04] text-slate-500';
             }
@@ -583,7 +583,7 @@ export function CompactToolStrip({
           const isExpanded = expandedIndex === i;
           const baseClass = `px-2 py-1 rounded text-[11px] border transition-all duration-150 cursor-pointer ${
             isExpanded
-              ? 'bg-white/[0.06] border-white/[0.10] text-slate-300'
+              ? 'bg-white/[0.08] border-chalk-accent/30 text-slate-200 ring-1 ring-chalk-accent/20'
               : 'bg-white/[0.03] border-white/[0.06] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300'
           }`;
 

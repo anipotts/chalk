@@ -130,35 +130,56 @@ export function TranscriptPanel({
         </div>
       )}
 
-      {/* Search — hidden on mobile */}
+      {/* Search / Loading / Error — unified row, desktop only */}
       {!isMobile && (
         <div className="flex-none px-3 py-2 border-b border-chalk-border/20">
-          <input
-            ref={searchRef}
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search transcript... (/)"
-            aria-label="Search transcript"
-            className="w-full px-3 py-1.5 rounded-lg bg-chalk-surface/40 border border-chalk-border/20 text-xs text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-chalk-accent/40 transition-colors"
-          />
+          {status === 'error' ? (
+            <div className="w-full px-3 py-1.5 rounded-lg bg-red-500/[0.06] border border-red-500/20 text-xs text-slate-500">
+              Transcript couldn&apos;t be loaded, sorry.
+            </div>
+          ) : isLoading ? (
+            <div className="relative w-full">
+              <div className="w-full px-3 py-1.5 rounded-lg bg-chalk-surface/40 border border-chalk-border/20 text-xs text-slate-500 flex items-center gap-2">
+                <div className="w-3 h-3 border border-chalk-accent/40 border-t-chalk-accent rounded-full animate-spin flex-shrink-0" />
+                <span className="truncate">{statusMessage || 'Loading transcript...'}</span>
+              </div>
+              {/* Slim progress bar at bottom edge of input */}
+              <div className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-white/[0.04] overflow-hidden">
+                {(progress ?? 0) > 0 && (progress ?? 0) < 100 ? (
+                  <div
+                    className="h-full bg-chalk-accent/40 rounded-full transition-all duration-700 ease-out"
+                    style={{ width: `${progress}%` }}
+                  />
+                ) : (
+                  <div className="h-full w-[40%] bg-chalk-accent/40 rounded-full animate-indeterminate" />
+                )}
+              </div>
+            </div>
+          ) : (
+            <input
+              ref={searchRef}
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search transcript... (/)"
+              aria-label="Search transcript"
+              className="w-full px-3 py-1.5 rounded-lg bg-chalk-surface/40 border border-chalk-border/20 text-xs text-chalk-text placeholder:text-slate-600 focus:outline-none focus:ring-1 focus:ring-chalk-accent/40 transition-colors"
+            />
+          )}
         </div>
       )}
 
-      {/* Status / Loading */}
-      {(isLoading || status === 'error') && (
-        <div className={`flex-none ${isMobile ? 'px-3 py-2' : 'px-4 py-3'}`}>
+      {/* Status / Loading — mobile only (desktop handled in unified row above) */}
+      {isMobile && (isLoading || status === 'error') && (
+        <div className="flex-none px-3 py-2">
           {status === 'error' ? (
-            <div className="text-xs text-red-400">
-              {error || 'Failed to load transcript'}
+            <div className="text-xs text-slate-500">
+              Transcript couldn&apos;t be loaded, sorry.
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 border border-chalk-accent/40 border-t-chalk-accent rounded-full animate-spin" />
               <span className="text-xs text-slate-500">{statusMessage || 'Loading...'}</span>
-              {progress !== undefined && progress > 0 && progress < 100 && (
-                <span className="text-[10px] text-slate-600">{Math.round(progress)}%</span>
-              )}
             </div>
           )}
         </div>

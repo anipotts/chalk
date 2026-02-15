@@ -223,14 +223,22 @@ function WatchContent() {
       }
       const cc = localStorage.getItem(storageKey("show-captions"));
       if (cc === "true") setShowCaptions(true);
-      // Transcript open by default on wide screens
-      if (window.innerWidth >= 1280) {
+
+      // Transcript: Chrome extension always gets it open; otherwise restore saved pref or default to open on wide screens
+      if (shouldAutoplay) {
         setShowTranscript(true);
+      } else {
+        const savedTranscript = localStorage.getItem(storageKey("show-transcript"));
+        if (savedTranscript !== null) {
+          setShowTranscript(savedTranscript === "true");
+        } else if (window.innerWidth >= 1280) {
+          setShowTranscript(true);
+        }
       }
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [shouldAutoplay]);
 
   // Persist mobile collapse state
   useEffect(() => {
@@ -252,6 +260,15 @@ function WatchContent() {
       /* ignore */
     }
   }, [showCaptions]);
+
+  // Persist transcript sidebar toggle
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey("show-transcript"), String(showTranscript));
+    } catch {
+      /* ignore */
+    }
+  }, [showTranscript]);
   const playerRef = useRef<MediaPlayerInstance>(null);
   const progressSaveRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const currentTimeRef = useRef(0);
@@ -272,15 +289,17 @@ function WatchContent() {
   }, [segments]);
 
   // Auto-pause/resume on phase transitions
+  // Use isPaused React state (reliable) instead of playerRef.current?.paused (proxy can be stale during init)
   const prevPhaseRef = useRef(phase);
   useEffect(() => {
     const prev = prevPhaseRef.current;
     prevPhaseRef.current = phase;
+    if (prev === phase) return; // Only act on actual phase transitions
 
     if (prev === 'watching' && phase === 'chatting') {
-      // Entering chatting: capture play state and pause
+      // Entering chatting: capture play state from React state and pause
+      wasPlayingRef.current = !isPaused;
       try {
-        wasPlayingRef.current = !playerRef.current?.paused;
         playerRef.current?.pause();
       } catch { /* Vidstack proxy may throw */ }
     } else if (prev === 'chatting' && phase === 'watching') {
@@ -290,7 +309,7 @@ function WatchContent() {
         wasPlayingRef.current = false;
       }
     }
-  }, [phase]);
+  }, [phase, isPaused]);
 
   // Save to recent videos (localStorage) so landing page shows them
   useEffect(() => {
@@ -666,8 +685,15 @@ function WatchContent() {
     };
   }, [phase, overlayDispatch]);
 
-  // Auto-expand chat when exchanges appear
+  // Auto-expand chat when NEW exchanges appear (skip hydrated/restored ones)
+  const sessionActiveRef = useRef(false);
   useEffect(() => {
+    // On first load, if exchanges already exist from localStorage, don't auto-open the overlay
+    if (!sessionActiveRef.current && unified.exchanges.length > 0 && !unified.isTextStreaming) {
+      sessionActiveRef.current = true;
+      return;
+    }
+    sessionActiveRef.current = true;
     if (unified.exchanges.length > 0 || unified.isTextStreaming) {
       overlayDispatch({ type: 'CONTENT_ARRIVED' });
     }
@@ -749,12 +775,31 @@ function WatchContent() {
             />
           </div>
           <span className="text-slate-600/50">|</span>
+          {/* Video thumbnail */}
+          <img
+            src={`https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`}
+            alt=""
+            className="w-9 h-5 rounded-[3px] object-cover bg-chalk-surface/30 shrink-0"
+          />
           <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-            {effectiveChannel && (
-              <span className="text-[10px] text-slate-500 truncate">
-                {effectiveChannel}
-              </span>
-            )}
+            <div className="flex items-center gap-1.5">
+              {effectiveChannel && (
+                <span className="text-[10px] text-slate-500 truncate">
+                  {effectiveChannel}
+                </span>
+              )}
+              <a
+                href={`https://www.youtube.com/watch?v=${videoId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 text-slate-600 hover:text-[#FF0000] transition-colors"
+                title="Open on YouTube"
+              >
+                <svg width="12" height="9" viewBox="0 0 20 14" fill="currentColor">
+                  <path d="M19.6 2.2A2.5 2.5 0 0 0 17.8.4C16.3 0 10 0 10 0S3.7 0 2.2.4A2.5 2.5 0 0 0 .4 2.2C0 3.7 0 7 0 7s0 3.3.4 4.8a2.5 2.5 0 0 0 1.8 1.8C3.7 14 10 14 10 14s6.3 0 7.8-.4a2.5 2.5 0 0 0 1.8-1.8C20 10.3 20 7 20 7s0-3.3-.4-4.8zM8 10V4l5.2 3L8 10z"/>
+                </svg>
+              </a>
+            </div>
             <span className="text-xs truncate text-slate-400">
               {effectiveTitle || videoId}
             </span>

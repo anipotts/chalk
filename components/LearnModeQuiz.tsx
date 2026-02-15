@@ -324,9 +324,9 @@ function QuizCard({
 
           if (answered) {
             if (opt.id === question.correctId) {
-              optionStyle = 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300';
+              optionStyle = 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300';
             } else if (opt.id === selectedAnswer && !isCorrect) {
-              optionStyle = 'bg-red-500/10 border-red-500/30 text-red-300';
+              optionStyle = 'bg-red-500/15 border-red-500/40 text-red-300';
             } else {
               optionStyle = 'bg-white/[0.02] border-white/[0.05] text-slate-500';
             }

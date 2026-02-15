@@ -264,3 +264,13 @@ body {
 .hero-card:hover {
   transform: scale(1.03);
 }
+
+/* Indeterminate progress bar animation */
+@keyframes indeterminate-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
+.animate-indeterminate {
+  animation: indeterminate-progress 1.5s ease-in-out infinite;
+}
