@@ -7,8 +7,8 @@
  *   npx tsx scripts/extract-knowledge.ts <videoId> [--model opus|sonnet]
  */
 
-// Load env before any imports that need it
-process.loadEnvFile('.env.local');
+// Load env before any imports that need it (wrapped for Vercel API route import safety)
+try { process.loadEnvFile('.env.local'); } catch { /* env already loaded or running in Vercel */ }
 
 import { createHash } from 'crypto';
 import { generateText, jsonSchema, tool } from 'ai';
@@ -383,7 +383,7 @@ ${transcript}`;
 
   const result = await generateTextWithRetry({
     model: anthropic(modelId),
-    system: EXTRACTION_SYSTEM_PROMPT,
+    system: { role: 'system', content: EXTRACTION_SYSTEM_PROMPT, providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } } },
     prompt: userPrompt,
     tools: {
       extract_video_knowledge: tool({
@@ -402,7 +402,7 @@ ${transcript}`;
     log(videoId, 'EXTRACTION', 'no tool call in response, retrying...');
     const retry = await generateTextWithRetry({
       model: anthropic(modelId),
-      system: EXTRACTION_SYSTEM_PROMPT,
+      system: { role: 'system', content: EXTRACTION_SYSTEM_PROMPT, providerOptions: { anthropic: { cacheControl: { type: 'ephemeral' } } } },
       prompt: userPrompt + '\n\nIMPORTANT: You MUST call the extract_video_knowledge tool with all extracted data.',
       tools: {
         extract_video_knowledge: tool({
@@ -788,14 +788,59 @@ async function stepEnrich(client: SupabaseClient, videoId: string) {
 
 // ─── Step 6: EMBED ──────────────────────────────────────────────────────────
 
+async function tryLocalEmbedding(
+  texts: string[],
+  inputType: 'document' | 'query' = 'document',
+): Promise<number[][] | null> {
+  // Check service_registry for local embedding service URL
+  let serviceUrl: string | null = null;
+
+  try {
+    const client = getClient();
+    const { data } = await client
+      .from('service_registry')
+      .select('url')
+      .eq('service_name', 'embedding')
+      .single();
+    if (data) serviceUrl = (data as { url: string }).url;
+  } catch {
+    // service_registry not available or empty
+  }
+
+  if (!serviceUrl) return null;
+
+  try {
+    const allEmbeddings: number[][] = [];
+    for (let i = 0; i < texts.length; i += 256) {
+      const batch = texts.slice(i, i + 256);
+      const resp = await fetch(`${serviceUrl}/embed`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texts: batch, input_type: inputType }),
+        signal: AbortSignal.timeout(60_000),
+      });
+      if (!resp.ok) return null;
+      const data = await resp.json() as { embeddings: number[][] };
+      allEmbeddings.push(...data.embeddings);
+    }
+    return allEmbeddings;
+  } catch {
+    return null;
+  }
+}
+
 async function embedTexts(
   texts: string[],
   inputType: 'document' | 'query' = 'document',
 ): Promise<number[][]> {
-  const apiKey = process.env.VOYAGE_API_KEY;
-  if (!apiKey) throw new Error('VOYAGE_API_KEY not set');
+  // Try local embedding service first (free, GPU-accelerated)
+  const local = await tryLocalEmbedding(texts, inputType);
+  if (local) return local;
 
-  // Voyage supports max 128 texts per request
+  // Fall back to Voyage API
+  const apiKey = process.env.VOYAGE_API_KEY;
+  if (!apiKey) throw new Error('No embedding service available (local offline, VOYAGE_API_KEY not set)');
+
   const allEmbeddings: number[][] = [];
   for (let i = 0; i < texts.length; i += 128) {
     const batch = texts.slice(i, i + 128);
@@ -833,12 +878,16 @@ async function stepEmbed(
   segments: TranscriptSegment[],
   videoMeta: VideoMetadata,
 ) {
-  if (!process.env.VOYAGE_API_KEY) {
-    log(videoId, 'EMBED', 'VOYAGE_API_KEY not set, skipping embeddings');
+  // Check if any embedding backend is available
+  const hasVoyage = !!process.env.VOYAGE_API_KEY;
+  const localAvailable = await tryLocalEmbedding(['test'], 'document').then(r => r !== null).catch(() => false);
+
+  if (!hasVoyage && !localAvailable) {
+    log(videoId, 'EMBED', 'no embedding service available (VOYAGE_API_KEY not set, local offline), skipping');
     return false;
   }
 
-  log(videoId, 'EMBED', 'generating embeddings...');
+  log(videoId, 'EMBED', `generating embeddings via ${localAvailable ? 'local GPU' : 'Voyage API'}...`);
 
   // Delete existing embeddings for this video
   await client.from('knowledge_embeddings').delete().eq('video_id', videoId);
@@ -1304,4 +1353,8 @@ async function main() {
   }
 }
 
-main();
+// Only run CLI when executed directly (not when imported by extract-batch.ts)
+const isDirectRun = process.argv[1]?.includes('extract-knowledge');
+if (isDirectRun) {
+  main();
+}

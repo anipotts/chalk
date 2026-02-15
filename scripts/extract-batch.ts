@@ -6,14 +6,24 @@
  *
  * Usage:
  *   npx tsx scripts/extract-batch.ts [--tier 1|2|3|4|all] [--concurrency N] [--retry-failed] [--dry-run]
+ *   npx tsx scripts/extract-batch.ts --batch-api [--tier 1|2|3|4|all] [--model opus|sonnet]
+ *
+ * The --batch-api flag delegates to the batch-worker.ts script which uses the
+ * Anthropic Message Batches API for 50% cost reduction. It runs a single batch
+ * then exits (equivalent to batch-worker.ts --once).
  */
 
 process.loadEnvFile('.env.local');
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { execSync } from 'child_process';
+
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+const __scripts_dir = (typeof __dirname !== 'undefined' ? __dirname : null)
+  ?? dirname(fileURLToPath(import.meta.url));
 import pLimit from 'p-limit';
 import { extractSingleVideo } from './extract-knowledge';
 import type { VideoManifestEntry } from '../lib/batch/types';
@@ -224,6 +234,32 @@ async function postRunSummary(client: SupabaseClient) {
 
 async function main() {
   const args = process.argv.slice(2);
+
+  // --batch-api flag: delegate to batch-worker.ts --once
+  if (args.includes('--batch-api')) {
+    const tierArg = args.find(a => a.startsWith('--tier'))?.split('=')[1]
+      || (args.includes('--tier') ? args[args.indexOf('--tier') + 1] : null)
+      || 'all';
+    const modelArg = args.find(a => a.startsWith('--model'))?.split('=')[1]
+      || (args.includes('--model') ? args[args.indexOf('--model') + 1] : null)
+      || 'sonnet';
+    const dryRun = args.includes('--dry-run');
+
+    console.log('\n=== Batch API Mode (50% cost reduction) ===\n');
+    console.log('Delegating to batch-worker.ts --once\n');
+
+    const workerArgs = [
+      'npx', 'tsx', join(__scripts_dir, 'batch-worker.ts'),
+      '--once',
+      '--tier', tierArg,
+      '--model', modelArg,
+    ];
+    if (dryRun) workerArgs.push('--dry-run');
+
+    execSync(workerArgs.join(' '), { stdio: 'inherit', timeout: 24 * 60 * 60_000 });
+    return;
+  }
+
   const tierArg = args.find(a => a.startsWith('--tier'))?.split('=')[1]
     || (args.includes('--tier') ? args[args.indexOf('--tier') + 1] : null)
     || 'all';
@@ -234,8 +270,8 @@ async function main() {
   const dryRun = args.includes('--dry-run');
 
   // Load video manifest (prefer video-manifest.json, fall back to video-list.json)
-  const manifestPath = join(import.meta.dirname, 'video-manifest.json');
-  const legacyPath = join(import.meta.dirname, 'video-list.json');
+  const manifestPath = join(__scripts_dir, 'video-manifest.json');
+  const legacyPath = join(__scripts_dir, 'video-list.json');
 
   const work: WorkItem[] = [];
 
@@ -253,7 +289,7 @@ async function main() {
         videoId: v.videoId,
         channel: v.channelName,
         title: v.title,
-        model: v.tier === 1 ? 'opus' : 'sonnet',
+        model: 'sonnet',
         tier: String(v.tier),
       });
     }
@@ -436,7 +472,7 @@ async function main() {
 
   // Save failed IDs
   if (failedIds.length > 0) {
-    const failedPath = join(import.meta.dirname, 'failed-videos.json');
+    const failedPath = join(__scripts_dir, 'failed-videos.json');
     writeFileSync(failedPath, JSON.stringify(failedIds, null, 2));
     console.log(`\n  Failed IDs saved to ${failedPath}`);
     console.log(`  Re-run with --retry-failed to retry`);
@@ -449,7 +485,7 @@ async function main() {
   if (succeeded >= 2) {
     console.log('\n--- Running cross-video linking ---\n');
     try {
-      const linkScript = join(import.meta.dirname, 'link-videos.ts');
+      const linkScript = join(__scripts_dir, 'link-videos.ts');
       execSync(`npx tsx ${linkScript}`, { stdio: 'inherit', timeout: 600_000 });
       console.log('\nCross-video linking complete.');
     } catch (err) {
