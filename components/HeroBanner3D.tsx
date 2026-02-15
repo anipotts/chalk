@@ -33,8 +33,8 @@ const CURATED_VIDEOS = [
     },
     {
       videoId: 'spUNpyF58BY',
-      title: 'The beauty of Bézier curves',
-      channelName: 'Freya Holmér',
+      title: 'The beauty of Bezier curves',
+      channelName: 'Freya Holmer',
       viewCount: 2100000,
       publishedText: '3 years ago',
       duration: '11:12'
@@ -223,20 +223,27 @@ const CURATED_VIDEOS = [
 ];
 
 export function HeroBanner3D() {
-  const [mounted, setMounted] = useState(false);
+  const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    // Single rAF to trigger the reveal — everything fades in together
+    const raf = requestAnimationFrame(() => setRevealed(true));
+    return () => cancelAnimationFrame(raf);
   }, []);
-
-  if (!mounted) {
-    return <div className="relative w-full h-[500px] bg-chalk-bg" />;
-  }
 
   return (
     <div className="fixed inset-0 w-full h-full overflow-hidden">
-      {/* Overall dim layer — darkens the entire banner for subtlety */}
-      <div className="absolute inset-0 bg-black/30 z-[1] pointer-events-none" />
+      {/* Black curtain — fades out to reveal all cards at once */}
+      <div
+        className="absolute inset-0 z-[5] bg-black pointer-events-none"
+        style={{
+          opacity: revealed ? 0 : 1,
+          transition: 'opacity 1.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s'
+        }}
+      />
+
+      {/* Overall dim layer — very subtle */}
+      <div className="absolute inset-0 bg-black/15 z-[1] pointer-events-none" />
 
       {/* 3D Perspective Container */}
       <div
@@ -246,13 +253,13 @@ export function HeroBanner3D() {
           perspectiveOrigin: '50% 35%'
         }}
       >
-        {/* Card columns with steep angle */}
+        {/* Card columns — NO stagger, all visible immediately */}
         <div
           className="relative flex gap-5 md:gap-7 items-start justify-center"
           style={{
             transform: 'rotateX(55deg) scale(1.5)',
             transformStyle: 'preserve-3d',
-            height: '1600px'
+            height: '1600px',
           }}
         >
           {/* Desktop: show all 5 columns, Mobile: show first 3 */}
@@ -264,22 +271,22 @@ export function HeroBanner3D() {
               <HeroColumn
                 cards={columnCards}
                 direction={colIdx % 2 === 0 ? 'up' : 'down'}
-                delay={colIdx * 0.4}
+                delay={colIdx * 0.3}
               />
             </div>
           ))}
         </div>
       </div>
 
-      {/* Center vignette — soft dark zone where the search bar lives */}
+      {/* Center vignette — subtle darkening behind search bar for readability */}
       <div
         className="absolute inset-0 pointer-events-none z-20"
         style={{
-          background: 'radial-gradient(ellipse 700px 400px at 50% 55%, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)'
+          background: 'radial-gradient(ellipse 500px 250px at 50% 40%, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.15) 60%, transparent 100%)'
         }}
       />
 
-      {/* Top header vignette — dark zone behind logo */}
+      {/* Top header vignette */}
       <div
         className="absolute inset-0 pointer-events-none z-20"
         style={{
@@ -287,11 +294,11 @@ export function HeroBanner3D() {
         }}
       />
 
-      {/* Edge overlays — smooth fade to black at all edges */}
-      <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-chalk-bg via-chalk-bg/70 to-transparent pointer-events-none z-10" />
-      <div className="absolute bottom-0 left-0 right-0 h-72 bg-gradient-to-t from-chalk-bg via-chalk-bg/85 to-transparent pointer-events-none z-10" />
-      <div className="absolute inset-y-0 left-0 w-56 bg-gradient-to-r from-chalk-bg via-chalk-bg/60 to-transparent pointer-events-none z-10" />
-      <div className="absolute inset-y-0 right-0 w-56 bg-gradient-to-l from-chalk-bg via-chalk-bg/60 to-transparent pointer-events-none z-10" />
+      {/* Edge overlays — soft fade to background at edges */}
+      <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-chalk-bg via-chalk-bg/50 to-transparent pointer-events-none z-10" />
+      <div className="absolute bottom-0 left-0 right-0 h-56 bg-gradient-to-t from-chalk-bg via-chalk-bg/70 to-transparent pointer-events-none z-10" />
+      <div className="absolute inset-y-0 left-0 w-40 bg-gradient-to-r from-chalk-bg via-chalk-bg/40 to-transparent pointer-events-none z-10" />
+      <div className="absolute inset-y-0 right-0 w-40 bg-gradient-to-l from-chalk-bg via-chalk-bg/40 to-transparent pointer-events-none z-10" />
     </div>
   );
 }

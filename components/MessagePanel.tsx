@@ -280,6 +280,9 @@ export interface MessagePanelProps {
 
   // Video paused state (for caret color)
   isPaused?: boolean;
+
+  // Clear conversation
+  onClearHistory?: () => void;
 }
 
 export function MessagePanel({
@@ -318,6 +321,7 @@ export function MessagePanel({
   tooltipSegments,
   storyboardLevels,
   sideOpen,
+  onClearHistory,
 }: MessagePanelProps) {
   const [canScrollDown, setCanScrollDown] = useState(false);
   const [drawerDismissed, setDrawerDismissed] = useState(false);
@@ -458,20 +462,59 @@ export function MessagePanel({
 
         {/* Messages + Knowledge Drawer — flex-row layout */}
         {hasContent && (
-          <div className="flex-1 w-full min-h-0 flex flex-row pointer-events-auto">
+          <div className="flex-1 w-full min-h-0 flex flex-row pointer-events-auto" data-message-panel>
+            {/* Knowledge Drawer — desktop only, LEFT side, disabled when side panel is open */}
+            <div className={`hidden md:flex flex-none overflow-hidden transition-[width,opacity] duration-300 ease-out ${
+              isDrawerOpen ? 'w-[320px] lg:w-[360px] opacity-100 border-r border-white/[0.06]' : 'w-0 opacity-0'
+            }`}>
+              {drawerCalls.length > 0 && (
+                <KnowledgeDrawer
+                  toolCalls={drawerCalls}
+                  isStreaming={isTextStreaming && streamingDrawerCalls.length > 0}
+                  onSeek={handleTimestampSeek}
+                  onOpenVideo={onOpenVideo}
+                  onClose={() => setDrawerDismissed(true)}
+                />
+              )}
+            </div>
+
+            {/* Drawer reopen toggle — shown when drawer has content but is dismissed */}
+            {drawerDismissed && drawerCalls.length > 0 && !sideOpen && (
+              <button
+                onClick={() => setDrawerDismissed(false)}
+                className="hidden md:flex flex-none items-center justify-center w-8 border-r border-white/[0.06] text-slate-500 hover:text-slate-300 hover:bg-white/[0.04] transition-colors"
+                title="Show related content"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </button>
+            )}
+
             {/* Chat column */}
             <div
               ref={scrollRef}
-              data-message-panel
               onScroll={handleScroll}
               onMouseOver={handleMouseOver}
               onMouseOut={handleMouseOut}
               className={`flex-1 min-w-0 overflow-y-auto scroll-smooth flex flex-col gap-3 md:gap-4 px-3 py-3 md:py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] transition-[max-width,padding] duration-300 ease-out ${
                 isDrawerOpen
-                  ? 'md:pl-6 md:pr-4'
+                  ? 'md:pr-6 md:pl-4'
                   : 'md:max-w-3xl md:mx-auto md:px-4'
               }`}
             >
+              {/* Clear conversation — subtle top-aligned action */}
+              {exchanges.length > 0 && onClearHistory && !isTextStreaming && (
+                <div className="flex justify-center pb-1">
+                  <button
+                    onClick={onClearHistory}
+                    className="text-[11px] text-slate-600 hover:text-slate-400 transition-colors"
+                  >
+                    Clear conversation
+                  </button>
+                </div>
+              )}
+
               {/* Unified conversation history -- all exchanges in chronological order */}
               {exchanges.map((exchange, i) => {
                 const justCommitted = i === exchanges.length - 1 && Date.now() - Number(exchange.id) < 500;
@@ -699,21 +742,6 @@ export function MessagePanel({
                     onSeek={handleTimestampSeek}
                   />
                 </LearnErrorBoundary>
-              )}
-            </div>
-
-            {/* Knowledge Drawer — desktop only, disabled when side panel is open */}
-            <div className={`hidden md:flex flex-none overflow-hidden transition-[width,opacity] duration-300 ease-out ${
-              isDrawerOpen ? 'w-[320px] lg:w-[360px] opacity-100' : 'w-0 opacity-0'
-            }`}>
-              {drawerCalls.length > 0 && (
-                <KnowledgeDrawer
-                  toolCalls={drawerCalls}
-                  isStreaming={isTextStreaming && streamingDrawerCalls.length > 0}
-                  onSeek={handleTimestampSeek}
-                  onOpenVideo={onOpenVideo}
-                  onClose={() => setDrawerDismissed(true)}
-                />
               )}
             </div>
           </div>

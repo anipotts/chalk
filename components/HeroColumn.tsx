@@ -17,8 +17,8 @@ interface HeroColumnProps {
   delay?: number;
 }
 
-const CARD_HEIGHT = 200; // Fixed height in px for each card
-const GAP = 20; // gap-5 = 1.25rem = 20px
+const CARD_HEIGHT = 200;
+const GAP = 20;
 
 export function HeroColumn({ cards, direction, delay = 0 }: HeroColumnProps) {
   // Duplicate for seamless infinite loop
@@ -28,7 +28,7 @@ export function HeroColumn({ cards, direction, delay = 0 }: HeroColumnProps) {
 
   return (
     <div
-      className="relative overflow-hidden"
+      className="hero-column relative overflow-hidden"
       style={{ height: `${setHeight}px`, pointerEvents: 'auto' }}
     >
       <div
@@ -37,7 +37,7 @@ export function HeroColumn({ cards, direction, delay = 0 }: HeroColumnProps) {
         }`}
         style={{
           animationDelay: `${delay}s`,
-          animationDuration: direction === 'up' ? '35s' : '40s',
+          animationDuration: direction === 'up' ? '22s' : '25s',
           pointerEvents: 'auto'
         }}
       >

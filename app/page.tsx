@@ -85,9 +85,7 @@ function HomePage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Smooth transition: delayed return to center
-  const [isVisuallyRaised, setIsVisuallyRaised] = useState(false);
-  const raiseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // (isVisuallyRaised removed — unified block stays at 1/3 position)
 
   // Abort controller for canceling in-flight requests
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -111,20 +109,6 @@ function HomePage() {
   }, []);
 
   const hasSearchContent = isSearching || searchResults.length > 0 || searchError;
-  const isSearchMode = !!(hasSearchContent && inputValue.length >= 2);
-
-  // Smooth raise/lower: instant up, 2s delayed return to center
-  useEffect(() => {
-    if (isSearchMode) {
-      if (raiseTimerRef.current) clearTimeout(raiseTimerRef.current);
-      setIsVisuallyRaised(true);
-    } else {
-      raiseTimerRef.current = setTimeout(() => setIsVisuallyRaised(false), 2000);
-    }
-    return () => {
-      if (raiseTimerRef.current) clearTimeout(raiseTimerRef.current);
-    };
-  }, [isSearchMode]);
 
   // Debounced search effect
   useEffect(() => {
@@ -399,25 +383,20 @@ function HomePage() {
         </div>
       </div>
 
-      {/* Logo and tagline — fixed at top */}
-      <div className="relative z-30 pt-8 pb-2 text-center pointer-events-none">
-        <div className="pointer-events-auto inline-block">
-          <h1 className="text-2xl font-semibold text-white/90 mb-1.5 flex items-center justify-center gap-2 tracking-tight">
-            <ChalkboardSimple size={26} weight="light" />
-            chalk
-          </h1>
-          <p className="text-[13px] text-white/30 tracking-wide">
-            Learn from any YouTube video with AI
-          </p>
-        </div>
-      </div>
-
-      {/* Search area — centered in remaining space */}
-      <div
-        className="flex-1 flex flex-col items-center px-4 relative z-20 pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
-        style={{ justifyContent: isVisuallyRaised ? 'flex-start' : 'center', paddingTop: isVisuallyRaised ? '1rem' : '0' }}
-      >
+      {/* Unified logo + search group — positioned at 1/3 from top */}
+      <div className="absolute inset-x-0 top-[33vh] z-20 flex flex-col items-center px-4 pointer-events-none">
         <div className="w-full max-w-2xl pointer-events-auto">
+          {/* Logo and tagline */}
+          <div className="text-center mb-5">
+            <h1 className="text-2xl font-semibold text-white/90 mb-1.5 flex items-center justify-center gap-2 tracking-tight">
+              <ChalkboardSimple size={26} weight="light" />
+              chalk
+            </h1>
+            <p className="text-[13px] text-white/30 tracking-wide">
+              Learn from any YouTube video with AI
+            </p>
+          </div>
+
           {/* Search input */}
           {searchInput}
 

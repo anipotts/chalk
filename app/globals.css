@@ -248,3 +248,19 @@ body {
     transform: translate3d(0, 0, 0);
   }
 }
+
+/* Pause column scroll on hover so users can read cards */
+.hero-column:hover .animate-scroll-up,
+.hero-column:hover .animate-scroll-down {
+  animation-play-state: paused;
+}
+
+/* Pure CSS hover scale for hero cards (replaces framer-motion) */
+.hero-card {
+  transform: scale(1);
+  transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1), border-color 0.4s ease-out;
+}
+
+.hero-card:hover {
+  transform: scale(1.03);
+}

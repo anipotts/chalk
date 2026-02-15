@@ -770,14 +770,6 @@ function WatchContent() {
           <div className="flex gap-2 items-center ml-auto">
             <SpeedControlButton playerRef={playerRef} />
 
-            {chatting && unified.exchanges.length > 0 && (
-              <button
-                onClick={unified.clearHistory}
-                className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30 transition-colors"
-              >
-                Clear
-              </button>
-            )}
             <button
               onClick={() => setShowCaptions((v) => !v)}
               className={`hidden md:inline-flex px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
