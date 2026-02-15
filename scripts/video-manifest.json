@@ -1,0 +1,4492 @@
+[
+  {
+    "videoId": "hEUO6pjwFOo",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Intelligence and Stupidity: The Orthogonality Thesis",
+    "tier": 1,
+    "viewCount": 697173,
+    "durationSeconds": 783,
+    "thumbnailUrl": "https://i.ytimg.com/vi/hEUO6pjwFOo/hqdefault.jpg"
+  },
+  {
+    "videoId": "JRuNA2eK7w0",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Is AI Safety a Pascal's Mugging?",
+    "tier": 1,
+    "viewCount": 384359,
+    "durationSeconds": 821,
+    "thumbnailUrl": "https://i.ytimg.com/vi/JRuNA2eK7w0/hqdefault.jpg"
+  },
+  {
+    "videoId": "9i1WlcCudpU",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "10 Reasons to Ignore AI Safety",
+    "tier": 1,
+    "viewCount": 358628,
+    "durationSeconds": 989,
+    "thumbnailUrl": "https://i.ytimg.com/vi/9i1WlcCudpU/hqdefault.jpg"
+  },
+  {
+    "videoId": "nKJlF-olKmg",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "9 Examples of Specification Gaming",
+    "tier": 1,
+    "viewCount": 321801,
+    "durationSeconds": 580,
+    "thumbnailUrl": "https://i.ytimg.com/vi/nKJlF-olKmg/hqdefault.jpg"
+  },
+  {
+    "videoId": "w65p_IIp6JY",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Why Does AI Lie, and What Can We Do About It?",
+    "tier": 1,
+    "viewCount": 276927,
+    "durationSeconds": 564,
+    "thumbnailUrl": "https://i.ytimg.com/vi/w65p_IIp6JY/hqdefault.jpg"
+  },
+  {
+    "videoId": "2ziuPUeewK0",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "AI Ruined My Year",
+    "tier": 1,
+    "viewCount": 267257,
+    "durationSeconds": 2759,
+    "thumbnailUrl": "https://i.ytimg.com/vi/2ziuPUeewK0/hqdefault.jpg"
+  },
+  {
+    "videoId": "zkbPdEHEyEI",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "We Were Right! Real Inner Misalignment",
+    "tier": 1,
+    "viewCount": 264882,
+    "durationSeconds": 707,
+    "thumbnailUrl": "https://i.ytimg.com/vi/zkbPdEHEyEI/hqdefault.jpg"
+  },
+  {
+    "videoId": "ZeecOKBus3Q",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Why Would AI Want to do Bad Things? Instrumental Convergence",
+    "tier": 1,
+    "viewCount": 264140,
+    "durationSeconds": 636,
+    "thumbnailUrl": "https://i.ytimg.com/vi/ZeecOKBus3Q/hqdefault.jpg"
+  },
+  {
+    "videoId": "bJLcIBixGj8",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "The OTHER AI Alignment Problem: Mesa-Optimizers and Inner Alignment",
+    "tier": 1,
+    "viewCount": 261826,
+    "durationSeconds": 1404,
+    "thumbnailUrl": "https://i.ytimg.com/vi/bJLcIBixGj8/hqdefault.jpg"
+  },
+  {
+    "videoId": "PYylPRX6z4Q",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Training AI Without Writing A Reward Function, with Reward Modelling",
+    "tier": 1,
+    "viewCount": 253411,
+    "durationSeconds": 1072,
+    "thumbnailUrl": "https://i.ytimg.com/vi/PYylPRX6z4Q/hqdefault.jpg"
+  },
+  {
+    "videoId": "yQE9KAbFhNY",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "A Response to Steven Pinker on AI",
+    "tier": 1,
+    "viewCount": 213502,
+    "durationSeconds": 938,
+    "thumbnailUrl": "https://i.ytimg.com/vi/yQE9KAbFhNY/hqdefault.jpg"
+  },
+  {
+    "videoId": "Ao4jwLwT36M",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "AI That Doesn't Try Too Hard - Maximizers and Satisficers",
+    "tier": 1,
+    "viewCount": 211390,
+    "durationSeconds": 622,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Ao4jwLwT36M/hqdefault.jpg"
+  },
+  {
+    "videoId": "pYXy-A4siMw",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Intro to AI Safety, Remastered",
+    "tier": 1,
+    "viewCount": 190700,
+    "durationSeconds": 1085,
+    "thumbnailUrl": "https://i.ytimg.com/vi/pYXy-A4siMw/hqdefault.jpg"
+  },
+  {
+    "videoId": "v9M2Ho9I9Qo",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "How to Keep Improving When You're Better Than Any Teacher - Iterated Distillation and Amplification",
+    "tier": 1,
+    "viewCount": 178644,
+    "durationSeconds": 692,
+    "thumbnailUrl": "https://i.ytimg.com/vi/v9M2Ho9I9Qo/hqdefault.jpg"
+  },
+  {
+    "videoId": "eaYIU6YXr3w",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Why Not Just: Raise AI Like Kids?",
+    "tier": 1,
+    "viewCount": 173000,
+    "durationSeconds": 351,
+    "thumbnailUrl": "https://i.ytimg.com/vi/eaYIU6YXr3w/hqdefault.jpg"
+  },
+  {
+    "videoId": "L5pUA3LsEaw",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Why Not Just: Think of AGI Like a Corporation?",
+    "tier": 1,
+    "viewCount": 161640,
+    "durationSeconds": 927,
+    "thumbnailUrl": "https://i.ytimg.com/vi/L5pUA3LsEaw/hqdefault.jpg"
+  },
+  {
+    "videoId": "lqJUIqZNzP8",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Avoiding Negative Side Effects: Concrete Problems in AI Safety part 1",
+    "tier": 1,
+    "viewCount": 158371,
+    "durationSeconds": 573,
+    "thumbnailUrl": "https://i.ytimg.com/vi/lqJUIqZNzP8/hqdefault.jpg"
+  },
+  {
+    "videoId": "0pgEMWy70Qk",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Using Dangerous AI, But Safely?",
+    "tier": 1,
+    "viewCount": 146274,
+    "durationSeconds": 1838,
+    "thumbnailUrl": "https://i.ytimg.com/vi/0pgEMWy70Qk/hqdefault.jpg"
+  },
+  {
+    "videoId": "gP4ZNUHdwp8",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "What can AGI do? I/O and Speed",
+    "tier": 1,
+    "viewCount": 122937,
+    "durationSeconds": 641,
+    "thumbnailUrl": "https://i.ytimg.com/vi/gP4ZNUHdwp8/hqdefault.jpg"
+  },
+  {
+    "videoId": "13tZ9Yia71c",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "What Can We Do About Reward Hacking?: Concrete Problems in AI Safety Part 4",
+    "tier": 1,
+    "viewCount": 117047,
+    "durationSeconds": 578,
+    "thumbnailUrl": "https://i.ytimg.com/vi/13tZ9Yia71c/hqdefault.jpg"
+  },
+  {
+    "videoId": "92qDfT8pENs",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Reward Hacking: Concrete Problems in AI Safety Part 3",
+    "tier": 1,
+    "viewCount": 107589,
+    "durationSeconds": 416,
+    "thumbnailUrl": "https://i.ytimg.com/vi/92qDfT8pENs/hqdefault.jpg"
+  },
+  {
+    "videoId": "7FCEiCnHcbo",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "The other \"Killer Robot Arms Race\" Elon Musk should worry about",
+    "tier": 1,
+    "viewCount": 100800,
+    "durationSeconds": 351,
+    "thumbnailUrl": "https://i.ytimg.com/vi/7FCEiCnHcbo/hqdefault.jpg"
+  },
+  {
+    "videoId": "V527HCWfBCU",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Safe Exploration: Concrete Problems in AI Safety Part 6",
+    "tier": 1,
+    "viewCount": 99970,
+    "durationSeconds": 826,
+    "thumbnailUrl": "https://i.ytimg.com/vi/V527HCWfBCU/hqdefault.jpg"
+  },
+  {
+    "videoId": "1wAgBaJgEsg",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Are AI Risks like Nuclear Risks?",
+    "tier": 1,
+    "viewCount": 99747,
+    "durationSeconds": 613,
+    "thumbnailUrl": "https://i.ytimg.com/vi/1wAgBaJgEsg/hqdefault.jpg"
+  },
+  {
+    "videoId": "CGTkoUidQ8I",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "AI Safety Gridworlds",
+    "tier": 1,
+    "viewCount": 94641,
+    "durationSeconds": 443,
+    "thumbnailUrl": "https://i.ytimg.com/vi/CGTkoUidQ8I/hqdefault.jpg"
+  },
+  {
+    "videoId": "46nsTFfsBuc",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Reward Hacking Reloaded: Concrete Problems in AI Safety Part 3.5",
+    "tier": 1,
+    "viewCount": 94523,
+    "durationSeconds": 452,
+    "thumbnailUrl": "https://i.ytimg.com/vi/46nsTFfsBuc/hqdefault.jpg"
+  },
+  {
+    "videoId": "IeWljQw3UgQ",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Deceptive Misaligned Mesa-Optimisers? It's More Likely Than You Think...",
+    "tier": 1,
+    "viewCount": 90844,
+    "durationSeconds": 620,
+    "thumbnailUrl": "https://i.ytimg.com/vi/IeWljQw3UgQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "gdKMG6kTl6Y",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Quantilizers: AI That Doesn't Try Too Hard",
+    "tier": 1,
+    "viewCount": 88834,
+    "durationSeconds": 594,
+    "thumbnailUrl": "https://i.ytimg.com/vi/gdKMG6kTl6Y/hqdefault.jpg"
+  },
+  {
+    "videoId": "7i_f4Kbpgn4",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Sharing the Benefits of AI: The Windfall Clause",
+    "tier": 1,
+    "viewCount": 81813,
+    "durationSeconds": 704,
+    "thumbnailUrl": "https://i.ytimg.com/vi/7i_f4Kbpgn4/hqdefault.jpg"
+  },
+  {
+    "videoId": "HOJ1NVtlnyQ",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Experts' Predictions about the Future of AI",
+    "tier": 1,
+    "viewCount": 81131,
+    "durationSeconds": 407,
+    "thumbnailUrl": "https://i.ytimg.com/vi/HOJ1NVtlnyQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "nNB9svNBGHM",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Respectability",
+    "tier": 1,
+    "viewCount": 79961,
+    "durationSeconds": 304,
+    "thumbnailUrl": "https://i.ytimg.com/vi/nNB9svNBGHM/hqdefault.jpg"
+  },
+  {
+    "videoId": "vYhErnZdnso",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Where do we go now?",
+    "tier": 1,
+    "viewCount": 72547,
+    "durationSeconds": 465,
+    "thumbnailUrl": "https://i.ytimg.com/vi/vYhErnZdnso/hqdefault.jpg"
+  },
+  {
+    "videoId": "OpufM6yK4Go",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "AI Safety Career Advice! (And So Can You!)",
+    "tier": 1,
+    "viewCount": 71711,
+    "durationSeconds": 1422,
+    "thumbnailUrl": "https://i.ytimg.com/vi/OpufM6yK4Go/hqdefault.jpg"
+  },
+  {
+    "videoId": "_UzX3L7lXhw",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Superintelligence Mod for Civilization V",
+    "tier": 1,
+    "viewCount": 70884,
+    "durationSeconds": 3880,
+    "thumbnailUrl": "https://i.ytimg.com/vi/_UzX3L7lXhw/hqdefault.jpg"
+  },
+  {
+    "videoId": "gPtsgTjyEj4",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Empowerment: Concrete Problems in AI Safety part 2",
+    "tier": 1,
+    "viewCount": 69012,
+    "durationSeconds": 393,
+    "thumbnailUrl": "https://i.ytimg.com/vi/gPtsgTjyEj4/hqdefault.jpg"
+  },
+  {
+    "videoId": "8AvIErXFoH8",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "What's the Use of Utility Functions?",
+    "tier": 1,
+    "viewCount": 67781,
+    "durationSeconds": 424,
+    "thumbnailUrl": "https://i.ytimg.com/vi/8AvIErXFoH8/hqdefault.jpg"
+  },
+  {
+    "videoId": "zATXsGm_xJo",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Tech is Good, AI Will Be Different",
+    "tier": 1,
+    "viewCount": 64410,
+    "durationSeconds": 569,
+    "thumbnailUrl": "https://i.ytimg.com/vi/zATXsGm_xJo/hqdefault.jpg"
+  },
+  {
+    "videoId": "B6Oigy1i3W4",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Predicting AI: RIP Prof. Hubert Dreyfus",
+    "tier": 1,
+    "viewCount": 62826,
+    "durationSeconds": 497,
+    "thumbnailUrl": "https://i.ytimg.com/vi/B6Oigy1i3W4/hqdefault.jpg"
+  },
+  {
+    "videoId": "S_Sd_S8jwP0",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Avoiding Positive Side Effects: Concrete Problems in AI Safety part 1.5",
+    "tier": 1,
+    "viewCount": 55065,
+    "durationSeconds": 203,
+    "thumbnailUrl": "https://i.ytimg.com/vi/S_Sd_S8jwP0/hqdefault.jpg"
+  },
+  {
+    "videoId": "nr1lHuFeq5w",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Scalable Supervision: Concrete Problems in AI Safety Part 5",
+    "tier": 1,
+    "viewCount": 54132,
+    "durationSeconds": 303,
+    "thumbnailUrl": "https://i.ytimg.com/vi/nr1lHuFeq5w/hqdefault.jpg"
+  },
+  {
+    "videoId": "vuYtSDMBLtQ",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Channel Introduction",
+    "tier": 1,
+    "viewCount": 54107,
+    "durationSeconds": 65,
+    "thumbnailUrl": "https://i.ytimg.com/vi/vuYtSDMBLtQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "MUVbqQ3STFA",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "AI learns to Create  \u0335K\u0335Z\u0335F\u0335 \u0335V\u0335i\u0335d\u0335e\u0335o\u0335s\u0335 Cat Pictures: Papers in Two Minutes #1",
+    "tier": 1,
+    "viewCount": 48864,
+    "durationSeconds": 320,
+    "thumbnailUrl": "https://i.ytimg.com/vi/MUVbqQ3STFA/hqdefault.jpg"
+  },
+  {
+    "videoId": "WM2THPzFSNk",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Friend or Foe? AI Safety Gridworlds extra bit",
+    "tier": 1,
+    "viewCount": 44062,
+    "durationSeconds": 227,
+    "thumbnailUrl": "https://i.ytimg.com/vi/WM2THPzFSNk/hqdefault.jpg"
+  },
+  {
+    "videoId": "BfcJymyTiu0",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "AI Safety at EAGlobal2017 Conference",
+    "tier": 1,
+    "viewCount": 19460,
+    "durationSeconds": 330,
+    "thumbnailUrl": "https://i.ytimg.com/vi/BfcJymyTiu0/hqdefault.jpg"
+  },
+  {
+    "videoId": "2B-AyWA2_ZY",
+    "channelId": "UCLB7AzTwc6VFZrBsO2ucBMg",
+    "channelName": "Robert Miles AI Safety",
+    "title": "Status Report",
+    "tier": 1,
+    "viewCount": 18186,
+    "durationSeconds": 86,
+    "thumbnailUrl": "https://i.ytimg.com/vi/2B-AyWA2_ZY/hqdefault.jpg"
+  },
+  {
+    "videoId": "oDqjPvD54Ss",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Breadth First Search Algorithm | Shortest Path | Graph Theory",
+    "tier": 1,
+    "viewCount": 818517,
+    "durationSeconds": 443,
+    "thumbnailUrl": "https://i.ytimg.com/vi/oDqjPvD54Ss/hqdefault.jpg"
+  },
+  {
+    "videoId": "LdOnanfc5TM",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Max Flow Ford Fulkerson | Network Flow | Graph Theory",
+    "tier": 1,
+    "viewCount": 614874,
+    "durationSeconds": 805,
+    "thumbnailUrl": "https://i.ytimg.com/vi/LdOnanfc5TM/hqdefault.jpg"
+  },
+  {
+    "videoId": "7fujbpJ0LB4",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Depth First Search Algorithm | Graph Theory",
+    "tier": 1,
+    "viewCount": 551740,
+    "durationSeconds": 620,
+    "thumbnailUrl": "https://i.ytimg.com/vi/7fujbpJ0LB4/hqdefault.jpg"
+  },
+  {
+    "videoId": "eL-KzMXSXXI",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Topological Sort Algorithm | Graph Theory",
+    "tier": 1,
+    "viewCount": 547592,
+    "durationSeconds": 849,
+    "thumbnailUrl": "https://i.ytimg.com/vi/eL-KzMXSXXI/hqdefault.jpg"
+  },
+  {
+    "videoId": "wptevk0bshY",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Priority Queue Introduction",
+    "tier": 1,
+    "viewCount": 515901,
+    "durationSeconds": 798,
+    "thumbnailUrl": "https://i.ytimg.com/vi/wptevk0bshY/hqdefault.jpg"
+  },
+  {
+    "videoId": "KiCBXu4P-2Y",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Breadth First Search grid shortest path | Graph Theory",
+    "tier": 1,
+    "viewCount": 368112,
+    "durationSeconds": 1011,
+    "thumbnailUrl": "https://i.ytimg.com/vi/KiCBXu4P-2Y/hqdefault.jpg"
+  },
+  {
+    "videoId": "zUUkiEllHG0",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Introduction to Big-O",
+    "tier": 1,
+    "viewCount": 349816,
+    "durationSeconds": 760,
+    "thumbnailUrl": "https://i.ytimg.com/vi/zUUkiEllHG0/hqdefault.jpg"
+  },
+  {
+    "videoId": "Qmt0QwzEmh0",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Data structures introduction",
+    "tier": 1,
+    "viewCount": 349314,
+    "durationSeconds": 144,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Qmt0QwzEmh0/hqdefault.jpg"
+  },
+  {
+    "videoId": "DgXR2OWQnLc",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Graph Theory Algorithms",
+    "tier": 1,
+    "viewCount": 300609,
+    "durationSeconds": 191,
+    "thumbnailUrl": "https://i.ytimg.com/vi/DgXR2OWQnLc/hqdefault.jpg"
+  },
+  {
+    "videoId": "cJ21moQpofY",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "0/1 Knapsack problem | Dynamic Programming",
+    "tier": 1,
+    "viewCount": 284981,
+    "durationSeconds": 809,
+    "thumbnailUrl": "https://i.ytimg.com/vi/cJ21moQpofY/hqdefault.jpg"
+  },
+  {
+    "videoId": "lyw4FaxrwHg",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Bellman Ford Algorithm | Shortest path & Negative cycles | Graph Theory",
+    "tier": 1,
+    "viewCount": 280484,
+    "durationSeconds": 901,
+    "thumbnailUrl": "https://i.ytimg.com/vi/lyw4FaxrwHg/hqdefault.jpg"
+  },
+  {
+    "videoId": "0jNmHPfA_yE",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Union Find - Union and Find Operations",
+    "tier": 1,
+    "viewCount": 279733,
+    "durationSeconds": 653,
+    "thumbnailUrl": "https://i.ytimg.com/vi/0jNmHPfA_yE/hqdefault.jpg"
+  },
+  {
+    "videoId": "JZBQLXgSGfs",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Union Find Kruskal's Algorithm",
+    "tier": 1,
+    "viewCount": 256941,
+    "durationSeconds": 375,
+    "thumbnailUrl": "https://i.ytimg.com/vi/JZBQLXgSGfs/hqdefault.jpg"
+  },
+  {
+    "videoId": "pSqmAO-m7Lk",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Dijkstra's Shortest Path Algorithm | Graph Theory",
+    "tier": 1,
+    "viewCount": 238046,
+    "durationSeconds": 1487,
+    "thumbnailUrl": "https://i.ytimg.com/vi/pSqmAO-m7Lk/hqdefault.jpg"
+  },
+  {
+    "videoId": "RppuJYwlcI8",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Edmonds Karp Algorithm | Network Flow | Graph Theory",
+    "tier": 1,
+    "viewCount": 211926,
+    "durationSeconds": 575,
+    "thumbnailUrl": "https://i.ytimg.com/vi/RppuJYwlcI8/hqdefault.jpg"
+  },
+  {
+    "videoId": "wUgWX0nc4NY",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Tarjan's Strongly Connected Component (SCC) Algorithm (UPDATED) | Graph Theory",
+    "tier": 1,
+    "viewCount": 206429,
+    "durationSeconds": 1062,
+    "thumbnailUrl": "https://i.ytimg.com/vi/wUgWX0nc4NY/hqdefault.jpg"
+  },
+  {
+    "videoId": "q4fnJZr8ztY",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Balanced binary search tree rotations",
+    "tier": 1,
+    "viewCount": 199150,
+    "durationSeconds": 531,
+    "thumbnailUrl": "https://i.ytimg.com/vi/q4fnJZr8ztY/hqdefault.jpg"
+  },
+  {
+    "videoId": "2USMAwcRWHE",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Abstract data types",
+    "tier": 1,
+    "viewCount": 191287,
+    "durationSeconds": 288,
+    "thumbnailUrl": "https://i.ytimg.com/vi/2USMAwcRWHE/hqdefault.jpg"
+  },
+  {
+    "videoId": "cY4HiiFHO1o",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Traveling Salesman Problem | Dynamic Programming | Graph Theory",
+    "tier": 1,
+    "viewCount": 188444,
+    "durationSeconds": 1228,
+    "thumbnailUrl": "https://i.ytimg.com/vi/cY4HiiFHO1o/hqdefault.jpg"
+  },
+  {
+    "videoId": "TXkDpqjDMHA",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Shortest/Longest path on a Directed Acyclic Graph (DAG)  | Graph Theory",
+    "tier": 1,
+    "viewCount": 186965,
+    "durationSeconds": 597,
+    "thumbnailUrl": "https://i.ytimg.com/vi/TXkDpqjDMHA/hqdefault.jpg"
+  },
+  {
+    "videoId": "cIBFEhD77b4",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Topological Sort | Kahn's Algorithm | Graph Theory",
+    "tier": 1,
+    "viewCount": 182251,
+    "durationSeconds": 812,
+    "thumbnailUrl": "https://i.ytimg.com/vi/cIBFEhD77b4/hqdefault.jpg"
+  },
+  {
+    "videoId": "eQA-m22wjTQ",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Graph Theory Introduction",
+    "tier": 1,
+    "viewCount": 179061,
+    "durationSeconds": 848,
+    "thumbnailUrl": "https://i.ytimg.com/vi/eQA-m22wjTQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "ibjEGG7ylHk",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Union Find Introduction",
+    "tier": 1,
+    "viewCount": 172867,
+    "durationSeconds": 346,
+    "thumbnailUrl": "https://i.ytimg.com/vi/ibjEGG7ylHk/hqdefault.jpg"
+  },
+  {
+    "videoId": "8MpoO2zA2l4",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Eulerian Path/Circuit algorithm (Hierholzer's algorithm) | Graph Theory",
+    "tier": 1,
+    "viewCount": 169582,
+    "durationSeconds": 934,
+    "thumbnailUrl": "https://i.ytimg.com/vi/8MpoO2zA2l4/hqdefault.jpg"
+  },
+  {
+    "videoId": "jsmMtJpPnhU",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Prim's Minimum Spanning Tree Algorithm | Graph Theory",
+    "tier": 1,
+    "viewCount": 157760,
+    "durationSeconds": 893,
+    "thumbnailUrl": "https://i.ytimg.com/vi/jsmMtJpPnhU/hqdefault.jpg"
+  },
+  {
+    "videoId": "4NQ3HnhyNfQ",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Floyd Warshall All Pairs Shortest Path Algorithm | Graph Theory | Dynamic Programming",
+    "tier": 1,
+    "viewCount": 142568,
+    "durationSeconds": 953,
+    "thumbnailUrl": "https://i.ytimg.com/vi/4NQ3HnhyNfQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "VHRhJWacxis",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Union Find Path Compression",
+    "tier": 1,
+    "viewCount": 140534,
+    "durationSeconds": 396,
+    "thumbnailUrl": "https://i.ytimg.com/vi/VHRhJWacxis/hqdefault.jpg"
+  },
+  {
+    "videoId": "GhjwOiJ4SqU",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Unweighted Bipartite Matching | Network Flow | Graph Theory",
+    "tier": 1,
+    "viewCount": 135036,
+    "durationSeconds": 684,
+    "thumbnailUrl": "https://i.ytimg.com/vi/GhjwOiJ4SqU/hqdefault.jpg"
+  },
+  {
+    "videoId": "PEnFFiQe1pM",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Dynamic and Static Arrays",
+    "tier": 1,
+    "viewCount": 134864,
+    "durationSeconds": 712,
+    "thumbnailUrl": "https://i.ytimg.com/vi/PEnFFiQe1pM/hqdefault.jpg"
+  },
+  {
+    "videoId": "LwpLXm3eb6A",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Binary Search Tree Insertion",
+    "tier": 1,
+    "viewCount": 125409,
+    "durationSeconds": 353,
+    "thumbnailUrl": "https://i.ytimg.com/vi/LwpLXm3eb6A/hqdefault.jpg"
+  },
+  {
+    "videoId": "1XC3p2zBK34",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Introduction to tree algorithms | Graph Theory",
+    "tier": 1,
+    "viewCount": 110215,
+    "durationSeconds": 622,
+    "thumbnailUrl": "https://i.ytimg.com/vi/1XC3p2zBK34/hqdefault.jpg"
+  },
+  {
+    "videoId": "87X57ldq1ok",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Overview of algorithms in Graph Theory",
+    "tier": 1,
+    "viewCount": 103989,
+    "durationSeconds": 587,
+    "thumbnailUrl": "https://i.ytimg.com/vi/87X57ldq1ok/hqdefault.jpg"
+  },
+  {
+    "videoId": "1QSYxIKXXP4",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "AVL tree insertion",
+    "tier": 1,
+    "viewCount": 94672,
+    "durationSeconds": 576,
+    "thumbnailUrl": "https://i.ytimg.com/vi/1QSYxIKXXP4/hqdefault.jpg"
+  },
+  {
+    "videoId": "TyWtx7q2D7Y",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Tarjans Strongly Connected Components algorithm | Graph Theory",
+    "tier": 1,
+    "viewCount": 91608,
+    "durationSeconds": 1023,
+    "thumbnailUrl": "https://i.ytimg.com/vi/TyWtx7q2D7Y/hqdefault.jpg"
+  },
+  {
+    "videoId": "zqKlL3ZpTqs",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Suffix array introduction",
+    "tier": 1,
+    "viewCount": 90681,
+    "durationSeconds": 196,
+    "thumbnailUrl": "https://i.ytimg.com/vi/zqKlL3ZpTqs/hqdefault.jpg"
+  },
+  {
+    "videoId": "tvw4v7FEF1w",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Dynamic Array Code",
+    "tier": 1,
+    "viewCount": 87577,
+    "durationSeconds": 406,
+    "thumbnailUrl": "https://i.ytimg.com/vi/tvw4v7FEF1w/hqdefault.jpg"
+  },
+  {
+    "videoId": "KbFlZYCpONw",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Union Find Code",
+    "tier": 1,
+    "viewCount": 84699,
+    "durationSeconds": 461,
+    "thumbnailUrl": "https://i.ytimg.com/vi/KbFlZYCpONw/hqdefault.jpg"
+  },
+  {
+    "videoId": "-Yn5DU0_-lw",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Linked Lists Introduction",
+    "tier": 1,
+    "viewCount": 84277,
+    "durationSeconds": 883,
+    "thumbnailUrl": "https://i.ytimg.com/vi/-Yn5DU0_-lw/hqdefault.jpg"
+  },
+  {
+    "videoId": "M6cm8UeeziI",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Dinic's Algorithm | Network Flow | Graph Theory",
+    "tier": 1,
+    "viewCount": 79041,
+    "durationSeconds": 709,
+    "thumbnailUrl": "https://i.ytimg.com/vi/M6cm8UeeziI/hqdefault.jpg"
+  },
+  {
+    "videoId": "QOJ-CmQiXko",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Priority Queue Inserting Elements",
+    "tier": 1,
+    "viewCount": 76884,
+    "durationSeconds": 599,
+    "thumbnailUrl": "https://i.ytimg.com/vi/QOJ-CmQiXko/hqdefault.jpg"
+  },
+  {
+    "videoId": "HCEr35qpawQ",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Priority Queue Min Heaps and Max Heaps",
+    "tier": 1,
+    "viewCount": 73896,
+    "durationSeconds": 375,
+    "thumbnailUrl": "https://i.ytimg.com/vi/HCEr35qpawQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "ib4BHvr5-Ao",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Divide and Conquer: The Art of Breaking Down Problems | Recursion Series",
+    "tier": 1,
+    "viewCount": 73092,
+    "durationSeconds": 682,
+    "thumbnailUrl": "https://i.ytimg.com/vi/ib4BHvr5-Ao/hqdefault.jpg"
+  },
+  {
+    "videoId": "tqFZzXkbbGY",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "AVL tree source code",
+    "tier": 1,
+    "viewCount": 65754,
+    "durationSeconds": 1009,
+    "thumbnailUrl": "https://i.ytimg.com/vi/tqFZzXkbbGY/hqdefault.jpg"
+  },
+  {
+    "videoId": "xR4sGgwtR2I",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Existence of Eulerian Paths and Circuits | Graph Theory",
+    "tier": 1,
+    "viewCount": 63186,
+    "durationSeconds": 581,
+    "thumbnailUrl": "https://i.ytimg.com/vi/xR4sGgwtR2I/hqdefault.jpg"
+  },
+  {
+    "videoId": "g4y2h70D6Nk",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "AVL tree removals",
+    "tier": 1,
+    "viewCount": 62140,
+    "durationSeconds": 536,
+    "thumbnailUrl": "https://i.ytimg.com/vi/g4y2h70D6Nk/hqdefault.jpg"
+  },
+  {
+    "videoId": "_tur2nPkIKo",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Magic Cows | Dynamic Programming | Adhoc | Interview problem",
+    "tier": 1,
+    "viewCount": 58519,
+    "durationSeconds": 973,
+    "thumbnailUrl": "https://i.ytimg.com/vi/_tur2nPkIKo/hqdefault.jpg"
+  },
+  {
+    "videoId": "m-8ZBO2ywaU",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Doubly Linked List Code",
+    "tier": 1,
+    "viewCount": 57907,
+    "durationSeconds": 576,
+    "thumbnailUrl": "https://i.ytimg.com/vi/m-8ZBO2ywaU/hqdefault.jpg"
+  },
+  {
+    "videoId": "T9gct6Dx-jo",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Hash table separate chaining",
+    "tier": 1,
+    "viewCount": 57692,
+    "durationSeconds": 494,
+    "thumbnailUrl": "https://i.ytimg.com/vi/T9gct6Dx-jo/hqdefault.jpg"
+  },
+  {
+    "videoId": "53VIWj8ksyI",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Longest Common Prefix (LCP) array",
+    "tier": 1,
+    "viewCount": 57348,
+    "durationSeconds": 210,
+    "thumbnailUrl": "https://i.ytimg.com/vi/53VIWj8ksyI/hqdefault.jpg"
+  },
+  {
+    "videoId": "2E54GqF0H4s",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Hash table hash function",
+    "tier": 1,
+    "viewCount": 54038,
+    "durationSeconds": 1041,
+    "thumbnailUrl": "https://i.ytimg.com/vi/2E54GqF0H4s/hqdefault.jpg"
+  },
+  {
+    "videoId": "sD1IoalFomA",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Lowest Common Ancestor (LCA) Problem | Eulerian path method",
+    "tier": 1,
+    "viewCount": 53850,
+    "durationSeconds": 1022,
+    "thumbnailUrl": "https://i.ytimg.com/vi/sD1IoalFomA/hqdefault.jpg"
+  },
+  {
+    "videoId": "8K7EO7s_iFE",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Binary Search Tree Removal",
+    "tier": 1,
+    "viewCount": 53706,
+    "durationSeconds": 850,
+    "thumbnailUrl": "https://i.ytimg.com/vi/8K7EO7s_iFE/hqdefault.jpg"
+  },
+  {
+    "videoId": "Xu8jjJnwvxE",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Max Flow Ford Fulkerson | Source Code",
+    "tier": 1,
+    "viewCount": 53475,
+    "durationSeconds": 1049,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Xu8jjJnwvxE/hqdefault.jpg"
+  },
+  {
+    "videoId": "eVq8CmoC1x8",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Priority Queue Removing Elements",
+    "tier": 1,
+    "viewCount": 52422,
+    "durationSeconds": 847,
+    "thumbnailUrl": "https://i.ytimg.com/vi/eVq8CmoC1x8/hqdefault.jpg"
+  },
+  {
+    "videoId": "L3ud3rXpIxA",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Stack Introduction",
+    "tier": 1,
+    "viewCount": 51417,
+    "durationSeconds": 699,
+    "thumbnailUrl": "https://i.ytimg.com/vi/L3ud3rXpIxA/hqdefault.jpg"
+  },
+  {
+    "videoId": "mbLzxKUeLJ4",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Dijkstra's Shortest Path Algorithm | Source Code | Graph Theory",
+    "tier": 1,
+    "viewCount": 49446,
+    "durationSeconds": 557,
+    "thumbnailUrl": "https://i.ytimg.com/vi/mbLzxKUeLJ4/hqdefault.jpg"
+  },
+  {
+    "videoId": "Ma9XOInZJWM",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Hash table linear probing",
+    "tier": 1,
+    "viewCount": 48755,
+    "durationSeconds": 836,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Ma9XOInZJWM/hqdefault.jpg"
+  },
+  {
+    "videoId": "yn2jnmlepY8",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Tiling dominoes | Dynamic programming",
+    "tier": 1,
+    "viewCount": 47383,
+    "durationSeconds": 890,
+    "thumbnailUrl": "https://i.ytimg.com/vi/yn2jnmlepY8/hqdefault.jpg"
+  },
+  {
+    "videoId": "2FFq2_je7Lg",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Rooting a tree | Graph Theory",
+    "tier": 1,
+    "viewCount": 46438,
+    "durationSeconds": 319,
+    "thumbnailUrl": "https://i.ytimg.com/vi/2FFq2_je7Lg/hqdefault.jpg"
+  },
+  {
+    "videoId": "0qgaIMqOEVs",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Beginner tree algorithms | Graph Theory",
+    "tier": 1,
+    "viewCount": 46176,
+    "durationSeconds": 594,
+    "thumbnailUrl": "https://i.ytimg.com/vi/0qgaIMqOEVs/hqdefault.jpg"
+  },
+  {
+    "videoId": "CecjOo4Zo-g",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Tiling Dominoes and Trominoes (Leetcode 790) | Dynamic Programming",
+    "tier": 1,
+    "viewCount": 45802,
+    "durationSeconds": 976,
+    "thumbnailUrl": "https://i.ytimg.com/vi/CecjOo4Zo-g/hqdefault.jpg"
+  },
+  {
+    "videoId": "GLIRnUhknP0",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Priority Queue Code",
+    "tier": 1,
+    "viewCount": 45534,
+    "durationSeconds": 950,
+    "thumbnailUrl": "https://i.ytimg.com/vi/GLIRnUhknP0/hqdefault.jpg"
+  },
+  {
+    "videoId": "RgITNht_f4Q",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Fenwick Tree range queries",
+    "tier": 1,
+    "viewCount": 44692,
+    "durationSeconds": 825,
+    "thumbnailUrl": "https://i.ytimg.com/vi/RgITNht_f4Q/hqdefault.jpg"
+  },
+  {
+    "videoId": "gQszF5qdZ-0",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Tiling problems [1/2] | Dynamic Programming",
+    "tier": 1,
+    "viewCount": 44681,
+    "durationSeconds": 998,
+    "thumbnailUrl": "https://i.ytimg.com/vi/gQszF5qdZ-0/hqdefault.jpg"
+  },
+  {
+    "videoId": "Ic80xQFWevc",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Longest common substring problem suffix array",
+    "tier": 1,
+    "viewCount": 43986,
+    "durationSeconds": 690,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Ic80xQFWevc/hqdefault.jpg"
+  },
+  {
+    "videoId": "-3u1C1URNZY",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Understanding Mergesort: Sorting Made Simple | Recursion Series",
+    "tier": 1,
+    "viewCount": 43039,
+    "durationSeconds": 616,
+    "thumbnailUrl": "https://i.ytimg.com/vi/-3u1C1URNZY/hqdefault.jpg"
+  },
+  {
+    "videoId": "JfSdGQdAzq8",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Binary Search Tree Introduction",
+    "tier": 1,
+    "viewCount": 42705,
+    "durationSeconds": 751,
+    "thumbnailUrl": "https://i.ytimg.com/vi/JfSdGQdAzq8/hqdefault.jpg"
+  },
+  {
+    "videoId": "m2lZRmMjebw",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Suffix array finding unique substrings",
+    "tier": 1,
+    "viewCount": 42035,
+    "durationSeconds": 279,
+    "thumbnailUrl": "https://i.ytimg.com/vi/m2lZRmMjebw/hqdefault.jpg"
+  },
+  {
+    "videoId": "uUatD9AudXo",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Sparse Table Data Structure",
+    "tier": 1,
+    "viewCount": 39217,
+    "durationSeconds": 1398,
+    "thumbnailUrl": "https://i.ytimg.com/vi/uUatD9AudXo/hqdefault.jpg"
+  },
+  {
+    "videoId": "OCKvEMF0Xac",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Identifying Isomorphic Trees | Graph Theory",
+    "tier": 1,
+    "viewCount": 38578,
+    "durationSeconds": 673,
+    "thumbnailUrl": "https://i.ytimg.com/vi/OCKvEMF0Xac/hqdefault.jpg"
+  },
+  {
+    "videoId": "nzF_9bjDzdc",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Tree center(s) | Graph Theory",
+    "tier": 1,
+    "viewCount": 38179,
+    "durationSeconds": 368,
+    "thumbnailUrl": "https://i.ytimg.com/vi/nzF_9bjDzdc/hqdefault.jpg"
+  },
+  {
+    "videoId": "H5e9V5x92vI",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Hash table double hashing",
+    "tier": 1,
+    "viewCount": 37735,
+    "durationSeconds": 890,
+    "thumbnailUrl": "https://i.ytimg.com/vi/H5e9V5x92vI/hqdefault.jpg"
+  },
+  {
+    "videoId": "1ewLrXUz4kk",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Capacity Scaling | Network Flow | Graph Theory",
+    "tier": 1,
+    "viewCount": 36237,
+    "durationSeconds": 615,
+    "thumbnailUrl": "https://i.ytimg.com/vi/1ewLrXUz4kk/hqdefault.jpg"
+  },
+  {
+    "videoId": "KxzhEQ-zpDc",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Queue Introduction",
+    "tier": 1,
+    "viewCount": 34655,
+    "durationSeconds": 386,
+    "thumbnailUrl": "https://i.ytimg.com/vi/KxzhEQ-zpDc/hqdefault.jpg"
+  },
+  {
+    "videoId": "k7GkEbECZK0",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Binary Search Tree Traversals",
+    "tier": 1,
+    "viewCount": 33962,
+    "durationSeconds": 718,
+    "thumbnailUrl": "https://i.ytimg.com/vi/k7GkEbECZK0/hqdefault.jpg"
+  },
+  {
+    "videoId": "xIejolxzZS8",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Hash table open addressing",
+    "tier": 1,
+    "viewCount": 33453,
+    "durationSeconds": 669,
+    "thumbnailUrl": "https://i.ytimg.com/vi/xIejolxzZS8/hqdefault.jpg"
+  },
+  {
+    "videoId": "udEe7Cv3DqU",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Travelling Salesman Problem source code | Dynamic Programming | Graph Theory",
+    "tier": 1,
+    "viewCount": 32541,
+    "durationSeconds": 800,
+    "thumbnailUrl": "https://i.ytimg.com/vi/udEe7Cv3DqU/hqdefault.jpg"
+  },
+  {
+    "videoId": "xq3ABa-px_g",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Eager Prim's Minimum Spanning Tree Algorithm | Graph Theory",
+    "tier": 1,
+    "viewCount": 31174,
+    "durationSeconds": 873,
+    "thumbnailUrl": "https://i.ytimg.com/vi/xq3ABa-px_g/hqdefault.jpg"
+  },
+  {
+    "videoId": "RAMqDLI6_1c",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Stack Implementation",
+    "tier": 1,
+    "viewCount": 31097,
+    "durationSeconds": 212,
+    "thumbnailUrl": "https://i.ytimg.com/vi/RAMqDLI6_1c/hqdefault.jpg"
+  },
+  {
+    "videoId": "OptoHwC3D-Y",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Longest Repeated Substring suffix array",
+    "tier": 1,
+    "viewCount": 29792,
+    "durationSeconds": 278,
+    "thumbnailUrl": "https://i.ytimg.com/vi/OptoHwC3D-Y/hqdefault.jpg"
+  },
+  {
+    "videoId": "oiZssCfk4_U",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Stack Code",
+    "tier": 1,
+    "viewCount": 29703,
+    "durationSeconds": 212,
+    "thumbnailUrl": "https://i.ytimg.com/vi/oiZssCfk4_U/hqdefault.jpg"
+  },
+  {
+    "videoId": "jND_WJ8r7FE",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Indexed Priority Queue (UPDATED) | Data Structures",
+    "tier": 1,
+    "viewCount": 29220,
+    "durationSeconds": 1522,
+    "thumbnailUrl": "https://i.ytimg.com/vi/jND_WJ8r7FE/hqdefault.jpg"
+  },
+  {
+    "videoId": "Av9kwXkuQFw",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Hash table separate chaining source code",
+    "tier": 1,
+    "viewCount": 28674,
+    "durationSeconds": 707,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Av9kwXkuQFw/hqdefault.jpg"
+  },
+  {
+    "videoId": "EoisnPvUkOA",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Queue Implementation",
+    "tier": 1,
+    "viewCount": 28182,
+    "durationSeconds": 350,
+    "thumbnailUrl": "https://i.ytimg.com/vi/EoisnPvUkOA/hqdefault.jpg"
+  },
+  {
+    "videoId": "7eLDTtbzX4M",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Hash Table Open Addressing Removals",
+    "tier": 1,
+    "viewCount": 27960,
+    "durationSeconds": 453,
+    "thumbnailUrl": "https://i.ytimg.com/vi/7eLDTtbzX4M/hqdefault.jpg"
+  },
+  {
+    "videoId": "b0858c55TGQ",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Hash table quadratic probing",
+    "tier": 1,
+    "viewCount": 27441,
+    "durationSeconds": 567,
+    "thumbnailUrl": "https://i.ytimg.com/vi/b0858c55TGQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "HV-hpvuGaC4",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Queue Code",
+    "tier": 1,
+    "viewCount": 26886,
+    "durationSeconds": 254,
+    "thumbnailUrl": "https://i.ytimg.com/vi/HV-hpvuGaC4/hqdefault.jpg"
+  },
+  {
+    "videoId": "RnlHPR0lyOE",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Backtracking tutorial: power set",
+    "tier": 1,
+    "viewCount": 26639,
+    "durationSeconds": 497,
+    "thumbnailUrl": "https://i.ytimg.com/vi/RnlHPR0lyOE/hqdefault.jpg"
+  },
+  {
+    "videoId": "ar6x7dHfGHA",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Bipartite Matching | Mice and Owls problem | Network Flow | Graph Theory",
+    "tier": 1,
+    "viewCount": 25960,
+    "durationSeconds": 508,
+    "thumbnailUrl": "https://i.ytimg.com/vi/ar6x7dHfGHA/hqdefault.jpg"
+  },
+  {
+    "videoId": "OViaWp9Q-Oc",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Edmonds Karp Algorithm | Source Code",
+    "tier": 1,
+    "viewCount": 23610,
+    "durationSeconds": 347,
+    "thumbnailUrl": "https://i.ytimg.com/vi/OViaWp9Q-Oc/hqdefault.jpg"
+  },
+  {
+    "videoId": "UYrYziWSyFE",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Introduction [Programming Competition Problems]",
+    "tier": 1,
+    "viewCount": 22536,
+    "durationSeconds": 87,
+    "thumbnailUrl": "https://i.ytimg.com/vi/UYrYziWSyFE/hqdefault.jpg"
+  },
+  {
+    "videoId": "44TwrxjfIfo",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Introduction to recursion | Recursion series",
+    "tier": 1,
+    "viewCount": 22331,
+    "durationSeconds": 417,
+    "thumbnailUrl": "https://i.ytimg.com/vi/44TwrxjfIfo/hqdefault.jpg"
+  },
+  {
+    "videoId": "LURXsBIoSqI",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "String Manipulation 1 [Programming Competition Problems]",
+    "tier": 1,
+    "viewCount": 21515,
+    "durationSeconds": 548,
+    "thumbnailUrl": "https://i.ytimg.com/vi/LURXsBIoSqI/hqdefault.jpg"
+  },
+  {
+    "videoId": "zrGnYstL4ss",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Bipartite Matching | Elementary Math problem | Network Flow | Graph Theory",
+    "tier": 1,
+    "viewCount": 20779,
+    "durationSeconds": 641,
+    "thumbnailUrl": "https://i.ytimg.com/vi/zrGnYstL4ss/hqdefault.jpg"
+  },
+  {
+    "videoId": "QwrZcySUxK8",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Binary Search Tree Code",
+    "tier": 1,
+    "viewCount": 20544,
+    "durationSeconds": 800,
+    "thumbnailUrl": "https://i.ytimg.com/vi/QwrZcySUxK8/hqdefault.jpg"
+  },
+  {
+    "videoId": "BHPez138yX8",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Fenwick Tree construction",
+    "tier": 1,
+    "viewCount": 18791,
+    "durationSeconds": 389,
+    "thumbnailUrl": "https://i.ytimg.com/vi/BHPez138yX8/hqdefault.jpg"
+  },
+  {
+    "videoId": "hKhLj7bfDKk",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Tarjans Strongly Connected Components algorithm source code | Graph Theory",
+    "tier": 1,
+    "viewCount": 16854,
+    "durationSeconds": 411,
+    "thumbnailUrl": "https://i.ytimg.com/vi/hKhLj7bfDKk/hqdefault.jpg"
+  },
+  {
+    "videoId": "QQ3jO1dKjYQ",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Eulerian Path Algorithm | Graph Theory | Source Code",
+    "tier": 1,
+    "viewCount": 16343,
+    "durationSeconds": 505,
+    "thumbnailUrl": "https://i.ytimg.com/vi/QQ3jO1dKjYQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "0dTrKG5UK9k",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Floyd Warshall All Pairs Shortest Path Algorithm | Graph Theory | Dynamic Programming | Source Code",
+    "tier": 1,
+    "viewCount": 16189,
+    "durationSeconds": 556,
+    "thumbnailUrl": "https://i.ytimg.com/vi/0dTrKG5UK9k/hqdefault.jpg"
+  },
+  {
+    "videoId": "40Jx-at2P5k",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Identifying Isomorphic Trees | Source Code | Graph Theory",
+    "tier": 1,
+    "viewCount": 15851,
+    "durationSeconds": 603,
+    "thumbnailUrl": "https://i.ytimg.com/vi/40Jx-at2P5k/hqdefault.jpg"
+  },
+  {
+    "videoId": "B-BkW9ZpKKM",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Fenwick Tree point updates",
+    "tier": 1,
+    "viewCount": 15620,
+    "durationSeconds": 276,
+    "thumbnailUrl": "https://i.ytimg.com/vi/B-BkW9ZpKKM/hqdefault.jpg"
+  },
+  {
+    "videoId": "L1x3an2pl3U",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Tiling problems [2/2] | Dynamic Programming",
+    "tier": 1,
+    "viewCount": 15540,
+    "durationSeconds": 938,
+    "thumbnailUrl": "https://i.ytimg.com/vi/L1x3an2pl3U/hqdefault.jpg"
+  },
+  {
+    "videoId": "piKq7gvOPS8",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Graph Theory 1 [Programming Competition Problems]",
+    "tier": 1,
+    "viewCount": 15398,
+    "durationSeconds": 1201,
+    "thumbnailUrl": "https://i.ytimg.com/vi/piKq7gvOPS8/hqdefault.jpg"
+  },
+  {
+    "videoId": "_SdF4KK_dyM",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Dinic's Algorithm | Network Flow | Source Code",
+    "tier": 1,
+    "viewCount": 14338,
+    "durationSeconds": 572,
+    "thumbnailUrl": "https://i.ytimg.com/vi/_SdF4KK_dyM/hqdefault.jpg"
+  },
+  {
+    "videoId": "rA7JJG7x9vs",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Lowest Common Ancestor (LCA) Problem |  Source Code",
+    "tier": 1,
+    "viewCount": 13964,
+    "durationSeconds": 413,
+    "thumbnailUrl": "https://i.ytimg.com/vi/rA7JJG7x9vs/hqdefault.jpg"
+  },
+  {
+    "videoId": "DTLjHSToxmo",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Longest common substring problem suffix array part 2",
+    "tier": 1,
+    "viewCount": 13672,
+    "durationSeconds": 407,
+    "thumbnailUrl": "https://i.ytimg.com/vi/DTLjHSToxmo/hqdefault.jpg"
+  },
+  {
+    "videoId": "uoZODz9rkT0",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Java Fractal Explorer [1/8]",
+    "tier": 1,
+    "viewCount": 12782,
+    "durationSeconds": 1038,
+    "thumbnailUrl": "https://i.ytimg.com/vi/uoZODz9rkT0/hqdefault.jpg"
+  },
+  {
+    "videoId": "pPgBZqY_Xh0",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Mountain Scenes | Dynamic Programming",
+    "tier": 1,
+    "viewCount": 11387,
+    "durationSeconds": 942,
+    "thumbnailUrl": "https://i.ytimg.com/vi/pPgBZqY_Xh0/hqdefault.jpg"
+  },
+  {
+    "videoId": "tIthmhm8xKc",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Recursive multiplication | Recursion series",
+    "tier": 1,
+    "viewCount": 11322,
+    "durationSeconds": 490,
+    "thumbnailUrl": "https://i.ytimg.com/vi/tIthmhm8xKc/hqdefault.jpg"
+  },
+  {
+    "videoId": "eer6yW4S4Ts",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Hash table open addressing code",
+    "tier": 1,
+    "viewCount": 11019,
+    "durationSeconds": 882,
+    "thumbnailUrl": "https://i.ytimg.com/vi/eer6yW4S4Ts/hqdefault.jpg"
+  },
+  {
+    "videoId": "oQQO_n57SB0",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Narrow Art Gallery | Dynamic Programming",
+    "tier": 1,
+    "viewCount": 10625,
+    "durationSeconds": 1251,
+    "thumbnailUrl": "https://i.ytimg.com/vi/oQQO_n57SB0/hqdefault.jpg"
+  },
+  {
+    "videoId": "eHSQjEtVUGA",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Fenwick tree source code",
+    "tier": 1,
+    "viewCount": 10369,
+    "durationSeconds": 342,
+    "thumbnailUrl": "https://i.ytimg.com/vi/eHSQjEtVUGA/hqdefault.jpg"
+  },
+  {
+    "videoId": "e0dlDKjrEIw",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Grid Problems 1 [Programming Competition Problems]",
+    "tier": 1,
+    "viewCount": 8533,
+    "durationSeconds": 1349,
+    "thumbnailUrl": "https://i.ytimg.com/vi/e0dlDKjrEIw/hqdefault.jpg"
+  },
+  {
+    "videoId": "n1AUAP7FdXI",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Strings & Palindromes | Recursion Series",
+    "tier": 1,
+    "viewCount": 8277,
+    "durationSeconds": 584,
+    "thumbnailUrl": "https://i.ytimg.com/vi/n1AUAP7FdXI/hqdefault.jpg"
+  },
+  {
+    "videoId": "JBFFWnZIPx8",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Loops and wrapper functions | Recursion Series",
+    "tier": 1,
+    "viewCount": 7863,
+    "durationSeconds": 629,
+    "thumbnailUrl": "https://i.ytimg.com/vi/JBFFWnZIPx8/hqdefault.jpg"
+  },
+  {
+    "videoId": "rGdDSi4S0pY",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Dynamic Programming 1 [Programming Competition Problems]",
+    "tier": 1,
+    "viewCount": 7674,
+    "durationSeconds": 939,
+    "thumbnailUrl": "https://i.ytimg.com/vi/rGdDSi4S0pY/hqdefault.jpg"
+  },
+  {
+    "videoId": "_RaIpPQ5aP8",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Multiple Return Values: Unlocking the Power of Recursive Functions | Recursion Series",
+    "tier": 1,
+    "viewCount": 7671,
+    "durationSeconds": 770,
+    "thumbnailUrl": "https://i.ytimg.com/vi/_RaIpPQ5aP8/hqdefault.jpg"
+  },
+  {
+    "videoId": "ESRJgwbwzf4",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Sparse Table Data Structure | Source Code",
+    "tier": 1,
+    "viewCount": 7413,
+    "durationSeconds": 436,
+    "thumbnailUrl": "https://i.ytimg.com/vi/ESRJgwbwzf4/hqdefault.jpg"
+  },
+  {
+    "videoId": "0Kafy_Mpap0",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "JES Image Manipulation - 3 - User Interface",
+    "tier": 1,
+    "viewCount": 7185,
+    "durationSeconds": 467,
+    "thumbnailUrl": "https://i.ytimg.com/vi/0Kafy_Mpap0/hqdefault.jpg"
+  },
+  {
+    "videoId": "hZqiLIaIEFg",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Capacity Scaling | Network Flow | Source Code",
+    "tier": 1,
+    "viewCount": 6842,
+    "durationSeconds": 387,
+    "thumbnailUrl": "https://i.ytimg.com/vi/hZqiLIaIEFg/hqdefault.jpg"
+  },
+  {
+    "videoId": "wuuiiGg_2x0",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Indexed Priority Queue | Data Structure | Source Code",
+    "tier": 1,
+    "viewCount": 6504,
+    "durationSeconds": 514,
+    "thumbnailUrl": "https://i.ytimg.com/vi/wuuiiGg_2x0/hqdefault.jpg"
+  },
+  {
+    "videoId": "bC7PYm9s1Vc",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "String Manipulation 2 [Programming Competition Problems]",
+    "tier": 1,
+    "viewCount": 6288,
+    "durationSeconds": 987,
+    "thumbnailUrl": "https://i.ytimg.com/vi/bC7PYm9s1Vc/hqdefault.jpg"
+  },
+  {
+    "videoId": "CI5Fvk-dGVs",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Eager Prim's Minimum Spanning Tree Algorithm | Source Code",
+    "tier": 1,
+    "viewCount": 6240,
+    "durationSeconds": 498,
+    "thumbnailUrl": "https://i.ytimg.com/vi/CI5Fvk-dGVs/hqdefault.jpg"
+  },
+  {
+    "videoId": "MFXqQwdqzNU",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "JES Image Manipulation - 4 - Grayscale",
+    "tier": 1,
+    "viewCount": 5792,
+    "durationSeconds": 1116,
+    "thumbnailUrl": "https://i.ytimg.com/vi/MFXqQwdqzNU/hqdefault.jpg"
+  },
+  {
+    "videoId": "PQIR2E-xva8",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Logic 1 [Programming Competition Problems]",
+    "tier": 1,
+    "viewCount": 5549,
+    "durationSeconds": 775,
+    "thumbnailUrl": "https://i.ytimg.com/vi/PQIR2E-xva8/hqdefault.jpg"
+  },
+  {
+    "videoId": "JxFcI_fNnik",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "JES Image Manipulation - 2 - Installation",
+    "tier": 1,
+    "viewCount": 4627,
+    "durationSeconds": 105,
+    "thumbnailUrl": "https://i.ytimg.com/vi/JxFcI_fNnik/hqdefault.jpg"
+  },
+  {
+    "videoId": "qkLPnSJ8YvQ",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "JES Image Manipulation - 9 - Blend",
+    "tier": 1,
+    "viewCount": 4371,
+    "durationSeconds": 608,
+    "thumbnailUrl": "https://i.ytimg.com/vi/qkLPnSJ8YvQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "pbnQCR1ieDI",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Java Fractal Explorer [2/8]",
+    "tier": 1,
+    "viewCount": 3771,
+    "durationSeconds": 437,
+    "thumbnailUrl": "https://i.ytimg.com/vi/pbnQCR1ieDI/hqdefault.jpg"
+  },
+  {
+    "videoId": "P-OrqfFnJow",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "JES Image Manipulation - 11  - Crop Image",
+    "tier": 1,
+    "viewCount": 2934,
+    "durationSeconds": 679,
+    "thumbnailUrl": "https://i.ytimg.com/vi/P-OrqfFnJow/hqdefault.jpg"
+  },
+  {
+    "videoId": "ESEoY50LCkM",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "JES Image Manipulation - 7 - Edge Detection",
+    "tier": 1,
+    "viewCount": 2887,
+    "durationSeconds": 1160,
+    "thumbnailUrl": "https://i.ytimg.com/vi/ESEoY50LCkM/hqdefault.jpg"
+  },
+  {
+    "videoId": "dD54lyheVuQ",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "JES Image Manipulation - 5 - Negative",
+    "tier": 1,
+    "viewCount": 2582,
+    "durationSeconds": 529,
+    "thumbnailUrl": "https://i.ytimg.com/vi/dD54lyheVuQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "HjyAwatH5GY",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "JES Image Manipulation - 12 - Mirroring Picture",
+    "tier": 1,
+    "viewCount": 2400,
+    "durationSeconds": 748,
+    "thumbnailUrl": "https://i.ytimg.com/vi/HjyAwatH5GY/hqdefault.jpg"
+  },
+  {
+    "videoId": "46qTUm2Aw00",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Java Fractal Explorer [3/8]",
+    "tier": 1,
+    "viewCount": 2367,
+    "durationSeconds": 371,
+    "thumbnailUrl": "https://i.ytimg.com/vi/46qTUm2Aw00/hqdefault.jpg"
+  },
+  {
+    "videoId": "dQPTe3X-owU",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Java Fractal Explorer [8/8]",
+    "tier": 1,
+    "viewCount": 2226,
+    "durationSeconds": 688,
+    "thumbnailUrl": "https://i.ytimg.com/vi/dQPTe3X-owU/hqdefault.jpg"
+  },
+  {
+    "videoId": "v5c7W_y8Vjs",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "JES Image Manipulation - 13 - Rotate90",
+    "tier": 1,
+    "viewCount": 2085,
+    "durationSeconds": 403,
+    "thumbnailUrl": "https://i.ytimg.com/vi/v5c7W_y8Vjs/hqdefault.jpg"
+  },
+  {
+    "videoId": "NXPfAeQSii4",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Java Fractal Explorer [4/8]",
+    "tier": 1,
+    "viewCount": 1940,
+    "durationSeconds": 547,
+    "thumbnailUrl": "https://i.ytimg.com/vi/NXPfAeQSii4/hqdefault.jpg"
+  },
+  {
+    "videoId": "I74L9eIaTGI",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "JES Image Manipulation - 15 - Swirl Effect",
+    "tier": 1,
+    "viewCount": 1823,
+    "durationSeconds": 973,
+    "thumbnailUrl": "https://i.ytimg.com/vi/I74L9eIaTGI/hqdefault.jpg"
+  },
+  {
+    "videoId": "jDBYquiAWm0",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Java Fractal Explorer [5/8]",
+    "tier": 1,
+    "viewCount": 1800,
+    "durationSeconds": 558,
+    "thumbnailUrl": "https://i.ytimg.com/vi/jDBYquiAWm0/hqdefault.jpg"
+  },
+  {
+    "videoId": "oVQdwN81vh4",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "JES Image Manipulation - 14 - Stretch picture",
+    "tier": 1,
+    "viewCount": 1494,
+    "durationSeconds": 1039,
+    "thumbnailUrl": "https://i.ytimg.com/vi/oVQdwN81vh4/hqdefault.jpg"
+  },
+  {
+    "videoId": "6D5Ei2tWc6o",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "JES Image Manipulation - 6 - Black & White",
+    "tier": 1,
+    "viewCount": 1479,
+    "durationSeconds": 459,
+    "thumbnailUrl": "https://i.ytimg.com/vi/6D5Ei2tWc6o/hqdefault.jpg"
+  },
+  {
+    "videoId": "D5Ewx012Erk",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Java Fractal Explorer [6/8]",
+    "tier": 1,
+    "viewCount": 1449,
+    "durationSeconds": 632,
+    "thumbnailUrl": "https://i.ytimg.com/vi/D5Ewx012Erk/hqdefault.jpg"
+  },
+  {
+    "videoId": "8iIPlNNUWfc",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "JES Image Manipulation - 8 - Blur",
+    "tier": 1,
+    "viewCount": 1246,
+    "durationSeconds": 812,
+    "thumbnailUrl": "https://i.ytimg.com/vi/8iIPlNNUWfc/hqdefault.jpg"
+  },
+  {
+    "videoId": "rjRqoeZBvno",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "Java Fractal Explorer [7/8]",
+    "tier": 1,
+    "viewCount": 1240,
+    "durationSeconds": 589,
+    "thumbnailUrl": "https://i.ytimg.com/vi/rjRqoeZBvno/hqdefault.jpg"
+  },
+  {
+    "videoId": "VDLtawZt8wk",
+    "channelId": "UCD8yeTczadqdARzQUp29PJw",
+    "channelName": "William Fiset",
+    "title": "JES Image Manipulation - 10 - Matte",
+    "tier": 1,
+    "viewCount": 1160,
+    "durationSeconds": 312,
+    "thumbnailUrl": "https://i.ytimg.com/vi/VDLtawZt8wk/hqdefault.jpg"
+  },
+  {
+    "videoId": "aircAruvnKk",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "But what is a neural network? | Deep learning chapter 1",
+    "tier": 2,
+    "viewCount": 22239732,
+    "durationSeconds": 1120,
+    "thumbnailUrl": "https://i.ytimg.com/vi/aircAruvnKk/hqdefault.jpg"
+  },
+  {
+    "videoId": "wjZofJX0v4M",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Transformers, the tech behind LLMs | Deep Learning Chapter 5",
+    "tier": 2,
+    "viewCount": 9231723,
+    "durationSeconds": 1634,
+    "thumbnailUrl": "https://i.ytimg.com/vi/wjZofJX0v4M/hqdefault.jpg"
+  },
+  {
+    "videoId": "IHZwWFHWa-w",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Gradient descent, how neural networks learn | Deep Learning Chapter 2",
+    "tier": 2,
+    "viewCount": 8719057,
+    "durationSeconds": 1233,
+    "thumbnailUrl": "https://i.ytimg.com/vi/IHZwWFHWa-w/hqdefault.jpg"
+  },
+  {
+    "videoId": "Ilg3gGewQ5U",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Backpropagation, intuitively | Deep Learning Chapter 3",
+    "tier": 2,
+    "viewCount": 5783943,
+    "durationSeconds": 767,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Ilg3gGewQ5U/hqdefault.jpg"
+  },
+  {
+    "videoId": "eMlx5fFNoYc",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Attention in transformers, step-by-step | Deep Learning Chapter 6",
+    "tier": 2,
+    "viewCount": 3705236,
+    "durationSeconds": 1570,
+    "thumbnailUrl": "https://i.ytimg.com/vi/eMlx5fFNoYc/hqdefault.jpg"
+  },
+  {
+    "videoId": "r6sGWTCMz2k",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "But what is a Fourier series?  From heat flow to drawing with circles | DE4",
+    "tier": 2,
+    "viewCount": 18656169,
+    "durationSeconds": 1487,
+    "thumbnailUrl": "https://i.ytimg.com/vi/r6sGWTCMz2k/hqdefault.jpg"
+  },
+  {
+    "videoId": "bBC-nXj3Ng4",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "But how does bitcoin actually work?",
+    "tier": 2,
+    "viewCount": 17783055,
+    "durationSeconds": 1516,
+    "thumbnailUrl": "https://i.ytimg.com/vi/bBC-nXj3Ng4/hqdefault.jpg"
+  },
+  {
+    "videoId": "OkmNXy7er84",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "The hardest problem on the hardest test",
+    "tier": 2,
+    "viewCount": 16327224,
+    "durationSeconds": 675,
+    "thumbnailUrl": "https://i.ytimg.com/vi/OkmNXy7er84/hqdefault.jpg"
+  },
+  {
+    "videoId": "HEfHFsfGXjs",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "The most unexpected answer to a counting puzzle",
+    "tier": 2,
+    "viewCount": 14208682,
+    "durationSeconds": 313,
+    "thumbnailUrl": "https://i.ytimg.com/vi/HEfHFsfGXjs/hqdefault.jpg"
+  },
+  {
+    "videoId": "spUNpyF58BY",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "But what is the Fourier Transform?  A visual introduction.",
+    "tier": 2,
+    "viewCount": 11864940,
+    "durationSeconds": 1182,
+    "thumbnailUrl": "https://i.ytimg.com/vi/spUNpyF58BY/hqdefault.jpg"
+  },
+  {
+    "videoId": "v68zYyaEmEA",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Solving Wordle using information theory",
+    "tier": 2,
+    "viewCount": 11564821,
+    "durationSeconds": 1838,
+    "thumbnailUrl": "https://i.ytimg.com/vi/v68zYyaEmEA/hqdefault.jpg"
+  },
+  {
+    "videoId": "fNk_zzaMoSs",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Vectors | Chapter 1, Essence of linear algebra",
+    "tier": 2,
+    "viewCount": 11153744,
+    "durationSeconds": 592,
+    "thumbnailUrl": "https://i.ytimg.com/vi/fNk_zzaMoSs/hqdefault.jpg"
+  },
+  {
+    "videoId": "WUvTyaaNkzM",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "The essence of calculus",
+    "tier": 2,
+    "viewCount": 10875383,
+    "durationSeconds": 1025,
+    "thumbnailUrl": "https://i.ytimg.com/vi/WUvTyaaNkzM/hqdefault.jpg"
+  },
+  {
+    "videoId": "GNcFjFmqEc8",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "But why is a sphere's surface area four times its shadow?",
+    "tier": 2,
+    "viewCount": 8632826,
+    "durationSeconds": 951,
+    "thumbnailUrl": "https://i.ytimg.com/vi/GNcFjFmqEc8/hqdefault.jpg"
+  },
+  {
+    "videoId": "EK32jo7i5LQ",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Why do prime numbers make these spirals? | Dirichlet\u2019s theorem and pi approximations",
+    "tier": 2,
+    "viewCount": 7307543,
+    "durationSeconds": 1341,
+    "thumbnailUrl": "https://i.ytimg.com/vi/EK32jo7i5LQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "d-o3eB9sfls",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Why is pi here?  And why is it squared?  A geometric answer to the Basel problem",
+    "tier": 2,
+    "viewCount": 7099765,
+    "durationSeconds": 1028,
+    "thumbnailUrl": "https://i.ytimg.com/vi/d-o3eB9sfls/hqdefault.jpg"
+  },
+  {
+    "videoId": "k7RM-ot2NWY",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Linear combinations, span, and basis vectors | Chapter 2, Essence of linear algebra",
+    "tier": 2,
+    "viewCount": 6824780,
+    "durationSeconds": 599,
+    "thumbnailUrl": "https://i.ytimg.com/vi/k7RM-ot2NWY/hqdefault.jpg"
+  },
+  {
+    "videoId": "fRed0Xmc2Wg",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Oh, wait, actually the best Wordle opener is not \u201ccrane\u201d\u2026",
+    "tier": 2,
+    "viewCount": 6590180,
+    "durationSeconds": 653,
+    "thumbnailUrl": "https://i.ytimg.com/vi/fRed0Xmc2Wg/hqdefault.jpg"
+  },
+  {
+    "videoId": "kYB8IZa5AuE",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Linear transformations and matrices | Chapter 3, Essence of linear algebra",
+    "tier": 2,
+    "viewCount": 6551508,
+    "durationSeconds": 659,
+    "thumbnailUrl": "https://i.ytimg.com/vi/kYB8IZa5AuE/hqdefault.jpg"
+  },
+  {
+    "videoId": "EmKQsSDlaa4",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "How are holograms possible?",
+    "tier": 2,
+    "viewCount": 6123804,
+    "durationSeconds": 2784,
+    "thumbnailUrl": "https://i.ytimg.com/vi/EmKQsSDlaa4/hqdefault.jpg"
+  },
+  {
+    "videoId": "Kas0tIxDvrg",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Exponential growth and epidemics",
+    "tier": 2,
+    "viewCount": 6010441,
+    "durationSeconds": 537,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Kas0tIxDvrg/hqdefault.jpg"
+  },
+  {
+    "videoId": "PFDu9oVAE-g",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Eigenvectors and eigenvalues | Chapter 14, Essence of linear algebra",
+    "tier": 2,
+    "viewCount": 5921605,
+    "durationSeconds": 1036,
+    "thumbnailUrl": "https://i.ytimg.com/vi/PFDu9oVAE-g/hqdefault.jpg"
+  },
+  {
+    "videoId": "HZGCoVF3YvM",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Bayes theorem, the geometry of changing beliefs",
+    "tier": 2,
+    "viewCount": 5584352,
+    "durationSeconds": 911,
+    "thumbnailUrl": "https://i.ytimg.com/vi/HZGCoVF3YvM/hqdefault.jpg"
+  },
+  {
+    "videoId": "M64HUIJFTZM",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "The unexpectedly hard windmill question (2011 IMO, Q2)",
+    "tier": 2,
+    "viewCount": 5521563,
+    "durationSeconds": 963,
+    "thumbnailUrl": "https://i.ytimg.com/vi/M64HUIJFTZM/hqdefault.jpg"
+  },
+  {
+    "videoId": "p_di4Zn4wz4",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Differential equations, a tourist's guide | DE1",
+    "tier": 2,
+    "viewCount": 5423396,
+    "durationSeconds": 1636,
+    "thumbnailUrl": "https://i.ytimg.com/vi/p_di4Zn4wz4/hqdefault.jpg"
+  },
+  {
+    "videoId": "d4EgbgTm0Bg",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Visualizing the 4d numbers Quaternions",
+    "tier": 2,
+    "viewCount": 5301388,
+    "durationSeconds": 1911,
+    "thumbnailUrl": "https://i.ytimg.com/vi/d4EgbgTm0Bg/hqdefault.jpg"
+  },
+  {
+    "videoId": "gxAaO2rsdIs",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Simulating an epidemic",
+    "tier": 2,
+    "viewCount": 5206781,
+    "durationSeconds": 1392,
+    "thumbnailUrl": "https://i.ytimg.com/vi/gxAaO2rsdIs/hqdefault.jpg"
+  },
+  {
+    "videoId": "LPZh9BOjkQs",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Large Language Models explained briefly",
+    "tier": 2,
+    "viewCount": 5190321,
+    "durationSeconds": 478,
+    "thumbnailUrl": "https://i.ytimg.com/vi/LPZh9BOjkQs/hqdefault.jpg"
+  },
+  {
+    "videoId": "sD0NjbwqlYw",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "But what is the Riemann zeta function? Visualizing analytic continuation",
+    "tier": 2,
+    "viewCount": 5128151,
+    "durationSeconds": 1331,
+    "thumbnailUrl": "https://i.ytimg.com/vi/sD0NjbwqlYw/hqdefault.jpg"
+  },
+  {
+    "videoId": "6dTyOl1fmDo",
+    "channelId": "UCYO_jab_esuFRV4b17AJtAw",
+    "channelName": "3Blue1Brown",
+    "title": "Why colliding blocks compute pi",
+    "tier": 2,
+    "viewCount": 5087699,
+    "durationSeconds": 1567,
+    "thumbnailUrl": "https://i.ytimg.com/vi/6dTyOl1fmDo/hqdefault.jpg"
+  },
+  {
+    "videoId": "axuGfh4UR9Q",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "The ghost in the machine.",
+    "tier": 2,
+    "viewCount": 947868,
+    "durationSeconds": 13011,
+    "thumbnailUrl": "https://i.ytimg.com/vi/axuGfh4UR9Q/hqdefault.jpg"
+  },
+  {
+    "videoId": "sJXn4Cl4oww",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "This is why Deep Learning is really weird.",
+    "tier": 2,
+    "viewCount": 639337,
+    "durationSeconds": 7598,
+    "thumbnailUrl": "https://i.ytimg.com/vi/sJXn4Cl4oww/hqdefault.jpg"
+  },
+  {
+    "videoId": "URtF_UHYBSo",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "The Elegant Math Behind Machine Learning",
+    "tier": 2,
+    "viewCount": 529083,
+    "durationSeconds": 6792,
+    "thumbnailUrl": "https://i.ytimg.com/vi/URtF_UHYBSo/hqdefault.jpg"
+  },
+  {
+    "videoId": "dkpDjd2nHgo",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "Mystery of Entropy FINALLY Solved After 50 Years? (STEPHEN WOLFRAM)",
+    "tier": 2,
+    "viewCount": 496988,
+    "durationSeconds": 5047,
+    "thumbnailUrl": "https://i.ytimg.com/vi/dkpDjd2nHgo/hqdefault.jpg"
+  },
+  {
+    "videoId": "z5WZhCBRDpU",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "CHATGPT won't ever be the same again after this",
+    "tier": 2,
+    "viewCount": 475449,
+    "durationSeconds": 3265,
+    "thumbnailUrl": "https://i.ytimg.com/vi/z5WZhCBRDpU/hqdefault.jpg"
+  },
+  {
+    "videoId": "bIZB1hIJ4u8",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "GEOMETRIC DEEP LEARNING BLUEPRINT",
+    "tier": 2,
+    "viewCount": 412401,
+    "durationSeconds": 12803,
+    "thumbnailUrl": "https://i.ytimg.com/vi/bIZB1hIJ4u8/hqdefault.jpg"
+  },
+  {
+    "videoId": "iccd86vOz3w",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "WE GOT ACCESS TO GPT-3! [Epic Special Edition]",
+    "tier": 2,
+    "viewCount": 393564,
+    "durationSeconds": 14237,
+    "thumbnailUrl": "https://i.ytimg.com/vi/iccd86vOz3w/hqdefault.jpg"
+  },
+  {
+    "videoId": "I7J67JOkIbI",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "This is what DeepMind just did to Football with AI...",
+    "tier": 2,
+    "viewCount": 225209,
+    "durationSeconds": 1151,
+    "thumbnailUrl": "https://i.ytimg.com/vi/I7J67JOkIbI/hqdefault.jpg"
+  },
+  {
+    "videoId": "Bpgloy1dDn0",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "Mapping GPT revealed something strange...",
+    "tier": 2,
+    "viewCount": 212839,
+    "durationSeconds": 4154,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Bpgloy1dDn0/hqdefault.jpg"
+  },
+  {
+    "videoId": "86ib0sfdFtw",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "#61: Prof. YANN LECUN: Interpolation, Extrapolation and Linearisation (w/ Dr. Randall Balestriero)",
+    "tier": 2,
+    "viewCount": 170494,
+    "durationSeconds": 11984,
+    "thumbnailUrl": "https://i.ytimg.com/vi/86ib0sfdFtw/hqdefault.jpg"
+  },
+  {
+    "videoId": "lhYGXYeMq_E",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "#038 - Prof. KENNETH STANLEY - Why Greatness Cannot Be Planned",
+    "tier": 2,
+    "viewCount": 151708,
+    "durationSeconds": 9987,
+    "thumbnailUrl": "https://i.ytimg.com/vi/lhYGXYeMq_E/hqdefault.jpg"
+  },
+  {
+    "videoId": "RJcMKH6ua44",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "How he built a $450M Startup | Chai AI",
+    "tier": 2,
+    "viewCount": 141137,
+    "durationSeconds": 1771,
+    "thumbnailUrl": "https://i.ytimg.com/vi/RJcMKH6ua44/hqdefault.jpg"
+  },
+  {
+    "videoId": "3MkJEGE9GRY",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "Joscha Bach - Why Your Thoughts Aren't Yours.",
+    "tier": 2,
+    "viewCount": 139083,
+    "durationSeconds": 6766,
+    "thumbnailUrl": "https://i.ytimg.com/vi/3MkJEGE9GRY/hqdefault.jpg"
+  },
+  {
+    "videoId": "_Ygf0GnlwmY",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "Mechanistic Interpretability - NEEL NANDA (DeepMind)",
+    "tier": 2,
+    "viewCount": 138635,
+    "durationSeconds": 14264,
+    "thumbnailUrl": "https://i.ytimg.com/vi/_Ygf0GnlwmY/hqdefault.jpg"
+  },
+  {
+    "videoId": "V_VXOdf1NMw",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "KARL FRISTON - INTELLIGENCE 3.0",
+    "tier": 2,
+    "viewCount": 135148,
+    "durationSeconds": 10761,
+    "thumbnailUrl": "https://i.ytimg.com/vi/V_VXOdf1NMw/hqdefault.jpg"
+  },
+  {
+    "videoId": "kuvFoXzTK3E",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "Prof. Chris Bishop's NEW Deep Learning Textbook!",
+    "tier": 2,
+    "viewCount": 129386,
+    "durationSeconds": 4980,
+    "thumbnailUrl": "https://i.ytimg.com/vi/kuvFoXzTK3E/hqdefault.jpg"
+  },
+  {
+    "videoId": "IMnWAuoucjo",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "#88 Dr. WALID SABA - Why machines will never rule the world [UNPLUGGED]",
+    "tier": 2,
+    "viewCount": 128118,
+    "durationSeconds": 4920,
+    "thumbnailUrl": "https://i.ytimg.com/vi/IMnWAuoucjo/hqdefault.jpg"
+  },
+  {
+    "videoId": "xjH2B_sE_RQ",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "YUDKOWSKY + WOLFRAM ON AI RISK.",
+    "tier": 2,
+    "viewCount": 127231,
+    "durationSeconds": 15428,
+    "thumbnailUrl": "https://i.ytimg.com/vi/xjH2B_sE_RQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "s7_NlkBwdj8",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "It's Not About Scale, It's About Abstraction",
+    "tier": 2,
+    "viewCount": 122421,
+    "durationSeconds": 2782,
+    "thumbnailUrl": "https://i.ytimg.com/vi/s7_NlkBwdj8/hqdefault.jpg"
+  },
+  {
+    "videoId": "YpFaPKOeNME",
+    "channelId": "UCMLtBahI5DMrt0NPvDSoIRQ",
+    "channelName": "ML Street Talk",
+    "title": "NEURAL NETWORKS ARE WEIRD! - Neel Nanda (DeepMind)",
+    "tier": 2,
+    "viewCount": 108625,
+    "durationSeconds": 13357,
+    "thumbnailUrl": "https://i.ytimg.com/vi/YpFaPKOeNME/hqdefault.jpg"
+  },
+  {
+    "videoId": "TQQlZhbC5ps",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Transformer Neural Networks - EXPLAINED! (Attention is all you need)",
+    "tier": 2,
+    "viewCount": 875145,
+    "durationSeconds": 785,
+    "thumbnailUrl": "https://i.ytimg.com/vi/TQQlZhbC5ps/hqdefault.jpg"
+  },
+  {
+    "videoId": "xI0HHN5XKDo",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "BERT Neural Network - EXPLAINED!",
+    "tier": 2,
+    "viewCount": 482345,
+    "durationSeconds": 697,
+    "thumbnailUrl": "https://i.ytimg.com/vi/xI0HHN5XKDo/hqdefault.jpg"
+  },
+  {
+    "videoId": "QciIcRxJvsM",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "LSTM Networks - EXPLAINED!",
+    "tier": 2,
+    "viewCount": 307727,
+    "durationSeconds": 972,
+    "thumbnailUrl": "https://i.ytimg.com/vi/QciIcRxJvsM/hqdefault.jpg"
+  },
+  {
+    "videoId": "K_EH2abOp00",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Linear Regression and Multiple Regression",
+    "tier": 2,
+    "viewCount": 230219,
+    "durationSeconds": 775,
+    "thumbnailUrl": "https://i.ytimg.com/vi/K_EH2abOp00/hqdefault.jpg"
+  },
+  {
+    "videoId": "W2rWgXJBZhU",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Attention in Neural Networks",
+    "tier": 2,
+    "viewCount": 205003,
+    "durationSeconds": 679,
+    "thumbnailUrl": "https://i.ytimg.com/vi/W2rWgXJBZhU/hqdefault.jpg"
+  },
+  {
+    "videoId": "wBVSbVktLIY",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "The Kernel Trick - THE MATH YOU SHOULD KNOW!",
+    "tier": 2,
+    "viewCount": 204128,
+    "durationSeconds": 450,
+    "thumbnailUrl": "https://i.ytimg.com/vi/wBVSbVktLIY/hqdefault.jpg"
+  },
+  {
+    "videoId": "IMj5dgGWxSM",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "History of Calculus - Animated",
+    "tier": 2,
+    "viewCount": 195020,
+    "durationSeconds": 403,
+    "thumbnailUrl": "https://i.ytimg.com/vi/IMj5dgGWxSM/hqdefault.jpg"
+  },
+  {
+    "videoId": "_ZQ-lQrK9Rg",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Time Series Forecasting with Machine Learning",
+    "tier": 2,
+    "viewCount": 185937,
+    "durationSeconds": 832,
+    "thumbnailUrl": "https://i.ytimg.com/vi/_ZQ-lQrK9Rg/hqdefault.jpg"
+  },
+  {
+    "videoId": "YMJtsYIp4kg",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Logistic Regression - THE MATH YOU SHOULD KNOW!",
+    "tier": 2,
+    "viewCount": 172539,
+    "durationSeconds": 554,
+    "thumbnailUrl": "https://i.ytimg.com/vi/YMJtsYIp4kg/hqdefault.jpg"
+  },
+  {
+    "videoId": "fcvYpzHmhvA",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Variational Autoencoders - EXPLAINED!",
+    "tier": 2,
+    "viewCount": 165868,
+    "durationSeconds": 1056,
+    "thumbnailUrl": "https://i.ytimg.com/vi/fcvYpzHmhvA/hqdefault.jpg"
+  },
+  {
+    "videoId": "4tkgOzQ9yyo",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Mask Region based Convolution Neural Networks - EXPLAINED!",
+    "tier": 2,
+    "viewCount": 163099,
+    "durationSeconds": 575,
+    "thumbnailUrl": "https://i.ytimg.com/vi/4tkgOzQ9yyo/hqdefault.jpg"
+  },
+  {
+    "videoId": "QBbC3Cjsnjg",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Loss Functions - EXPLAINED!",
+    "tier": 2,
+    "viewCount": 162345,
+    "durationSeconds": 510,
+    "thumbnailUrl": "https://i.ytimg.com/vi/QBbC3Cjsnjg/hqdefault.jpg"
+  },
+  {
+    "videoId": "05VABNfa1ds",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Support Vector Machines - THE MATH YOU  SHOULD KNOW",
+    "tier": 2,
+    "viewCount": 157179,
+    "durationSeconds": 681,
+    "thumbnailUrl": "https://i.ytimg.com/vi/05VABNfa1ds/hqdefault.jpg"
+  },
+  {
+    "videoId": "s-V7gKrsels",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Activation Functions - EXPLAINED!",
+    "tier": 2,
+    "viewCount": 152831,
+    "durationSeconds": 605,
+    "thumbnailUrl": "https://i.ytimg.com/vi/s-V7gKrsels/hqdefault.jpg"
+  },
+  {
+    "videoId": "mdKjMPmcWjY",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Optimizers - EXPLAINED!",
+    "tier": 2,
+    "viewCount": 146004,
+    "durationSeconds": 443,
+    "thumbnailUrl": "https://i.ytimg.com/vi/mdKjMPmcWjY/hqdefault.jpg"
+  },
+  {
+    "videoId": "QCJQG4DuHT0",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Self Attention in Transformer Neural Networks (with Code!)",
+    "tier": 2,
+    "viewCount": 140310,
+    "durationSeconds": 902,
+    "thumbnailUrl": "https://i.ytimg.com/vi/QCJQG4DuHT0/hqdefault.jpg"
+  },
+  {
+    "videoId": "DtEq44FTPM4",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Batch Normalization - EXPLAINED!",
+    "tier": 2,
+    "viewCount": 129898,
+    "durationSeconds": 529,
+    "thumbnailUrl": "https://i.ytimg.com/vi/DtEq44FTPM4/hqdefault.jpg"
+  },
+  {
+    "videoId": "T7o3xvJLuHk",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Depthwise Separable Convolution - A FASTER CONVOLUTION!",
+    "tier": 2,
+    "viewCount": 105724,
+    "durationSeconds": 763,
+    "thumbnailUrl": "https://i.ytimg.com/vi/T7o3xvJLuHk/hqdefault.jpg"
+  },
+  {
+    "videoId": "Od6oAz1Op2k",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Causal Inference - EXPLAINED!",
+    "tier": 2,
+    "viewCount": 100964,
+    "durationSeconds": 932,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Od6oAz1Op2k/hqdefault.jpg"
+  },
+  {
+    "videoId": "TiAXhVAZQl8",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Q-learning - Explained!",
+    "tier": 2,
+    "viewCount": 83647,
+    "durationSeconds": 714,
+    "thumbnailUrl": "https://i.ytimg.com/vi/TiAXhVAZQl8/hqdefault.jpg"
+  },
+  {
+    "videoId": "7mRfwaGGAPg",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Autoencoders - EXPLAINED",
+    "tier": 2,
+    "viewCount": 80093,
+    "durationSeconds": 653,
+    "thumbnailUrl": "https://i.ytimg.com/vi/7mRfwaGGAPg/hqdefault.jpg"
+  },
+  {
+    "videoId": "NpmnWgQgcsA",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "ChatGPT - Explained!",
+    "tier": 2,
+    "viewCount": 79507,
+    "durationSeconds": 628,
+    "thumbnailUrl": "https://i.ytimg.com/vi/NpmnWgQgcsA/hqdefault.jpg"
+  },
+  {
+    "videoId": "-eGJuwQ5A2o",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Likelihood Estimation - THE MATH YOU SHOULD KNOW!",
+    "tier": 2,
+    "viewCount": 73425,
+    "durationSeconds": 1669,
+    "thumbnailUrl": "https://i.ytimg.com/vi/-eGJuwQ5A2o/hqdefault.jpg"
+  },
+  {
+    "videoId": "gVehTbi6Ipc",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "Neural Voice Cloning",
+    "tier": 2,
+    "viewCount": 70333,
+    "durationSeconds": 1197,
+    "thumbnailUrl": "https://i.ytimg.com/vi/gVehTbi6Ipc/hqdefault.jpg"
+  },
+  {
+    "videoId": "rPFkX5fJdRY",
+    "channelId": "UC5_6ZD6s8klmMu9TXEB_1IA",
+    "channelName": "CodeEmporium",
+    "title": "[ 100k Special ] Transformers: Zero to Hero",
+    "tier": 2,
+    "viewCount": 67997,
+    "durationSeconds": 12881,
+    "thumbnailUrl": "https://i.ytimg.com/vi/rPFkX5fJdRY/hqdefault.jpg"
+  },
+  {
+    "videoId": "HMOI_lkzW08",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "StatQuest: PCA main ideas in only 5 minutes!!!",
+    "tier": 2,
+    "viewCount": 1560784,
+    "durationSeconds": 365,
+    "thumbnailUrl": "https://i.ytimg.com/vi/HMOI_lkzW08/hqdefault.jpg"
+  },
+  {
+    "videoId": "J4Wdy0Wc_xQ",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "StatQuest: Random Forests Part 1 - Building, Using and Evaluating",
+    "tier": 2,
+    "viewCount": 1392030,
+    "durationSeconds": 594,
+    "thumbnailUrl": "https://i.ytimg.com/vi/J4Wdy0Wc_xQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "FgakZw6K1QQ",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "StatQuest: Principal Component Analysis (PCA), Step-by-Step",
+    "tier": 2,
+    "viewCount": 3506986,
+    "durationSeconds": 1318,
+    "thumbnailUrl": "https://i.ytimg.com/vi/FgakZw6K1QQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "yIYKR4sgzI8",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "StatQuest: Logistic Regression",
+    "tier": 2,
+    "viewCount": 2652524,
+    "durationSeconds": 528,
+    "thumbnailUrl": "https://i.ytimg.com/vi/yIYKR4sgzI8/hqdefault.jpg"
+  },
+  {
+    "videoId": "4b5d3muPQmA",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "StatQuest: K-means clustering",
+    "tier": 2,
+    "viewCount": 2098633,
+    "durationSeconds": 511,
+    "thumbnailUrl": "https://i.ytimg.com/vi/4b5d3muPQmA/hqdefault.jpg"
+  },
+  {
+    "videoId": "rzFX5NWojp0",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "The Normal Distribution, Clearly Explained!!!",
+    "tier": 2,
+    "viewCount": 1940379,
+    "durationSeconds": 313,
+    "thumbnailUrl": "https://i.ytimg.com/vi/rzFX5NWojp0/hqdefault.jpg"
+  },
+  {
+    "videoId": "4jRBRDbJemM",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "ROC and AUC, Clearly Explained!",
+    "tier": 2,
+    "viewCount": 1865374,
+    "durationSeconds": 977,
+    "thumbnailUrl": "https://i.ytimg.com/vi/4jRBRDbJemM/hqdefault.jpg"
+  },
+  {
+    "videoId": "sDv4f4s2SB8",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Gradient Descent, Step-by-Step",
+    "tier": 2,
+    "viewCount": 1743868,
+    "durationSeconds": 1434,
+    "thumbnailUrl": "https://i.ytimg.com/vi/sDv4f4s2SB8/hqdefault.jpg"
+  },
+  {
+    "videoId": "XepXtl9YKwc",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Maximum Likelihood, clearly explained!!!",
+    "tier": 2,
+    "viewCount": 1706401,
+    "durationSeconds": 372,
+    "thumbnailUrl": "https://i.ytimg.com/vi/XepXtl9YKwc/hqdefault.jpg"
+  },
+  {
+    "videoId": "efR1C6CvhmE",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Support Vector Machines Part 1 (of 3): Main Ideas!!!",
+    "tier": 2,
+    "viewCount": 1695507,
+    "durationSeconds": 1232,
+    "thumbnailUrl": "https://i.ytimg.com/vi/efR1C6CvhmE/hqdefault.jpg"
+  },
+  {
+    "videoId": "EuBBz3bI-aA",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Machine Learning Fundamentals: Bias and Variance",
+    "tier": 2,
+    "viewCount": 1643702,
+    "durationSeconds": 396,
+    "thumbnailUrl": "https://i.ytimg.com/vi/EuBBz3bI-aA/hqdefault.jpg"
+  },
+  {
+    "videoId": "nk2CQITm_eo",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Linear Regression, Clearly Explained!!!",
+    "tier": 2,
+    "viewCount": 1556606,
+    "durationSeconds": 1647,
+    "thumbnailUrl": "https://i.ytimg.com/vi/nk2CQITm_eo/hqdefault.jpg"
+  },
+  {
+    "videoId": "pYxNSUDSFH4",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "In Statistics, Probability is not Likelihood.",
+    "tier": 2,
+    "viewCount": 1520306,
+    "durationSeconds": 301,
+    "thumbnailUrl": "https://i.ytimg.com/vi/pYxNSUDSFH4/hqdefault.jpg"
+  },
+  {
+    "videoId": "Gv9_4yMHFhI",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "A Gentle Introduction to Machine Learning",
+    "tier": 2,
+    "viewCount": 1473676,
+    "durationSeconds": 765,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Gv9_4yMHFhI/hqdefault.jpg"
+  },
+  {
+    "videoId": "vemZtEM63GY",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "p-values: What they are and how to interpret them",
+    "tier": 2,
+    "viewCount": 1455312,
+    "durationSeconds": 681,
+    "thumbnailUrl": "https://i.ytimg.com/vi/vemZtEM63GY/hqdefault.jpg"
+  },
+  {
+    "videoId": "fSytzGwwBVw",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Machine Learning Fundamentals: Cross Validation",
+    "tier": 2,
+    "viewCount": 1400991,
+    "durationSeconds": 365,
+    "thumbnailUrl": "https://i.ytimg.com/vi/fSytzGwwBVw/hqdefault.jpg"
+  },
+  {
+    "videoId": "Q81RR3yKn30",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Regularization Part 1: Ridge (L2) Regression",
+    "tier": 2,
+    "viewCount": 1334564,
+    "durationSeconds": 1227,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Q81RR3yKn30/hqdefault.jpg"
+  },
+  {
+    "videoId": "O2L2Uv9pdDA",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Naive Bayes, Clearly Explained!!!",
+    "tier": 2,
+    "viewCount": 1334386,
+    "durationSeconds": 912,
+    "thumbnailUrl": "https://i.ytimg.com/vi/O2L2Uv9pdDA/hqdefault.jpg"
+  },
+  {
+    "videoId": "CqOfi41LfDw",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "The Essential Main Ideas of Neural Networks",
+    "tier": 2,
+    "viewCount": 1299509,
+    "durationSeconds": 1134,
+    "thumbnailUrl": "https://i.ytimg.com/vi/CqOfi41LfDw/hqdefault.jpg"
+  },
+  {
+    "videoId": "_L39rN6gz7Y",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Decision and Classification Trees, Clearly Explained!!!",
+    "tier": 2,
+    "viewCount": 1154415,
+    "durationSeconds": 1088,
+    "thumbnailUrl": "https://i.ytimg.com/vi/_L39rN6gz7Y/hqdefault.jpg"
+  },
+  {
+    "videoId": "zxQyTK8quyY",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Transformer Neural Networks, ChatGPT's foundation, Clearly Explained!!!",
+    "tier": 2,
+    "viewCount": 1080278,
+    "durationSeconds": 2175,
+    "thumbnailUrl": "https://i.ytimg.com/vi/zxQyTK8quyY/hqdefault.jpg"
+  },
+  {
+    "videoId": "vN5cNN2-HWE",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Logistic Regression Details Pt1: Coefficients",
+    "tier": 2,
+    "viewCount": 1049141,
+    "durationSeconds": 1142,
+    "thumbnailUrl": "https://i.ytimg.com/vi/vN5cNN2-HWE/hqdefault.jpg"
+  },
+  {
+    "videoId": "_UVHneBUBW0",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Principal Component Analysis (PCA) clearly explained (2015)",
+    "tier": 2,
+    "viewCount": 1047725,
+    "durationSeconds": 1216,
+    "thumbnailUrl": "https://i.ytimg.com/vi/_UVHneBUBW0/hqdefault.jpg"
+  },
+  {
+    "videoId": "YAlJCEDH2uY",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "The Central Limit Theorem, Clearly Explained!!!",
+    "tier": 2,
+    "viewCount": 1046217,
+    "durationSeconds": 455,
+    "thumbnailUrl": "https://i.ytimg.com/vi/YAlJCEDH2uY/hqdefault.jpg"
+  },
+  {
+    "videoId": "3CC4N4z3GJc",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Gradient Boost Part 1 (of 4): Regression Main Ideas",
+    "tier": 2,
+    "viewCount": 1003558,
+    "durationSeconds": 952,
+    "thumbnailUrl": "https://i.ytimg.com/vi/3CC4N4z3GJc/hqdefault.jpg"
+  },
+  {
+    "videoId": "qBigTkBLU6g",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "StatQuest: Histograms, Clearly Explained",
+    "tier": 2,
+    "viewCount": 965501,
+    "durationSeconds": 222,
+    "thumbnailUrl": "https://i.ytimg.com/vi/qBigTkBLU6g/hqdefault.jpg"
+  },
+  {
+    "videoId": "YCzL96nL7j0",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Long Short-Term Memory (LSTM), Clearly Explained",
+    "tier": 2,
+    "viewCount": 925506,
+    "durationSeconds": 1245,
+    "thumbnailUrl": "https://i.ytimg.com/vi/YCzL96nL7j0/hqdefault.jpg"
+  },
+  {
+    "videoId": "AsNTP8Kwu80",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Recurrent Neural Networks (RNNs), Clearly Explained!!!",
+    "tier": 2,
+    "viewCount": 921159,
+    "durationSeconds": 997,
+    "thumbnailUrl": "https://i.ytimg.com/vi/AsNTP8Kwu80/hqdefault.jpg"
+  },
+  {
+    "videoId": "LsK-xG1cLYA",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "AdaBoost, Clearly Explained",
+    "tier": 2,
+    "viewCount": 912265,
+    "durationSeconds": 1254,
+    "thumbnailUrl": "https://i.ytimg.com/vi/LsK-xG1cLYA/hqdefault.jpg"
+  },
+  {
+    "videoId": "Kdsp6soqA7o",
+    "channelId": "UCtYLUTtgS3k1Fg4y5tAhLbw",
+    "channelName": "StatQuest",
+    "title": "Machine Learning Fundamentals: The Confusion Matrix",
+    "tier": 2,
+    "viewCount": 905113,
+    "durationSeconds": 433,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Kdsp6soqA7o/hqdefault.jpg"
+  },
+  {
+    "videoId": "uxPdPpi5W4o",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "Why Are 96,000,000 Black Balls on This Reservoir?",
+    "tier": 2,
+    "viewCount": 109805509,
+    "durationSeconds": 727,
+    "thumbnailUrl": "https://i.ytimg.com/vi/uxPdPpi5W4o/hqdefault.jpg"
+  },
+  {
+    "videoId": "4Wrc4fHSCpw",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "These are the asteroids to worry about",
+    "tier": 2,
+    "viewCount": 80449156,
+    "durationSeconds": 1206,
+    "thumbnailUrl": "https://i.ytimg.com/vi/4Wrc4fHSCpw/hqdefault.jpg"
+  },
+  {
+    "videoId": "AeJ9q45PfD0",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "World's Lightest Solid!",
+    "tier": 2,
+    "viewCount": 61850893,
+    "durationSeconds": 722,
+    "thumbnailUrl": "https://i.ytimg.com/vi/AeJ9q45PfD0/hqdefault.jpg"
+  },
+  {
+    "videoId": "2OSrvzNW9FE",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "Backspin Basketball Flies Off Dam",
+    "tier": 2,
+    "viewCount": 59988892,
+    "durationSeconds": 181,
+    "thumbnailUrl": "https://i.ytimg.com/vi/2OSrvzNW9FE/hqdefault.jpg"
+  },
+  {
+    "videoId": "AF8d72mA41M",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "Why It Was Almost Impossible to Make the Blue LED",
+    "tier": 2,
+    "viewCount": 47238432,
+    "durationSeconds": 2025,
+    "thumbnailUrl": "https://i.ytimg.com/vi/AF8d72mA41M/hqdefault.jpg"
+  },
+  {
+    "videoId": "094y1Z2wpJg",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "The Simplest Math Problem No One Can Solve - Collatz Conjecture",
+    "tier": 2,
+    "viewCount": 45089093,
+    "durationSeconds": 1329,
+    "thumbnailUrl": "https://i.ytimg.com/vi/094y1Z2wpJg/hqdefault.jpg"
+  },
+  {
+    "videoId": "IV3dnLzthDA",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "The Man Who Accidentally Killed The Most People In History",
+    "tier": 2,
+    "viewCount": 41924283,
+    "durationSeconds": 1497,
+    "thumbnailUrl": "https://i.ytimg.com/vi/IV3dnLzthDA/hqdefault.jpg"
+  },
+  {
+    "videoId": "pir_muTzYM8",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "Inside The Navy's Indoor Ocean",
+    "tier": 2,
+    "viewCount": 41360264,
+    "durationSeconds": 1225,
+    "thumbnailUrl": "https://i.ytimg.com/vi/pir_muTzYM8/hqdefault.jpg"
+  },
+  {
+    "videoId": "GcdB5bFwio4",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "I Waterproofed Myself With Aerogel!",
+    "tier": 2,
+    "viewCount": 40545143,
+    "durationSeconds": 742,
+    "thumbnailUrl": "https://i.ytimg.com/vi/GcdB5bFwio4/hqdefault.jpg"
+  },
+  {
+    "videoId": "ZMByI4s-D-Y",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "World's Roundest Object!",
+    "tier": 2,
+    "viewCount": 38405511,
+    "durationSeconds": 704,
+    "thumbnailUrl": "https://i.ytimg.com/vi/ZMByI4s-D-Y/hqdefault.jpg"
+  },
+  {
+    "videoId": "OxGsU8oIWjY",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "How An Infinite Hotel Ran Out Of Room",
+    "tier": 2,
+    "viewCount": 35515430,
+    "durationSeconds": 367,
+    "thumbnailUrl": "https://i.ytimg.com/vi/OxGsU8oIWjY/hqdefault.jpg"
+  },
+  {
+    "videoId": "qevIIQHrJZg",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "This Unstoppable Robot Could Save Your Life",
+    "tier": 2,
+    "viewCount": 35322806,
+    "durationSeconds": 870,
+    "thumbnailUrl": "https://i.ytimg.com/vi/qevIIQHrJZg/hqdefault.jpg"
+  },
+  {
+    "videoId": "GeyDf4ooPdo",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "Anti-Gravity Wheel?",
+    "tier": 2,
+    "viewCount": 34823249,
+    "durationSeconds": 342,
+    "thumbnailUrl": "https://i.ytimg.com/vi/GeyDf4ooPdo/hqdefault.jpg"
+  },
+  {
+    "videoId": "BZbChKzedEk",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "Can You Swim in Shade Balls?",
+    "tier": 2,
+    "viewCount": 32753186,
+    "durationSeconds": 642,
+    "thumbnailUrl": "https://i.ytimg.com/vi/BZbChKzedEk/hqdefault.jpg"
+  },
+  {
+    "videoId": "mXVGIb3bzHI",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "Testing if 60 minutes of silence drives you crazy",
+    "tier": 2,
+    "viewCount": 32670700,
+    "durationSeconds": 633,
+    "thumbnailUrl": "https://i.ytimg.com/vi/mXVGIb3bzHI/hqdefault.jpg"
+  },
+  {
+    "videoId": "6akmv1bsz1M",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "Something Strange Happens When You Follow Einstein's Math",
+    "tier": 2,
+    "viewCount": 32337877,
+    "durationSeconds": 2223,
+    "thumbnailUrl": "https://i.ytimg.com/vi/6akmv1bsz1M/hqdefault.jpg"
+  },
+  {
+    "videoId": "SC2eSujzrUY",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "How One Company Secretly Poisoned The Planet",
+    "tier": 2,
+    "viewCount": 31599554,
+    "durationSeconds": 3248,
+    "thumbnailUrl": "https://i.ytimg.com/vi/SC2eSujzrUY/hqdefault.jpg"
+  },
+  {
+    "videoId": "HeQX2HjkcNo",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "Math's Fundamental Flaw",
+    "tier": 2,
+    "viewCount": 30089003,
+    "durationSeconds": 2040,
+    "thumbnailUrl": "https://i.ytimg.com/vi/HeQX2HjkcNo/hqdefault.jpg"
+  },
+  {
+    "videoId": "DxL2HoqLbyA",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "The Most Misunderstood Concept in Physics",
+    "tier": 2,
+    "viewCount": 27812581,
+    "durationSeconds": 1635,
+    "thumbnailUrl": "https://i.ytimg.com/vi/DxL2HoqLbyA/hqdefault.jpg"
+  },
+  {
+    "videoId": "t-_VPRCtiUg",
+    "channelId": "UCHnyfMqiRRG1u-2MsSQLbXA",
+    "channelName": "Veritasium",
+    "title": "The Surprising Secret of Synchronization",
+    "tier": 2,
+    "viewCount": 27702913,
+    "durationSeconds": 1169,
+    "thumbnailUrl": "https://i.ytimg.com/vi/t-_VPRCtiUg/hqdefault.jpg"
+  },
+  {
+    "videoId": "sNhhvQGsMEc",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "The Fermi Paradox \u2014 Where Are All The Aliens? (1/2)",
+    "tier": 2,
+    "viewCount": 34902157,
+    "durationSeconds": 381,
+    "thumbnailUrl": "https://i.ytimg.com/vi/sNhhvQGsMEc/hqdefault.jpg"
+  },
+  {
+    "videoId": "BtN-goy9VOY",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "The Coronavirus Explained & What You Should Do",
+    "tier": 2,
+    "viewCount": 89411848,
+    "durationSeconds": 515,
+    "thumbnailUrl": "https://i.ytimg.com/vi/BtN-goy9VOY/hqdefault.jpg"
+  },
+  {
+    "videoId": "zQGOcOUBi6s",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "The Immune System Explained I \u2013 Bacteria Infection",
+    "tier": 2,
+    "viewCount": 54437567,
+    "durationSeconds": 469,
+    "thumbnailUrl": "https://i.ytimg.com/vi/zQGOcOUBi6s/hqdefault.jpg"
+  },
+  {
+    "videoId": "9tbxDgcv74c",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "What If You Detonated a Nuclear Bomb In The Marianas Trench? (Science not Fantasy)",
+    "tier": 2,
+    "viewCount": 36244455,
+    "durationSeconds": 363,
+    "thumbnailUrl": "https://i.ytimg.com/vi/9tbxDgcv74c/hqdefault.jpg"
+  },
+  {
+    "videoId": "3mnSDifDSxQ",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "The Largest Star in the Universe \u2013 Size Comparison",
+    "tier": 2,
+    "viewCount": 35364870,
+    "durationSeconds": 719,
+    "thumbnailUrl": "https://i.ytimg.com/vi/3mnSDifDSxQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "h6fcK_fRYaI",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "The Egg - A Short Story",
+    "tier": 2,
+    "viewCount": 35277574,
+    "durationSeconds": 486,
+    "thumbnailUrl": "https://i.ytimg.com/vi/h6fcK_fRYaI/hqdefault.jpg"
+  },
+  {
+    "videoId": "YI3tsmFsrOg",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "The Deadliest Being on Planet Earth \u2013 The Bacteriophage",
+    "tier": 2,
+    "viewCount": 34696378,
+    "durationSeconds": 429,
+    "thumbnailUrl": "https://i.ytimg.com/vi/YI3tsmFsrOg/hqdefault.jpg"
+  },
+  {
+    "videoId": "JyECrGp-Sw8",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "What If We Detonated All Nuclear Bombs at Once?",
+    "tier": 2,
+    "viewCount": 32596295,
+    "durationSeconds": 426,
+    "thumbnailUrl": "https://i.ytimg.com/vi/JyECrGp-Sw8/hqdefault.jpg"
+  },
+  {
+    "videoId": "0FH9cgRhQ-k",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "The Largest Black Hole in the Universe - Size Comparison",
+    "tier": 2,
+    "viewCount": 31544635,
+    "durationSeconds": 824,
+    "thumbnailUrl": "https://i.ytimg.com/vi/0FH9cgRhQ-k/hqdefault.jpg"
+  },
+  {
+    "videoId": "yWO-cvGETRQ",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "Why Black Holes Could Delete The Universe \u2013 The Information Paradox",
+    "tier": 2,
+    "viewCount": 31399567,
+    "durationSeconds": 613,
+    "thumbnailUrl": "https://i.ytimg.com/vi/yWO-cvGETRQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "jAhjPd4uNFY",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "Genetic Engineering Will Change Everything Forever \u2013 CRISPR",
+    "tier": 2,
+    "viewCount": 30508535,
+    "durationSeconds": 964,
+    "thumbnailUrl": "https://i.ytimg.com/vi/jAhjPd4uNFY/hqdefault.jpg"
+  },
+  {
+    "videoId": "ulCdoCfw-bY",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "The Black Hole Bomb and Black Hole Civilizations",
+    "tier": 2,
+    "viewCount": 29245468,
+    "durationSeconds": 488,
+    "thumbnailUrl": "https://i.ytimg.com/vi/ulCdoCfw-bY/hqdefault.jpg"
+  },
+  {
+    "videoId": "5iPH-br_eJQ",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "What if We Nuke a City?",
+    "tier": 2,
+    "viewCount": 29081743,
+    "durationSeconds": 536,
+    "thumbnailUrl": "https://i.ytimg.com/vi/5iPH-br_eJQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "4_aOIA-vyBo",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "Three Ways to Destroy the Universe",
+    "tier": 2,
+    "viewCount": 28124300,
+    "durationSeconds": 377,
+    "thumbnailUrl": "https://i.ytimg.com/vi/4_aOIA-vyBo/hqdefault.jpg"
+  },
+  {
+    "videoId": "n3Xv_g3g-mA",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "Loneliness",
+    "tier": 2,
+    "viewCount": 27752523,
+    "durationSeconds": 787,
+    "thumbnailUrl": "https://i.ytimg.com/vi/n3Xv_g3g-mA/hqdefault.jpg"
+  },
+  {
+    "videoId": "UjtOGPJ0URM",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "Why Alien Life Would be our Doom - The Great Filter",
+    "tier": 2,
+    "viewCount": 27459482,
+    "durationSeconds": 498,
+    "thumbnailUrl": "https://i.ytimg.com/vi/UjtOGPJ0URM/hqdefault.jpg"
+  },
+  {
+    "videoId": "7_e0CA_nhaE",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "The World War of the Ants \u2013 The Army Ant",
+    "tier": 2,
+    "viewCount": 27386607,
+    "durationSeconds": 435,
+    "thumbnailUrl": "https://i.ytimg.com/vi/7_e0CA_nhaE/hqdefault.jpg"
+  },
+  {
+    "videoId": "1AElONvi9WQ",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "Why Blue Whales Don't Get Cancer - Peto's Paradox",
+    "tier": 2,
+    "viewCount": 27057489,
+    "durationSeconds": 427,
+    "thumbnailUrl": "https://i.ytimg.com/vi/1AElONvi9WQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "e-P5IFTqB98",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "Black Holes Explained \u2013\u00a0From Birth to Death",
+    "tier": 2,
+    "viewCount": 27022141,
+    "durationSeconds": 356,
+    "thumbnailUrl": "https://i.ytimg.com/vi/e-P5IFTqB98/hqdefault.jpg"
+  },
+  {
+    "videoId": "Da-2h2B4faU",
+    "channelId": "UCsXVk37bltHxD1rDPwtNM8Q",
+    "channelName": "Kurzgesagt",
+    "title": "String Theory Explained \u2013 What is The True Nature of Reality?",
+    "tier": 2,
+    "viewCount": 26051207,
+    "durationSeconds": 480,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Da-2h2B4faU/hqdefault.jpg"
+  },
+  {
+    "videoId": "nDLb8_wgX50",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "How to Build Immense Inner Strength | David Goggins",
+    "tier": 2,
+    "viewCount": 21233268,
+    "durationSeconds": 9455,
+    "thumbnailUrl": "https://i.ytimg.com/vi/nDLb8_wgX50/hqdefault.jpg"
+  },
+  {
+    "videoId": "50BZQRT1dAg",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "A Process for Finding & Achieving Your Unique Purpose | Robert Greene",
+    "tier": 2,
+    "viewCount": 15396043,
+    "durationSeconds": 11478,
+    "thumbnailUrl": "https://i.ytimg.com/vi/50BZQRT1dAg/hqdefault.jpg"
+  },
+  {
+    "videoId": "tLRCS48Ens4",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "Dr. Paul Conti: How to Understand & Assess Your Mental Health | Huberman Lab Guest Series",
+    "tier": 2,
+    "viewCount": 14766839,
+    "durationSeconds": 13370,
+    "thumbnailUrl": "https://i.ytimg.com/vi/tLRCS48Ens4/hqdefault.jpg"
+  },
+  {
+    "videoId": "QmOF0crdyRU",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "Controlling Your Dopamine For Motivation, Focus & Satisfaction",
+    "tier": 2,
+    "viewCount": 12130901,
+    "durationSeconds": 8192,
+    "thumbnailUrl": "https://i.ytimg.com/vi/QmOF0crdyRU/hqdefault.jpg"
+  },
+  {
+    "videoId": "IAnhFUUCq6c",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "Dr. Andy Galpin: How to Build Strength, Muscle Size & Endurance",
+    "tier": 2,
+    "viewCount": 10249244,
+    "durationSeconds": 12688,
+    "thumbnailUrl": "https://i.ytimg.com/vi/IAnhFUUCq6c/hqdefault.jpg"
+  },
+  {
+    "videoId": "K4Ze-Sp6aUE",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "The Science of Eating for Health, Fat Loss & Lean Muscle | Dr. Layne Norton",
+    "tier": 2,
+    "viewCount": 8585732,
+    "durationSeconds": 13775,
+    "thumbnailUrl": "https://i.ytimg.com/vi/K4Ze-Sp6aUE/hqdefault.jpg"
+  },
+  {
+    "videoId": "DkS1pkKpILY",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "What Alcohol Does to Your Body, Brain & Health",
+    "tier": 2,
+    "viewCount": 7784929,
+    "durationSeconds": 7262,
+    "thumbnailUrl": "https://i.ytimg.com/vi/DkS1pkKpILY/hqdefault.jpg"
+  },
+  {
+    "videoId": "9tRohh0gErM",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "Effects of Fasting & Time Restricted Eating on Fat Loss & Health | Huberman Lab Podcast #41",
+    "tier": 2,
+    "viewCount": 7461206,
+    "durationSeconds": 8767,
+    "thumbnailUrl": "https://i.ytimg.com/vi/9tRohh0gErM/hqdefault.jpg"
+  },
+  {
+    "videoId": "hFL6qRIJZ_Y",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "ADHD & How Anyone Can Improve Their Focus",
+    "tier": 2,
+    "viewCount": 7166819,
+    "durationSeconds": 8281,
+    "thumbnailUrl": "https://i.ytimg.com/vi/hFL6qRIJZ_Y/hqdefault.jpg"
+  },
+  {
+    "videoId": "wTBSGgbIvsY",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "How Meditation Works & Science-Based Effective Meditations",
+    "tier": 2,
+    "viewCount": 7009531,
+    "durationSeconds": 8762,
+    "thumbnailUrl": "https://i.ytimg.com/vi/wTBSGgbIvsY/hqdefault.jpg"
+  },
+  {
+    "videoId": "XLr2RKoD-oY",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "Science of Muscle Growth, Increasing Strength & Muscular Recovery",
+    "tier": 2,
+    "viewCount": 6625826,
+    "durationSeconds": 7460,
+    "thumbnailUrl": "https://i.ytimg.com/vi/XLr2RKoD-oY/hqdefault.jpg"
+  },
+  {
+    "videoId": "GqPGXG5TlZw",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "How to Lose Fat with Science-Based Tools",
+    "tier": 2,
+    "viewCount": 5555562,
+    "durationSeconds": 6834,
+    "thumbnailUrl": "https://i.ytimg.com/vi/GqPGXG5TlZw/hqdefault.jpg"
+  },
+  {
+    "videoId": "Wcs2PFz5q6g",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "The Science of Making & Breaking Habits",
+    "tier": 2,
+    "viewCount": 5499765,
+    "durationSeconds": 6639,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Wcs2PFz5q6g/hqdefault.jpg"
+  },
+  {
+    "videoId": "oNkDA2F7CjM",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "Dr. Andy Galpin: How to Build Physical Endurance & Lose Fat | Huberman Lab Guest Series",
+    "tier": 2,
+    "viewCount": 5468511,
+    "durationSeconds": 13733,
+    "thumbnailUrl": "https://i.ytimg.com/vi/oNkDA2F7CjM/hqdefault.jpg"
+  },
+  {
+    "videoId": "xjEFo3a1AnI",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "Diet & Nutrition for Mental Health | Dr. Chris Palmer",
+    "tier": 2,
+    "viewCount": 5310563,
+    "durationSeconds": 11022,
+    "thumbnailUrl": "https://i.ytimg.com/vi/xjEFo3a1AnI/hqdefault.jpg"
+  },
+  {
+    "videoId": "q37ARYnRDGc",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "Dr. Andy Galpin: Optimal Nutrition & Supplementation for Fitness | Huberman Lab Guest Series",
+    "tier": 2,
+    "viewCount": 5256852,
+    "durationSeconds": 11134,
+    "thumbnailUrl": "https://i.ytimg.com/vi/q37ARYnRDGc/hqdefault.jpg"
+  },
+  {
+    "videoId": "n28W4AmvMDE",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "How Sugar & Processed Foods Impact Your Health | Dr. Robert Lustig",
+    "tier": 2,
+    "viewCount": 4858229,
+    "durationSeconds": 12561,
+    "thumbnailUrl": "https://i.ytimg.com/vi/n28W4AmvMDE/hqdefault.jpg"
+  },
+  {
+    "videoId": "_ltcLEM-5HU",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "How to Improve Your Eye Health & Offset Vision Loss | Dr. Jeffrey Goldberg",
+    "tier": 2,
+    "viewCount": 4647805,
+    "durationSeconds": 11325,
+    "thumbnailUrl": "https://i.ytimg.com/vi/_ltcLEM-5HU/hqdefault.jpg"
+  },
+  {
+    "videoId": "ycOBZZeVeAc",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "How to Access Your Creativity | Rick Rubin",
+    "tier": 2,
+    "viewCount": 4636535,
+    "durationSeconds": 10839,
+    "thumbnailUrl": "https://i.ytimg.com/vi/ycOBZZeVeAc/hqdefault.jpg"
+  },
+  {
+    "videoId": "3gtvNYa3Nd8",
+    "channelId": "UC2D2CMWXMOVWx7giW1n3LIg",
+    "channelName": "Lexica AI News",
+    "title": "How to Unlock Your Potential, Motivation & Unique Abilities | Dr. Adam Grant",
+    "tier": 2,
+    "viewCount": 4308759,
+    "durationSeconds": 11542,
+    "thumbnailUrl": "https://i.ytimg.com/vi/3gtvNYa3Nd8/hqdefault.jpg"
+  },
+  {
+    "videoId": "AwwIFcdUFrE",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "What Happens At The Edge Of The Universe? | Space Time | PBS Digital Studios",
+    "tier": 2,
+    "viewCount": 8679147,
+    "durationSeconds": 577,
+    "thumbnailUrl": "https://i.ytimg.com/vi/AwwIFcdUFrE/hqdefault.jpg"
+  },
+  {
+    "videoId": "EzZGPCyrpSU",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "5 REAL Possibilities for Interstellar Travel",
+    "tier": 2,
+    "viewCount": 7091550,
+    "durationSeconds": 783,
+    "thumbnailUrl": "https://i.ytimg.com/vi/EzZGPCyrpSU/hqdefault.jpg"
+  },
+  {
+    "videoId": "msVuCEs8Ydo",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "The Speed of Light is NOT About Light",
+    "tier": 2,
+    "viewCount": 7057948,
+    "durationSeconds": 766,
+    "thumbnailUrl": "https://i.ytimg.com/vi/msVuCEs8Ydo/hqdefault.jpg"
+  },
+  {
+    "videoId": "p-MNSLsjjdo",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "The Quantum Experiment that Broke Reality | Space Time | PBS Digital Studios",
+    "tier": 2,
+    "viewCount": 7046280,
+    "durationSeconds": 812,
+    "thumbnailUrl": "https://i.ytimg.com/vi/p-MNSLsjjdo/hqdefault.jpg"
+  },
+  {
+    "videoId": "Xo232kyTsO0",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "The Real Meaning of E=mc\u00b2",
+    "tier": 2,
+    "viewCount": 6466087,
+    "durationSeconds": 624,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Xo232kyTsO0/hqdefault.jpg"
+  },
+  {
+    "videoId": "ztninkgZ0ws",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "Is an Ice Age Coming? | Space Time | PBS Digital Studios",
+    "tier": 2,
+    "viewCount": 4941175,
+    "durationSeconds": 928,
+    "thumbnailUrl": "https://i.ytimg.com/vi/ztninkgZ0ws/hqdefault.jpg"
+  },
+  {
+    "videoId": "gJ5KV3rzuag",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "Should We Colonize Venus Instead of Mars?",
+    "tier": 2,
+    "viewCount": 4770904,
+    "durationSeconds": 457,
+    "thumbnailUrl": "https://i.ytimg.com/vi/gJ5KV3rzuag/hqdefault.jpg"
+  },
+  {
+    "videoId": "wdP_UDSsuro",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "Is Interstellar Travel Impossible?",
+    "tier": 2,
+    "viewCount": 4393300,
+    "durationSeconds": 1234,
+    "thumbnailUrl": "https://i.ytimg.com/vi/wdP_UDSsuro/hqdefault.jpg"
+  },
+  {
+    "videoId": "RCSSgxV9qNw",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "Why Is 1/137 One of the Greatest Unsolved Problems In Physics?",
+    "tier": 2,
+    "viewCount": 4327246,
+    "durationSeconds": 938,
+    "thumbnailUrl": "https://i.ytimg.com/vi/RCSSgxV9qNw/hqdefault.jpg"
+  },
+  {
+    "videoId": "prvXCuEA1lw",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "Are there Undiscovered Elements Beyond The Periodic Table?",
+    "tier": 2,
+    "viewCount": 4255817,
+    "durationSeconds": 1257,
+    "thumbnailUrl": "https://i.ytimg.com/vi/prvXCuEA1lw/hqdefault.jpg"
+  },
+  {
+    "videoId": "tJevBNQsKtU",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "The Edge of an Infinite Universe",
+    "tier": 2,
+    "viewCount": 4035956,
+    "durationSeconds": 1110,
+    "thumbnailUrl": "https://i.ytimg.com/vi/tJevBNQsKtU/hqdefault.jpg"
+  },
+  {
+    "videoId": "nAJN1CrJsVE",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "The Final Barrier to (Nearly) Infinite Energy",
+    "tier": 2,
+    "viewCount": 3826277,
+    "durationSeconds": 1294,
+    "thumbnailUrl": "https://i.ytimg.com/vi/nAJN1CrJsVE/hqdefault.jpg"
+  },
+  {
+    "videoId": "pWlk1gLkF2Y",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "Electrons DO NOT Spin",
+    "tier": 2,
+    "viewCount": 3740937,
+    "durationSeconds": 1090,
+    "thumbnailUrl": "https://i.ytimg.com/vi/pWlk1gLkF2Y/hqdefault.jpg"
+  },
+  {
+    "videoId": "JDmKLXVFJzk",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "What\u2019s Wrong With the Big Bang Theory? | Space Time | PBS Digital Studios",
+    "tier": 2,
+    "viewCount": 3578737,
+    "durationSeconds": 778,
+    "thumbnailUrl": "https://i.ytimg.com/vi/JDmKLXVFJzk/hqdefault.jpg"
+  },
+  {
+    "videoId": "rckrnYw5sOA",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "The Impossibility of Perpetual Motion Machines",
+    "tier": 2,
+    "viewCount": 3572735,
+    "durationSeconds": 991,
+    "thumbnailUrl": "https://i.ytimg.com/vi/rckrnYw5sOA/hqdefault.jpg"
+  },
+  {
+    "videoId": "469chceiiUQ",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "What If Alien Life Were Silicon-Based?",
+    "tier": 2,
+    "viewCount": 3550618,
+    "durationSeconds": 1316,
+    "thumbnailUrl": "https://i.ytimg.com/vi/469chceiiUQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "klpDHn8viX8",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "The Holographic Universe Explained",
+    "tier": 2,
+    "viewCount": 3407701,
+    "durationSeconds": 1104,
+    "thumbnailUrl": "https://i.ytimg.com/vi/klpDHn8viX8/hqdefault.jpg"
+  },
+  {
+    "videoId": "jeRgFqbBM5E",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "Could The Universe Be Inside A Black Hole?",
+    "tier": 2,
+    "viewCount": 3378379,
+    "durationSeconds": 781,
+    "thumbnailUrl": "https://i.ytimg.com/vi/jeRgFqbBM5E/hqdefault.jpg"
+  },
+  {
+    "videoId": "YycAzdtUIko",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "Are Space and Time An Illusion?",
+    "tier": 2,
+    "viewCount": 3301412,
+    "durationSeconds": 535,
+    "thumbnailUrl": "https://i.ytimg.com/vi/YycAzdtUIko/hqdefault.jpg"
+  },
+  {
+    "videoId": "1lPJ5SX5p08",
+    "channelId": "UC7_gcs09iThXybpVgjHZ_7g",
+    "channelName": "PBS Space Time",
+    "title": "How Earth REALLY Moves Through the Galaxy",
+    "tier": 2,
+    "viewCount": 3189770,
+    "durationSeconds": 1228,
+    "thumbnailUrl": "https://i.ytimg.com/vi/1lPJ5SX5p08/hqdefault.jpg"
+  },
+  {
+    "videoId": "kxLoycj4pJY",
+    "channelId": "UC6107grRI4m0o2-emgoDnAA",
+    "channelName": "SmarterEveryDay",
+    "title": "TATTOOING Close Up (in Slow Motion) - Smarter Every Day 122",
+    "tier": 2,
+    "viewCount": 86781952,
+    "durationSeconds": 399,
+    "thumbnailUrl": "https://i.ytimg.com/vi/kxLoycj4pJY/hqdefault.jpg"
+  },
+  {
+    "videoId": "QJ9lNRAjTQM",
+    "channelId": "UC6107grRI4m0o2-emgoDnAA",
+    "channelName": "SmarterEveryDay",
+    "title": "How Houdini DIED (in Slow Motion) - Smarter Every Day 108",
+    "tier": 2,
+    "viewCount": 32925949,
+    "durationSeconds": 404,
+    "thumbnailUrl": "https://i.ytimg.com/vi/QJ9lNRAjTQM/hqdefault.jpg"
+  },
+  {
+    "videoId": "MFzDaBzBlL0",
+    "channelId": "UC6107grRI4m0o2-emgoDnAA",
+    "channelName": "SmarterEveryDay",
+    "title": "The Backwards Brain Bicycle - Smarter Every Day 133",
+    "tier": 2,
+    "viewCount": 31422945,
+    "durationSeconds": 478,
+    "thumbnailUrl": "https://i.ytimg.com/vi/MFzDaBzBlL0/hqdefault.jpg"
+  },
+  {
+    "videoId": "cp5gdUHFGIQ",
+    "channelId": "UC6107grRI4m0o2-emgoDnAA",
+    "channelName": "SmarterEveryDay",
+    "title": "AK-47 Underwater at 27,450 frames per second (Part 2) - Smarter Every Day 97",
+    "tier": 2,
+    "viewCount": 30735712,
+    "durationSeconds": 608,
+    "thumbnailUrl": "https://i.ytimg.com/vi/cp5gdUHFGIQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "tcQVrD7RnNI",
+    "channelId": "UC6107grRI4m0o2-emgoDnAA",
+    "channelName": "SmarterEveryDay",
+    "title": "Bullets HITTING Bullets in Slow Motion - THE IMPOSSIBLE SHOT - Smarter Every Day 287",
+    "tier": 2,
+    "viewCount": 25190307,
+    "durationSeconds": 2128,
+    "thumbnailUrl": "https://i.ytimg.com/vi/tcQVrD7RnNI/hqdefault.jpg"
+  },
+  {
+    "videoId": "Q_F9CxSmGOM",
+    "channelId": "UC6107grRI4m0o2-emgoDnAA",
+    "channelName": "SmarterEveryDay",
+    "title": "World's Longest Home Run (The \"Mad Batter\" Machine) - Smarter Every Day 230",
+    "tier": 2,
+    "viewCount": 24851974,
+    "durationSeconds": 1011,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Q_F9CxSmGOM/hqdefault.jpg"
+  },
+  {
+    "videoId": "JT0wx27J9xs",
+    "channelId": "UC6107grRI4m0o2-emgoDnAA",
+    "channelName": "SmarterEveryDay",
+    "title": "How Hard Can You Hit a Golf Ball? (at 100,000 FPS) - Smarter Every Day 216",
+    "tier": 2,
+    "viewCount": 22208776,
+    "durationSeconds": 973,
+    "thumbnailUrl": "https://i.ytimg.com/vi/JT0wx27J9xs/hqdefault.jpg"
+  },
+  {
+    "videoId": "p1PgNbgWSyY",
+    "channelId": "UC6107grRI4m0o2-emgoDnAA",
+    "channelName": "SmarterEveryDay",
+    "title": "GOING SUPERSONIC with U.S. Air Force Thunderbirds! Pulling 7 G's in an F-16 -Smarter Every Day 235",
+    "tier": 2,
+    "viewCount": 21872414,
+    "durationSeconds": 1797,
+    "thumbnailUrl": "https://i.ytimg.com/vi/p1PgNbgWSyY/hqdefault.jpg"
+  },
+  {
+    "videoId": "-53kaP6dZeI",
+    "channelId": "UC6107grRI4m0o2-emgoDnAA",
+    "channelName": "SmarterEveryDay",
+    "title": "STRAPPED INTO A SINKING HELICOPTER (with U.S. Marines) - Smarter Every Day 201",
+    "tier": 2,
+    "viewCount": 20869657,
+    "durationSeconds": 679,
+    "thumbnailUrl": "https://i.ytimg.com/vi/-53kaP6dZeI/hqdefault.jpg"
+  },
+  {
+    "videoId": "7pOXunRYJIw",
+    "channelId": "UC6107grRI4m0o2-emgoDnAA",
+    "channelName": "SmarterEveryDay",
+    "title": "See Through Suppressor in Super Slow Motion (110,000 fps)  - Smarter Every Day 177",
+    "tier": 2,
+    "viewCount": 19890611,
+    "durationSeconds": 584,
+    "thumbnailUrl": "https://i.ytimg.com/vi/7pOXunRYJIw/hqdefault.jpg"
+  },
+  {
+    "videoId": "M2w3NZzPwOM",
+    "channelId": "UC6107grRI4m0o2-emgoDnAA",
+    "channelName": "SmarterEveryDay",
+    "title": "Why Snatch Blocks are AWESOME (How Pulleys Work)  - Smarter Every Day 228",
+    "tier": 2,
+    "viewCount": 17594028,
+    "durationSeconds": 991,
+    "thumbnailUrl": "https://i.ytimg.com/vi/M2w3NZzPwOM/hqdefault.jpg"
+  },
+  {
+    "videoId": "RXXMJAU6vY8",
+    "channelId": "UC6107grRI4m0o2-emgoDnAA",
+    "channelName": "SmarterEveryDay",
+    "title": "Boarding a US NAVY NUCLEAR SUBMARINE in the Arctic - Smarter Every Day 240",
+    "tier": 2,
+    "viewCount": 16891745,
+    "durationSeconds": 1765,
+    "thumbnailUrl": "https://i.ytimg.com/vi/RXXMJAU6vY8/hqdefault.jpg"
+  },
+  {
+    "videoId": "4I-p8vjQ95s",
+    "channelId": "UC6107grRI4m0o2-emgoDnAA",
+    "channelName": "SmarterEveryDay",
+    "title": "Trying to Catch a 1,000 MPH Baseball - Smarter Every Day 247",
+    "tier": 2,
+    "viewCount": 16812769,
+    "durationSeconds": 1075,
+    "thumbnailUrl": "https://i.ytimg.com/vi/4I-p8vjQ95s/hqdefault.jpg"
+  },
+  {
+    "videoId": "D0B7F5UbTOQ",
+    "channelId": "UC6107grRI4m0o2-emgoDnAA",
+    "channelName": "SmarterEveryDay",
+    "title": "How Laser Tattoo Removal Works - Smarter Every Day 123",
+    "tier": 2,
+    "viewCount": 16378162,
+    "durationSeconds": 579,
+    "thumbnailUrl": "https://i.ytimg.com/vi/D0B7F5UbTOQ/hqdefault.jpg"
+  },
+  {
+    "videoId": "EVbdbVhzcM4",
+    "channelId": "UC6107grRI4m0o2-emgoDnAA",
+    "channelName": "SmarterEveryDay",
+    "title": "Two Vortex Rings Colliding in SLOW MOTION - Smarter Every Day 195",
+    "tier": 2,
+    "viewCount": 15789191,
+    "durationSeconds": 519,
+    "thumbnailUrl": "https://i.ytimg.com/vi/EVbdbVhzcM4/hqdefault.jpg"
+  },
+  {
+    "videoId": "8wysIxzqgPI",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "My Brain after 569 Leetcode Problems",
+    "tier": 2,
+    "viewCount": 3203874,
+    "durationSeconds": 470,
+    "thumbnailUrl": "https://i.ytimg.com/vi/8wysIxzqgPI/hqdefault.jpg"
+  },
+  {
+    "videoId": "KLlXCFG5TnA",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Two Sum - Leetcode 1 - HashMap - Python",
+    "tier": 2,
+    "viewCount": 2003717,
+    "durationSeconds": 506,
+    "thumbnailUrl": "https://i.ytimg.com/vi/KLlXCFG5TnA/hqdefault.jpg"
+  },
+  {
+    "videoId": "SVvr3ZjtjI8",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "How I Got Good at Coding Interviews",
+    "tier": 2,
+    "viewCount": 1853862,
+    "durationSeconds": 389,
+    "thumbnailUrl": "https://i.ytimg.com/vi/SVvr3ZjtjI8/hqdefault.jpg"
+  },
+  {
+    "videoId": "46dZH7LDbf8",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Mock Google Coding Interview with a Meta Intern",
+    "tier": 2,
+    "viewCount": 1561377,
+    "durationSeconds": 2824,
+    "thumbnailUrl": "https://i.ytimg.com/vi/46dZH7LDbf8/hqdefault.jpg"
+  },
+  {
+    "videoId": "i53Gi_K3o7I",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "20 System Design Concepts Explained in 10 Minutes",
+    "tier": 2,
+    "viewCount": 1517163,
+    "durationSeconds": 701,
+    "thumbnailUrl": "https://i.ytimg.com/vi/i53Gi_K3o7I/hqdefault.jpg"
+  },
+  {
+    "videoId": "4SUJt3dP2Jc",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "How I Failed the Google Coding Interview (and lessons I learned)",
+    "tier": 2,
+    "viewCount": 1448205,
+    "durationSeconds": 864,
+    "thumbnailUrl": "https://i.ytimg.com/vi/4SUJt3dP2Jc/hqdefault.jpg"
+  },
+  {
+    "videoId": "uB9yZenVLzg",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "This video will change your mind about the AI hype",
+    "tier": 2,
+    "viewCount": 1411942,
+    "durationSeconds": 1027,
+    "thumbnailUrl": "https://i.ytimg.com/vi/uB9yZenVLzg/hqdefault.jpg"
+  },
+  {
+    "videoId": "tAuRQs_d9F8",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "8 Design Patterns EVERY Developer Should Know",
+    "tier": 2,
+    "viewCount": 1283241,
+    "durationSeconds": 587,
+    "thumbnailUrl": "https://i.ytimg.com/vi/tAuRQs_d9F8/hqdefault.jpg"
+  },
+  {
+    "videoId": "jzZsG8n2R9A",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "3Sum - Leetcode 15 - Python",
+    "tier": 2,
+    "viewCount": 1186167,
+    "durationSeconds": 774,
+    "thumbnailUrl": "https://i.ytimg.com/vi/jzZsG8n2R9A/hqdefault.jpg"
+  },
+  {
+    "videoId": "1pkOgXD63yU",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Sliding Window: Best Time to Buy and Sell Stock - Leetcode 121 - Python",
+    "tier": 2,
+    "viewCount": 1026815,
+    "durationSeconds": 526,
+    "thumbnailUrl": "https://i.ytimg.com/vi/1pkOgXD63yU/hqdefault.jpg"
+  },
+  {
+    "videoId": "3OamzN90kPg",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Contains Duplicate - Leetcode 217 - Python",
+    "tier": 2,
+    "viewCount": 979318,
+    "durationSeconds": 391,
+    "thumbnailUrl": "https://i.ytimg.com/vi/3OamzN90kPg/hqdefault.jpg"
+  },
+  {
+    "videoId": "bNvIQI2wAjk",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Product of Array Except Self - Leetcode 238 - Python",
+    "tier": 2,
+    "viewCount": 925569,
+    "durationSeconds": 714,
+    "thumbnailUrl": "https://i.ytimg.com/vi/bNvIQI2wAjk/hqdefault.jpg"
+  },
+  {
+    "videoId": "YPTqKIgVk-k",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Top K Frequent Elements - Bucket Sort - Leetcode 347 - Python",
+    "tier": 2,
+    "viewCount": 856609,
+    "durationSeconds": 793,
+    "thumbnailUrl": "https://i.ytimg.com/vi/YPTqKIgVk-k/hqdefault.jpg"
+  },
+  {
+    "videoId": "9UtInBqnCgA",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Valid Anagram - Leetcode 242 - Python",
+    "tier": 2,
+    "viewCount": 822661,
+    "durationSeconds": 721,
+    "thumbnailUrl": "https://i.ytimg.com/vi/9UtInBqnCgA/hqdefault.jpg"
+  },
+  {
+    "videoId": "Y0lT9Fck7qI",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Climbing Stairs - Dynamic Programming - Leetcode 70 - Python",
+    "tier": 2,
+    "viewCount": 817804,
+    "durationSeconds": 1088,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Y0lT9Fck7qI/hqdefault.jpg"
+  },
+  {
+    "videoId": "0K_eZGS5NsU",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Python for Coding Interviews - Everything you need to Know",
+    "tier": 2,
+    "viewCount": 813417,
+    "durationSeconds": 1578,
+    "thumbnailUrl": "https://i.ytimg.com/vi/0K_eZGS5NsU/hqdefault.jpg"
+  },
+  {
+    "videoId": "QHXET1G9Y5U",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "I quit Amazon after two months",
+    "tier": 2,
+    "viewCount": 811187,
+    "durationSeconds": 609,
+    "thumbnailUrl": "https://i.ytimg.com/vi/QHXET1G9Y5U/hqdefault.jpg"
+  },
+  {
+    "videoId": "wiGpQwVHdE0",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Longest Substring Without Repeating Characters - Leetcode 3 - Python",
+    "tier": 2,
+    "viewCount": 799113,
+    "durationSeconds": 406,
+    "thumbnailUrl": "https://i.ytimg.com/vi/wiGpQwVHdE0/hqdefault.jpg"
+  },
+  {
+    "videoId": "vzdNOK2oB2E",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Group Anagrams - Categorize Strings by Count - Leetcode 49",
+    "tier": 2,
+    "viewCount": 790919,
+    "durationSeconds": 492,
+    "thumbnailUrl": "https://i.ytimg.com/vi/vzdNOK2oB2E/hqdefault.jpg"
+  },
+  {
+    "videoId": "XYQecbcd6_c",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Longest Palindromic Substring - Python - Leetcode 5",
+    "tier": 2,
+    "viewCount": 760208,
+    "durationSeconds": 491,
+    "thumbnailUrl": "https://i.ytimg.com/vi/XYQecbcd6_c/hqdefault.jpg"
+  },
+  {
+    "videoId": "gqXU1UyA8pk",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Longest Repeating Character Replacement - Leetcode 424 - Python",
+    "tier": 2,
+    "viewCount": 753892,
+    "durationSeconds": 1244,
+    "thumbnailUrl": "https://i.ytimg.com/vi/gqXU1UyA8pk/hqdefault.jpg"
+  },
+  {
+    "videoId": "BgLTDT03QtU",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Big-O Notation - For Coding Interviews",
+    "tier": 2,
+    "viewCount": 743988,
+    "durationSeconds": 1238,
+    "thumbnailUrl": "https://i.ytimg.com/vi/BgLTDT03QtU/hqdefault.jpg"
+  },
+  {
+    "videoId": "ZI2z5pq0TqA",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Trapping Rain Water - Google Interview Question - Leetcode 42",
+    "tier": 2,
+    "viewCount": 707150,
+    "durationSeconds": 1401,
+    "thumbnailUrl": "https://i.ytimg.com/vi/ZI2z5pq0TqA/hqdefault.jpg"
+  },
+  {
+    "videoId": "5WZl3MMT0Eg",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Maximum Subarray - Amazon Coding Interview Question - Leetcode 53 - Python",
+    "tier": 2,
+    "viewCount": 705376,
+    "durationSeconds": 483,
+    "thumbnailUrl": "https://i.ytimg.com/vi/5WZl3MMT0Eg/hqdefault.jpg"
+  },
+  {
+    "videoId": "q6IEA26hvXc",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Median of Two Sorted Arrays - Binary Search - Leetcode 4",
+    "tier": 2,
+    "viewCount": 674905,
+    "durationSeconds": 1342,
+    "thumbnailUrl": "https://i.ytimg.com/vi/q6IEA26hvXc/hqdefault.jpg"
+  },
+  {
+    "videoId": "ft0owvS5tQA",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Top 6 Coding Interview Concepts (Data Structures & Algorithms)",
+    "tier": 2,
+    "viewCount": 667125,
+    "durationSeconds": 651,
+    "thumbnailUrl": "https://i.ytimg.com/vi/ft0owvS5tQA/hqdefault.jpg"
+  },
+  {
+    "videoId": "H9bfqozjoqs",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Coin Change - Dynamic Programming Bottom Up - Leetcode 322",
+    "tier": 2,
+    "viewCount": 666089,
+    "durationSeconds": 1163,
+    "thumbnailUrl": "https://i.ytimg.com/vi/H9bfqozjoqs/hqdefault.jpg"
+  },
+  {
+    "videoId": "2V7yPrxJ8Ck",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "The LeetCode Fallacy",
+    "tier": 2,
+    "viewCount": 665273,
+    "durationSeconds": 368,
+    "thumbnailUrl": "https://i.ytimg.com/vi/2V7yPrxJ8Ck/hqdefault.jpg"
+  },
+  {
+    "videoId": "G0_I-ZF0S38",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Reverse Linked List - Iterative AND Recursive - Leetcode 206 - Python",
+    "tier": 2,
+    "viewCount": 656151,
+    "durationSeconds": 667,
+    "thumbnailUrl": "https://i.ytimg.com/vi/G0_I-ZF0S38/hqdefault.jpg"
+  },
+  {
+    "videoId": "o5n85GRKuzk",
+    "channelId": "UC_mYaQAE6-71rjSN6CeCA-g",
+    "channelName": "NeetCode",
+    "title": "Design Twitter - System Design Interview",
+    "tier": 2,
+    "viewCount": 639297,
+    "durationSeconds": 1576,
+    "thumbnailUrl": "https://i.ytimg.com/vi/o5n85GRKuzk/hqdefault.jpg"
+  },
+  {
+    "videoId": "ZDa-Z5JzLYM",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python OOP Tutorial 1: Classes and Instances",
+    "tier": 2,
+    "viewCount": 4887440,
+    "durationSeconds": 924,
+    "thumbnailUrl": "https://i.ytimg.com/vi/ZDa-Z5JzLYM/hqdefault.jpg"
+  },
+  {
+    "videoId": "YYXdXT2l-Gg",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Tutorial for Beginners 1: Install and Setup for Mac and Windows",
+    "tier": 2,
+    "viewCount": 4021505,
+    "durationSeconds": 929,
+    "thumbnailUrl": "https://i.ytimg.com/vi/YYXdXT2l-Gg/hqdefault.jpg"
+  },
+  {
+    "videoId": "UmljXZIypDc",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Django Tutorial: Full-Featured Web App Part 1 - Getting Started",
+    "tier": 2,
+    "viewCount": 2366687,
+    "durationSeconds": 932,
+    "thumbnailUrl": "https://i.ytimg.com/vi/UmljXZIypDc/hqdefault.jpg"
+  },
+  {
+    "videoId": "HVsySz-h9r4",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Git Tutorial for Beginners: Command-Line Fundamentals",
+    "tier": 2,
+    "viewCount": 2290841,
+    "durationSeconds": 1833,
+    "thumbnailUrl": "https://i.ytimg.com/vi/HVsySz-h9r4/hqdefault.jpg"
+  },
+  {
+    "videoId": "HW29067qVWk",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Jupyter Notebook Tutorial: Introduction, Setup, and Walkthrough",
+    "tier": 2,
+    "viewCount": 2246750,
+    "durationSeconds": 1821,
+    "thumbnailUrl": "https://i.ytimg.com/vi/HW29067qVWk/hqdefault.jpg"
+  },
+  {
+    "videoId": "sugvnHA7ElY",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Tutorial: if __name__ == '__main__'",
+    "tier": 2,
+    "viewCount": 2114740,
+    "durationSeconds": 523,
+    "thumbnailUrl": "https://i.ytimg.com/vi/sugvnHA7ElY/hqdefault.jpg"
+  },
+  {
+    "videoId": "MwZwr5Tvyxo",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Flask Tutorial: Full-Featured Web App Part 1 - Getting Started",
+    "tier": 2,
+    "viewCount": 2086368,
+    "durationSeconds": 1029,
+    "thumbnailUrl": "https://i.ytimg.com/vi/MwZwr5Tvyxo/hqdefault.jpg"
+  },
+  {
+    "videoId": "Uh2ebFW8OYM",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Tutorial: File Objects - Reading and Writing to Files",
+    "tier": 2,
+    "viewCount": 2023058,
+    "durationSeconds": 1473,
+    "thumbnailUrl": "https://i.ytimg.com/vi/Uh2ebFW8OYM/hqdefault.jpg"
+  },
+  {
+    "videoId": "k9TUPpGqYTo",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Tutorial for Beginners 2: Strings - Working with Textual Data",
+    "tier": 2,
+    "viewCount": 1997322,
+    "durationSeconds": 1272,
+    "thumbnailUrl": "https://i.ytimg.com/vi/k9TUPpGqYTo/hqdefault.jpg"
+  },
+  {
+    "videoId": "BJ-VvGyQxho",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python OOP Tutorial 2: Class Variables",
+    "tier": 2,
+    "viewCount": 1890635,
+    "durationSeconds": 701,
+    "thumbnailUrl": "https://i.ytimg.com/vi/BJ-VvGyQxho/hqdefault.jpg"
+  },
+  {
+    "videoId": "daefaLgNkw0",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Tutorial for Beginners 5: Dictionaries - Working with Key-Value Pairs",
+    "tier": 2,
+    "viewCount": 1727670,
+    "durationSeconds": 599,
+    "thumbnailUrl": "https://i.ytimg.com/vi/daefaLgNkw0/hqdefault.jpg"
+  },
+  {
+    "videoId": "W8KRzm-HUcc",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Tutorial for Beginners 4: Lists, Tuples, and Sets",
+    "tier": 2,
+    "viewCount": 1716805,
+    "durationSeconds": 1745,
+    "thumbnailUrl": "https://i.ytimg.com/vi/W8KRzm-HUcc/hqdefault.jpg"
+  },
+  {
+    "videoId": "rq8cL2XMM5M",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python OOP Tutorial 3: classmethods and staticmethods",
+    "tier": 2,
+    "viewCount": 1708652,
+    "durationSeconds": 920,
+    "thumbnailUrl": "https://i.ytimg.com/vi/rq8cL2XMM5M/hqdefault.jpg"
+  },
+  {
+    "videoId": "ZyhVh-qRZPA",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Pandas Tutorial (Part 1): Getting Started with Data Analysis - Installation and Loading Data",
+    "tier": 2,
+    "viewCount": 1653046,
+    "durationSeconds": 1381,
+    "thumbnailUrl": "https://i.ytimg.com/vi/ZyhVh-qRZPA/hqdefault.jpg"
+  },
+  {
+    "videoId": "6tNS--WetLI",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Tutorial: Unit Testing Your Code with the unittest Module",
+    "tier": 2,
+    "viewCount": 1496163,
+    "durationSeconds": 2353,
+    "thumbnailUrl": "https://i.ytimg.com/vi/6tNS--WetLI/hqdefault.jpg"
+  },
+  {
+    "videoId": "RSl87lqOXDE",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python OOP Tutorial 4: Inheritance - Creating Subclasses",
+    "tier": 2,
+    "viewCount": 1468524,
+    "durationSeconds": 1180,
+    "thumbnailUrl": "https://i.ytimg.com/vi/RSl87lqOXDE/hqdefault.jpg"
+  },
+  {
+    "videoId": "q5uM4VKywbA",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Tutorial: CSV Module - How to Read, Parse, and Write CSV Files",
+    "tier": 2,
+    "viewCount": 1425149,
+    "durationSeconds": 972,
+    "thumbnailUrl": "https://i.ytimg.com/vi/q5uM4VKywbA/hqdefault.jpg"
+  },
+  {
+    "videoId": "C-gEQdGVXbk",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "10 Python Tips and Tricks For Writing Better Code",
+    "tier": 2,
+    "viewCount": 1407673,
+    "durationSeconds": 2361,
+    "thumbnailUrl": "https://i.ytimg.com/vi/C-gEQdGVXbk/hqdefault.jpg"
+  },
+  {
+    "videoId": "sa-TUpSx1JA",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Regular Expressions (Regex) Tutorial: How to Match Any Pattern of Text",
+    "tier": 2,
+    "viewCount": 1347324,
+    "durationSeconds": 2275,
+    "thumbnailUrl": "https://i.ytimg.com/vi/sa-TUpSx1JA/hqdefault.jpg"
+  },
+  {
+    "videoId": "9Os0o3wzS_I",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Tutorial for Beginners 8: Functions",
+    "tier": 2,
+    "viewCount": 1287012,
+    "durationSeconds": 1308,
+    "thumbnailUrl": "https://i.ytimg.com/vi/9Os0o3wzS_I/hqdefault.jpg"
+  },
+  {
+    "videoId": "9N6a-VLBa2I",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Tutorial: Working with JSON Data using the json Module",
+    "tier": 2,
+    "viewCount": 1263312,
+    "durationSeconds": 1234,
+    "thumbnailUrl": "https://i.ytimg.com/vi/9N6a-VLBa2I/hqdefault.jpg"
+  },
+  {
+    "videoId": "K8L6KVGG-7o",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Tutorial: re Module - How to Write and Match Regular Expressions (Regex)",
+    "tier": 2,
+    "viewCount": 1219861,
+    "durationSeconds": 3198,
+    "thumbnailUrl": "https://i.ytimg.com/vi/K8L6KVGG-7o/hqdefault.jpg"
+  },
+  {
+    "videoId": "ng2o98k983k",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Tutorial: Web Scraping with BeautifulSoup and Requests",
+    "tier": 2,
+    "viewCount": 1179471,
+    "durationSeconds": 2748,
+    "thumbnailUrl": "https://i.ytimg.com/vi/ng2o98k983k/hqdefault.jpg"
+  },
+  {
+    "videoId": "YJC6ldI3hWk",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Tutorial: Anaconda - Installation and Using Conda",
+    "tier": 2,
+    "viewCount": 1171763,
+    "durationSeconds": 685,
+    "thumbnailUrl": "https://i.ytimg.com/vi/YJC6ldI3hWk/hqdefault.jpg"
+  },
+  {
+    "videoId": "UO98lJQ3QGI",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Matplotlib Tutorial (Part 1): Creating and Customizing Our First Plots",
+    "tier": 2,
+    "viewCount": 1143591,
+    "durationSeconds": 2101,
+    "thumbnailUrl": "https://i.ytimg.com/vi/UO98lJQ3QGI/hqdefault.jpg"
+  },
+  {
+    "videoId": "tb8gHvYlCFs",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Requests Tutorial: Request Web Pages, Download Images, POST Data, Read JSON, and More",
+    "tier": 2,
+    "viewCount": 1112178,
+    "durationSeconds": 1501,
+    "thumbnailUrl": "https://i.ytimg.com/vi/tb8gHvYlCFs/hqdefault.jpg"
+  },
+  {
+    "videoId": "xFciV6Ew5r4",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Setting up a Python Development Environment in Sublime Text",
+    "tier": 2,
+    "viewCount": 1108081,
+    "durationSeconds": 1563,
+    "thumbnailUrl": "https://i.ytimg.com/vi/xFciV6Ew5r4/hqdefault.jpg"
+  },
+  {
+    "videoId": "jCzT9XFZ5bw",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python OOP Tutorial 6: Property Decorators - Getters, Setters, and Deleters",
+    "tier": 2,
+    "viewCount": 1062060,
+    "durationSeconds": 573,
+    "thumbnailUrl": "https://i.ytimg.com/vi/jCzT9XFZ5bw/hqdefault.jpg"
+  },
+  {
+    "videoId": "pd-0G0MigUA",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python SQLite Tutorial: Complete Overview - Creating a Database, Table, and Running Queries",
+    "tier": 2,
+    "viewCount": 1041628,
+    "durationSeconds": 1789,
+    "thumbnailUrl": "https://i.ytimg.com/vi/pd-0G0MigUA/hqdefault.jpg"
+  },
+  {
+    "videoId": "6iF8Xb7Z3wQ",
+    "channelId": "UCCezIgC97PvUuR4_gbFUs5g",
+    "channelName": "Corey Schafer",
+    "title": "Python Tutorial for Beginners 7: Loops and Iterations - For/While Loops",
+    "tier": 2,
+    "viewCount": 1028307,
+    "durationSeconds": 614,
+    "thumbnailUrl": "https://i.ytimg.com/vi/6iF8Xb7Z3wQ/hqdefault.jpg"
+  }
+]
