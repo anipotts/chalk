@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { generateChapters } from '@/lib/chapters';
 import type { TranscriptSegment } from '@/lib/video-utils';
+import { snapToSegmentBoundaries, type IntervalSelection } from '@/lib/video-utils';
 
 export interface KeyMoment {
   timestamp_seconds: number;
@@ -16,6 +17,9 @@ interface ChapterTimelineProps {
   duration: number;
   onSeek: (seconds: number) => void;
   keyMoments?: KeyMoment[];
+  interval?: IntervalSelection | null;
+  onIntervalSelect?: (interval: IntervalSelection) => void;
+  onIntervalClear?: () => void;
 }
 
 function formatTs(seconds: number): string {
@@ -26,9 +30,13 @@ function formatTs(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+/** Minimum drag distance (as fraction of bar width) to register as interval vs click */
+const MIN_DRAG_FRACTION = 0.01;
+
 /**
  * Thin chapter/progress bar that replaces the bottom border of the top header.
  * Hover shows live timestamp / total duration, click seeks.
+ * Shift+drag to select an interval range.
  */
 export function ChapterTimeline({
   segments,
@@ -36,6 +44,9 @@ export function ChapterTimeline({
   duration,
   onSeek,
   keyMoments,
+  interval,
+  onIntervalSelect,
+  onIntervalClear,
 }: ChapterTimelineProps) {
   const chapters = useMemo(
     () => generateChapters(segments, duration),
@@ -44,8 +55,76 @@ export function ChapterTimeline({
   const [hoverInfo, setHoverInfo] = useState<{ time: number; xPercent: number } | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
 
+  // Drag state for interval selection
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<number | null>(null);
+  const [dragEnd, setDragEnd] = useState<number | null>(null);
+  const dragStartRef = useRef<number | null>(null);
+
+  const fractionToTime = useCallback(
+    (clientX: number): number => {
+      if (!barRef.current || duration <= 0) return 0;
+      const rect = barRef.current.getBoundingClientRect();
+      const fraction = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      return fraction * duration;
+    },
+    [duration],
+  );
+
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      // Shift+click starts interval drag
+      if (!e.shiftKey || !onIntervalSelect) return;
+      e.preventDefault();
+      const time = fractionToTime(e.clientX);
+      setIsDragging(true);
+      setDragStart(time);
+      setDragEnd(time);
+      dragStartRef.current = time;
+    },
+    [fractionToTime, onIntervalSelect],
+  );
+
+  // Global mouse move/up for drag
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMove = (e: MouseEvent) => {
+      const time = fractionToTime(e.clientX);
+      setDragEnd(time);
+    };
+
+    const handleUp = (e: MouseEvent) => {
+      setIsDragging(false);
+      const endTime = fractionToTime(e.clientX);
+      const startTime = dragStartRef.current ?? 0;
+
+      // Check if drag distance is significant
+      const dragFraction = Math.abs(endTime - startTime) / duration;
+      if (dragFraction >= MIN_DRAG_FRACTION && onIntervalSelect) {
+        const lo = Math.min(startTime, endTime);
+        const hi = Math.max(startTime, endTime);
+        const snapped = snapToSegmentBoundaries(lo, hi, segments);
+        onIntervalSelect(snapped);
+      }
+
+      setDragStart(null);
+      setDragEnd(null);
+      dragStartRef.current = null;
+    };
+
+    document.addEventListener('mousemove', handleMove);
+    document.addEventListener('mouseup', handleUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleUp);
+    };
+  }, [isDragging, duration, fractionToTime, onIntervalSelect, segments]);
+
   const handleClick = useCallback(
     (e: React.MouseEvent) => {
+      // If shift is held, drag handles it
+      if (e.shiftKey) return;
       if (!barRef.current || duration <= 0) return;
       const rect = barRef.current.getBoundingClientRect();
       const fraction = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
@@ -68,19 +147,42 @@ export function ChapterTimeline({
     setHoverInfo(null);
   }, []);
 
+  // Double-click clears interval
+  const handleDoubleClick = useCallback(() => {
+    if (interval && onIntervalClear) {
+      onIntervalClear();
+    }
+  }, [interval, onIntervalClear]);
+
   if (duration <= 0) return null;
 
   const progressFraction = Math.min(1, Math.max(0, currentTime / duration));
   const hasChapters = chapters.length > 0;
+
+  // Active interval (committed or in-progress drag)
+  const displayInterval = isDragging && dragStart !== null && dragEnd !== null
+    ? { startTime: Math.min(dragStart, dragEnd), endTime: Math.max(dragStart, dragEnd) }
+    : interval;
+
+  const intervalLeft = displayInterval
+    ? Math.min(1, Math.max(0, displayInterval.startTime / duration)) * 100
+    : 0;
+  const intervalWidth = displayInterval
+    ? (Math.min(1, Math.max(0, displayInterval.endTime / duration)) - Math.min(1, Math.max(0, displayInterval.startTime / duration))) * 100
+    : 0;
 
   return (
     <div className="relative w-full group/timeline">
       <div
         ref={barRef}
         onClick={handleClick}
+        onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className="relative w-full h-[3px] bg-white/[0.06] cursor-pointer transition-[height] duration-150 group-hover/timeline:h-[5px]"
+        onDoubleClick={handleDoubleClick}
+        className={`relative w-full h-[3px] bg-white/[0.06] cursor-pointer transition-[height] duration-150 group-hover/timeline:h-[5px] ${
+          isDragging ? 'h-[5px]' : ''
+        }`}
         role="slider"
         aria-valuemin={0}
         aria-valuemax={duration}
@@ -106,8 +208,16 @@ export function ChapterTimeline({
           style={{ width: `${progressFraction * 100}%` }}
         />
 
+        {/* Interval selection highlight */}
+        {displayInterval && intervalWidth > 0 && (
+          <div
+            className="absolute top-0 h-full bg-amber-400/30 border-x border-amber-400/60 z-[2] pointer-events-none"
+            style={{ left: `${intervalLeft}%`, width: `${intervalWidth}%` }}
+          />
+        )}
+
         {/* Hover position indicator — thin vertical line at mouse position */}
-        {hoverInfo && (
+        {hoverInfo && !isDragging && (
           <div
             className="absolute top-0 h-full w-[2px] bg-white/40 z-[3] pointer-events-none"
             style={{ left: `${hoverInfo.xPercent}%`, marginLeft: '-1px' }}
@@ -153,7 +263,7 @@ export function ChapterTimeline({
       </div>
 
       {/* Hover timestamp tooltip */}
-      {hoverInfo && (
+      {hoverInfo && !isDragging && (
         <div
           className="absolute top-full mt-1 transform -translate-x-1/2 px-2 py-0.5 rounded bg-chalk-surface/95 border border-chalk-border/40 shadow-lg pointer-events-none z-10"
           style={{ left: `${hoverInfo.xPercent}%` }}
@@ -162,6 +272,30 @@ export function ChapterTimeline({
             {formatTs(Math.floor(hoverInfo.time))}{' '}
             <span className="text-slate-500">/</span>{' '}
             <span className="text-slate-500">{formatTs(Math.floor(duration))}</span>
+          </span>
+        </div>
+      )}
+
+      {/* Interval tooltip — shows selected range */}
+      {displayInterval && intervalWidth > 0 && !isDragging && (
+        <div
+          className="absolute top-full mt-1 transform -translate-x-1/2 px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 shadow-lg pointer-events-none z-10"
+          style={{ left: `${intervalLeft + intervalWidth / 2}%` }}
+        >
+          <span className="text-[10px] font-mono text-amber-300 whitespace-nowrap">
+            {formatTs(Math.floor(displayInterval.startTime))} – {formatTs(Math.floor(displayInterval.endTime))}
+          </span>
+        </div>
+      )}
+
+      {/* Drag tooltip — live range during drag */}
+      {isDragging && dragStart !== null && dragEnd !== null && (
+        <div
+          className="absolute top-full mt-1 transform -translate-x-1/2 px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 shadow-lg pointer-events-none z-10"
+          style={{ left: `${intervalLeft + intervalWidth / 2}%` }}
+        >
+          <span className="text-[10px] font-mono text-amber-300 whitespace-nowrap">
+            {formatTs(Math.floor(Math.min(dragStart, dragEnd)))} – {formatTs(Math.floor(Math.max(dragStart, dragEnd)))}
           </span>
         </div>
       )}

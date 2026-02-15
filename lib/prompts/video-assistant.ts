@@ -7,6 +7,7 @@ ${VIDEO_RULES}
 
 CONTEXT:
 - <watched_content> is primary; <upcoming_content> is secondary. Reference upcoming only with "this comes up later around [timestamp]".
+- When <selected_interval> is present, the user selected a specific video range. Focus your answer on that section above all else. Cite timestamps within the interval.
 - Cite [M:SS] for claims. "At [3:45], the speaker explains..."
 - 2-4 sentences for simple questions. Expand for summaries/notes.
 
@@ -55,6 +56,7 @@ export function buildVideoSystemPromptParts(opts: {
   summary?: string;
   transcriptSource?: string;
   voiceMode?: boolean;
+  intervalDesc?: string;
 }): SystemPart[] {
   let basePrompt = VIDEO_ASSISTANT_SYSTEM_PROMPT;
 
@@ -80,7 +82,7 @@ export function buildVideoSystemPromptParts(opts: {
     },
     {
       role: 'system',
-      content: `<current_position>The user is at ${opts.currentTimestamp} in the video.</current_position>`,
+      content: `<current_position>The user is at ${opts.currentTimestamp} in the video.${opts.intervalDesc || ''}</current_position>`,
     },
   ];
 }
@@ -95,6 +97,7 @@ export function buildExploreSystemPromptParts(opts: {
   videoTitle?: string;
   exploreGoal?: string;
   transcriptSource?: string;
+  intervalDesc?: string;
 }): SystemPart[] {
   let basePrompt = EXPLORE_MODE_SYSTEM_PROMPT;
 
@@ -117,7 +120,7 @@ export function buildExploreSystemPromptParts(opts: {
     },
     {
       role: 'system',
-      content: `<current_position>${opts.currentTimestamp}</current_position>`,
+      content: `<current_position>${opts.currentTimestamp}${opts.intervalDesc || ''}</current_position>`,
     },
   ];
 }
