@@ -6,7 +6,6 @@ import { TranscriptPanel } from './TranscriptPanel';
 import { useTranscriptStream } from '@/hooks/useTranscriptStream';
 import { useVideoTitle } from '@/hooks/useVideoTitle';
 import { X, ArrowLeft, ArrowSquareOut } from '@phosphor-icons/react';
-import type { MediaPlayerInstance } from '@vidstack/react';
 
 const VideoPlayer = dynamic(() => import('./VideoPlayer').then((m) => m.VideoPlayer), { ssr: false });
 
@@ -114,7 +113,7 @@ function SidePanelContent({ entry, onOpenVideo }: {
   entry: SideVideoEntry;
   onOpenVideo?: (videoId: string, title: string, channelName: string, seekTo?: number) => void;
 }) {
-  const playerRef = useRef<MediaPlayerInstance>(null);
+  const playerRef = useRef<HTMLVideoElement>(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [showTranscript, setShowTranscript] = useState(true);
 

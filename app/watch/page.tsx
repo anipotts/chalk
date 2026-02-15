@@ -12,7 +12,6 @@ import { formatTimestamp } from "@/lib/video-utils";
 import { storageKey } from "@/lib/brand";
 import { ChalkboardSimple, Play, ArrowBendUpLeft, MagnifyingGlass } from "@phosphor-icons/react";
 import { KaraokeCaption } from "@/components/KaraokeCaption";
-import type { MediaPlayerInstance } from "@vidstack/react";
 
 import { useUnifiedMode } from "@/hooks/useUnifiedMode";
 import { useVoiceClone } from "@/hooks/useVoiceClone";
@@ -50,7 +49,7 @@ const VIEW_SIZE_CYCLE = ["compact", "default", "expanded"] as const;
 function SpeedControlButton({
   playerRef,
 }: {
-  playerRef: React.RefObject<MediaPlayerInstance | null>;
+  playerRef: React.RefObject<HTMLVideoElement | null>;
 }) {
   const [open, setOpen] = useState(false);
   const [speed, setSpeed] = useState(1);
@@ -58,11 +57,7 @@ function SpeedControlButton({
 
   useEffect(() => {
     const interval = setInterval(() => {
-      try {
-        if (playerRef.current) setSpeed(playerRef.current.playbackRate);
-      } catch {
-        /* Vidstack $state proxy may throw during teardown */
-      }
+      if (playerRef.current) setSpeed(playerRef.current.playbackRate);
     }, 500);
     return () => clearInterval(interval);
   }, [playerRef]);
@@ -78,14 +73,10 @@ function SpeedControlButton({
   }, [open]);
 
   const handleSelect = (s: number) => {
-    try {
-      if (playerRef.current) {
-        playerRef.current.playbackRate = s;
-        setSpeed(s);
-        localStorage.setItem(storageKey("playback-speed"), String(s));
-      }
-    } catch {
-      /* Vidstack $state proxy may throw */
+    if (playerRef.current) {
+      playerRef.current.playbackRate = s;
+      setSpeed(s);
+      localStorage.setItem(storageKey("playback-speed"), String(s));
     }
     setOpen(false);
   };
@@ -236,7 +227,7 @@ function WatchContent() {
       /* ignore */
     }
   }, [transcriptCollapsed]);
-  const playerRef = useRef<MediaPlayerInstance>(null);
+  const playerRef = useRef<HTMLVideoElement>(null);
   const progressSaveRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const currentTimeRef = useRef(0);
   const segmentsRef = useRef(segments);
@@ -391,13 +382,9 @@ function WatchContent() {
   useEffect(() => {
     if (continueFrom === null || !playerRef.current) return;
     const timer = setInterval(() => {
-      try {
-        if (playerRef.current && playerRef.current.duration > 0) {
-          playerRef.current.currentTime = continueFrom;
-          clearInterval(timer);
-        }
-      } catch {
-        /* Vidstack $state proxy may throw during init */
+      if (playerRef.current && playerRef.current.duration > 0) {
+        playerRef.current.currentTime = continueFrom;
+        clearInterval(timer);
       }
     }, 200);
     return () => clearInterval(timer);
@@ -431,24 +418,14 @@ function WatchContent() {
   }, []);
 
   const handleSeek = useCallback((seconds: number) => {
-    try {
-      if (playerRef.current) {
-        playerRef.current.currentTime = seconds;
-        playerRef.current.play();
-      }
-    } catch {
-      /* Vidstack $state proxy may throw */
+    if (playerRef.current) {
+      playerRef.current.currentTime = seconds;
+      playerRef.current.play();
     }
   }, []);
 
   const startVoiceMode = useCallback(() => {
-    if (playerRef.current) {
-      try {
-        playerRef.current.pause();
-      } catch {
-        /* ignore */
-      }
-    }
+    playerRef.current?.pause();
     overlayDispatch({ type: 'VOICE_START' });
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [overlayDispatch]);
@@ -536,36 +513,34 @@ function WatchContent() {
       }
 
       // Player shortcuts — control video directly via playerRef
-      try {
-        const player = playerRef.current;
-        if (player) {
-          if (e.key === " " || e.key === "k") {
-            e.preventDefault();
-            if (player.paused) player.play(); else player.pause();
-            return;
-          }
-          if (e.key === "j") {
-            e.preventDefault();
-            player.currentTime = Math.max(0, player.currentTime - 10);
-            return;
-          }
-          if (e.key === "l") {
-            e.preventDefault();
-            player.currentTime += 10;
-            return;
-          }
-          if (e.key === "ArrowLeft") {
-            e.preventDefault();
-            player.currentTime = Math.max(0, player.currentTime - 5);
-            return;
-          }
-          if (e.key === "ArrowRight") {
-            e.preventDefault();
-            player.currentTime += 5;
-            return;
-          }
+      const player = playerRef.current;
+      if (player) {
+        if (e.key === " " || e.key === "k") {
+          e.preventDefault();
+          if (player.paused) player.play(); else player.pause();
+          return;
         }
-      } catch { /* Vidstack $state proxy may throw */ }
+        if (e.key === "j") {
+          e.preventDefault();
+          player.currentTime = Math.max(0, player.currentTime - 10);
+          return;
+        }
+        if (e.key === "l") {
+          e.preventDefault();
+          player.currentTime += 10;
+          return;
+        }
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          player.currentTime = Math.max(0, player.currentTime - 5);
+          return;
+        }
+        if (e.key === "ArrowRight") {
+          e.preventDefault();
+          player.currentTime += 5;
+          return;
+        }
+      }
       // Other player keys — don't capture as type-to-activate
       const otherPlayerKeys = new Set(["f", ",", ".", "<", ">", "ArrowUp", "ArrowDown"]);
       if (otherPlayerKeys.has(e.key)) return;
@@ -616,7 +591,7 @@ function WatchContent() {
 
       // Backdrop click = "go back to watching" → resume playback
       if (isBackdrop) {
-        try { playerRef.current?.play(); } catch {}
+        playerRef.current?.play();
       }
     }
     // setTimeout(0) avoids catching the same click that opened the input
@@ -839,10 +814,8 @@ function WatchContent() {
                     className="hidden md:block absolute inset-0 z-[5] cursor-pointer"
                     onPointerDown={(e) => {
                       e.stopPropagation();
-                      try {
-                        const p = playerRef.current;
-                        if (p) { p.paused ? p.play() : p.pause(); }
-                      } catch {}
+                      const p = playerRef.current;
+                      if (p) { p.paused ? p.play() : p.pause(); }
                     }}
                   />
                 )}
@@ -859,7 +832,7 @@ function WatchContent() {
                 {currentTime > 0 && phase === 'dormant' && (
                   <button
                     onClick={() => {
-                      try { playerRef.current?.pause(); } catch {}
+                      playerRef.current?.pause();
                       overlayDispatch({ type: 'ACTIVATE' });
                       requestAnimationFrame(() => {
                         if (inputRef.current) {
