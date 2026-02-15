@@ -25,6 +25,7 @@ interface TranscriptStreamState {
   progress: number;
   durationSeconds: number | null;
   metadata: TranscriptMetadata | null;
+  storyboardSpec: string | null;
 }
 
 /**
@@ -78,6 +79,7 @@ export function useTranscriptStream(videoId: string | null): TranscriptStreamSta
   const [progress, setProgress] = useState(0);
   const [durationSeconds, setDurationSeconds] = useState<number | null>(null);
   const [metadata, setMetadata] = useState<TranscriptMetadata | null>(null);
+  const [storyboardSpec, setStoryboardSpec] = useState<string | null>(null);
 
   useEffect(() => {
     if (!videoId) return;
@@ -92,6 +94,7 @@ export function useTranscriptStream(videoId: string | null): TranscriptStreamSta
     setProgress(0);
     setDurationSeconds(null);
     setMetadata(null);
+    setStoryboardSpec(null);
 
     (async () => {
       try {
@@ -117,10 +120,13 @@ export function useTranscriptStream(videoId: string | null): TranscriptStreamSta
               break;
             }
             case 'meta': {
-              const payload = JSON.parse(data) as { source: TranscriptSource; cached: boolean; metadata?: TranscriptMetadata };
+              const payload = JSON.parse(data) as { source: TranscriptSource; cached: boolean; metadata?: TranscriptMetadata; storyboardSpec?: string };
               setSource(payload.source);
               if (payload.metadata) {
                 setMetadata(payload.metadata);
+              }
+              if (payload.storyboardSpec) {
+                setStoryboardSpec(payload.storyboardSpec);
               }
               if (payload.cached) {
                 setStatusMessage('Loaded from cache');
@@ -162,5 +168,5 @@ export function useTranscriptStream(videoId: string | null): TranscriptStreamSta
     return () => { cancelled = true; };
   }, [videoId]);
 
-  return { segments, status, statusMessage, error, source, progress, durationSeconds, metadata };
+  return { segments, status, statusMessage, error, source, progress, durationSeconds, metadata, storyboardSpec };
 }

@@ -10,6 +10,23 @@ interface ExplorePillsProps {
   disabled?: boolean;
 }
 
+const pillVariants = {
+  hidden: { opacity: 0, scale: 0.8, y: 12, filter: 'blur(4px)' },
+  visible: (i: number) => ({
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    filter: 'blur(0px)',
+    transition: {
+      delay: i * 0.06,
+      type: 'spring' as const,
+      stiffness: 500,
+      damping: 30,
+      mass: 0.8,
+    },
+  }),
+};
+
 export function ExplorePills({ options, onSelect, onFocusInput, disabled = false }: ExplorePillsProps) {
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [selectingIndex, setSelectingIndex] = useState<number | null>(null);
@@ -94,21 +111,14 @@ export function ExplorePills({ options, onSelect, onFocusInput, disabled = false
         return (
           <motion.button
             key={`${option}-${index}`}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{
-              opacity: isSelecting ? 0 : 1,
-              y: 0,
-              scale: isSelecting ? 1.05 : 1,
-            }}
-            transition={{
-              delay: index * 0.03,
-              duration: 0.2,
-              ease: 'easeOut',
-            }}
+            custom={index}
+            variants={pillVariants}
+            initial="hidden"
+            animate={isSelecting ? { opacity: 0, scale: 1.08, transition: { duration: 0.15 } } : "visible"}
             onClick={() => handleSelect(option, index)}
             disabled={disabled}
             className={`
-              rounded-lg text-sm px-3 py-1.5 transition-all
+              rounded-lg text-sm px-3 py-1.5 transition-colors
               ${isSomethingElse
                 ? 'bg-white/[0.03] border border-dashed border-white/[0.15] text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]'
                 : 'bg-white/[0.06] border border-white/[0.08] text-slate-300 hover:bg-white/[0.1] hover:text-white'
@@ -120,7 +130,7 @@ export function ExplorePills({ options, onSelect, onFocusInput, disabled = false
             aria-selected={isFocused}
           >
             {!isSomethingElse && index < 4 && (
-              <span className="text-[10px] text-slate-600 font-mono mr-1.5">{index + 1}</span>
+              <span className="inline-flex items-center justify-center w-4 h-4 rounded text-[9px] font-mono font-medium bg-white/[0.08] text-slate-500 mr-1.5 -ml-0.5">{index + 1}</span>
             )}
             {option}
           </motion.button>

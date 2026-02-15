@@ -71,9 +71,8 @@ export interface InputStripContentProps {
   isTextStreaming: boolean;
   exploreMode: boolean;
   toggleExploreMode: () => void;
-  exploreAbortRef: React.RefObject<AbortController | null>;
-  onStopTextStream: () => void;
-  inputRef?: RefObject<HTMLTextAreaElement | null>;
+  onStopStream: () => void;
+  inputRef?: RefObject<HTMLElement | null>;
   inputVisible?: boolean;
   onInputFocus?: () => void;
   onInputBlur?: () => void;
@@ -85,9 +84,6 @@ export interface InputStripContentProps {
   // Exchanges for clear button
   exchanges: UnifiedExchange[];
   onClearHistory: () => void;
-  setExploreGoal: (goal: string | null) => void;
-  setExplorePills: (pills: string[]) => void;
-  setExploreError: (error: string | null) => void;
 
   // Curriculum
   curriculumContext?: string | null;
@@ -105,8 +101,7 @@ export function InputStripContent({
   isTextStreaming,
   exploreMode,
   toggleExploreMode,
-  exploreAbortRef,
-  onStopTextStream,
+  onStopStream,
   inputRef,
   inputVisible,
   onInputFocus,
@@ -115,9 +110,6 @@ export function InputStripContent({
   recordingDuration,
   exchanges,
   onClearHistory,
-  setExploreGoal,
-  setExplorePills,
-  setExploreError,
   curriculumContext,
   curriculumVideoCount,
   onHeightChange,
@@ -138,7 +130,7 @@ export function InputStripContent({
   }, [onHeightChange]);
 
   return (
-    <div ref={stripRef} className={`absolute bottom-0 left-0 right-0 z-[32] pointer-events-none md:relative md:inset-auto md:w-full md:z-auto transition-opacity duration-200 ease-out ${
+    <div ref={stripRef} data-input-strip className={`absolute bottom-0 left-0 right-0 z-[32] pointer-events-none md:relative md:inset-auto md:w-full md:z-auto transition-opacity duration-200 ease-out ${
       inputVisible === false ? 'md:opacity-0 md:pointer-events-none' : 'md:opacity-100'
     }`}>
       <div className={`pointer-events-auto px-3 pb-3 md:px-0 md:pb-0 md:pt-3 ${expanded ? 'bg-chalk-surface/95 backdrop-blur-md md:bg-transparent md:backdrop-blur-none' : 'pt-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent md:from-transparent md:via-transparent md:pt-3 md:bg-none'}`}>
@@ -160,14 +152,7 @@ export function InputStripContent({
             onChange={setInput}
             onSubmit={handleSubmit}
             isStreaming={isTextStreaming}
-            onStop={() => {
-              if (exploreMode && exploreAbortRef.current) {
-                exploreAbortRef.current.abort("stopped");
-                // Note: we don't null out the ref here since it's a RefObject
-              } else {
-                onStopTextStream();
-              }
-            }}
+            onStop={onStopStream}
             placeholder="Ask about this video..."
             inputRef={inputRef}
             autoFocus={false}
@@ -235,14 +220,7 @@ export function InputStripContent({
           {isTextStreaming ? (
             <button
               type="button"
-              onClick={() => {
-                if (exploreMode && exploreAbortRef.current) {
-                  exploreAbortRef.current.abort("stopped");
-                  // Note: we don't null out the ref here since it's a RefObject
-                } else {
-                  onStopTextStream();
-                }
-              }}
+              onClick={onStopStream}
               className="flex flex-shrink-0 justify-center items-center w-11 h-11 text-red-400 rounded-xl transition-colors bg-red-500/15 hover:bg-red-500/25"
               title="Stop"
               aria-label="Stop response"
@@ -304,12 +282,7 @@ export function InputStripContent({
         {expanded && exchanges.length > 0 && (
           <div className="flex justify-center mt-4 md:hidden">
             <button
-              onClick={() => {
-                onClearHistory();
-                setExploreGoal(null);
-                setExplorePills([]);
-                setExploreError(null);
-              }}
+              onClick={onClearHistory}
               className="text-xs text-slate-500 hover:text-slate-300 px-3 py-1.5 rounded-lg hover:bg-white/[0.03] transition-colors"
               title="Clear conversation history"
             >

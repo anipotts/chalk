@@ -338,7 +338,8 @@ export function renderRichContent(content: string, onSeek?: (seconds: number) =>
           </span>
         );
       } else {
-        blocks.push(<span key={`bl-${blockIdx++}`}>{'\n'}</span>);
+        // Empty line → visual paragraph break spacer
+        blocks.push(<div key={`bl-${blockIdx++}`} className="h-2" />);
       }
     }
   }

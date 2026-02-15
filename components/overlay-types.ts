@@ -1,6 +1,7 @@
 import type { RefObject } from "react";
 import type { VoiceState } from "@/hooks/useVoiceMode";
 import type { TranscriptSegment, TranscriptSource } from "@/lib/video-utils";
+import type { StoryboardLevel } from "@/lib/storyboard";
 import type {
   ParsedQuiz,
   ParsedExplanation,
@@ -104,10 +105,8 @@ export interface InteractionOverlayProps {
   onClose: () => void;
   onExpandOverlay?: () => void;
   onInteract?: () => void;
-  inputRef?: RefObject<HTMLTextAreaElement | null>;
+  inputRef?: RefObject<HTMLElement | null>;
   inputVisible?: boolean;
-  pendingChar?: string | null;
-  onPendingCharConsumed?: () => void;
   onInputFocus?: () => void;
   onInputBlur?: () => void;
 
@@ -127,7 +126,6 @@ export interface InteractionOverlayProps {
   learnError: string | null;
   learnOptions: LearnOption[];
   learnOptionsLoading: boolean;
-  onEnsureLearnOptions?: () => void;
   onOpenLearnMode: () => void;
   onSelectAction: (action: LearnAction) => void;
   onFocusInput?: () => void;
@@ -139,17 +137,19 @@ export interface InteractionOverlayProps {
   curriculumContext?: string | null;
   curriculumVideoCount?: number;
 
-  // External streaming control (unified model)
-  onAddExchange?: (exchange: UnifiedExchange) => void;
-  onSetStreamingState?: (state: {
-    userText?: string;
-    aiText?: string;
-    isStreaming?: boolean;
-    toolCalls?: ToolCallData[];
-  }) => void;
-  currentMode?: 'chat' | 'explore';
-  onSetCurrentMode?: (mode: 'chat' | 'explore') => void;
+  // Explore mode (from unified mode hook)
+  exploreMode: boolean;
+  onToggleExploreMode: () => void;
+  onExploreSubmit: (text: string) => Promise<void>;
+  onStopExploreStream: () => void;
+  exploreError: string | null;
+  explorePills: string[];
+  isThinking: boolean;
+  thinkingDuration: number | null;
 
   // View size for scaling input strip + captions
   viewSize?: ViewSize;
+
+  // Storyboard data for timestamp hover cards
+  storyboardLevels?: StoryboardLevel[];
 }

@@ -81,6 +81,11 @@ interface InnertubePlayerResponse {
     shortDescription?: string;
     author?: string;
   };
+  storyboards?: {
+    playerStoryboardSpecRenderer?: {
+      spec?: string;
+    };
+  };
 }
 
 interface Json3Response {
@@ -191,15 +196,25 @@ function isAllowedYouTubeUrl(urlStr: string, allowedPrefixes: string[]): boolean
   }
 }
 
+/**
+ * Fetch only the storyboard spec string for a video (lightweight fallback).
+ * Used when the caption race winner didn't include storyboard data.
+ */
+export async function fetchStoryboardSpec(videoId: string): Promise<string | undefined> {
+  const data = await fetchInnertubePlayer(videoId);
+  return data.storyboards?.playerStoryboardSpecRenderer?.spec;
+}
+
 // ─── Tier 1: Innertube API (ANDROID client) ─────────────────────────────────────
 //
 // YouTube's WEB client no longer returns caption tracks as of early 2025.
 // The ANDROID client still returns them, but caption URLs serve XML timedtext
 // instead of JSON3 (the fmt param is ignored). We parse the XML directly.
 
-async function fetchTranscriptInnertube(videoId: string): Promise<{ segments: TranscriptSegment[]; metadata?: VideoMetadata }> {
+async function fetchTranscriptInnertube(videoId: string): Promise<{ segments: TranscriptSegment[]; metadata?: VideoMetadata; storyboardSpec?: string }> {
   const data = await fetchInnertubePlayer(videoId);
   const metadata = extractMetadata(data);
+  const storyboardSpec = data.storyboards?.playerStoryboardSpecRenderer?.spec;
   const tracks = data.captions?.playerCaptionsTracklistRenderer?.captionTracks;
   if (!tracks || tracks.length === 0) throw new Error('No caption tracks found');
 
@@ -248,7 +263,7 @@ async function fetchTranscriptInnertube(videoId: string): Promise<{ segments: Tr
   }
 
   if (segments.length === 0) throw new Error('Innertube: returned 0 segments');
-  return { segments, metadata };
+  return { segments, metadata, storyboardSpec };
 }
 
 // ─── Tier 1b: Web page scrape (extract ytInitialPlayerResponse from HTML) ────
@@ -257,7 +272,7 @@ async function fetchTranscriptInnertube(videoId: string): Promise<{ segments: Tr
 // the embedded player response. More reliable from datacenter IPs than
 // the Innertube API POST because it looks like a normal page visit.
 
-async function fetchTranscriptWebScrape(videoId: string): Promise<{ segments: TranscriptSegment[]; metadata?: VideoMetadata }> {
+async function fetchTranscriptWebScrape(videoId: string): Promise<{ segments: TranscriptSegment[]; metadata?: VideoMetadata; storyboardSpec?: string }> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
 
@@ -337,7 +352,11 @@ async function fetchTranscriptWebScrape(videoId: string): Promise<{ segments: Tr
 
   if (segments.length === 0) throw new Error('Web scrape: returned 0 segments');
   console.log(`[transcript] web scrape: got ${segments.length} segments`);
-  return { segments, metadata };
+
+  // Extract storyboard spec if available
+  const storyboardSpec = playerData.storyboards?.playerStoryboardSpecRenderer?.spec;
+
+  return { segments, metadata, storyboardSpec };
 }
 
 // ─── Tier 2: yt-dlp CLI (write subs to file) ───────────────────────────────────
@@ -614,6 +633,7 @@ interface CaptionRaceResult {
   segments: TranscriptSegment[];
   source: 'innertube' | 'web-scrape' | 'yt-dlp' | 'caption-extractor' | 'cf-worker';
   metadata?: VideoMetadata;
+  storyboardSpec?: string;
 }
 
 const INNERTUBE_TIMEOUT = 15_000;         // 15s — Innertube is fast when it works
@@ -668,8 +688,9 @@ export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
     ).then((result) => {
       const segments = Array.isArray(result) ? result : result.segments;
       const metadata = Array.isArray(result) ? undefined : result.metadata;
+      const storyboardSpec = Array.isArray(result) ? undefined : (result as { storyboardSpec?: string }).storyboardSpec;
       console.log(`[transcript] ${videoId}: ${source} succeeded in ${Date.now() - raceStart}ms (${segments.length} segments)`);
-      return { segments, source, metadata };
+      return { segments, source, metadata, storyboardSpec };
     }).catch((err) => {
       console.warn(`[transcript] ${videoId}: ${source} failed in ${Date.now() - raceStart}ms:`, err instanceof Error ? err.message : err);
       throw err;

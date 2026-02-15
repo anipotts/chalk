@@ -13,7 +13,7 @@
  *   error    → { message }
  */
 
-import { captionRace, sttCascade, deduplicateSegments, cleanSegments, mergeIntoSentences, type TranscriptSegment, type TranscriptSource, type VideoMetadata } from '@/lib/transcript';
+import { captionRace, sttCascade, deduplicateSegments, cleanSegments, mergeIntoSentences, fetchStoryboardSpec, type TranscriptSegment, type TranscriptSource, type VideoMetadata } from '@/lib/transcript';
 import { getCachedTranscript, setCachedTranscript } from '@/lib/transcript-cache';
 
 export const dynamic = 'force-dynamic';
@@ -87,12 +87,14 @@ export async function GET(req: Request) {
         let segments: TranscriptSegment[] | null = null;
         let source: TranscriptSource | null = null;
         let metadata: VideoMetadata | undefined;
+        let storyboardSpec: string | undefined;
 
         try {
           const result = await captionRace(videoId);
           segments = mergeIntoSentences(cleanSegments(deduplicateSegments(result.segments)));
           source = result.source;
           metadata = result.metadata;
+          storyboardSpec = result.storyboardSpec;
           console.log(`[transcript] ${videoId}: fetched via ${source} (${segments.length} segments)`);
         } catch (e) {
           console.log(`[transcript] ${videoId}: caption race failed:`, e instanceof Error ? e.message : e);
@@ -122,7 +124,16 @@ export async function GET(req: Request) {
           return;
         }
 
-        send('meta', { source, cached: false, metadata });
+        // If the winning tier didn't return storyboard, try fetching it separately
+        if (!storyboardSpec) {
+          try {
+            storyboardSpec = await fetchStoryboardSpec(videoId);
+          } catch {
+            // Non-critical — hover thumbnails just won't show
+          }
+        }
+
+        send('meta', { source, cached: false, metadata, storyboardSpec });
         send('segments', segments);
 
         const lastSeg = segments[segments.length - 1];

@@ -30,6 +30,7 @@ export interface TranscriptResult {
     description?: string;
     author?: string;
   };
+  storyboardSpec?: string;
 }
 
 export interface ExtractedVideo {

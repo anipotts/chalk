@@ -4,36 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { formatTimestamp, type TranscriptSegment, type TranscriptSource } from '@/lib/video-utils';
 import type { TranscriptStatus } from '@/hooks/useTranscriptStream';
 import { XCircle, Chats } from '@phosphor-icons/react';
-
-interface Chapter {
-  offset: number;
-  label: string;
-}
-
-function generateChapters(segments: TranscriptSegment[]): Chapter[] {
-  if (segments.length < 10) return [];
-
-  const totalDuration = segments[segments.length - 1].offset + (segments[segments.length - 1].duration || 0);
-  if (totalDuration < 120) return [];
-
-  const chapterInterval = Math.max(120, Math.min(300, totalDuration / 8));
-  const chapters: Chapter[] = [];
-  let nextChapterTime = 0;
-
-  for (const seg of segments) {
-    if (seg.offset >= nextChapterTime) {
-      const text = seg.text.trim();
-      if (text.length > 3) {
-        let label = text.length > 40 ? text.slice(0, 40).replace(/\s\S*$/, '') + '...' : text;
-        label = label.charAt(0).toUpperCase() + label.slice(1);
-        chapters.push({ offset: seg.offset, label });
-        nextChapterTime = seg.offset + chapterInterval;
-      }
-    }
-  }
-
-  return chapters;
-}
+import { generateChapters } from '@/lib/chapters';
 
 interface TranscriptPanelProps {
   segments: TranscriptSegment[];

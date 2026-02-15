@@ -179,6 +179,37 @@ body {
 }
 
 
+/* ── Video border + scroll badge color system ── */
+/* Badges: paused / neutral */
+[data-video-container] [data-scroll-badge] {
+  background-color: rgba(255, 255, 255, 0.12);
+  box-shadow: none;
+  transition: background-color 0.3s ease-out, box-shadow 0.3s ease-out;
+}
+
+/* Badges: playing / blue */
+[data-video-container][data-playing] [data-scroll-badge] {
+  background-color: rgb(59, 130, 246);
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.2);
+}
+
+/* Hover sync — paused: badge + border brighten to neutral highlight */
+[data-video-container]:has([data-scroll-badge]:hover) [data-video-border] {
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+[data-video-container]:has([data-scroll-badge]:hover) [data-scroll-badge] {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Hover sync — playing: badge + border brighten to blue-400 */
+[data-video-container][data-playing]:has([data-scroll-badge]:hover) [data-video-border] {
+  border-color: rgb(96, 165, 250) !important;
+}
+[data-video-container][data-playing]:has([data-scroll-badge]:hover) [data-scroll-badge] {
+  background-color: rgb(96, 165, 250) !important;
+  box-shadow: 0 10px 15px -3px rgba(96, 165, 250, 0.3) !important;
+}
+
 /* Mafs overrides for dark theme */
 .MafsView {
   --mafs-bg: transparent !important;

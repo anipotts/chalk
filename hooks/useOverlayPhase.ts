@@ -2,30 +2,26 @@ import { useReducer, useRef, useState, useEffect, useCallback } from 'react';
 
 // --- Phase type ---
 
-export type OverlayPhase = 'dormant' | 'input' | 'conversing' | 'lingering';
+export type OverlayPhase = 'dormant' | 'active' | 'lingering';
 
 // --- Action types ---
 
 export type OverlayAction =
-  | { type: 'KEYPRESS'; char: string }
-  | { type: 'FOCUS_INPUT' }
-  | { type: 'CLICK_VIDEO' }
+  | { type: 'ACTIVATE' }
+  | { type: 'CLICK_AWAY' }
   | { type: 'ESCAPE' }
   | { type: 'CLOSE' }
-  | { type: 'BLUR_INPUT'; hasContent: boolean; hasExchanges: boolean }
   | { type: 'CONTENT_ARRIVED' }
   | { type: 'VOICE_START' }
   | { type: 'VIDEO_PLAY'; hasExchanges: boolean }
   | { type: 'VIDEO_PAUSE' }
   | { type: 'LINGER_EXPIRE' }
-  | { type: 'INTERACT' }
-  | { type: 'PENDING_CHAR_CONSUMED' };
+  | { type: 'INTERACT' };
 
 // --- State ---
 
 interface OverlayState {
   phase: OverlayPhase;
-  pendingChar: string | null;
 }
 
 // --- Reducer ---
@@ -34,83 +30,54 @@ function overlayReducer(state: OverlayState, action: OverlayAction): OverlayStat
   const { phase } = state;
 
   switch (action.type) {
-    case 'KEYPRESS':
+    case 'ACTIVATE':
       if (phase === 'dormant') {
-        return { phase: 'input', pendingChar: action.char };
-      }
-      return state;
-
-    case 'FOCUS_INPUT':
-      if (phase === 'dormant') {
-        return { ...state, phase: 'input' };
+        return { phase: 'active' };
       }
       if (phase === 'lingering') {
-        return { ...state, phase: 'conversing' };
+        return { phase: 'active' };
       }
       return state;
 
-    case 'CLICK_VIDEO':
-      if (phase === 'dormant') {
-        return { ...state, phase: 'input' };
-      }
-      if (phase === 'input') {
-        return { ...state, phase: 'dormant' };
-      }
-      return state;
-
+    case 'CLICK_AWAY':
     case 'ESCAPE':
     case 'CLOSE':
       if (phase === 'dormant') return state;
-      return { phase: 'dormant', pendingChar: null };
-
-    case 'BLUR_INPUT':
-      if (phase === 'input' && !action.hasContent && !action.hasExchanges) {
-        return { ...state, phase: 'dormant' };
-      }
-      return state;
+      return { phase: 'dormant' };
 
     case 'CONTENT_ARRIVED':
-      if (phase === 'dormant' || phase === 'input') {
-        return { ...state, phase: 'conversing' };
-      }
-      if (phase === 'lingering') {
-        return { ...state, phase: 'conversing' };
+      if (phase !== 'active') {
+        return { phase: 'active' };
       }
       return state;
 
     case 'VOICE_START':
-      if (phase !== 'conversing') {
-        return { ...state, phase: 'conversing' };
+      if (phase !== 'active') {
+        return { phase: 'active' };
       }
       return state;
 
     case 'VIDEO_PLAY':
-      if (phase === 'conversing') {
-        return { ...state, phase: action.hasExchanges ? 'lingering' : 'dormant' };
+      if (phase === 'active') {
+        return { phase: action.hasExchanges ? 'lingering' : 'dormant' };
       }
       return state;
 
     case 'VIDEO_PAUSE':
       if (phase === 'lingering') {
-        return { ...state, phase: 'conversing' };
+        return { phase: 'active' };
       }
       return state;
 
     case 'LINGER_EXPIRE':
       if (phase === 'lingering') {
-        return { phase: 'dormant', pendingChar: null };
+        return { phase: 'dormant' };
       }
       return state;
 
     case 'INTERACT':
       if (phase === 'lingering') {
-        return { ...state, phase: 'conversing' };
-      }
-      return state;
-
-    case 'PENDING_CHAR_CONSUMED':
-      if (state.pendingChar !== null) {
-        return { ...state, pendingChar: null };
+        return { phase: 'active' };
       }
       return state;
 
@@ -138,7 +105,6 @@ function computeLingerProgress(elapsedMs: number): number {
 export function useOverlayPhase() {
   const [state, dispatch] = useReducer(overlayReducer, {
     phase: 'dormant' as OverlayPhase,
-    pendingChar: null,
   });
 
   // Progressive fade: lingerProgress tracks 0→1 over 12s
@@ -178,14 +144,13 @@ export function useOverlayPhase() {
     }
   }, [state.phase]);
 
-  // Wrapped dispatch that also cancels linger on INTERACT
+  // Wrapped dispatch
   const wrappedDispatch = useCallback((action: OverlayAction) => {
     dispatch(action);
   }, []);
 
   return {
     phase: state.phase,
-    pendingChar: state.pendingChar,
     lingerProgress,
     dispatch: wrappedDispatch,
   };

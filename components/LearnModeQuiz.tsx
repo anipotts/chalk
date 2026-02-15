@@ -139,22 +139,35 @@ function ActionSelector({
   }, [options, selectedIndex, onSelect, onFocusInput]);
 
   return (
-    <motion.div
+    <div
       ref={containerRef}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
       className="w-full flex flex-col items-center gap-3"
     >
-      <div className="text-center">
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+        className="text-center"
+      >
         <p className="text-sm text-slate-300 font-medium mb-1">What would you like to do?</p>
         {optionsLoading && (
           <p className="text-[10px] text-slate-600">Generating options...</p>
         )}
-      </div>
+      </motion.div>
       <div className="flex flex-col gap-1.5 w-full">
         {options.map((opt, i) => (
-          <button
+          <motion.button
             key={opt.id}
+            initial={{ opacity: 0, scale: 0.92, y: 16, filter: 'blur(4px)' }}
+            animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+            transition={{
+              delay: 0.08 + i * 0.06,
+              type: 'spring',
+              stiffness: 500,
+              damping: 30,
+              mass: 0.8,
+            }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => {
               if (opt.id === 'custom') {
                 onFocusInput?.();
@@ -162,7 +175,7 @@ function ActionSelector({
                 onSelect({ id: opt.id, label: opt.label, intent: opt.intent });
               }
             }}
-            className={`group w-full flex items-center gap-3 px-4 py-3 rounded-lg border transition-all text-left active:scale-[0.98] ${
+            className={`group w-full flex items-center gap-3 px-4 py-3 rounded-lg border transition-colors text-left ${
               i === selectedIndex
                 ? 'bg-chalk-accent/10 border-chalk-accent/30 ring-1 ring-chalk-accent/20'
                 : 'bg-white/[0.04] border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15]'
@@ -177,7 +190,7 @@ function ActionSelector({
             {i === selectedIndex && (
               <ArrowRight size={14} weight="bold" className="text-chalk-accent flex-shrink-0" />
             )}
-          </button>
+          </motion.button>
         ))}
       </div>
 
@@ -195,7 +208,7 @@ function ActionSelector({
           </motion.p>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }
 

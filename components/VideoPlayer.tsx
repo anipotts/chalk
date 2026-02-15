@@ -59,7 +59,8 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
 
     // Don't intercept when typing in input/textarea
     const tag = (e.target as HTMLElement)?.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    const isEditable = (e.target as HTMLElement)?.isContentEditable;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || isEditable) return;
 
     switch (e.key) {
       case ' ':

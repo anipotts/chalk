@@ -2,7 +2,6 @@
 
 import React, {
   useState,
-  useRef,
   useEffect,
   useCallback,
 } from "react";
@@ -10,8 +9,6 @@ import { AnimatePresence } from "framer-motion";
 import type { UnifiedExchange } from "./ExchangeMessage";
 import type { LearnAction } from "@/hooks/useLearnMode";
 import { storageKey } from "@/lib/brand";
-import { classifyThinkingBudget } from "@/lib/thinking-budget";
-import { splitReasoningFromText } from "@/lib/stream-parser";
 import type {
   InteractionOverlayProps,
   LearnState,
@@ -21,18 +18,7 @@ import type {
 import { OverlayBackdrop } from "./OverlayBackdrop";
 import { MessagePanel } from "./MessagePanel";
 import { InputStripContent } from "./InputStripContent";
-
-/** Parse <options>opt1|opt2|opt3</options> from AI text. Returns [cleanText, options]. */
-function parseExploreOptions(text: string): [string, string[]] {
-  const match = text.match(/<options>([\s\S]*?)<\/options>/);
-  if (!match) return [text, []];
-  const cleanText = text.replace(/<options>[\s\S]*?<\/options>/, "").trimEnd();
-  const options = match[1]
-    .split("|")
-    .map((o) => o.trim())
-    .filter(Boolean);
-  return [cleanText, options];
-}
+import { VideoTimeProvider } from "./VideoTimeContext";
 
 /* --- Main component: InteractionOverlay (thin shell) --- */
 
@@ -87,8 +73,6 @@ export function InteractionOverlay({
   onInteract,
   inputRef,
   inputVisible,
-  pendingChar,
-  onPendingCharConsumed,
   onInputFocus,
   onInputBlur,
 
@@ -108,7 +92,6 @@ export function InteractionOverlay({
   learnError,
   learnOptions,
   learnOptionsLoading,
-  onEnsureLearnOptions,
   onOpenLearnMode,
   onSelectAction,
   onFocusInput,
@@ -117,35 +100,21 @@ export function InteractionOverlay({
   onStopLearnMode,
   curriculumContext,
   curriculumVideoCount,
-  onAddExchange,
-  onSetStreamingState,
-  onSetCurrentMode,
+
+  // Explore (from unified mode)
+  exploreMode,
+  onToggleExploreMode,
+  onExploreSubmit,
+  onStopExploreStream,
+  exploreError,
+  explorePills,
+  isThinking,
+  thinkingDuration,
+
+  storyboardLevels,
 }: InteractionOverlayProps) {
   const [input, setInput] = useState("");
   const [inputStripHeight, setInputStripHeight] = useState(72);
-
-  // Inject pending character from type-to-activate
-  useEffect(() => {
-    if (pendingChar) {
-      setInput(prev => prev + pendingChar);
-      onPendingCharConsumed?.();
-    }
-  }, [pendingChar, onPendingCharConsumed]);
-
-  // Explore Mode state (UI-only; exchange data flows through unified model)
-  const [exploreMode, setExploreMode] = useState(false);
-  const [explorePills, setExplorePills] = useState<string[]>([]);
-  const [exploreGoal, setExploreGoal] = useState<string | null>(null);
-  const [exploreError, setExploreError] = useState<string | null>(null);
-  const exploreAbortRef = useRef<AbortController | null>(null);
-
-  // Adaptive thinking state (UI-only during streaming)
-  const [exploreIsThinking, setExploreIsThinking] = useState(false);
-  const [exploreThinkingDuration, setExploreThinkingDuration] = useState<
-    number | null
-  >(null);
-  const [exploreThinking, setExploreThinking] = useState<string | null>(null);
-  const exploreThinkingStartRef = useRef<number | null>(null);
 
   const isTextMode = voiceState === "idle";
 
@@ -181,186 +150,6 @@ export function InteractionOverlay({
     !isLearnModeActive &&
     !exploreMode;
 
-  // Submit explore message (calls API directly with adaptive thinking budget)
-  const submitExploreMessage = useCallback(
-    async (text: string) => {
-      if (isTextStreaming) return;
-
-      if (!exploreGoal) {
-        setExploreGoal(text);
-      }
-
-      // Set mode to explore
-      onSetCurrentMode?.("explore");
-
-      // Classify thinking budget based on message complexity
-      const exploreExchangeCount = exchanges.filter(
-        (e) => e.mode === "explore",
-      ).length;
-      const budget = classifyThinkingBudget(
-        text,
-        exploreExchangeCount,
-        undefined,
-        "explore",
-      );
-      setExploreIsThinking(true);
-      setExploreThinkingDuration(null);
-      setExploreThinking(null);
-      exploreThinkingStartRef.current = Date.now();
-
-      // Use unified streaming state
-      onSetStreamingState?.({
-        userText: text,
-        aiText: "",
-        isStreaming: true,
-        toolCalls: [],
-      });
-      setExplorePills([]);
-      setExploreError(null);
-
-      // Build history from unified explore exchanges
-      const history = exchanges
-        .filter((e) => e.mode === "explore")
-        .slice(-10)
-        .flatMap((ex) => [
-          { role: "user" as const, content: ex.userText },
-          { role: "assistant" as const, content: ex.aiText },
-        ]);
-      history.push({ role: "user" as const, content: text });
-
-      const controller = new AbortController();
-      exploreAbortRef.current = controller;
-
-      try {
-        const response = await fetch("/api/video-chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: text,
-            currentTimestamp: currentTime,
-            segments,
-            history,
-            videoTitle,
-            transcriptSource,
-            exploreMode: true,
-            exploreGoal: exploreGoal || text,
-            thinkingBudget: budget.budgetTokens,
-            curriculumContext: curriculumContext || undefined,
-          }),
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          const err = await response
-            .json()
-            .catch(() => ({ error: "Request failed" }));
-          throw new Error(err.error || "Request failed");
-        }
-
-        const reader = response.body?.getReader();
-        if (!reader) throw new Error("No response body");
-
-        const decoder = new TextDecoder();
-        let fullRaw = "";
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value, { stream: true });
-          fullRaw += chunk;
-
-          // Parse reasoning vs text using \x1E separator
-          const {
-            reasoning,
-            text: textContent,
-            hasSeparator,
-          } = splitReasoningFromText(fullRaw);
-
-          if (hasSeparator) {
-            // Separator received -- thinking is complete
-            if (exploreThinkingStartRef.current && exploreIsThinking) {
-              setExploreThinkingDuration(
-                Date.now() - exploreThinkingStartRef.current,
-              );
-              setExploreIsThinking(false);
-            }
-            setExploreThinking(reasoning || null);
-
-            // Show the text content (after separator), parse options progressively
-            let cleaned = textContent;
-            const [stripped] = parseExploreOptions(cleaned);
-            cleaned = stripped;
-            cleaned = cleaned.replace(/<options>[^<]*$/, "").trimEnd();
-            onSetStreamingState?.({ aiText: cleaned });
-          } else {
-            // Still in reasoning phase -- update thinking text
-            setExploreThinking(reasoning || null);
-          }
-        }
-
-        // Final parse
-        const { reasoning: finalReasoning, text: finalText } =
-          splitReasoningFromText(fullRaw);
-        const [cleanText, options] = parseExploreOptions(finalText);
-        const thinkDuration = exploreThinkingStartRef.current
-          ? Date.now() - exploreThinkingStartRef.current
-          : null;
-
-        // Add to unified exchanges
-        const exchange: UnifiedExchange = {
-          id: String(Date.now()),
-          type: "text",
-          mode: "explore",
-          userText: text,
-          aiText: cleanText,
-          timestamp: currentTime,
-          model: "opus",
-          thinking: finalReasoning || undefined,
-          thinkingDuration: thinkDuration ?? undefined,
-          explorePills: options.length > 0 ? options : undefined,
-        };
-        onAddExchange?.(exchange);
-        onSetStreamingState?.({
-          userText: "",
-          aiText: "",
-          isStreaming: false,
-          toolCalls: [],
-        });
-        setExplorePills(options);
-      } catch (err: unknown) {
-        if (err instanceof Error && err.name === "AbortError") return;
-        setExploreError(
-          err instanceof Error ? err.message : "Something went wrong",
-        );
-        onSetStreamingState?.({
-          userText: "",
-          aiText: "",
-          isStreaming: false,
-          toolCalls: [],
-        });
-      } finally {
-        setExploreIsThinking(false);
-        exploreAbortRef.current = null;
-        exploreThinkingStartRef.current = null;
-      }
-    },
-    [
-      isTextStreaming,
-      exploreGoal,
-      exchanges,
-      currentTime,
-      segments,
-      videoTitle,
-      transcriptSource,
-      curriculumContext,
-      exploreIsThinking,
-      onSetCurrentMode,
-      onSetStreamingState,
-      onAddExchange,
-    ],
-  );
-
   const handleSubmit = useCallback(async () => {
     if (!input.trim()) return;
     const text = input.trim();
@@ -372,52 +161,24 @@ export function InteractionOverlay({
     }
 
     if (exploreMode) {
-      await submitExploreMessage(text);
+      await onExploreSubmit(text);
     } else {
       await onTextSubmit(text);
     }
-  }, [input, exploreMode, isLearnModeActive, onStopLearnMode, onTextSubmit, submitExploreMessage]);
-
-  // Toggle explore mode (unified: subsumes both explore chat and learn mode)
-  // Note: parent state updates (onExpandOverlay, onStopLearnMode) must NOT be called
-  // inside a setState updater — React forbids updating a parent during child reconciliation.
-  const toggleExploreMode = useCallback(() => {
-    const entering = !exploreMode;
-    setExploreMode(entering);
-
-    if (entering) {
-      // Entering explore mode -- trigger lazy loading of learn options + expand overlay
-      onEnsureLearnOptions?.();
-      onExpandOverlay?.();
-      setExplorePills([]);
-    } else {
-      // Exiting explore mode -- clean up UI state only (exchanges persist in unified model)
-      setExplorePills([]);
-      if (exploreAbortRef.current) {
-        exploreAbortRef.current.abort("explore toggled");
-        exploreAbortRef.current = null;
-      }
-      setExploreGoal(null);
-      setExploreError(null);
-      // Also stop learn mode if active
-      if (learnPhase !== "idle") {
-        onStopLearnMode();
-      }
-    }
-  }, [exploreMode, onEnsureLearnOptions, onExpandOverlay, learnPhase, onStopLearnMode]);
+  }, [input, exploreMode, isLearnModeActive, onStopLearnMode, onTextSubmit, onExploreSubmit]);
 
   // Handle pill selection (explore chat follow-up pills)
   const handlePillSelect = useCallback(
     (option: string) => {
-      submitExploreMessage(option);
+      onExploreSubmit(option);
     },
-    [submitExploreMessage],
+    [onExploreSubmit],
   );
 
   // Handle unified option card click (triggers learn mode flow)
   const handleOptionCardClick = useCallback(
     (action: LearnAction) => {
-      onOpenLearnMode(); // resets learn state + sets learnEverOpened
+      onOpenLearnMode();
       // Execute action after state reset
       setTimeout(() => onSelectAction(action), 0);
     },
@@ -470,9 +231,6 @@ export function InteractionOverlay({
 
   return (
     <>
-      {/* Lingering opacity: progressively fade messages when phase === 'lingering' */}
-      {/* Interaction detection: any pointer/scroll in overlay cancels linger */}
-
       {/* Expandable message overlay -- visible when expanded OR when typing with history */}
       <AnimatePresence>
         {(expanded || (inputVisible && exchanges.length > 0)) && (
@@ -488,6 +246,7 @@ export function InteractionOverlay({
             onScroll={phase === 'lingering' ? onInteract : undefined}
           >
             <OverlayBackdrop videoDimLevel={videoDimLevel} onClose={onClose} />
+            <VideoTimeProvider currentTime={currentTime} isPaused={phase === 'dormant'}>
             <MessagePanel
               hasContent={hasContent}
               expanded={expanded}
@@ -510,9 +269,9 @@ export function InteractionOverlay({
               showExploreUI={showExploreUI}
               exploreMode={exploreMode}
               exploreError={exploreError}
-              exploreIsThinking={exploreIsThinking}
-              exploreThinkingDuration={exploreThinkingDuration}
-              submitExploreMessage={submitExploreMessage}
+              isThinking={isThinking}
+              thinkingDuration={thinkingDuration}
+              submitExploreMessage={onExploreSubmit}
               playingMessageId={playingMessageId}
               onPlayMessage={onPlayMessage}
               isReadAloudLoading={isReadAloudLoading}
@@ -522,7 +281,9 @@ export function InteractionOverlay({
               learnHandlers={learnHandlers}
               videoTitle={videoTitle}
               tooltipSegments={segments}
+              storyboardLevels={storyboardLevels}
             />
+            </VideoTimeProvider>
             {/* Dynamic spacer for input strip on mobile -- matches measured height */}
             <div className="md:hidden flex-none" style={{ height: inputStripHeight }} />
           </div>
@@ -537,9 +298,14 @@ export function InteractionOverlay({
         handleSubmit={handleSubmit}
         isTextStreaming={isTextStreaming}
         exploreMode={exploreMode}
-        toggleExploreMode={toggleExploreMode}
-        exploreAbortRef={exploreAbortRef}
-        onStopTextStream={onStopTextStream}
+        toggleExploreMode={onToggleExploreMode}
+        onStopStream={() => {
+          if (exploreMode) {
+            onStopExploreStream();
+          } else {
+            onStopTextStream();
+          }
+        }}
         inputRef={inputRef}
         inputVisible={inputVisible}
         onInputFocus={onInputFocus}
@@ -548,9 +314,6 @@ export function InteractionOverlay({
         recordingDuration={recordingDuration}
         exchanges={exchanges}
         onClearHistory={onClearHistory}
-        setExploreGoal={setExploreGoal}
-        setExplorePills={setExplorePills}
-        setExploreError={setExploreError}
         curriculumContext={curriculumContext}
         curriculumVideoCount={curriculumVideoCount}
         onHeightChange={setInputStripHeight}

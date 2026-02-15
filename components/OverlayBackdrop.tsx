@@ -23,6 +23,7 @@ export function OverlayBackdrop({
   return (
     <motion.div
       key="overlay-backdrop"
+      data-overlay-backdrop
       className={`absolute inset-0 ${
         videoDimLevel > 0 ? "cursor-pointer" : "pointer-events-none"
       }`}
@@ -38,11 +39,6 @@ export function OverlayBackdrop({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5, ease: "easeInOut" }}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) {
-          onClose();
-        }
-      }}
     >
       {/* SVG displacement filter — displaces backdrop pixels via noise, then darkens */}
       {showEffect && (

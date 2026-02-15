@@ -17,9 +17,11 @@ import { ExplorePills } from "./ExplorePills";
 import { LearnModeQuiz } from "./LearnModeQuiz";
 import type { VoiceState } from "@/hooks/useVoiceMode";
 import type { TranscriptSegment } from "@/lib/video-utils";
+import { getStoryboardFrame, type StoryboardLevel } from "@/lib/storyboard";
 import {
   CaretDown,
   CaretUp,
+  X,
 } from "@phosphor-icons/react";
 import { createPortal } from "react-dom";
 import type { LearnState, LearnHandlers } from "./overlay-types";
@@ -103,15 +105,21 @@ function TalkingTimer({
 
 /* --- Timestamp hover tooltip --- */
 
-/** Timestamp hover tooltip showing transcript context */
+/** Enhanced timestamp hover card with storyboard thumbnail and transcript context. Click to seek. */
 function TimestampTooltip({
   seconds,
   segments,
   position,
+  storyboardLevels,
+  onSeek,
+  onClose,
 }: {
   seconds: number;
   segments: TranscriptSegment[];
   position: { x: number; y: number };
+  storyboardLevels?: StoryboardLevel[];
+  onSeek: (seconds: number) => void;
+  onClose: () => void;
 }) {
   const sorted = [...segments].sort(
     (a, b) => Math.abs(a.offset - seconds) - Math.abs(b.offset - seconds),
@@ -126,30 +134,78 @@ function TimestampTooltip({
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
+  // Pick a larger storyboard level if available (L2 for 320px-wide card)
+  const preferLevel = storyboardLevels && storyboardLevels.length > 2 ? 2 : 1;
+  const frame = storyboardLevels && storyboardLevels.length > 0
+    ? getStoryboardFrame(storyboardLevels, seconds, preferLevel)
+    : null;
+
+  // Clamp position to viewport edges
+  const clampedX = Math.max(170, Math.min(position.x, window.innerWidth - 170));
+
   return createPortal(
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.1 }}
-      className="fixed z-[9999] bg-chalk-surface/90 backdrop-blur-sm border border-chalk-border rounded-lg p-2.5 max-w-[300px] shadow-xl shadow-black/30 pointer-events-none"
+      initial={{ opacity: 0, y: 4, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 4, scale: 0.97 }}
+      transition={{ type: "spring", damping: 25, stiffness: 400 }}
+      className="fixed z-[9999] bg-chalk-surface/95 backdrop-blur-md border border-chalk-border/60 rounded-xl overflow-hidden max-w-[280px] w-[280px] shadow-2xl shadow-black/40 pointer-events-auto cursor-pointer hover:border-chalk-accent/40 transition-colors"
       style={{
-        left: position.x,
+        left: clampedX,
         top: position.y - 8,
         transform: "translate(-50%, -100%)",
       }}
+      onClick={() => { onSeek(seconds); onClose(); }}
+      onMouseEnter={(e) => e.stopPropagation()}
+      onMouseLeave={() => onClose()}
     >
-      <div className="space-y-1">
+      {/* Storyboard thumbnail */}
+      {frame && (() => {
+        // Scale sprite sheet so one frame fills the 280px container width
+        const containerW = 280;
+        const scale = containerW / frame.width;
+        const level = storyboardLevels?.[Math.min(preferLevel, (storyboardLevels?.length ?? 1) - 1)];
+        const cols = level?.cols ?? 5;
+        const rows = level?.rows ?? 5;
+        // Parse original position and scale it
+        const posMatch = frame.backgroundPosition.match(/-?(\d+)(?:px)?\s+-?(\d+)/);
+        const origX = posMatch ? parseInt(posMatch[1]) : 0;
+        const origY = posMatch ? parseInt(posMatch[2]) : 0;
+        return (
+        <div className="relative w-full overflow-hidden" style={{ height: Math.round(frame.height * scale) }}>
+          <div
+            className="w-full h-full"
+            style={{
+              backgroundImage: `url(${frame.url})`,
+              backgroundPosition: `-${Math.round(origX * scale)}px -${Math.round(origY * scale)}px`,
+              backgroundSize: `${Math.round(frame.width * cols * scale)}px ${Math.round(frame.height * rows * scale)}px`,
+              backgroundRepeat: 'no-repeat',
+            }}
+          />
+          {/* Gradient overlay from image to content */}
+          <div className="absolute inset-x-0 bottom-0 h-6 bg-gradient-to-t from-chalk-surface/95 to-transparent" />
+          {/* Timestamp badge */}
+          <span className="absolute top-2 left-2 bg-black/70 text-white text-[10px] font-mono px-1.5 py-0.5 rounded">
+            {formatTs(seconds)}
+          </span>
+        </div>
+        );
+      })()}
+
+      {/* Transcript context */}
+      <div className={`px-3 ${frame ? 'py-1.5' : 'py-2'} space-y-0.5`}>
+        {!frame && (
+          <span className="text-[10px] font-mono text-chalk-accent mb-1 block">
+            {formatTs(seconds)}
+          </span>
+        )}
         {nearby.map((seg, i) => {
           const isExact = Math.abs(seg.offset - seconds) < 3;
           return (
             <div
               key={i}
-              className={`text-xs leading-relaxed ${isExact ? "text-chalk-text" : "text-slate-500"}`}
+              className={`text-[11px] leading-snug ${isExact ? "text-chalk-text" : "text-slate-500"}`}
             >
-              <span className="font-mono text-[10px] text-slate-600 mr-1">
-                [{formatTs(seg.offset)}]
-              </span>
               {seg.text}
             </div>
           );
@@ -195,8 +251,8 @@ export interface MessagePanelProps {
   showExploreUI: boolean;
   exploreMode: boolean;
   exploreError: string | null;
-  exploreIsThinking: boolean;
-  exploreThinkingDuration: number | null;
+  isThinking: boolean;
+  thinkingDuration: number | null;
   submitExploreMessage: (text: string) => void;
 
   // Read aloud
@@ -215,6 +271,7 @@ export interface MessagePanelProps {
 
   // Tooltip segments
   tooltipSegments: TranscriptSegment[];
+  storyboardLevels?: StoryboardLevel[];
 }
 
 export function MessagePanel({
@@ -239,8 +296,8 @@ export function MessagePanel({
   showExploreUI,
   exploreMode,
   exploreError,
-  exploreIsThinking,
-  exploreThinkingDuration,
+  isThinking,
+  thinkingDuration,
   submitExploreMessage,
   playingMessageId,
   onPlayMessage,
@@ -251,16 +308,18 @@ export function MessagePanel({
   learnHandlers,
   videoTitle,
   tooltipSegments,
+  storyboardLevels,
 }: MessagePanelProps) {
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Timestamp tooltip state
+  // Timestamp tooltip state with debounced close
   const [tooltipInfo, setTooltipInfo] = useState<{
     seconds: number;
     position: { x: number; y: number };
   } | null>(null);
+  const tooltipCloseTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const handleTimestampSeek = useCallback(
     (seconds: number) => {
@@ -312,11 +371,16 @@ export function MessagePanel({
     setCanScrollDown(scrollHeight - scrollTop - clientHeight > 60);
   }, []);
 
-  // Timestamp tooltip via event delegation
+  // Timestamp tooltip via event delegation with debounced close
   const handleMouseOver = useCallback((e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const button = target.closest('button[aria-label^="Seek to"]');
     if (button) {
+      // Cancel any pending close
+      if (tooltipCloseTimer.current) {
+        clearTimeout(tooltipCloseTimer.current);
+        tooltipCloseTimer.current = undefined;
+      }
       const label = button.getAttribute("aria-label") || "";
       const match = label.match(/Seek to (\d+):(\d{2})(?::(\d{2}))? in video/);
       if (match) {
@@ -342,8 +406,15 @@ export function MessagePanel({
     const target = e.target as HTMLElement;
     const button = target.closest('button[aria-label^="Seek to"]');
     if (button) {
-      setTooltipInfo(null);
+      // 200ms debounce so users can hover into the tooltip card
+      tooltipCloseTimer.current = setTimeout(() => {
+        setTooltipInfo(null);
+      }, 200);
     }
+  }, []);
+
+  const handleTooltipClose = useCallback(() => {
+    setTooltipInfo(null);
   }, []);
 
   return (
@@ -371,6 +442,7 @@ export function MessagePanel({
         {hasContent && (
           <div
             ref={scrollRef}
+            data-message-panel
             onScroll={handleScroll}
             onMouseOver={handleMouseOver}
             onMouseOut={handleMouseOut}
@@ -379,21 +451,49 @@ export function MessagePanel({
             {/* Unified conversation history -- all exchanges in chronological order */}
             {exchanges.map((exchange, i) => {
               const justCommitted = i === exchanges.length - 1 && Date.now() - Number(exchange.id) < 500;
+              const prev = i > 0 ? exchanges[i - 1] : null;
+
+              // Separator: time gap > 5 min or mode change
+              let separator: React.ReactNode = null;
+              if (prev) {
+                const timeGap = exchange.timestamp - prev.timestamp;
+                const modeChange = exchange.mode !== prev.mode;
+                if (timeGap > 300 || modeChange) {
+                  const formatTs = (s: number) => {
+                    const m = Math.floor(s / 60);
+                    const sec = Math.floor(s % 60);
+                    return `${m}:${sec.toString().padStart(2, "0")}`;
+                  };
+                  const label = modeChange
+                    ? exchange.mode === "explore" ? "explore mode" : "chat mode"
+                    : formatTs(exchange.timestamp);
+                  separator = (
+                    <div key={`sep-${exchange.id}`} className="flex items-center gap-3 py-1">
+                      <div className="flex-1 h-px bg-chalk-border/20" />
+                      <span className="text-[10px] text-slate-600 font-mono">{label}</span>
+                      <div className="flex-1 h-px bg-chalk-border/20" />
+                    </div>
+                  );
+                }
+              }
+
               return (
-                <ExchangeMessage
-                  key={exchange.id}
-                  exchange={exchange}
-                  skipEntrance={justCommitted}
-                  onSeek={handleTimestampSeek}
-                  videoId={videoId}
-                  onPlayMessage={onPlayMessage}
-                  isPlaying={playingMessageId === exchange.id}
-                  isReadAloudLoading={
-                    isReadAloudLoading &&
-                    playingMessageId === exchange.id
-                  }
-                  onOpenVideo={onOpenVideo}
-                />
+                <React.Fragment key={exchange.id}>
+                  {separator}
+                  <ExchangeMessage
+                    exchange={exchange}
+                    skipEntrance={justCommitted}
+                    onSeek={handleTimestampSeek}
+                    videoId={videoId}
+                    onPlayMessage={onPlayMessage}
+                    isPlaying={playingMessageId === exchange.id}
+                    isReadAloudLoading={
+                      isReadAloudLoading &&
+                      playingMessageId === exchange.id
+                    }
+                    onOpenVideo={onOpenVideo}
+                  />
+                </React.Fragment>
               );
             })}
 
@@ -412,8 +512,8 @@ export function MessagePanel({
                   </div>
                 )}
                 {/* Thinking timer — between user msg and AI response */}
-                {showExploreUI && isTextStreaming && (exploreIsThinking || exploreThinkingDuration !== null) && (
-                  <TalkingTimer isThinking={exploreIsThinking} thinkingDuration={exploreThinkingDuration} />
+                {showExploreUI && isTextStreaming && (isThinking || thinkingDuration !== null) && (
+                  <TalkingTimer isThinking={isThinking} thinkingDuration={thinkingDuration} />
                 )}
                 {(currentAiText ||
                   (!showExploreUI && voiceResponseText)) && (
@@ -473,30 +573,41 @@ export function MessagePanel({
               !exchanges.some((e) => e.mode === "explore") &&
               !isTextStreaming &&
               !isLearnModeActive && (
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex flex-col justify-end w-full mt-auto"
-                >
-                  <p className="mb-3 text-sm text-slate-400">
+                <div className="flex flex-col justify-end w-full mt-auto">
+                  <motion.p
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+                    className="mb-3 text-sm text-slate-400"
+                  >
                     Pick a starting point, or just ask.
-                  </p>
+                  </motion.p>
                   <div className="flex flex-wrap gap-1.5">
                     {[
                       "Summarize with timestamps",
                       "Quiz me on this",
                       "Key takeaways so far",
-                    ].map((label) => (
-                      <button
+                    ].map((label, i) => (
+                      <motion.button
                         key={label}
+                        initial={{ opacity: 0, scale: 0.8, y: 12, filter: 'blur(4px)' }}
+                        animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+                        transition={{
+                          delay: 0.1 + i * 0.07,
+                          type: 'spring',
+                          stiffness: 500,
+                          damping: 30,
+                          mass: 0.8,
+                        }}
+                        whileTap={{ scale: 0.97 }}
                         onClick={() => submitExploreMessage(label)}
-                        className="px-3 py-1.5 rounded-lg text-xs text-slate-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white transition-all active:scale-[0.97]"
+                        className="px-3 py-1.5 rounded-lg text-xs text-slate-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white transition-colors"
                       >
                         {label}
-                      </button>
+                      </motion.button>
                     ))}
                   </div>
-                </motion.div>
+                </div>
               )}
 
             {/* Explore pills — always at bottom, pulled from last explore exchange */}
@@ -558,11 +669,11 @@ export function MessagePanel({
           </div>
         )}
 
-        {/* Scroll badges -- desktop only, tabs growing from blue border */}
-        <AnimatePresence>
-          {canScrollDown && exchanges.length > 0 && (
+        {/* Left badge -- desktop only, dynamic scroll direction indicator */}
+        <AnimatePresence mode="wait">
+          {exchanges.length > 0 && (canScrollUp || canScrollDown) && (
             <motion.button
-              key="scroll-down-badge"
+              key={canScrollUp ? "scroll-up" : "scroll-down"}
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
@@ -570,19 +681,25 @@ export function MessagePanel({
                 duration: 0.15,
                 ease: [0.23, 1, 0.32, 1],
               }}
-              onClick={() => scrollToBottom(true)}
-              className="hidden md:flex absolute top-0 left-0 z-[40] items-center gap-1 px-2.5 py-1.5 rounded-none rounded-br-lg bg-chalk-accent text-white text-[11px] font-medium shadow-lg shadow-blue-500/20 pointer-events-auto hover:bg-blue-400 transition-colors"
-              aria-label="Scroll to latest"
+              onClick={canScrollUp ? scrollToTop : () => scrollToBottom(true)}
+              data-scroll-badge
+              className="hidden md:flex absolute top-0 left-0 z-[40] items-center justify-center w-7 h-7 rounded-none rounded-br-lg text-white pointer-events-auto"
+              aria-label={canScrollUp ? "Scroll to top" : "Scroll to latest"}
             >
-              <CaretDown size={11} weight="bold" />
-              Latest
+              {canScrollUp ? (
+                <CaretUp size={12} weight="bold" />
+              ) : (
+                <CaretDown size={12} weight="bold" />
+              )}
             </motion.button>
           )}
         </AnimatePresence>
+
+        {/* Close badge -- desktop only, always visible when content exists */}
         <AnimatePresence>
-          {canScrollUp && exchanges.length > 0 && (
+          {exchanges.length > 0 && (
             <motion.button
-              key="scroll-up-badge"
+              key="close-badge"
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
@@ -590,12 +707,12 @@ export function MessagePanel({
                 duration: 0.15,
                 ease: [0.23, 1, 0.32, 1],
               }}
-              onClick={scrollToTop}
-              className="hidden md:flex absolute top-0 right-0 z-[40] items-center gap-1 px-2.5 py-1.5 rounded-none rounded-bl-lg bg-chalk-accent text-white text-[11px] font-medium shadow-lg shadow-blue-500/20 pointer-events-auto hover:bg-blue-400 transition-colors"
-              aria-label="Scroll to top"
+              onClick={onClose}
+              data-scroll-badge
+              className="hidden md:flex absolute top-0 right-0 z-[40] items-center justify-center w-7 h-7 rounded-none rounded-bl-lg text-white pointer-events-auto"
+              aria-label="Close chat"
             >
-              Top
-              <CaretUp size={11} weight="bold" />
+              <X size={12} weight="bold" />
             </motion.button>
           )}
         </AnimatePresence>
@@ -608,6 +725,9 @@ export function MessagePanel({
             seconds={tooltipInfo.seconds}
             segments={tooltipSegments}
             position={tooltipInfo.position}
+            storyboardLevels={storyboardLevels}
+            onSeek={handleTimestampSeek}
+            onClose={handleTooltipClose}
           />
         )}
       </AnimatePresence>
