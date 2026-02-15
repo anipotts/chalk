@@ -23,6 +23,7 @@ import { VideoTimeProvider } from "./VideoTimeContext";
 /* --- Main component: InteractionOverlay (thin shell) --- */
 
 export function InteractionOverlay({
+  variant = "desktop",
   expanded,
   phase,
   lingerProgress,
@@ -118,6 +119,7 @@ export function InteractionOverlay({
   const [input, setInput] = useState("");
   const [inputStripHeight, setInputStripHeight] = useState(72);
 
+  const isMobile = variant === "mobile";
   const isTextMode = voiceState === "idle";
 
   // One-time cleanup of old localStorage keys
@@ -231,6 +233,83 @@ export function InteractionOverlay({
     error: voiceError,
   };
 
+  // --- Mobile variant: flow layout (no overlay, always visible) ---
+  if (isMobile) {
+    return (
+      <div className="flex-1 flex flex-col min-h-0">
+        <VideoTimeProvider currentTime={currentTime} isPaused={phase === 'dormant'}>
+          <MessagePanel
+            hasContent={hasContent}
+            expanded={true}
+            exchanges={exchanges}
+            segments={segments}
+            videoId={videoId}
+            onSeek={onSeek}
+            onClose={() => {}}
+            onOpenVideo={onOpenVideo}
+            isTextStreaming={isTextStreaming}
+            currentUserText={currentUserText}
+            currentAiText={currentAiText}
+            currentToolCalls={currentToolCalls}
+            currentRawAiText={currentRawAiText}
+            textError={textError}
+            voiceState={voiceState}
+            voiceTranscript={voiceTranscript}
+            voiceResponseText={voiceResponseText}
+            voiceError={voiceError}
+            showExploreUI={showExploreUI}
+            exploreMode={exploreMode}
+            exploreError={exploreError}
+            isThinking={isThinking}
+            thinkingDuration={thinkingDuration}
+            submitExploreMessage={onExploreSubmit}
+            playingMessageId={playingMessageId}
+            onPlayMessage={onPlayMessage}
+            isReadAloudLoading={isReadAloudLoading}
+            handlePillSelect={handlePillSelect}
+            focusInput={focusInput}
+            learnState={learnState}
+            learnHandlers={learnHandlers}
+            videoTitle={videoTitle}
+            tooltipSegments={segments}
+            storyboardLevels={storyboardLevels}
+            disableDrag
+          />
+        </VideoTimeProvider>
+        <InputStripContent
+          variant="mobile"
+          expanded={true}
+          input={input}
+          setInput={setInput}
+          handleSubmit={handleSubmit}
+          isTextStreaming={isTextStreaming}
+          exploreMode={exploreMode}
+          toggleExploreMode={onToggleExploreMode}
+          onStopStream={() => {
+            if (exploreMode) {
+              onStopExploreStream();
+            } else {
+              onStopTextStream();
+            }
+          }}
+          inputRef={inputRef}
+          inputVisible={true}
+          onInputFocus={onInputFocus}
+          onInputBlur={onInputBlur}
+          voiceControls={voiceControls}
+          recordingDuration={recordingDuration}
+          exchanges={exchanges}
+          onClearHistory={onClearHistory}
+          curriculumContext={curriculumContext}
+          curriculumVideoCount={curriculumVideoCount}
+          interval={interval}
+          onClearInterval={onClearInterval}
+        />
+      </div>
+    );
+  }
+
+  // --- Desktop variant: overlay layout (original behavior) ---
   return (
     <>
       {/* Expandable message overlay -- visible when expanded OR when typing with history */}

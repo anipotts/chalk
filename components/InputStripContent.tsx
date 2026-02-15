@@ -66,6 +66,7 @@ function formatDuration(seconds: number): string {
 /* --- InputStripContent --- */
 
 export interface InputStripContentProps {
+  variant?: "desktop" | "mobile";
   expanded: boolean;
   input: string;
   setInput: (value: string) => void;
@@ -100,6 +101,7 @@ export interface InputStripContentProps {
 }
 
 export function InputStripContent({
+  variant = "desktop",
   expanded,
   input,
   setInput,
@@ -137,11 +139,19 @@ export function InputStripContent({
     return () => observer.disconnect();
   }, [onHeightChange]);
 
+  const isMobileVariant = variant === "mobile";
+
   return (
-    <div ref={stripRef} data-input-strip className={`absolute bottom-0 left-0 right-0 z-[32] pointer-events-none md:relative md:inset-auto md:w-full md:z-auto transition-opacity duration-200 ease-out ${
-      inputVisible === false ? 'md:opacity-0 md:pointer-events-none' : 'md:opacity-100'
-    }`}>
-      <div className={`pointer-events-auto px-3 pb-3 md:px-0 md:pb-0 md:pt-3 ${expanded ? 'bg-chalk-surface/95 backdrop-blur-md md:bg-transparent md:backdrop-blur-none' : 'pt-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent md:from-transparent md:via-transparent md:pt-3 md:bg-none'}`}>
+    <div ref={stripRef} data-input-strip className={isMobileVariant
+      ? "flex-none w-full"
+      : `absolute bottom-0 left-0 right-0 z-[32] pointer-events-none md:relative md:inset-auto md:w-full md:z-auto transition-opacity duration-200 ease-out ${
+        inputVisible === false ? 'md:opacity-0 md:pointer-events-none' : 'md:opacity-100'
+      }`
+    }>
+      <div className={isMobileVariant
+        ? "px-3 py-2 border-t border-chalk-border/20 bg-chalk-bg"
+        : `pointer-events-auto px-3 pb-3 md:px-0 md:pb-0 md:pt-3 ${expanded ? 'bg-chalk-surface/95 backdrop-blur-md md:bg-transparent md:backdrop-blur-none' : 'pt-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent md:from-transparent md:via-transparent md:pt-3 md:bg-none'}`
+      }>
         {/* Interval selection pill */}
         {interval && (
           <div className="flex items-center gap-1.5 mb-1.5">

@@ -272,6 +272,9 @@ export interface MessagePanelProps {
   // Tooltip segments
   tooltipSegments: TranscriptSegment[];
   storyboardLevels?: StoryboardLevel[];
+
+  // Mobile flow mode (disable drag-to-close)
+  disableDrag?: boolean;
 }
 
 export function MessagePanel({
@@ -309,6 +312,7 @@ export function MessagePanel({
   videoTitle,
   tooltipSegments,
   storyboardLevels,
+  disableDrag,
 }: MessagePanelProps) {
   const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
@@ -421,22 +425,26 @@ export function MessagePanel({
     <>
       <motion.div
         key="text-mode"
-        drag="y"
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0, bottom: 0.5 }}
-        onDragEnd={(_, info) => {
+        drag={disableDrag ? false : "y"}
+        dragConstraints={disableDrag ? undefined : { top: 0, bottom: 0 }}
+        dragElastic={disableDrag ? undefined : { top: 0, bottom: 0.5 }}
+        onDragEnd={disableDrag ? undefined : (_, info) => {
           if (info.offset.y > 100 || info.velocity.y > 500) onClose();
         }}
-        initial={{ opacity: 0 }}
+        initial={disableDrag ? undefined : { opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.4, ease: "easeInOut" }}
-        className={`relative z-[1] flex flex-col w-full flex-1 min-h-0 pointer-events-none ${
+        exit={disableDrag ? undefined : { opacity: 0 }}
+        transition={disableDrag ? undefined : { duration: 0.4, ease: "easeInOut" }}
+        className={`relative z-[1] flex flex-col w-full flex-1 min-h-0 ${
+          disableDrag ? '' : 'pointer-events-none'
+        } ${
           hasContent ? "items-center" : "justify-end items-center"
         }`}
       >
-        {/* Mobile grip indicator for swipe-to-close */}
-        <div className="flex-shrink-0 mx-auto mb-3 w-8 h-1 rounded-full pointer-events-auto md:hidden bg-white/20" />
+        {/* Mobile grip indicator for swipe-to-close (overlay mode only) */}
+        {!disableDrag && (
+          <div className="flex-shrink-0 mx-auto mb-3 w-8 h-1 rounded-full pointer-events-auto md:hidden bg-white/20" />
+        )}
 
         {/* Messages - unified container for all messages */}
         {hasContent && (

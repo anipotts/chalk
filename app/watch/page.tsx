@@ -242,6 +242,7 @@ function WatchContent() {
   const currentTimeRef = useRef(0);
   const segmentsRef = useRef(segments);
   const inputRef = useRef<HTMLElement>(null);
+  const mobileInputRef = useRef<HTMLElement>(null);
   const lastDismissRef = useRef(0);
   const hasPlayedOnce = useRef(false);
 
@@ -519,6 +520,11 @@ function WatchContent() {
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [learnMode.stopLearnMode]);
 
+  const handleMobileFocusInput = useCallback(() => {
+    learnMode.stopLearnMode();
+    setTimeout(() => mobileInputRef.current?.focus(), 100);
+  }, [learnMode.stopLearnMode]);
+
   // Keyboard shortcuts — desktop only (mobile has no physical keyboard)
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -605,13 +611,15 @@ function WatchContent() {
     return () => document.removeEventListener("keydown", handleKey);
   }, [startVoiceMode, overlayDispatch]);
 
-  // Click-away: zone-aware dismissal
+  // Click-away: zone-aware dismissal (desktop only)
   // - Input elements, input strip, message panel, scroll badges: excluded (no dismiss)
   // - Overlay backdrop (dim video area): dismiss + resume playback
   // - Everything else (outside border): dismiss only (no playback change)
   useEffect(() => {
     if (phase === 'dormant') return;
     function handleClickAway(e: PointerEvent) {
+      // Skip on mobile — mobile uses flow layout, not overlay
+      if (window.innerWidth < 768) return;
       const target = e.target as HTMLElement;
       if (target.closest('[contenteditable]') || target.closest('textarea') || target.closest('input[type="text"]')) return;
       if (target.closest('[data-input-strip]')) return;
@@ -670,429 +678,401 @@ function WatchContent() {
     : phase === 'active' ? (hasExchangeHistory ? 0.75 : 0.15)
     : 0.75 * (1 - lingerProgress); // lingering
 
+  // Shared overlay props for both mobile and desktop InteractionOverlay instances
+  const sharedOverlayProps = {
+    segments,
+    currentTime,
+    videoId,
+    videoTitle: effectiveTitle ?? undefined,
+    transcriptSource: source ?? undefined,
+    voiceId,
+    isVoiceCloning: isCloning,
+    voiceState: unified.voiceState,
+    voiceTranscript: unified.voiceTranscript,
+    voiceResponseText: unified.voiceResponseText,
+    voiceError: unified.voiceError,
+    recordingDuration: unified.recordingDuration,
+    onStartRecording: unified.startRecording,
+    onStopRecording: unified.stopRecording,
+    onCancelRecording: unified.cancelRecording,
+    isTextStreaming: unified.isTextStreaming,
+    currentUserText: unified.currentUserText,
+    currentAiText: unified.currentAiText,
+    currentToolCalls: unified.currentToolCalls,
+    currentRawAiText: unified.currentRawAiText,
+    textError: unified.textError,
+    onTextSubmit: unified.handleTextSubmit,
+    onStopTextStream: unified.stopTextStream,
+    onOpenVideo: handleOpenVideo,
+    autoReadAloud: unified.autoReadAloud,
+    onToggleAutoReadAloud: unified.setAutoReadAloud,
+    playingMessageId: unified.playingMessageId,
+    onPlayMessage: unified.playMessage,
+    isReadAloudLoading: unified.isReadAloudLoading,
+    exchanges: unified.exchanges,
+    onClearHistory: unified.clearHistory,
+    onSeek: handleSeek,
+    learnPhase: learnMode.phase,
+    learnSelectedAction: learnMode.selectedAction,
+    learnQuiz: learnMode.currentQuiz,
+    learnExplanation: learnMode.currentExplanation,
+    learnIntroText: learnMode.introText,
+    learnResponseContent: learnMode.responseContent,
+    learnExportableContent: learnMode.exportableContent,
+    learnAnswers: learnMode.answers,
+    learnScore: learnMode.score,
+    learnThinking: learnMode.thinking,
+    learnThinkingDuration: learnMode.thinkingDuration,
+    learnLoading: learnMode.isLoading,
+    learnError: learnMode.error,
+    learnOptions,
+    learnOptionsLoading,
+    onOpenLearnMode: handleOpenLearnMode,
+    onSelectAction: learnMode.executeAction,
+    onSelectAnswer: learnMode.selectAnswer,
+    onNextBatch: learnMode.requestNextBatch,
+    onStopLearnMode: learnMode.stopLearnMode,
+    curriculumContext: curriculum.curriculumContext,
+    curriculumVideoCount: curriculum.videoCount,
+    exploreMode: unified.exploreMode,
+    onToggleExploreMode: toggleExploreMode,
+    onExploreSubmit: unified.handleExploreSubmit,
+    onStopExploreStream: unified.stopExploreStream,
+    exploreError: unified.exploreError,
+    explorePills: unified.explorePills,
+    isThinking: unified.isThinking,
+    thinkingDuration: unified.thinkingDuration,
+    storyboardLevels,
+    interval: selectedInterval,
+    onClearInterval: handleIntervalClear,
+  } as const;
+
   return (
-    <div className="flex h-[100dvh] bg-chalk-bg overflow-hidden animate-in fade-in duration-300 px-safe">
-      {/* Main area — shrinks to 55% when side panel is open */}
-      <div className={`flex flex-col min-w-0 transition-[flex,width] duration-300 ease-out ${
-        sideStack.length > 0 ? "w-[55%] flex-none" : "flex-1"
-      }`}>
-        {/* Top bar — hidden on mobile, z-20 so speed dropdown escapes above the video area */}
-        <div className="hidden md:flex flex-col flex-none bg-chalk-bg/80 backdrop-blur-md relative z-20">
-          <div className="flex items-center gap-3 px-4 py-3">
-          {/* Left: chalk icon + compact search */}
-          <a
-            href="/"
-            className="flex items-center gap-1.5 text-chalk-text hover:text-chalk-accent transition-colors shrink-0"
-            title="Home"
-          >
-            <ChalkboardSimple size={18} />
-            <span className="text-sm font-semibold">chalk</span>
-          </a>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const val = navSearchValue.trim();
-              if (val) {
-                navRouter.push(`/?q=${encodeURIComponent(val)}`);
-                setNavSearchValue("");
-              }
-            }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] focus-within:ring-1 focus-within:ring-chalk-accent/40 focus-within:border-chalk-accent/30 transition-colors w-48"
-          >
-            <MagnifyingGlass size={13} className="text-slate-500 shrink-0" />
-            <input
-              type="text"
-              value={navSearchValue}
-              onChange={(e) => setNavSearchValue(e.target.value)}
-              placeholder="Search videos, channels..."
-              className="flex-1 bg-transparent text-xs text-chalk-text placeholder:text-slate-600 focus:outline-none min-w-0"
-            />
-          </form>
-          <span className="text-slate-600/50">|</span>
-          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-            {effectiveChannel && (
-              <span className="text-[10px] text-slate-500 truncate">
-                {effectiveChannel}
-              </span>
-            )}
-            <span className="text-xs truncate text-slate-400">
-              {effectiveTitle || videoId}
-            </span>
-          </div>
-
-          {/* Hint text — normal flex item, sits to the left of config buttons */}
-          {phase === 'dormant' && effectiveChannel && (
-            <span className="hidden lg:inline text-xs whitespace-nowrap pointer-events-none text-slate-500 shrink-0">
-              Start typing to talk to {effectiveChannel}
-            </span>
-          )}
-
-          <div className="flex gap-2 items-center ml-auto">
-            <button
-              onClick={cycleViewSize}
-              className={`px-1.5 py-1 rounded-lg text-[11px] font-mono font-medium transition-colors ${
-                viewSize !== "default"
-                  ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                  : "text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30"
-              }`}
-              title={`View size: ${viewSize}`}
-            >
-              {viewSize === "compact"
-                ? "S"
-                : viewSize === "expanded"
-                  ? "L"
-                  : "M"}
-            </button>
-            <SpeedControlButton playerRef={playerRef} />
-
-            {chatExpanded && unified.exchanges.length > 0 && (
-              <button
-                onClick={unified.clearHistory}
-                className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30 transition-colors"
-              >
-                Clear
-              </button>
-            )}
-            <button
-              onClick={() => setShowTranscript((v) => !v)}
-              className={`hidden md:inline-flex px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
-                showTranscript
-                  ? "bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30"
-                  : "text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30"
-              }`}
-            >
-              Transcript
-            </button>
-          </div>
-          </div>
-          {/* Chapter timeline — replaces header border-b */}
-          {hasSegments && durationSeconds && durationSeconds > 0 ? (
-            <ChapterTimeline
-              segments={segments}
-              currentTime={currentTime}
-              duration={durationSeconds}
-              onSeek={handleSeek}
-              keyMoments={knowledgeContext?.video?.key_moments}
-              interval={selectedInterval}
-              onIntervalSelect={handleIntervalSelect}
-              onIntervalClear={handleIntervalClear}
-            />
-          ) : (
-            <div className="h-px bg-chalk-border/30" />
-          )}
-        </div>
-
+    <>
+      {/* ==================== MOBILE LAYOUT ==================== */}
+      {/* Simple vertical stack: header → video → chat. No overlay mechanics. */}
+      <div className="md:hidden flex flex-col h-[100dvh] bg-chalk-bg animate-in fade-in duration-300">
         {/* Mobile header */}
-        <div className="md:hidden flex-none flex items-center gap-2 px-2 pb-2 pt-[calc(env(safe-area-inset-top)+8px)] bg-chalk-bg/95 backdrop-blur-md border-b border-chalk-border/30">
+        <div className="flex-none flex items-center gap-2 px-3 pt-[calc(env(safe-area-inset-top)+8px)] pb-2 bg-chalk-bg border-b border-chalk-border/20">
           <a
             href="/"
-            className="flex items-center p-2.5 -ml-1 text-white/60 active:text-white/90 transition-colors"
+            className="flex items-center p-2 -ml-1 text-white/60 active:text-white/90 transition-colors"
             aria-label="Back to home"
           >
             <ArrowBendUpLeft size={18} weight="bold" />
           </a>
-          <ChalkboardSimple
-            size={16}
-            className="flex-shrink-0 text-chalk-text"
-          />
-          <div className="flex flex-col flex-1 min-w-0">
+          <div className="flex-1 min-w-0">
             {effectiveChannel && (
-              <span className="text-[10px] text-slate-500 truncate leading-tight">
+              <span className="text-[10px] text-slate-500 truncate block leading-tight">
                 {effectiveChannel}
               </span>
             )}
-            <span className="text-xs leading-tight truncate text-slate-400">
+            <span className="text-xs text-slate-400 truncate block leading-tight">
               {effectiveTitle || videoId}
             </span>
           </div>
           <SpeedControlButton playerRef={playerRef} />
         </div>
 
-        {/* Video area — on mobile: flex-none when transcript visible, flex-1 when overlay open or transcript collapsed */}
-        <div
-          onPointerDown={(e) => {
-            if (window.innerWidth < 768) return;
-            const target = e.target as HTMLElement;
-            if (target.closest('button') || target.closest('textarea') || target.closest('input') || target.closest('iframe')) return;
-            if (chatExpanded) return;
-            // Guard against re-activation right after click-away dismissal
-            if (Date.now() - lastDismissRef.current < 300) return;
-            if (phase === 'dormant') {
-              overlayDispatch({ type: 'ACTIVATE' });
-              requestAnimationFrame(() => inputRef.current?.focus());
-            }
-          }}
-          className={`md:flex-1 flex flex-col overflow-hidden relative md:items-center md:justify-center md:max-h-none transition-[flex,height] duration-[250ms] ease-out motion-reduce:transition-none ${
-            keyboardOpen
-              ? "flex-none h-0"
-              : chatExpanded || transcriptCollapsed
-                ? "flex-1 min-h-0"
-                : "flex-none h-[28dvh]"
-          }`}
-        >
-          {/* Wrapper — flex-1 on mobile (fills video area), flex-none on desktop */}
-          <div className="overflow-hidden relative z-0 flex-1 md:flex-none flex flex-col p-0 md:w-full md:px-4">
-            {/* Container — single relative parent for video, overlay, and border */}
-            <div data-video-container data-playing={!isPaused || undefined} className={`w-full ${viewMaxWidth} md:mx-auto relative flex-1 md:flex-none transition-[max-width] duration-[250ms] ease-out`}>
-              {/* Video */}
-              <div
-                className="group relative aspect-video md:rounded-xl md:overflow-hidden"
-                data-paused={isPaused || undefined}
-              >
-                <VideoPlayer
-                  playerRef={playerRef}
-                  videoId={videoId}
-                  onPause={handlePause}
-                  onPlay={handlePlay}
-                  onTimeUpdate={handleTimeUpdate}
-                />
-                {/* Click layer: covers video to intercept YouTube iframe clicks — just toggles play/pause */}
-                {phase === 'dormant' && (
-                  <div
-                    className="hidden md:block absolute inset-0 z-[5] cursor-pointer"
-                    onPointerDown={(e) => {
-                      e.stopPropagation();
-                      try {
-                        const p = playerRef.current;
-                        if (p) { p.paused ? p.play() : p.pause(); }
-                      } catch {}
-                    }}
-                  />
-                )}
-                {/* Mobile: absolute overlay captions */}
-                {hasSegments && !chatExpanded && (
-                  <div className="md:hidden absolute right-0 bottom-0 left-0 z-10 px-2 pt-8 pb-2 bg-gradient-to-t to-transparent pointer-events-none from-black/60">
-                    <KaraokeCaption
-                      segments={segments}
-                      currentTime={currentTime}
-                    />
-                  </div>
-                )}
-                {/* "@ time" chip — bottom-right of video, slides up when player controls visible */}
-                {currentTime > 0 && phase === 'dormant' && (
-                  <button
-                    onClick={() => {
-                      try { playerRef.current?.pause(); } catch {}
-                      overlayDispatch({ type: 'ACTIVATE' });
-                      requestAnimationFrame(() => {
-                        if (inputRef.current) {
-                          inputRef.current.focus();
-                          document.execCommand('selectAll');
-                          document.execCommand('insertText', false, `What's happening at [${Math.floor(currentTime / 60)}:${Math.floor(currentTime % 60).toString().padStart(2, '0')}]?`);
-                        }
-                      });
-                    }}
-                    className="hidden md:inline-flex absolute right-3 bottom-3 group-focus-within:bottom-20 group-data-[paused]:bottom-20 z-10 items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-mono text-white/70 bg-black/50 backdrop-blur-sm border border-white/10 hover:bg-black/70 hover:text-white hover:border-white/20 transition-all duration-200 ease-out delay-[2000ms] group-focus-within:delay-0 group-data-[paused]:delay-0"
-                  >
-                    @ {formatTimestamp(Math.floor(currentTime))}
-                  </button>
-                )}
-              </div>
-
-              {/* Unified interaction overlay (text + voice + learn) — inside container */}
-              <InteractionOverlay
-            expanded={chatExpanded}
-            phase={phase}
-            lingerProgress={lingerProgress}
-            segments={segments}
-            currentTime={currentTime}
+        {/* Video player — fixed aspect, hide when keyboard is open */}
+        <div className={`flex-none relative bg-black transition-[height] duration-200 ease-out ${
+          keyboardOpen ? 'h-0 overflow-hidden' : ''
+        }`}>
+          <VideoPlayer
+            playerRef={playerRef}
             videoId={videoId}
-            videoTitle={effectiveTitle ?? undefined}
-            transcriptSource={source ?? undefined}
-            voiceId={voiceId}
-            isVoiceCloning={isCloning}
-            // Voice state
-            voiceState={unified.voiceState}
-            voiceTranscript={unified.voiceTranscript}
-            voiceResponseText={unified.voiceResponseText}
-            voiceError={unified.voiceError}
-            recordingDuration={unified.recordingDuration}
-            onStartRecording={unified.startRecording}
-            onStopRecording={unified.stopRecording}
-            onCancelRecording={unified.cancelRecording}
-            // Text state
-            isTextStreaming={unified.isTextStreaming}
-            currentUserText={unified.currentUserText}
-            currentAiText={unified.currentAiText}
-            currentToolCalls={unified.currentToolCalls}
-            currentRawAiText={unified.currentRawAiText}
-            textError={unified.textError}
-            onTextSubmit={unified.handleTextSubmit}
-            onStopTextStream={unified.stopTextStream}
-            onOpenVideo={handleOpenVideo}
-            // Read aloud
-            autoReadAloud={unified.autoReadAloud}
-            onToggleAutoReadAloud={unified.setAutoReadAloud}
-            playingMessageId={unified.playingMessageId}
-            onPlayMessage={unified.playMessage}
-            isReadAloudLoading={unified.isReadAloudLoading}
-            // Unified state
-            exchanges={unified.exchanges}
-            onClearHistory={unified.clearHistory}
-            videoDimLevel={videoDimLevel}
-            onSeek={handleSeek}
-            onClose={() => overlayDispatch({ type: 'CLOSE' })}
-            onExpandOverlay={() => overlayDispatch({ type: 'CONTENT_ARRIVED' })}
-            onInteract={() => overlayDispatch({ type: 'INTERACT' })}
-            inputRef={inputRef}
-            inputVisible={inputVisible}
+            onPause={handlePause}
+            onPlay={handlePlay}
+            onTimeUpdate={handleTimeUpdate}
+          />
+          {/* Karaoke captions on video */}
+          {hasSegments && (
+            <div className="absolute bottom-0 left-0 right-0 px-3 pb-2 pt-8 bg-gradient-to-t from-black/70 to-transparent pointer-events-none z-[4]">
+              <KaraokeCaption segments={segments} currentTime={currentTime} />
+            </div>
+          )}
+        </div>
+
+        {/* Chat area — fills remaining space */}
+        <div className={`flex-1 flex flex-col min-h-0 ${keyboardOpen ? '' : 'pb-safe'}`}>
+          <InteractionOverlay
+            variant="mobile"
+            expanded={true}
+            phase={phase}
+            lingerProgress={0}
+            {...sharedOverlayProps}
+            videoDimLevel={0}
+            onClose={() => {}}
+            onExpandOverlay={() => {}}
+            onInteract={() => {}}
+            inputRef={mobileInputRef}
+            inputVisible={true}
             onInputFocus={() => overlayDispatch({ type: 'ACTIVATE' })}
             onInputBlur={() => {}}
-            // Learn mode
-            learnPhase={learnMode.phase}
-            learnSelectedAction={learnMode.selectedAction}
-            learnQuiz={learnMode.currentQuiz}
-            learnExplanation={learnMode.currentExplanation}
-            learnIntroText={learnMode.introText}
-            learnResponseContent={learnMode.responseContent}
-            learnExportableContent={learnMode.exportableContent}
-            learnAnswers={learnMode.answers}
-            learnScore={learnMode.score}
-            learnThinking={learnMode.thinking}
-            learnThinkingDuration={learnMode.thinkingDuration}
-            learnLoading={learnMode.isLoading}
-            learnError={learnMode.error}
-            learnOptions={learnOptions}
-            learnOptionsLoading={learnOptionsLoading}
-            onOpenLearnMode={handleOpenLearnMode}
-            onSelectAction={learnMode.executeAction}
-            onFocusInput={handleFocusInput}
-            onSelectAnswer={learnMode.selectAnswer}
-            onNextBatch={learnMode.requestNextBatch}
-            onStopLearnMode={learnMode.stopLearnMode}
-            curriculumContext={curriculum.curriculumContext}
-            curriculumVideoCount={curriculum.videoCount}
-            // Explore mode (from unified)
-            exploreMode={unified.exploreMode}
-            onToggleExploreMode={toggleExploreMode}
-            onExploreSubmit={unified.handleExploreSubmit}
-            onStopExploreStream={unified.stopExploreStream}
-            exploreError={unified.exploreError}
-            explorePills={unified.explorePills}
-            isThinking={unified.isThinking}
-            thinkingDuration={unified.thinkingDuration}
-            storyboardLevels={storyboardLevels}
-            interval={selectedInterval}
-            onClearInterval={handleIntervalClear}
+            onFocusInput={handleMobileFocusInput}
           />
+        </div>
+      </div>
 
-              {/* Desktop captions — single line, fixed height prevents layout shift */}
-              {hasSegments && (
-                <div className={`hidden md:flex items-center justify-center h-8 mt-2 overflow-hidden transition-opacity duration-200 ${
-                  phase === 'dormant' ? 'opacity-100'
-                  : phase === 'active' && !hasExchangeHistory ? 'opacity-70'
-                  : 'opacity-0 pointer-events-none'
-                }`}>
-                  <KaraokeCaption segments={segments} currentTime={currentTime} />
-                </div>
-              )}
-
-              {/* Video border — blue when playing, neutral when paused */}
-              <div
-                data-video-border
-                className={`hidden md:block absolute top-0 left-0 right-0 aspect-video rounded-xl border-[4px] pointer-events-none z-30 transition-colors duration-300 ease-out ${
-                  isPaused ? 'border-white/[0.12]' : 'border-chalk-accent/90'
-                }`}
+      {/* ==================== DESKTOP LAYOUT (unchanged) ==================== */}
+      <div className="hidden md:flex h-[100dvh] bg-chalk-bg overflow-hidden animate-in fade-in duration-300 px-safe">
+        {/* Main area — shrinks to 55% when side panel is open */}
+        <div className={`flex flex-col min-w-0 transition-[flex,width] duration-300 ease-out ${
+          sideStack.length > 0 ? "w-[55%] flex-none" : "flex-1"
+        }`}>
+          {/* Top bar */}
+          <div className="flex flex-col flex-none bg-chalk-bg/80 backdrop-blur-md relative z-20">
+            <div className="flex items-center gap-3 px-4 py-3">
+            {/* Left: chalk icon + compact search */}
+            <a
+              href="/"
+              className="flex items-center gap-1.5 text-chalk-text hover:text-chalk-accent transition-colors shrink-0"
+              title="Home"
+            >
+              <ChalkboardSimple size={18} />
+              <span className="text-sm font-semibold">chalk</span>
+            </a>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const val = navSearchValue.trim();
+                if (val) {
+                  navRouter.push(`/?q=${encodeURIComponent(val)}`);
+                  setNavSearchValue("");
+                }
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] focus-within:ring-1 focus-within:ring-chalk-accent/40 focus-within:border-chalk-accent/30 transition-colors w-48"
+            >
+              <MagnifyingGlass size={13} className="text-slate-500 shrink-0" />
+              <input
+                type="text"
+                value={navSearchValue}
+                onChange={(e) => setNavSearchValue(e.target.value)}
+                placeholder="Search videos, channels..."
+                className="flex-1 bg-transparent text-xs text-chalk-text placeholder:text-slate-600 focus:outline-none min-w-0"
               />
+            </form>
+            <span className="text-slate-600/50">|</span>
+            <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+              {effectiveChannel && (
+                <span className="text-[10px] text-slate-500 truncate">
+                  {effectiveChannel}
+                </span>
+              )}
+              <span className="text-xs truncate text-slate-400">
+                {effectiveTitle || videoId}
+              </span>
+            </div>
+
+            {/* Hint text */}
+            {phase === 'dormant' && effectiveChannel && (
+              <span className="hidden lg:inline text-xs whitespace-nowrap pointer-events-none text-slate-500 shrink-0">
+                Start typing to talk to {effectiveChannel}
+              </span>
+            )}
+
+            <div className="flex gap-2 items-center ml-auto">
+              <button
+                onClick={cycleViewSize}
+                className={`px-1.5 py-1 rounded-lg text-[11px] font-mono font-medium transition-colors ${
+                  viewSize !== "default"
+                    ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                    : "text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30"
+                }`}
+                title={`View size: ${viewSize}`}
+              >
+                {viewSize === "compact"
+                  ? "S"
+                  : viewSize === "expanded"
+                    ? "L"
+                    : "M"}
+              </button>
+              <SpeedControlButton playerRef={playerRef} />
+
+              {chatExpanded && unified.exchanges.length > 0 && (
+                <button
+                  onClick={unified.clearHistory}
+                  className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30 transition-colors"
+                >
+                  Clear
+                </button>
+              )}
+              <button
+                onClick={() => setShowTranscript((v) => !v)}
+                className={`inline-flex px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+                  showTranscript
+                    ? "bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30"
+                    : "text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30"
+                }`}
+              >
+                Transcript
+              </button>
+            </div>
+            </div>
+            {/* Chapter timeline — replaces header border-b */}
+            {hasSegments && durationSeconds && durationSeconds > 0 ? (
+              <ChapterTimeline
+                segments={segments}
+                currentTime={currentTime}
+                duration={durationSeconds}
+                onSeek={handleSeek}
+                keyMoments={knowledgeContext?.video?.key_moments}
+                interval={selectedInterval}
+                onIntervalSelect={handleIntervalSelect}
+                onIntervalClear={handleIntervalClear}
+              />
+            ) : (
+              <div className="h-px bg-chalk-border/30" />
+            )}
+          </div>
+
+          {/* Video area */}
+          <div
+            onPointerDown={(e) => {
+              const target = e.target as HTMLElement;
+              if (target.closest('button') || target.closest('textarea') || target.closest('input') || target.closest('iframe')) return;
+              if (chatExpanded) return;
+              if (Date.now() - lastDismissRef.current < 300) return;
+              if (phase === 'dormant') {
+                overlayDispatch({ type: 'ACTIVATE' });
+                requestAnimationFrame(() => inputRef.current?.focus());
+              }
+            }}
+            className="flex-1 flex flex-col overflow-hidden relative items-center justify-center"
+          >
+            <div className="overflow-hidden relative z-0 flex-none flex flex-col w-full px-4">
+              {/* Container */}
+              <div data-video-container data-playing={!isPaused || undefined} className={`w-full ${viewMaxWidth} mx-auto relative flex-none transition-[max-width] duration-[250ms] ease-out`}>
+                {/* Video */}
+                <div
+                  className="group relative aspect-video rounded-xl overflow-hidden"
+                  data-paused={isPaused || undefined}
+                >
+                  <VideoPlayer
+                    playerRef={playerRef}
+                    videoId={videoId}
+                    onPause={handlePause}
+                    onPlay={handlePlay}
+                    onTimeUpdate={handleTimeUpdate}
+                  />
+                  {/* Click layer: covers video to intercept YouTube iframe clicks */}
+                  {phase === 'dormant' && (
+                    <div
+                      className="absolute inset-0 z-[5] cursor-pointer"
+                      onPointerDown={(e) => {
+                        e.stopPropagation();
+                        try {
+                          const p = playerRef.current;
+                          if (p) { p.paused ? p.play() : p.pause(); }
+                        } catch {}
+                      }}
+                    />
+                  )}
+                  {/* "@ time" chip */}
+                  {currentTime > 0 && phase === 'dormant' && (
+                    <button
+                      onClick={() => {
+                        try { playerRef.current?.pause(); } catch {}
+                        overlayDispatch({ type: 'ACTIVATE' });
+                        requestAnimationFrame(() => {
+                          if (inputRef.current) {
+                            inputRef.current.focus();
+                            document.execCommand('selectAll');
+                            document.execCommand('insertText', false, `What's happening at [${Math.floor(currentTime / 60)}:${Math.floor(currentTime % 60).toString().padStart(2, '0')}]?`);
+                          }
+                        });
+                      }}
+                      className="inline-flex absolute right-3 bottom-3 group-focus-within:bottom-20 group-data-[paused]:bottom-20 z-10 items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-mono text-white/70 bg-black/50 backdrop-blur-sm border border-white/10 hover:bg-black/70 hover:text-white hover:border-white/20 transition-all duration-200 ease-out delay-[2000ms] group-focus-within:delay-0 group-data-[paused]:delay-0"
+                    >
+                      @ {formatTimestamp(Math.floor(currentTime))}
+                    </button>
+                  )}
+                </div>
+
+                {/* Interaction overlay */}
+                <InteractionOverlay
+                  expanded={chatExpanded}
+                  phase={phase}
+                  lingerProgress={lingerProgress}
+                  {...sharedOverlayProps}
+                  videoDimLevel={videoDimLevel}
+                  onClose={() => overlayDispatch({ type: 'CLOSE' })}
+                  onExpandOverlay={() => overlayDispatch({ type: 'CONTENT_ARRIVED' })}
+                  onInteract={() => overlayDispatch({ type: 'INTERACT' })}
+                  inputRef={inputRef}
+                  inputVisible={inputVisible}
+                  onInputFocus={() => overlayDispatch({ type: 'ACTIVATE' })}
+                  onInputBlur={() => {}}
+                  onFocusInput={handleFocusInput}
+                />
+
+                {/* Desktop captions */}
+                {hasSegments && (
+                  <div className={`flex items-center justify-center h-8 mt-2 overflow-hidden transition-opacity duration-200 ${
+                    phase === 'dormant' ? 'opacity-100'
+                    : phase === 'active' && !hasExchangeHistory ? 'opacity-70'
+                    : 'opacity-0 pointer-events-none'
+                  }`}>
+                    <KaraokeCaption segments={segments} currentTime={currentTime} />
+                  </div>
+                )}
+
+                {/* Video border */}
+                <div
+                  data-video-border
+                  className={`absolute top-0 left-0 right-0 aspect-video rounded-xl border-[4px] pointer-events-none z-30 transition-colors duration-300 ease-out ${
+                    isPaused ? 'border-white/[0.12]' : 'border-chalk-accent/90'
+                  }`}
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Mobile transcript — collapsible; flex-1 fills remaining space, flex-none for collapsed/hidden */}
+        {/* Side video panel — 45% split when open */}
         <div
-          className={`md:hidden flex flex-col border-t border-chalk-border/40 overflow-hidden transition-[flex,height] duration-[250ms] ease-out motion-reduce:transition-none ${
-            keyboardOpen || chatExpanded
-              ? "flex-none h-0"
-              : transcriptCollapsed
-                ? "flex-none h-10"
-                : "flex-1 min-h-0"
+          className={`flex flex-none overflow-hidden transition-[width] duration-300 ease-out ${
+            sideStack.length > 0 ? "border-l w-[45%] border-chalk-border/30" : "w-0"
           }`}
         >
-          {transcriptCollapsed && !keyboardOpen ? (
-            <WhisperBar
-              label="Transcript"
-              meta={
-                status === "connecting" || status === "extracting"
-                  ? "Loading..."
-                  : segments.length === 0
-                    ? "No transcript"
-                    : formatTimestamp(currentTime)
-              }
-              onTap={() => setTranscriptCollapsed(false)}
-            />
-          ) : (
-            <>
-              <SectionGrip
-                onTap={() => setTranscriptCollapsed(true)}
-                sectionName="transcript"
+          {sideStack.length > 0 && (
+            <div className="w-full h-full">
+              <SideVideoPanel
+                stack={sideStack}
+                onPop={handleSidePopVideo}
+                onClose={handleSideClose}
+                onOpenVideo={handleOpenVideo}
               />
-              <div className="overflow-hidden flex-1 min-h-0">
-                <TranscriptPanel
-                  segments={segments}
-                  currentTime={currentTime}
-                  onSeek={handleSeek}
-                  status={status}
-                  statusMessage={statusMessage}
-                  source={source}
-                  progress={progress}
-                  error={error ?? undefined}
-                  variant="mobile"
-                  onAskAbout={handleAskAbout}
-                  videoId={videoId}
-                  videoTitle={effectiveTitle ?? undefined}
-                />
-              </div>
-            </>
+            </div>
           )}
         </div>
 
-        {/* Bottom safe area padding on mobile */}
-        <div className="flex-none md:hidden bg-chalk-bg pb-safe" />
-      </div>
-
-      {/* Side video panel — 45% split when open (desktop only) */}
-      <div
-        className={`hidden md:flex flex-none overflow-hidden transition-[width] duration-300 ease-out ${
-          sideStack.length > 0 ? "border-l w-[45%] border-chalk-border/30" : "w-0"
-        }`}
-      >
-        {sideStack.length > 0 && (
-          <div className="w-full h-full">
-            <SideVideoPanel
-              stack={sideStack}
-              onPop={handleSidePopVideo}
-              onClose={handleSideClose}
-              onOpenVideo={handleOpenVideo}
+        {/* Transcript sidebar */}
+        <div
+          className={`flex flex-none overflow-hidden transition-[width] duration-[250ms] ease-out ${
+            showTranscript && sideStack.length === 0 ? "border-l w-[360px] border-chalk-border/30" : "w-0"
+          }`}
+        >
+          <div className="w-[360px] flex-none h-full">
+            <TranscriptPanel
+              segments={segments}
+              currentTime={currentTime}
+              onSeek={handleSeek}
+              status={status}
+              statusMessage={statusMessage}
+              source={source}
+              progress={progress}
+              error={error ?? undefined}
+              variant="sidebar"
+              onClose={() => setShowTranscript(false)}
+              onAskAbout={handleAskAbout}
+              videoId={videoId}
+              videoTitle={effectiveTitle ?? undefined}
             />
           </div>
-        )}
-      </div>
-
-      {/* Transcript sidebar — right (desktop), smooth slide */}
-      <div
-        className={`hidden md:flex flex-none overflow-hidden transition-[width] duration-[250ms] ease-out ${
-          showTranscript && sideStack.length === 0 ? "border-l w-[360px] border-chalk-border/30" : "w-0"
-        }`}
-      >
-        <div className="w-[360px] flex-none h-full">
-          <TranscriptPanel
-            segments={segments}
-            currentTime={currentTime}
-            onSeek={handleSeek}
-            status={status}
-            statusMessage={statusMessage}
-            source={source}
-            progress={progress}
-            error={error ?? undefined}
-            variant="sidebar"
-            onClose={() => setShowTranscript(false)}
-            onAskAbout={handleAskAbout}
-            videoId={videoId}
-            videoTitle={effectiveTitle ?? undefined}
-          />
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

@@ -50,6 +50,7 @@ export interface VoiceControls {
 }
 
 export interface InteractionOverlayProps {
+  variant?: "desktop" | "mobile";
   expanded: boolean;
   phase?: import('@/hooks/useOverlayPhase').OverlayPhase;
   lingerProgress?: number;

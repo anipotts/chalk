@@ -156,13 +156,16 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
             safePlayerCall(player.current, (pl) => { pl.playbackRate = parseFloat(savedSpeed); });
           }
         } catch { /* localStorage may throw in private browsing */ }
-        // Auto-play after provider is ready (more reliable than autoPlay prop
-        // which can fail on hard reload due to browser autoplay policies)
-        safePlayerCall(player.current, (pl) => {
-          pl.play().catch(() => {
-            // Autoplay blocked — user will click the built-in play button
+        // Auto-play on desktop only — on mobile, programmatic play() can trigger
+        // YouTube's native fullscreen which we want to avoid. Users tap to play.
+        const isMobile = window.innerWidth < 768;
+        if (!isMobile) {
+          safePlayerCall(player.current, (pl) => {
+            pl.play().catch(() => {
+              // Autoplay blocked — user will click the built-in play button
+            });
           });
-        });
+        }
         onReady?.();
       }}
       className="w-full rounded-none md:rounded-2xl overflow-hidden bg-black"
