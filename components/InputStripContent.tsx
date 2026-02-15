@@ -12,8 +12,10 @@ import {
   Microphone,
   StopCircle,
   PaperPlaneTilt,
+  X,
 } from "@phosphor-icons/react";
 import type { VoiceControls } from "./overlay-types";
+import { formatInterval, type IntervalSelection } from "@/lib/video-utils";
 
 /* --- Voice mode visual elements --- */
 
@@ -91,6 +93,10 @@ export interface InputStripContentProps {
 
   // Height reporting for dynamic spacer
   onHeightChange?: (height: number) => void;
+
+  // Interval selection
+  interval?: IntervalSelection | null;
+  onClearInterval?: () => void;
 }
 
 export function InputStripContent({
@@ -113,6 +119,8 @@ export function InputStripContent({
   curriculumContext,
   curriculumVideoCount,
   onHeightChange,
+  interval,
+  onClearInterval,
 }: InputStripContentProps) {
   const stripRef = useRef<HTMLDivElement>(null);
 
@@ -134,6 +142,25 @@ export function InputStripContent({
       inputVisible === false ? 'md:opacity-0 md:pointer-events-none' : 'md:opacity-100'
     }`}>
       <div className={`pointer-events-auto px-3 pb-3 md:px-0 md:pb-0 md:pt-3 ${expanded ? 'bg-chalk-surface/95 backdrop-blur-md md:bg-transparent md:backdrop-blur-none' : 'pt-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent md:from-transparent md:via-transparent md:pt-3 md:bg-none'}`}>
+        {/* Interval selection pill */}
+        {interval && (
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-300 bg-amber-500/15 border border-amber-400/30 rounded-full px-2.5 py-1 font-mono" title="Selected interval — double-click timeline or click X to clear">
+              {formatInterval(interval.startTime, interval.endTime)}
+              {onClearInterval && (
+                <button
+                  type="button"
+                  onClick={onClearInterval}
+                  className="ml-0.5 text-amber-400/60 hover:text-amber-300 transition-colors"
+                  aria-label="Clear interval selection"
+                >
+                  <X size={10} weight="bold" />
+                </button>
+              )}
+            </span>
+          </div>
+        )}
+
         {/* Unified input row */}
         <div className="flex gap-2 items-center">
           {/* Curriculum context badge */}

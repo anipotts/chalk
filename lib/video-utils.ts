@@ -149,3 +149,62 @@ export function formatTimestamp(seconds: number): string {
   return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
+/* ---- Interval Selection ---- */
+
+export interface IntervalSelection {
+  startTime: number;
+  endTime: number;
+}
+
+/**
+ * Snap a raw time range to the nearest transcript segment boundaries.
+ * Snap threshold: 3 seconds. If no segment within threshold, keeps original.
+ */
+export function snapToSegmentBoundaries(
+  startTime: number,
+  endTime: number,
+  segments: TranscriptSegment[],
+): IntervalSelection {
+  if (segments.length === 0) return { startTime, endTime };
+
+  const SNAP_THRESHOLD = 3; // seconds
+
+  // Find nearest segment start for startTime
+  let snappedStart = startTime;
+  let minStartDist = Infinity;
+  for (const seg of segments) {
+    const dist = Math.abs(seg.offset - startTime);
+    if (dist < minStartDist && dist <= SNAP_THRESHOLD) {
+      minStartDist = dist;
+      snappedStart = seg.offset;
+    }
+  }
+
+  // Find nearest segment end for endTime
+  let snappedEnd = endTime;
+  let minEndDist = Infinity;
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    const segEnd = seg.offset + getSegmentDuration(seg, segments[i + 1]);
+    const dist = Math.abs(segEnd - endTime);
+    if (dist < minEndDist && dist <= SNAP_THRESHOLD) {
+      minEndDist = dist;
+      snappedEnd = segEnd;
+    }
+  }
+
+  // Ensure minimum interval of 1 second
+  if (snappedEnd <= snappedStart) {
+    snappedEnd = snappedStart + 1;
+  }
+
+  return { startTime: snappedStart, endTime: snappedEnd };
+}
+
+/**
+ * Format an interval as "M:SS – M:SS".
+ */
+export function formatInterval(startTime: number, endTime: number): string {
+  return `${formatTimestamp(startTime)} – ${formatTimestamp(endTime)}`;
+}
+

@@ -4,6 +4,14 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import ReactPlayer from 'react-player';
 import { storageKey } from '@/lib/brand';
 
+/**
+ * Note: react-player with YouTube uses youtube-video-element under the hood.
+ * The ref is actually a YoutubeVideoElement (extends HTMLElement), not a true
+ * HTMLVideoElement — but it polyfills the media element API (.play(), .pause(),
+ * .currentTime, .paused, .playbackRate, .duration), so it works at runtime.
+ * `instanceof HTMLVideoElement` will return false.
+ */
+
 interface VideoPlayerProps {
   videoId: string;
   onPause?: () => void;
@@ -41,7 +49,7 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
       case 'k':
         e.preventDefault();
         if (p.paused) {
-          p.play();
+          p.play()?.catch(() => {});
         } else {
           p.pause();
         }
@@ -99,7 +107,7 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
   }, [handleKeyDown]);
 
   return (
-    <div ref={containerRef} className="relative">
+    <div ref={containerRef} className="relative aspect-video">
     {speedOverlay && (
       <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
         <div className="px-4 py-2 rounded-xl bg-black/70 backdrop-blur-sm text-white text-lg font-bold animate-in fade-in zoom-in-95 duration-150">
@@ -110,10 +118,11 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
     <ReactPlayer
       ref={player}
       src={`https://www.youtube.com/watch?v=${videoId}`}
+      controls
       playsInline
       style={{ aspectRatio: '16/9' }}
       width="100%"
-      height="auto"
+      height="100%"
       onPause={() => onPause?.()}
       onPlay={() => onPlay?.()}
       onTimeUpdate={() => {
@@ -122,7 +131,7 @@ export function VideoPlayer({ videoId, onPause, onPlay, onTimeUpdate, onReady, p
           onTimeUpdate?.(p.currentTime);
         }
       }}
-      onCanPlay={() => {
+      onLoadedMetadata={() => {
         try {
           const savedSpeed = localStorage.getItem(storageKey('playback-speed'));
           if (savedSpeed && player.current) {

@@ -112,6 +112,8 @@ export function InteractionOverlay({
   thinkingDuration,
 
   storyboardLevels,
+  interval,
+  onClearInterval,
 }: InteractionOverlayProps) {
   const [input, setInput] = useState("");
   const [inputStripHeight, setInputStripHeight] = useState(72);
@@ -317,6 +319,8 @@ export function InteractionOverlay({
         curriculumContext={curriculumContext}
         curriculumVideoCount={curriculumVideoCount}
         onHeightChange={setInputStripHeight}
+        interval={interval}
+        onClearInterval={onClearInterval}
       />
     </>
   );

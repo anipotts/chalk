@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 import type { VoiceState } from "@/hooks/useVoiceMode";
-import type { TranscriptSegment, TranscriptSource } from "@/lib/video-utils";
+import type { TranscriptSegment, TranscriptSource, IntervalSelection } from "@/lib/video-utils";
 import type { StoryboardLevel } from "@/lib/storyboard";
 import type {
   ParsedQuiz,
@@ -152,4 +152,8 @@ export interface InteractionOverlayProps {
 
   // Storyboard data for timestamp hover cards
   storyboardLevels?: StoryboardLevel[];
+
+  // Interval selection
+  interval?: IntervalSelection | null;
+  onClearInterval?: () => void;
 }

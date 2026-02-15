@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useVoiceMode, type VoiceState } from './useVoiceMode';
 import { useReadAloud } from './useReadAloud';
-import type { TranscriptSegment, TranscriptSource } from '@/lib/video-utils';
+import type { TranscriptSegment, TranscriptSource, IntervalSelection } from '@/lib/video-utils';
 import { storageKey } from '@/lib/brand';
 import { parseStreamWithToolCalls, type ToolCallData } from '@/components/ToolRenderers';
 import type { KnowledgeContext } from '@/hooks/useKnowledgeContext';
@@ -34,6 +34,7 @@ interface UseUnifiedModeOptions {
   transcriptSource?: TranscriptSource;
   knowledgeContext?: KnowledgeContext | null;
   curriculumContext?: string | null;
+  interval?: IntervalSelection | null;
 }
 
 interface UseUnifiedModeReturn {
@@ -133,6 +134,7 @@ export function useUnifiedMode({
   transcriptSource,
   knowledgeContext,
   curriculumContext,
+  interval,
 }: UseUnifiedModeOptions): UseUnifiedModeReturn {
   // Unified exchanges (persisted) — single source of truth
   const [exchanges, setExchanges] = useState<UnifiedExchange[]>([]);
@@ -153,6 +155,8 @@ export function useUnifiedMode({
   knowledgeContextRef.current = knowledgeContext;
   const curriculumContextRef = useRef(curriculumContext);
   curriculumContextRef.current = curriculumContext;
+  const intervalRef = useRef(interval);
+  intervalRef.current = interval;
 
   // Explore mode state (consolidated from InteractionOverlay)
   const [exploreMode, setExploreMode] = useState(false);
@@ -273,6 +277,7 @@ export function useUnifiedMode({
           voiceMode: false,
           videoId,
           knowledgeContext: knowledgeContextRef.current,
+          intervalSelection: intervalRef.current || undefined,
         }),
         signal: abortController.signal,
       });
@@ -395,6 +400,7 @@ export function useUnifiedMode({
           exploreGoal: exploreGoal || text,
           thinkingBudget: budget.budgetTokens,
           curriculumContext: curriculumContextRef.current || undefined,
+          intervalSelection: intervalRef.current || undefined,
         }),
         signal: controller.signal,
       });
