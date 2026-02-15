@@ -356,10 +356,17 @@ async def registration_heartbeat_loop():
 
 
 def cleanup_orphan_temps():
-    """Clean up old whisperx temp dirs on startup."""
+    """Clean up old whisperx temp dirs on startup (but NOT the model cache)."""
     import pathlib
     cutoff = time.time() - 3600  # 1 hour old
+    hf_home = os.environ.get("HF_HOME", "")
     for p in pathlib.Path("/tmp").glob("whisperx-*"):
+        # Never delete the HF model cache dir
+        if hf_home and str(p) == hf_home:
+            continue
+        # Only delete dirs that look like tempfile-created dirs (8-char random suffix)
+        if not p.name.startswith("whisperx-") or len(p.name) < 15:
+            continue
         try:
             if p.stat().st_mtime < cutoff:
                 shutil.rmtree(p, ignore_errors=True)
