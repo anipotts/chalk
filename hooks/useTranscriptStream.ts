@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { TranscriptSegment, TranscriptSource } from '@/lib/video-utils';
 
 export type TranscriptStatus =
@@ -79,12 +79,14 @@ async function* parseSSE(
   }
 }
 
-/** Get a Supabase client for client-side polling (anon key). */
-function getAnonClient() {
+/** Module-level singleton Supabase client for client-side polling (anon key). */
+let _anonClient: SupabaseClient | null | undefined;
+function getAnonClient(): SupabaseClient | null {
+  if (_anonClient !== undefined) return _anonClient;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return null;
-  return createClient(url, key);
+  _anonClient = url && key ? createClient(url, key) : null;
+  return _anonClient;
 }
 
 export function useTranscriptStream(videoId: string | null, forceStt = false): TranscriptStreamState {
@@ -99,6 +101,7 @@ export function useTranscriptStream(videoId: string | null, forceStt = false): T
   const [storyboardSpec, setStoryboardSpec] = useState<string | null>(null);
   const [queueProgress, setQueueProgress] = useState<QueueProgress | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
 
   useEffect(() => {
     if (!videoId) return;
@@ -133,6 +136,7 @@ export function useTranscriptStream(videoId: string | null, forceStt = false): T
         }
 
         const reader = res.body.getReader();
+        readerRef.current = reader;
 
         for await (const { event, data } of parseSSE(reader)) {
           if (cancelled) break;
@@ -305,6 +309,10 @@ export function useTranscriptStream(videoId: string | null, forceStt = false): T
 
     return () => {
       cancelled = true;
+      if (readerRef.current) {
+        readerRef.current.cancel().catch(() => {});
+        readerRef.current = null;
+      }
       if (pollRef.current) {
         clearInterval(pollRef.current);
         pollRef.current = null;

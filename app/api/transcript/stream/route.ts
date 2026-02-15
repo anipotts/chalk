@@ -64,24 +64,26 @@ export async function GET(req: Request) {
       }
 
       try {
-        // ── Check caches ──────────────────────────────────────────────────
-        send('status', { phase: 'cache', message: 'Checking cache...' });
+        // ── Check caches (skip when force-stt) ─────────────────────────────
+        if (!forceStt) {
+          send('status', { phase: 'cache', message: 'Checking cache...' });
 
-        const cached = await getCachedTranscript(videoId);
-        if (cached && cached.segments.length > 0) {
-          send('meta', { source: cached.source, cached: true });
-          send('segments', cached.segments);
+          const cached = await getCachedTranscript(videoId);
+          if (cached && cached.segments.length > 0) {
+            send('meta', { source: cached.source, cached: true });
+            send('segments', cached.segments);
 
-          const lastSeg = cached.segments[cached.segments.length - 1];
-          const duration = lastSeg.offset + (lastSeg.duration || 0);
-          send('done', {
-            total: cached.segments.length,
-            source: cached.source,
-            durationSeconds: duration,
-          });
-          clearInterval(heartbeat);
-          controller.close();
-          return;
+            const lastSeg = cached.segments[cached.segments.length - 1];
+            const duration = lastSeg.offset + (lastSeg.duration || 0);
+            send('done', {
+              total: cached.segments.length,
+              source: cached.source,
+              durationSeconds: duration,
+            });
+            clearInterval(heartbeat);
+            controller.close();
+            return;
+          }
         }
 
         // ── Phase 1: Caption race (skip if force-stt) ──────────────────

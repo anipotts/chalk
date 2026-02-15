@@ -49,7 +49,7 @@ export const CHANNEL_REGISTRY: ChannelConfig[] = [
   { id: 'UCCezIgC97PvUuR4_gbFUs5g', name: 'Corey Schafer', handle: '@coreyms', tier: 2, category: 'programming', maxVideos: 30 },
   // NEW: AI/ML Tier 2
   { id: 'UCZCFT11CWBi3MHNlGf019nw', name: 'Welch Labs', handle: '@WelchLabsVideo', tier: 2, category: 'ai_ml', maxVideos: 25 },
-  { id: 'UCkw4JCwteGrDHIsyIIKo4tQ', name: 'AI Explained', handle: '@ai-explained-', tier: 2, category: 'ai_ml', maxVideos: 25 },
+  { id: 'UCNJ1Ymd5yFuUPtn21xtRbbw', name: 'AI Explained', handle: '@ai-explained-', tier: 2, category: 'ai_ml', maxVideos: 25 },
   { id: 'UCoBvAPy3AHPLw3Nfzu_zsyg', name: 'Matthew Berman', handle: '@matthew_berman', tier: 2, category: 'ai_ml', maxVideos: 20 },
   { id: 'UCFM6oCMMjhN36vGbcm-p-Ig', name: 'Weights & Biases', handle: '@WeightsBiases', tier: 2, category: 'ai_ml', maxVideos: 20 },
   { id: 'UCrjtKRgkliZWjNWRlsE_9qQ', name: 'AI Coffee Break with Letitia', handle: '@AICoffeeBreak', tier: 2, category: 'ai_ml', maxVideos: 20 },
@@ -102,7 +102,7 @@ export const CHANNEL_REGISTRY: ChannelConfig[] = [
   { id: 'UCjPimgBGkNt47tVafuDyPUw', name: 'Krista King Math', tier: 3, category: 'math_cs', maxVideos: 15,
     keywords: ['calculus', 'linear algebra', 'differential equations'] },
   // NEW: AI/ML Tier 3
-  { id: 'UCfzlCWGWYyIQ0aLC5w48gBQ', name: 'Sam Witteveen', handle: '@samwitteveenai', tier: 3, category: 'ai_ml', maxVideos: 15,
+  { id: 'UC55ODQSvARtgSyc8ThfiepQ', name: 'Sam Witteveen', handle: '@samwitteveenai', tier: 3, category: 'ai_ml', maxVideos: 15,
     keywords: ['LLM', 'GPT', 'prompt engineering', 'AI agents'] },
   { id: 'UCP7jMXSY2xbc3KCAE0MHQ-A', name: 'Dave Ebbelaar', handle: '@daveebbelaar', tier: 3, category: 'ai_ml', maxVideos: 15,
     keywords: ['python', 'AI', 'data science', 'LLM'] },
@@ -156,7 +156,7 @@ export const CHANNEL_REGISTRY: ChannelConfig[] = [
   // NEW: General CS/Engineering Tier 4
   { id: 'UCmtyQOKKmrMVaKuRXz02jbQ', name: 'Sebastian Lague', handle: '@SebastianLague', tier: 4, category: 'programming', maxVideos: 12,
     keywords: ['game dev', 'algorithm', 'simulation', 'procedural'] },
-  { id: 'UC8ENHE5xdFSwx71u3fDH5Xw', name: 'Ben Eater', handle: '@BenEater', tier: 4, category: 'programming', maxVideos: 10,
+  { id: 'UCS0N5baNlQWJCUrhCEo8WlA', name: 'Ben Eater', handle: '@BenEater', tier: 4, category: 'programming', maxVideos: 10,
     keywords: ['computer', 'hardware', 'CPU', '8-bit'] },
   { id: 'UCBDqDX7V8PvdvKNGdZ8sxew', name: 'Tom Scott', handle: '@TomScottGo', tier: 4, category: 'general', maxVideos: 10,
     keywords: ['CS', 'internet', 'tech', 'engineering'] },

@@ -9,7 +9,7 @@
  *   npx tsx scripts/discover-channels.ts [--search "query"] [--limit N]
  */
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
 const SEARCH_QUERIES = [
   'AI engineering tutorial 2024',
@@ -51,9 +51,10 @@ function discoverFromSearch(query: string, limit: number): Map<string, Discovere
   const channels = new Map<string, DiscoveredChannel>();
 
   try {
-    const output = execSync(
-      `yt-dlp --flat-playlist "ytsearch${limit}:${query}" --print "%(channel_id)s\t%(channel)s" 2>/dev/null`,
-      { encoding: 'utf-8', timeout: 30_000 },
+    const output = execFileSync(
+      'yt-dlp',
+      ['--flat-playlist', `ytsearch${limit}:${query}`, '--print', '%(channel_id)s\t%(channel)s'],
+      { encoding: 'utf-8', timeout: 30_000, stdio: ['pipe', 'pipe', 'ignore'] },
     ).trim();
 
     for (const line of output.split('\n')) {

@@ -20,13 +20,8 @@
 process.loadEnvFile('.env.local');
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { execFileSync } from 'child_process';
 import { hostname } from 'os';
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-const __dirname_compat = (typeof __dirname !== 'undefined' ? __dirname : null)
-  ?? dirname(fileURLToPath(import.meta.url));
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -119,28 +114,34 @@ async function processJob(
 ): Promise<void> {
   log(job.video_id, 'START', `priority=${job.priority}, requested_by=${job.requested_by}, attempt=${job.attempt_count}`);
 
-  // Start heartbeat timer
+  // Create AbortController for timeout and preemption
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), WHISPERX_TIMEOUT);
+
+  // Start heartbeat timer with preemption check for batch jobs
   const heartbeatTimer = setInterval(async () => {
     try {
       await client.rpc('heartbeat_job', {
         p_job_id: job.id,
         p_worker_id: WORKER_ID,
       });
+
+      // For P2 (batch) jobs, check if a higher-priority job is waiting
+      if (job.priority >= 2) {
+        const preempt = await shouldPreempt(client, job.priority);
+        if (preempt) {
+          log(job.video_id, 'PREEMPT', 'Higher-priority job waiting, aborting...');
+          controller.abort();
+        }
+      }
     } catch (e) {
       log(job.video_id, 'HEARTBEAT', `failed: ${e instanceof Error ? e.message : e}`);
     }
   }, HEARTBEAT_INTERVAL);
 
   try {
-    // Call WhisperX progressive endpoint
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
     const progressiveUrl = `${whisperxUrl}/transcribe/progressive`;
     log(job.video_id, 'TRANSCRIBE', `calling ${progressiveUrl}...`);
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), WHISPERX_TIMEOUT);
 
     const response = await fetch(progressiveUrl, {
       method: 'POST',
@@ -149,13 +150,9 @@ async function processJob(
         video_id: job.video_id,
         job_id: job.id,
         worker_id: WORKER_ID,
-        supabase_url: supabaseUrl,
-        supabase_key: supabaseKey,
       }),
       signal: controller.signal,
     });
-
-    clearTimeout(timeout);
 
     if (!response.ok) {
       const errText = await response.text().catch(() => 'unknown');
@@ -205,6 +202,7 @@ async function processJob(
       p_error: msg.slice(0, 500),
     });
   } finally {
+    clearTimeout(timeout);
     clearInterval(heartbeatTimer);
   }
 }
@@ -231,11 +229,16 @@ async function enqueueBatchWork(client: SupabaseClient): Promise<boolean> {
 
   try {
     // Use yt-dlp to get recent video IDs from channel
-    const { execSync } = await import('child_process');
     const maxVideos = channel.maxVideos || 10;
-    const output = execSync(
-      `yt-dlp --flat-playlist --print id "https://www.youtube.com/${(channel.handle || channel.name).replace(/^@*/, '@')}/videos" --playlist-end ${Math.min(maxVideos, 20)} 2>/dev/null`,
-      { encoding: 'utf-8', timeout: 30_000 },
+    const channelHandle = (channel.handle || channel.name).replace(/^@*/, '@');
+    const output = execFileSync(
+      'yt-dlp',
+      [
+        '--flat-playlist', '--print', 'id',
+        `https://www.youtube.com/${channelHandle}/videos`,
+        '--playlist-end', String(Math.min(maxVideos, 20)),
+      ],
+      { encoding: 'utf-8', timeout: 30_000, stdio: ['pipe', 'pipe', 'ignore'] },
     ).trim();
 
     if (!output) return false;
@@ -314,6 +317,21 @@ async function main() {
 
       if (job) {
         idleTime = 0;
+
+        // For P2 (batch) jobs, check preemption before starting
+        if (job.priority >= 2) {
+          const preempt = await shouldPreempt(client, job.priority);
+          if (preempt) {
+            log(job.video_id, 'PREEMPT', 'Higher-priority job waiting, re-queuing P2 job');
+            await client.rpc('fail_job', {
+              p_job_id: job.id,
+              p_worker_id: WORKER_ID,
+              p_error: 'Preempted by higher-priority job',
+            });
+            continue;
+          }
+        }
+
         await processJob(client, job, config.whisperxUrl);
         jobsProcessed++;
 

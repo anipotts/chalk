@@ -7,7 +7,7 @@ Endpoints:
   GET  /health                  — health check
   GET  /status                  — uptime, job count, GPU memory
 """
-import os, sys, glob, shutil, tempfile, subprocess, time, json, asyncio
+import os, sys, glob, shutil, tempfile, subprocess, time, json, asyncio, threading
 from typing import Optional
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
@@ -18,6 +18,16 @@ _model = None
 _start_time = time.time()
 _transcription_count = 0
 _currently_processing: Optional[str] = None
+
+# GPU concurrency guard — prevent simultaneous transcriptions (would OOM)
+_gpu_lock = threading.Lock()
+
+# Module-level Supabase credentials (read from env, never from HTTP requests)
+_SUPABASE_URL = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
+_SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+
+# Max audio file size: 1.5 GB
+_MAX_AUDIO_BYTES = 1_500_000_000
 
 
 def get_model():
@@ -51,6 +61,8 @@ def download_audio(vid: str, tmpdir: str, timeout: int = 600) -> str:
     fsize = os.path.getsize(audio_path)
     if fsize < 1000:
         raise HTTPException(502, f"Audio too small ({fsize} bytes)")
+    if fsize > _MAX_AUDIO_BYTES:
+        raise HTTPException(413, f"Audio too large ({fsize:,} bytes, max {_MAX_AUDIO_BYTES:,})")
     print(f"[whisperx] {vid}: downloaded {fsize:,} bytes to {audio_path}")
     return audio_path
 
@@ -85,9 +97,10 @@ def seg_to_dict(s) -> dict:
     return seg
 
 
-def supabase_upsert_segments(supabase_url: str, supabase_key: str,
-                              video_id: str, segments: list, source: str = "whisperx"):
+def supabase_upsert_segments(video_id: str, segments: list, source: str = "whisperx"):
     """Upsert accumulated segments to Supabase transcripts table via REST API."""
+    if not _SUPABASE_URL or not _SUPABASE_KEY:
+        raise RuntimeError("Supabase env vars not configured")
     from urllib.request import Request, urlopen
 
     last_seg = segments[-1] if segments else {}
@@ -103,11 +116,11 @@ def supabase_upsert_segments(supabase_url: str, supabase_key: str,
     }).encode()
 
     req = Request(
-        f"{supabase_url}/rest/v1/transcripts",
+        f"{_SUPABASE_URL}/rest/v1/transcripts",
         data=data,
         headers={
-            "apikey": supabase_key,
-            "Authorization": f"Bearer {supabase_key}",
+            "apikey": _SUPABASE_KEY,
+            "Authorization": f"Bearer {_SUPABASE_KEY}",
             "Content-Type": "application/json",
             "Prefer": "resolution=merge-duplicates",
         },
@@ -116,11 +129,12 @@ def supabase_upsert_segments(supabase_url: str, supabase_key: str,
     urlopen(req, timeout=15)
 
 
-def supabase_heartbeat(supabase_url: str, supabase_key: str,
-                        job_id: str, worker_id: str,
+def supabase_heartbeat(job_id: str, worker_id: str,
                         status: str = None, progress_pct: int = None,
                         segments_written: int = None):
     """Call heartbeat_job RPC via Supabase REST."""
+    if not _SUPABASE_URL or not _SUPABASE_KEY:
+        return
     from urllib.request import Request, urlopen
 
     params = {"p_job_id": job_id, "p_worker_id": worker_id}
@@ -133,11 +147,11 @@ def supabase_heartbeat(supabase_url: str, supabase_key: str,
 
     data = json.dumps(params).encode()
     req = Request(
-        f"{supabase_url}/rest/v1/rpc/heartbeat_job",
+        f"{_SUPABASE_URL}/rest/v1/rpc/heartbeat_job",
         data=data,
         headers={
-            "apikey": supabase_key,
-            "Authorization": f"Bearer {supabase_key}",
+            "apikey": _SUPABASE_KEY,
+            "Authorization": f"Bearer {_SUPABASE_KEY}",
             "Content-Type": "application/json",
         },
         method="POST",
@@ -155,11 +169,14 @@ class TranscribeRequest(BaseModel):
 
 
 @app.post("/transcribe")
-async def transcribe(req: TranscribeRequest):
+def transcribe(req: TranscribeRequest):
     global _transcription_count, _currently_processing
     vid = req.video_id
     if not vid or len(vid) != 11:
         raise HTTPException(400, "Invalid video_id")
+
+    if not _gpu_lock.acquire(blocking=False):
+        raise HTTPException(503, "GPU busy with another transcription")
 
     _currently_processing = vid
     tmpdir = tempfile.mkdtemp(dir="/tmp", prefix="whisperx-")
@@ -180,6 +197,7 @@ async def transcribe(req: TranscribeRequest):
         raise HTTPException(500, str(e))
     finally:
         _currently_processing = None
+        _gpu_lock.release()
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
@@ -189,16 +207,21 @@ class ProgressiveRequest(BaseModel):
     video_id: str
     job_id: str
     worker_id: str
-    supabase_url: str
-    supabase_key: str
 
 
 @app.post("/transcribe/progressive")
-async def transcribe_progressive(req: ProgressiveRequest):
+def transcribe_progressive(req: ProgressiveRequest):
     global _transcription_count, _currently_processing
+
+    if not _SUPABASE_URL or not _SUPABASE_KEY:
+        raise HTTPException(500, "Supabase env vars not configured on GPU server")
+
     vid = req.video_id
     if not vid or len(vid) != 11:
         raise HTTPException(400, "Invalid video_id")
+
+    if not _gpu_lock.acquire(blocking=False):
+        raise HTTPException(503, "GPU busy with another transcription")
 
     _currently_processing = vid
     tmpdir = tempfile.mkdtemp(dir="/tmp", prefix="whisperx-")
@@ -209,8 +232,7 @@ async def transcribe_progressive(req: ProgressiveRequest):
         audio_path = download_audio(vid, tmpdir, timeout=600)
 
         # Heartbeat: downloading -> transcribing
-        supabase_heartbeat(req.supabase_url, req.supabase_key,
-                          req.job_id, req.worker_id, status="transcribing")
+        supabase_heartbeat(req.job_id, req.worker_id, status="transcribing")
 
         # Transcribe with progressive flushing
         segs_gen, info = transcribe_audio(audio_path)
@@ -229,12 +251,8 @@ async def transcribe_progressive(req: ProgressiveRequest):
                 pct = min(95, int(last_time / estimated_duration * 100))
 
                 try:
-                    supabase_upsert_segments(
-                        req.supabase_url, req.supabase_key,
-                        vid, segments, "whisperx"
-                    )
+                    supabase_upsert_segments(vid, segments, "whisperx")
                     supabase_heartbeat(
-                        req.supabase_url, req.supabase_key,
                         req.job_id, req.worker_id,
                         progress_pct=pct, segments_written=len(segments)
                     )
@@ -246,10 +264,7 @@ async def transcribe_progressive(req: ProgressiveRequest):
         # Final flush with all segments
         if segments:
             try:
-                supabase_upsert_segments(
-                    req.supabase_url, req.supabase_key,
-                    vid, segments, "whisperx"
-                )
+                supabase_upsert_segments(vid, segments, "whisperx")
             except Exception as e:
                 print(f"[whisperx] {vid}: final flush failed: {e}")
 
@@ -262,6 +277,7 @@ async def transcribe_progressive(req: ProgressiveRequest):
         raise HTTPException(500, str(e))
     finally:
         _currently_processing = None
+        _gpu_lock.release()
         shutil.rmtree(tmpdir, ignore_errors=True)
 
 
@@ -311,7 +327,7 @@ async def register_service():
     data = json.dumps({
         "service_name": "whisperx",
         "url": service_url,
-        "updated_at": "now()",
+        "updated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     }).encode()
 
     try:
