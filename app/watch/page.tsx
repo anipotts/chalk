@@ -855,13 +855,13 @@ function WatchContent() {
                 : "flex-none h-[28dvh]"
           }`}
         >
-          {/* Wrapper */}
-          <div className="overflow-hidden relative z-0 flex-1 md:flex-none flex flex-col items-center justify-center p-0 md:w-full md:px-4">
+          {/* Wrapper — max-h-full prevents video from exceeding available space */}
+          <div className="overflow-hidden relative z-0 flex-1 md:flex-none flex flex-col items-center justify-center p-0 md:w-full md:px-4 md:max-h-full">
             {/* Container — max-width keeps video from stretching too wide when transcript panel is closed */}
-            <div data-video-container data-playing={!isPaused || undefined} className="w-full md:max-w-[calc((100dvh_-_12rem)*16/9)] md:mx-auto relative flex-1 md:flex-none">
-              {/* Video */}
+            <div data-video-container data-playing={!isPaused || undefined} className="w-full md:max-w-[calc((100dvh_-_12rem)*16/9)] md:max-h-full md:mx-auto relative flex-1 md:flex-none">
+              {/* Video — aspect-video with max-h constraint to prevent overflow */}
               <div
-                className="group relative aspect-video md:rounded-xl md:overflow-hidden"
+                className="group relative aspect-video md:rounded-xl md:overflow-hidden md:max-h-[calc(100dvh-8rem)]"
                 data-paused={isPaused || undefined}
               >
                 <VideoPlayer
@@ -996,7 +996,7 @@ function WatchContent() {
               {/* Video border — blue when playing, neutral when paused */}
               <div
                 data-video-border
-                className={`hidden md:block absolute top-0 left-0 right-0 aspect-video rounded-xl border-[4px] pointer-events-none z-30 transition-colors duration-300 ease-out ${
+                className={`hidden md:block absolute top-0 left-0 right-0 aspect-video max-h-[calc(100dvh-8rem)] rounded-xl border-[4px] pointer-events-none z-30 transition-colors duration-300 ease-out ${
                   isPaused ? 'border-white/[0.12]' : 'border-chalk-accent/90'
                 }`}
               />
