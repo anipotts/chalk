@@ -97,7 +97,7 @@ export function TranscriptPanel({
     return () => document.removeEventListener('keydown', handleKey);
   }, []);
 
-  const isLoading = status === 'connecting' || status === 'extracting';
+  const isLoading = status === 'connecting' || status === 'extracting' || status === 'queued' || status === 'transcribing';
   const isSidebar = variant === 'sidebar';
   const isMobile = variant === 'mobile';
 

@@ -14,11 +14,12 @@
  */
 
 import { after } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { captionRace, sttCascade, deduplicateSegments, cleanSegments, mergeIntoSentences, fetchStoryboardSpec, type TranscriptSegment, type TranscriptSource, type VideoMetadata } from '@/lib/transcript';
 import { getCachedTranscript, setCachedTranscript } from '@/lib/transcript-cache';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 function sseEvent(event: string, data: unknown): string {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -29,6 +30,7 @@ const VIDEO_ID_RE = /^[a-zA-Z0-9_-]{11}$/;
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const videoId = url.searchParams.get('videoId');
+  const forceStt = url.searchParams.get('force-stt') === 'true';
 
   if (!videoId || !VIDEO_ID_RE.test(videoId)) {
     return new Response(
@@ -82,23 +84,27 @@ export async function GET(req: Request) {
           return;
         }
 
-        // ── Phase 1: Caption race ────────────────────────────────────────
-        send('status', { phase: 'captions', message: 'Fetching captions...' });
-
+        // ── Phase 1: Caption race (skip if force-stt) ──────────────────
         let segments: TranscriptSegment[] | null = null;
         let source: TranscriptSource | null = null;
         let metadata: VideoMetadata | undefined;
         let storyboardSpec: string | undefined;
 
-        try {
-          const result = await captionRace(videoId);
-          segments = mergeIntoSentences(cleanSegments(deduplicateSegments(result.segments)));
-          source = result.source;
-          metadata = result.metadata;
-          storyboardSpec = result.storyboardSpec;
-          console.log(`[transcript] ${videoId}: fetched via ${source} (${segments.length} segments)`);
-        } catch (e) {
-          console.log(`[transcript] ${videoId}: caption race failed:`, e instanceof Error ? e.message : e);
+        if (forceStt) {
+          console.log(`[transcript] ${videoId}: force-stt enabled, skipping caption race`);
+          send('status', { phase: 'captions', message: 'Force STT mode — skipping captions...' });
+        } else {
+          send('status', { phase: 'captions', message: 'Fetching captions...' });
+          try {
+            const result = await captionRace(videoId);
+            segments = mergeIntoSentences(cleanSegments(deduplicateSegments(result.segments)));
+            source = result.source;
+            metadata = result.metadata;
+            storyboardSpec = result.storyboardSpec;
+            console.log(`[transcript] ${videoId}: fetched via ${source} (${segments.length} segments)`);
+          } catch (e) {
+            console.log(`[transcript] ${videoId}: caption race failed:`, e instanceof Error ? e.message : e);
+          }
         }
 
         // ── Phase 2: STT cascade (only if captions failed) ───────────────
@@ -111,15 +117,50 @@ export async function GET(req: Request) {
             source = result.source;
           } catch (e) {
             console.error(`[transcript] ${videoId}: STT cascade failed:`, e instanceof Error ? e.message : e);
+            // Fall through to Phase 3 (GPU queue)
+          }
+        }
+
+        // ── Phase 3: GPU queue fallback ──────────────────────────────────
+        if (!segments || segments.length === 0) {
+          const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+          const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+          if (!supabaseUrl || !serviceKey) {
             send('error', { message: `Could not fetch transcript for ${videoId}` });
             clearInterval(heartbeat);
             controller.close();
             return;
           }
-        }
 
-        if (!segments || segments.length === 0 || !source) {
-          send('error', { message: 'Transcript returned 0 segments' });
+          send('status', { phase: 'queued', message: 'Queued for GPU transcription...' });
+
+          const serviceClient = createClient(supabaseUrl, serviceKey);
+          const { data: queueResult } = await serviceClient.rpc('enqueue_transcript', {
+            p_video_id: videoId,
+            p_priority: 0,
+            p_requested_by: 'user',
+          });
+
+          console.log(`[transcript] ${videoId}: enqueue result: ${queueResult}`);
+
+          // If transcript was cached between our check and enqueue, serve it
+          if (queueResult === 'cached') {
+            const freshCached = await getCachedTranscript(videoId);
+            if (freshCached && freshCached.segments.length > 0) {
+              send('meta', { source: freshCached.source, cached: true });
+              send('segments', freshCached.segments);
+              const lastSeg = freshCached.segments[freshCached.segments.length - 1];
+              const dur = lastSeg.offset + (lastSeg.duration || 0);
+              send('done', { total: freshCached.segments.length, source: freshCached.source, durationSeconds: dur });
+              clearInterval(heartbeat);
+              controller.close();
+              return;
+            }
+          }
+
+          // Tell client to switch to Supabase polling for progressive segments
+          send('queued', { videoId, action: queueResult });
           clearInterval(heartbeat);
           controller.close();
           return;
@@ -134,19 +175,22 @@ export async function GET(req: Request) {
           }
         }
 
-        send('meta', { source, cached: false, metadata, storyboardSpec });
+        // At this point we know we have segments and source (Phase 3 returns early if not)
+        const finalSource = source!;
+
+        send('meta', { source: finalSource, cached: false, metadata, storyboardSpec });
         send('segments', segments);
 
         const lastSeg = segments[segments.length - 1];
         const duration = lastSeg.offset + (lastSeg.duration || 0);
         send('done', {
           total: segments.length,
-          source,
+          source: finalSource,
           durationSeconds: duration,
         });
 
         // ── Cache result (fire-and-forget) ───────────────────────────────
-        setCachedTranscript(videoId, segments, source);
+        setCachedTranscript(videoId, segments, finalSource);
 
         // ── Trigger knowledge extraction via after() ────────────────────
         // after() runs after the response stream completes, keeping the

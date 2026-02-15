@@ -183,12 +183,13 @@ function WatchContent() {
   const urlStartTime = searchParams.get("t");
   const playlistId = searchParams.get("list") || null;
   const shouldAutoplay = searchParams.get("autoplay") === "1";
+  const forceStt = searchParams.get("force-stt") === "true";
   const navRouter = useRouter();
   const [navSearchValue, setNavSearchValue] = useState("");
   const [navSearchFocused, setNavSearchFocused] = useState(false);
 
   const { segments, status, statusMessage, error, source, progress, durationSeconds, metadata, storyboardSpec } =
-    useTranscriptStream(videoId || null);
+    useTranscriptStream(videoId || null, forceStt);
 
   const storyboardLevels = useMemo(
     () => (storyboardSpec ? parseStoryboardSpec(storyboardSpec) : []),

@@ -10,7 +10,7 @@ import { fetchTranscript, deduplicateSegments, cleanSegments, mergeIntoSentences
 import { getCachedTranscript, setCachedTranscript } from '@/lib/transcript-cache';
 
 export const dynamic = 'force-dynamic';
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
   let body;
