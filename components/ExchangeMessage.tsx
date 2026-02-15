@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { TimestampLink } from './TimestampLink';
 import { parseTimestampLinks } from '@/lib/video-utils';
 import { ClipboardText, CheckCircle, SpeakerSimpleHigh, SpeakerSimpleLow } from '@phosphor-icons/react';
-import { ToolResultRenderer, parseStreamToSegments, type ToolCallData } from './ToolRenderers';
+import { ToolResultRenderer, CompactToolStrip, isDrawerTool, parseStreamToSegments, type ToolCallData } from './ToolRenderers';
 import katex from 'katex';
 import hljs from 'highlight.js/lib/core';
 import javascript from 'highlight.js/lib/languages/javascript';
@@ -55,6 +55,7 @@ interface ExchangeMessageProps {
   isReadAloudLoading?: boolean;
   onOpenVideo?: (videoId: string, title: string, channelName: string, seekTo?: number) => void;
   skipEntrance?: boolean;
+  suppressDrawerTools?: boolean;
 }
 
 /**
@@ -395,7 +396,7 @@ function SpeakerButton({ exchange, onPlay, isPlaying, isLoading }: { exchange: U
   );
 }
 
-export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPlaying, isReadAloudLoading, onOpenVideo, skipEntrance }: ExchangeMessageProps) {
+export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPlaying, isReadAloudLoading, onOpenVideo, skipEntrance, suppressDrawerTools }: ExchangeMessageProps) {
 
   return (
     <div className="space-y-3">
@@ -406,7 +407,7 @@ export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPl
         transition={{ duration: 0.2 }}
         className="flex justify-end w-full"
       >
-        <div className="max-w-[85%] px-3.5 py-2 rounded-2xl bg-chalk-accent/90 text-white text-sm leading-relaxed break-words">
+        <div className="max-w-[85%] px-3.5 py-2 rounded-lg bg-white/[0.06] border border-white/[0.08] text-white text-sm leading-relaxed break-words">
           {exchange.userText}
         </div>
       </motion.div>
@@ -432,49 +433,88 @@ export function ExchangeMessage({ exchange, onSeek, videoId, onPlayMessage, isPl
           <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
             {exchange.rawAiText ? (
               // Segment-based rendering: tool cards at their natural position
-              parseStreamToSegments(exchange.rawAiText).map((seg, i) => {
-                if (seg.type === 'text') {
-                  if (!seg.content.trim()) return null;
-                  return <span key={`seg-${exchange.id}-${i}`}>{renderRichContent(seg.content, onSeek, videoId)}</span>;
-                }
-                // Tool segment: inline for cite_moment, block for everything else
-                if (seg.toolCall.result.type === 'cite_moment') {
-                  return (
-                    <ToolResultRenderer
-                      key={`tool-${exchange.id}-${i}`}
-                      toolCall={seg.toolCall}
-                      onSeek={onSeek}
-                      onOpenVideo={onOpenVideo}
-                    />
-                  );
-                }
+              (() => {
+                const segments = parseStreamToSegments(exchange.rawAiText!);
+                const drawerTools = segments
+                  .filter((s): s is { type: 'tool'; toolCall: ToolCallData } =>
+                    s.type === 'tool' && isDrawerTool(s.toolCall))
+                  .map(s => s.toolCall);
+
                 return (
-                  <div key={`tool-${exchange.id}-${i}`} className="my-2">
-                    <ToolResultRenderer
-                      toolCall={seg.toolCall}
-                      onSeek={onSeek}
-                      onOpenVideo={onOpenVideo}
-                    />
-                  </div>
+                  <>
+                    {segments.map((seg, i) => {
+                      if (seg.type === 'text') {
+                        if (!seg.content.trim()) return null;
+                        return <span key={`seg-${exchange.id}-${i}`}>{renderRichContent(seg.content, onSeek, videoId)}</span>;
+                      }
+                      // cite_moment: always inline
+                      if (seg.toolCall.result.type === 'cite_moment') {
+                        return (
+                          <ToolResultRenderer
+                            key={`tool-${exchange.id}-${i}`}
+                            toolCall={seg.toolCall}
+                            onSeek={onSeek}
+                            onOpenVideo={onOpenVideo}
+                          />
+                        );
+                      }
+                      // Drawer tools: skip if suppressed (shown in drawer), otherwise skip (shown in compact strip below)
+                      if (isDrawerTool(seg.toolCall)) return null;
+                      // Non-drawer, non-cite tools: render inline
+                      return (
+                        <div key={`tool-${exchange.id}-${i}`} className="my-2">
+                          <ToolResultRenderer
+                            toolCall={seg.toolCall}
+                            onSeek={onSeek}
+                            onOpenVideo={onOpenVideo}
+                          />
+                        </div>
+                      );
+                    })}
+                    {/* Compact strip for historical drawer tools (not the active drawer exchange) */}
+                    {!suppressDrawerTools && drawerTools.length > 0 && (
+                      <CompactToolStrip toolCalls={drawerTools} onSeek={onSeek} onOpenVideo={onOpenVideo} />
+                    )}
+                  </>
                 );
-              })
+              })()
             ) : (
               // Fallback: text then tool calls (backward compat for exchanges without rawAiText)
-              <>
-                {renderRichContent(exchange.aiText, onSeek, videoId)}
-                {exchange.toolCalls && exchange.toolCalls.length > 0 && (
-                  <div className="mt-2 space-y-1">
-                    {exchange.toolCalls.map((tc, i) => (
+              (() => {
+                const allTools = exchange.toolCalls || [];
+                const drawerTools = allTools.filter(tc => isDrawerTool(tc));
+                const otherTools = allTools.filter(tc => !isDrawerTool(tc) && tc.result.type !== 'cite_moment');
+                const citeTools = allTools.filter(tc => tc.result.type === 'cite_moment');
+
+                return (
+                  <>
+                    {renderRichContent(exchange.aiText, onSeek, videoId)}
+                    {citeTools.map((tc, i) => (
                       <ToolResultRenderer
-                        key={`tool-${exchange.id}-${i}`}
+                        key={`cite-${exchange.id}-${i}`}
                         toolCall={tc}
                         onSeek={onSeek}
                         onOpenVideo={onOpenVideo}
                       />
                     ))}
-                  </div>
-                )}
-              </>
+                    {otherTools.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        {otherTools.map((tc, i) => (
+                          <ToolResultRenderer
+                            key={`tool-${exchange.id}-${i}`}
+                            toolCall={tc}
+                            onSeek={onSeek}
+                            onOpenVideo={onOpenVideo}
+                          />
+                        ))}
+                      </div>
+                    )}
+                    {!suppressDrawerTools && drawerTools.length > 0 && (
+                      <CompactToolStrip toolCalls={drawerTools} onSeek={onSeek} onOpenVideo={onOpenVideo} />
+                    )}
+                  </>
+                );
+              })()
             )}
           </div>
 

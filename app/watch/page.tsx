@@ -21,6 +21,7 @@ import { useLearnOptions } from "@/hooks/useLearnOptions";
 import { useCurriculumContext } from "@/hooks/useCurriculumContext";
 import { useKnowledgeContext } from "@/hooks/useKnowledgeContext";
 import { SideVideoPanel, type SideVideoEntry } from "@/components/SideVideoPanel";
+import SearchDropdown from "@/components/SearchDropdown";
 import { parseStoryboardSpec } from "@/lib/storyboard";
 import { ChapterTimeline } from "@/components/ChapterTimeline";
 
@@ -184,6 +185,7 @@ function WatchContent() {
   const shouldAutoplay = searchParams.get("autoplay") === "1";
   const navRouter = useRouter();
   const [navSearchValue, setNavSearchValue] = useState("");
+  const [navSearchFocused, setNavSearchFocused] = useState(false);
 
   const { segments, status, statusMessage, error, source, progress, durationSeconds, metadata, storyboardSpec } =
     useTranscriptStream(videoId || null);
@@ -559,9 +561,13 @@ function WatchContent() {
       const isEditable = (e.target as HTMLElement)?.isContentEditable;
       const inInput = tag === "INPUT" || tag === "TEXTAREA" || isEditable;
 
-      // Escape: transition to watching
+      // Escape: close side panel first, then transition to watching
       if (e.key === "Escape") {
         e.preventDefault();
+        if (sideStack.length > 0) {
+          setSideStack([]);
+          return;
+        }
         overlayDispatch({ type: 'ESCAPE' });
         inputRef.current?.blur();
         return;
@@ -713,26 +719,35 @@ function WatchContent() {
             <ChalkboardSimple size={18} />
             <span className="text-sm font-semibold">chalk</span>
           </a>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const val = navSearchValue.trim();
-              if (val) {
-                navRouter.push(`/?q=${encodeURIComponent(val)}`);
-                setNavSearchValue("");
-              }
-            }}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] focus-within:ring-1 focus-within:ring-chalk-accent/40 focus-within:border-chalk-accent/30 transition-colors w-48"
-          >
-            <MagnifyingGlass size={13} className="text-slate-500 shrink-0" />
-            <input
-              type="text"
-              value={navSearchValue}
-              onChange={(e) => setNavSearchValue(e.target.value)}
-              placeholder="Search videos, channels..."
-              className="flex-1 bg-transparent text-xs text-chalk-text placeholder:text-slate-600 focus:outline-none min-w-0"
+          <div className="relative">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const val = navSearchValue.trim();
+                if (val) {
+                  navRouter.push(`/?q=${encodeURIComponent(val)}`);
+                  setNavSearchValue("");
+                  setNavSearchFocused(false);
+                }
+              }}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08] focus-within:ring-1 focus-within:ring-chalk-accent/40 focus-within:border-chalk-accent/30 transition-colors w-48"
+            >
+              <MagnifyingGlass size={13} className="text-slate-500 shrink-0" />
+              <input
+                type="text"
+                value={navSearchValue}
+                onChange={(e) => setNavSearchValue(e.target.value)}
+                onFocus={() => setNavSearchFocused(true)}
+                onBlur={() => setTimeout(() => setNavSearchFocused(false), 200)}
+                placeholder="Search videos, channels..."
+                className="flex-1 bg-transparent text-xs text-chalk-text placeholder:text-slate-600 focus:outline-none min-w-0"
+              />
+            </form>
+            <SearchDropdown
+              isVisible={navSearchFocused && !navSearchValue.trim()}
+              onSelectTopic={() => {}}
             />
-          </form>
+          </div>
           <span className="text-slate-600/50">|</span>
           <div className="flex-1 min-w-0 flex flex-col gap-0.5">
             {effectiveChannel && (

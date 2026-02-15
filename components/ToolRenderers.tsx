@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { formatTimestamp } from '@/lib/video-utils';
-import { ArrowSquareOut, Clock, VideoCamera, TreeStructure, Exam, BookOpen, Shuffle, Path, SquareHalf } from '@phosphor-icons/react';
+import { ArrowSquareOut } from '@phosphor-icons/react';
 
 // Tool result types matching the server-side tool outputs
 
@@ -132,6 +133,38 @@ export interface ToolCallData {
 
 // === UI Components ===
 
+const relationshipLabels: Record<string, string> = {
+  prerequisite: 'Prerequisite',
+  follow_up: 'Follow-up',
+  related: 'Related',
+  deeper_dive: 'Deeper Dive',
+  alternative_explanation: 'Alt. Explanation',
+  builds_on: 'Builds On',
+  contrasts: 'Contrasts',
+};
+
+function getRelationshipLabel(reason: string): string {
+  const lower = reason.toLowerCase();
+  if (lower.includes('prerequisite')) return 'Prerequisite';
+  if (lower.includes('follow-up') || lower.includes('followup') || lower.includes('follow up')) return 'Follow-up';
+  if (lower.includes('deep dive') || lower.includes('deeper')) return 'Deep Dive';
+  if (lower.includes('alternative')) return 'Alternative';
+  if (lower.includes('supplement') || lower.includes('complementary')) return 'Supplement';
+  return 'Related';
+}
+
+const approachLabels: Record<string, string> = {
+  visual_geometric: 'Visual',
+  algebraic_symbolic: 'Algebraic',
+  intuitive_analogy: 'Analogy',
+  formal_proof: 'Proof',
+  code_implementation: 'Code',
+  worked_example: 'Example',
+  historical_narrative: 'History',
+  comparative: 'Comparison',
+  socratic: 'Socratic',
+};
+
 /**
  * Inline citation pill for a specific video moment.
  */
@@ -145,42 +178,17 @@ export function CiteMomentCard({
   return (
     <button
       onClick={() => onSeek(result.timestamp_seconds)}
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-chalk-accent/15 hover:bg-chalk-accent/25 border border-chalk-accent/20 hover:border-chalk-accent/40 text-chalk-accent hover:shadow-[0_0_8px_rgba(59,130,246,0.3)] transition-all duration-200 ease-out cursor-pointer"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/[0.06] hover:bg-white/[0.10] border border-white/[0.08] hover:border-white/[0.12] text-slate-300 transition-all duration-150 cursor-pointer"
       title={result.context}
     >
-      <Clock size={12} weight="bold" />
-      <span className="font-mono text-xs font-medium">[{result.timestamp}]</span>
+      <span className="font-mono text-xs">[{result.timestamp}]</span>
       <span className="text-xs text-slate-300">{result.label}</span>
     </button>
   );
 }
 
-const relationshipLabels: Record<string, string> = {
-  prerequisite: 'Prerequisite',
-  follow_up: 'Follow-up',
-  related: 'Related',
-  deeper_dive: 'Deeper Dive',
-  alternative_explanation: 'Alt. Explanation',
-  builds_on: 'Builds On',
-  contrasts: 'Contrasts',
-};
-
-/**
- * Extracts a relationship label from a reason string.
- */
-function getRelationshipLabel(reason: string): string {
-  const lower = reason.toLowerCase();
-  if (lower.includes('prerequisite')) return 'Prerequisite';
-  if (lower.includes('follow-up') || lower.includes('followup') || lower.includes('follow up')) return 'Follow-up';
-  if (lower.includes('deep dive') || lower.includes('deeper')) return 'Deep Dive';
-  if (lower.includes('alternative')) return 'Alternative';
-  if (lower.includes('supplement') || lower.includes('complementary')) return 'Supplement';
-  return 'Related';
-}
-
 /**
  * Card showing a referenced video with thumbnail, title, channel, and reason.
- * Clicking opens a 55/45 split-screen view alongside the main video.
  */
 export function ReferenceVideoCard({
   result,
@@ -210,9 +218,9 @@ export function ReferenceVideoCard({
   return (
     <div
       onClick={handleClick}
-      className="flex gap-3 p-3 rounded-xl bg-chalk-surface hover:bg-chalk-accent/[0.06] border border-chalk-border hover:border-chalk-accent/30 cursor-pointer transition-all duration-200 ease-out group my-2 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20"
+      className="flex gap-3 p-3 rounded-lg bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.06] hover:border-white/[0.10] cursor-pointer transition-all duration-150 group my-2"
     >
-      <div className="flex-shrink-0 w-28 h-16 rounded-lg overflow-hidden bg-chalk-border relative">
+      <div className="flex-shrink-0 w-28 h-16 rounded-md overflow-hidden bg-chalk-border relative">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={result.thumbnail_url}
@@ -225,37 +233,25 @@ export function ReferenceVideoCard({
             {formatTimestamp(result.timestamp_seconds)}
           </span>
         )}
-        {/* Split-screen indicator on hover */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <SquareHalf size={20} weight="bold" className="text-white" />
-        </div>
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-start gap-1">
-          <VideoCamera size={14} className="text-chalk-accent flex-shrink-0 mt-0.5" weight="fill" />
-          <span className="text-sm font-medium text-slate-200 line-clamp-2">{result.video_title}</span>
-        </div>
-        <div className="flex items-center gap-2 mt-0.5">
+        <div className="text-sm text-slate-200 line-clamp-2">{result.video_title}</div>
+        <div className="flex items-center gap-1.5 mt-0.5">
           <span className="text-xs text-slate-400">{result.channel_name}</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-chalk-accent/10 text-chalk-accent border border-chalk-accent/20">
-            {badge}
-          </span>
+          <span className="text-slate-600">&middot;</span>
+          <span className="text-[11px] text-slate-500">{badge}</span>
         </div>
         <div className="text-xs text-slate-500 mt-1 line-clamp-2">{result.reason}</div>
         {result.shared_concepts && result.shared_concepts.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1">
-            {result.shared_concepts.slice(0, 5).map((concept, i) => (
-              <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-white/[0.06] text-slate-400">
-                {concept}
-              </span>
-            ))}
+          <div className="text-[11px] text-slate-500 mt-1">
+            {result.shared_concepts.slice(0, 5).join(', ')}
           </div>
         )}
       </div>
       <div className="flex flex-col items-center gap-1 flex-shrink-0">
         <button
           onClick={handleNewTab}
-          className="p-1.5 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] opacity-0 group-hover:opacity-100 transition-all duration-200"
+          className="p-1.5 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-all duration-150"
           title="Open in new tab"
         >
           <ArrowSquareOut size={14} />
@@ -286,16 +282,17 @@ export function PrerequisiteChainCard({
     byDepth.get(item.depth)!.push(item);
   }
 
+  const sortedDepths = [...byDepth.entries()].sort((a, b) => a[0] - b[0]);
+
   return (
-    <div className="p-3 rounded-xl bg-chalk-surface border border-chalk-border my-2">
-      <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-2">
-        <TreeStructure size={14} weight="bold" />
-        <span>Prerequisites for this concept</span>
+    <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] my-2">
+      <div className="text-[11px] text-slate-500 uppercase tracking-wider font-mono mb-2">
+        Prerequisites
       </div>
-      <div className="space-y-1">
-        {[...byDepth.entries()].sort((a, b) => a[0] - b[0]).map(([depth, items]) => (
-          <div key={depth} className="flex flex-wrap gap-1.5" style={{ paddingLeft: `${(depth - 1) * 12}px` }}>
-            {items.map(item => (
+      <div className="space-y-1.5">
+        {sortedDepths.map(([depth, items]) => (
+          <div key={depth} className="flex flex-wrap gap-1.5" style={{ marginLeft: `${(depth - 1) * 16}px` }}>
+            {items.map((item) => (
               <button
                 key={item.concept_id}
                 onClick={() => {
@@ -303,14 +300,13 @@ export function PrerequisiteChainCard({
                     onOpenVideo(item.best_video_id, item.best_video_title || item.display_name, '', undefined);
                   }
                 }}
-                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs transition-all duration-200 ease-out ${
+                className={`px-2 py-0.5 rounded text-xs transition-all duration-150 ${
                   item.best_video_id
-                    ? 'bg-chalk-accent/10 text-chalk-accent hover:bg-chalk-accent/20 cursor-pointer'
-                    : 'bg-chalk-border text-slate-300'
+                    ? 'bg-white/[0.04] border border-white/[0.06] text-chalk-accent hover:bg-white/[0.08] cursor-pointer'
+                    : 'bg-white/[0.04] border border-white/[0.06] text-slate-300'
                 }`}
                 title={item.best_video_title ? `Watch: ${item.best_video_title}` : item.display_name}
               >
-                {depth > 1 && <span className="text-slate-500">{'>'}</span>}
                 {item.display_name}
               </button>
             ))}
@@ -336,7 +332,7 @@ export function QuizCard({
   }
 
   return (
-    <div className="space-y-3 my-2">
+    <div className="space-y-2 my-2">
       {result.questions.map((q, i) => (
         <QuizQuestion key={i} question={q} onSeek={onSeek} />
       ))}
@@ -351,44 +347,70 @@ function QuizQuestion({
   question: QuizResult['questions'][0];
   onSeek: (seconds: number) => void;
 }) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const isAnswered = selected !== null;
+  const isCorrect = selected === q.correct_answer;
+
+  // Build shuffled options (correct + distractors)
+  const options = useState(() => {
+    const all = [q.correct_answer, ...(q.distractors || [])];
+    for (let i = all.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [all[i], all[j]] = [all[j], all[i]];
+    }
+    return all;
+  })[0];
+
   return (
-    <div className="p-3 rounded-xl bg-chalk-surface border border-chalk-border">
-      <div className="flex items-start gap-2">
-        <Exam size={14} className="text-amber-400 flex-shrink-0 mt-0.5" weight="bold" />
-        <div className="flex-1">
-          <div className="text-sm text-slate-200">{q.question}</div>
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            {q.bloom_level && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-300 uppercase">
-                {q.bloom_level}
-              </span>
-            )}
-            <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase ${
-              q.difficulty === 'easy' ? 'bg-green-500/15 text-green-300' :
-              q.difficulty === 'hard' ? 'bg-red-500/15 text-red-300' :
-              'bg-amber-500/15 text-amber-300'
-            }`}>
-              {q.difficulty}
-            </span>
-            {q.timestamp_seconds !== null && (
-              <button
-                onClick={() => onSeek(q.timestamp_seconds!)}
-                className="text-[10px] px-1.5 py-0.5 rounded bg-chalk-accent/15 text-chalk-accent hover:bg-chalk-accent/25 transition-all duration-200 ease-out"
-              >
-                [{formatTimestamp(q.timestamp_seconds!)}]
-              </button>
-            )}
-          </div>
-          {/* Answer (shown as details toggle) */}
-          <details className="mt-2">
-            <summary className="text-xs text-slate-400 cursor-pointer hover:text-slate-300">Show answer</summary>
-            <div className="mt-1.5 text-xs text-slate-300 pl-2 border-l border-chalk-accent/30">
-              <div className="font-medium text-green-300">{q.correct_answer}</div>
-              {q.explanation && <div className="mt-1 text-slate-400">{q.explanation}</div>}
-            </div>
-          </details>
-        </div>
+    <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-[11px] text-slate-500 uppercase tracking-wider font-mono">Quiz</span>
+        <span className="text-[11px] text-slate-500">({q.difficulty})</span>
+        {q.timestamp_seconds !== null && (
+          <button
+            onClick={() => onSeek(q.timestamp_seconds!)}
+            className="text-[11px] text-chalk-accent hover:underline font-mono ml-auto"
+          >
+            [{formatTimestamp(q.timestamp_seconds!)}]
+          </button>
+        )}
       </div>
+      <div className="text-sm text-slate-200 mb-3">{q.question}</div>
+      <div className="space-y-1.5">
+        {options.map((opt, i) => {
+          const isThis = selected === opt;
+          const isCorrectOpt = opt === q.correct_answer;
+          let optClass = 'bg-white/[0.03] border-white/[0.06] hover:bg-white/[0.06] text-slate-300';
+          if (isAnswered) {
+            if (isCorrectOpt) {
+              optClass = 'bg-chalk-accent/10 border-chalk-accent/30 text-slate-200';
+            } else if (isThis && !isCorrectOpt) {
+              optClass = 'bg-white/[0.02] border-red-500/20 text-slate-400';
+            } else {
+              optClass = 'bg-white/[0.02] border-white/[0.04] text-slate-500';
+            }
+          }
+          return (
+            <button
+              key={i}
+              onClick={() => !isAnswered && setSelected(opt)}
+              disabled={isAnswered}
+              className={`w-full text-left px-3 py-2 rounded-md border text-xs transition-all duration-150 ${optClass} ${!isAnswered ? 'cursor-pointer' : ''}`}
+            >
+              <span className="font-mono text-[10px] text-slate-500 mr-2">{String.fromCharCode(65 + i)}.</span>
+              {opt}
+            </button>
+          );
+        })}
+      </div>
+      {isAnswered && (
+        <div className="mt-2 text-xs text-slate-400">
+          <span className={isCorrect ? 'text-chalk-accent' : 'text-slate-400'}>
+            {isCorrect ? 'Correct.' : `Incorrect \u2014 answer: ${q.correct_answer}`}
+          </span>
+          {q.explanation && <div className="mt-1">{q.explanation}</div>}
+        </div>
+      )}
     </div>
   );
 }
@@ -406,20 +428,20 @@ export function ChapterContextCard({
   if (!result.chapter && result.moments.length === 0) return null;
 
   return (
-    <div className="p-3 rounded-xl bg-chalk-surface border border-chalk-border my-2">
+    <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] my-2">
+      <div className="text-[11px] text-slate-500 uppercase tracking-wider font-mono mb-2">
+        Chapter
+      </div>
       {result.chapter && (
         <div className="mb-2">
-          <div className="flex items-center gap-1.5">
-            <BookOpen size={14} className="text-blue-400" weight="bold" />
-            <button
-              onClick={() => onSeek(result.chapter!.start_seconds)}
-              className="text-sm font-medium text-slate-200 hover:text-chalk-accent transition-all duration-200 ease-out"
-            >
-              {result.chapter.title}
-            </button>
-          </div>
+          <button
+            onClick={() => onSeek(result.chapter!.start_seconds)}
+            className="text-sm font-medium text-slate-200 hover:text-chalk-accent transition-colors"
+          >
+            {result.chapter.title}
+          </button>
           {result.chapter.summary && (
-            <div className="text-xs text-slate-400 mt-1 ml-5">{result.chapter.summary}</div>
+            <div className="text-xs text-slate-400 mt-1">{result.chapter.summary}</div>
           )}
         </div>
       )}
@@ -429,12 +451,11 @@ export function ChapterContextCard({
             <button
               key={i}
               onClick={() => onSeek(m.timestamp_seconds)}
-              className="flex items-start gap-1.5 w-full text-left text-xs hover:bg-chalk-accent/[0.06] rounded px-1 py-0.5 transition-all duration-200 ease-out"
+              className="flex items-start gap-1.5 w-full text-left text-xs hover:bg-white/[0.04] rounded px-1 py-0.5 transition-colors"
             >
               <span className="text-chalk-accent font-mono flex-shrink-0">
                 [{formatTimestamp(m.timestamp_seconds)}]
               </span>
-              <span className="text-slate-500">{m.moment_type}:</span>
               <span className="text-slate-300 line-clamp-1">{m.content}</span>
             </button>
           ))}
@@ -456,40 +477,27 @@ export function AlternativeExplanationsCard({
 }) {
   if (result.message || result.alternatives.length === 0) return null;
 
-  const approachLabels: Record<string, string> = {
-    visual_geometric: 'Visual',
-    algebraic_symbolic: 'Algebraic',
-    intuitive_analogy: 'Analogy',
-    formal_proof: 'Proof',
-    code_implementation: 'Code',
-    worked_example: 'Example',
-    historical_narrative: 'History',
-    comparative: 'Comparison',
-    socratic: 'Socratic',
-  };
-
   return (
-    <div className="p-3 rounded-xl bg-chalk-surface border border-chalk-border my-2">
-      <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-2">
-        <Shuffle size={14} weight="bold" />
-        <span>Alternative explanations</span>
+    <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] my-2">
+      <div className="text-[11px] text-slate-500 uppercase tracking-wider font-mono mb-2">
+        Alternatives
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1">
         {result.alternatives.slice(0, 4).map((alt, i) => (
           <button
             key={i}
             onClick={() => onOpenVideo?.(alt.video_id, alt.video_title, alt.channel_name || '', alt.timestamp_seconds)}
-            className="flex items-start gap-2 w-full text-left hover:bg-chalk-accent/[0.06] rounded-lg p-1.5 transition-all duration-200 ease-out"
+            className="flex items-center gap-2 w-full text-left hover:bg-white/[0.04] rounded-md p-1.5 transition-colors"
           >
             <div className="flex-1 min-w-0">
               <div className="text-sm text-slate-200 line-clamp-1">{alt.video_title}</div>
-              <div className="text-xs text-slate-400">{alt.channel_name || 'Unknown'}</div>
+              <div className="text-xs text-slate-400">
+                {alt.channel_name || 'Unknown'}
+                {alt.pedagogical_approach && (
+                  <span className="text-slate-500"> &middot; {approachLabels[alt.pedagogical_approach] || alt.pedagogical_approach}</span>
+                )}
+              </div>
             </div>
-            {alt.pedagogical_approach && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 flex-shrink-0">
-                {approachLabels[alt.pedagogical_approach] || alt.pedagogical_approach}
-              </span>
-            )}
           </button>
         ))}
       </div>
@@ -510,25 +518,24 @@ export function LearningPathCard({
   if (result.message || result.steps.length === 0) return null;
 
   return (
-    <div className="p-3 rounded-xl bg-chalk-surface border border-chalk-border my-2">
-      <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-2">
-        <Path size={14} weight="bold" />
-        <span>Learning path</span>
+    <div className="p-3 rounded-lg bg-white/[0.03] border border-white/[0.06] my-2">
+      <div className="text-[11px] text-slate-500 uppercase tracking-wider font-mono mb-2">
+        Learning Path
       </div>
       <div className="flex flex-wrap items-center gap-1">
         {result.steps.map((step, i) => (
           <div key={step.concept_id} className="flex items-center gap-1">
-            {i > 0 && <span className="text-slate-500 text-xs">{'>'}</span>}
+            {i > 0 && <span className="text-slate-500 text-xs">&rsaquo;</span>}
             <button
               onClick={() => {
                 if (step.best_video_id && onOpenVideo) {
                   onOpenVideo(step.best_video_id, step.best_video_title || step.display_name, '', undefined);
                 }
               }}
-              className={`px-2 py-0.5 rounded-md text-xs transition-all duration-200 ease-out ${
+              className={`text-xs transition-colors ${
                 step.best_video_id
-                  ? 'bg-chalk-accent/10 text-chalk-accent hover:bg-chalk-accent/20 cursor-pointer'
-                  : 'bg-chalk-border text-slate-300'
+                  ? 'text-chalk-accent hover:underline cursor-pointer'
+                  : 'text-slate-300'
               }`}
               title={step.best_video_title || step.display_name}
             >
@@ -537,6 +544,94 @@ export function LearningPathCard({
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// === Compact Tool Strip (for conversation history) ===
+
+const DRAWER_TYPES = new Set([
+  'reference_video', 'prerequisite_chain', 'quiz',
+  'chapter_context', 'alternative_explanations', 'learning_path', 'search_results',
+]);
+
+export function isDrawerTool(tc: ToolCallData): boolean {
+  return DRAWER_TYPES.has(tc.result.type);
+}
+
+/**
+ * Compact strip of mini-cards for tool calls in conversation history.
+ */
+export function CompactToolStrip({
+  toolCalls,
+  onSeek,
+  onOpenVideo,
+}: {
+  toolCalls: ToolCallData[];
+  onSeek: (seconds: number) => void;
+  onOpenVideo?: (videoId: string, title: string, channelName: string, seekTo?: number) => void;
+}) {
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  if (toolCalls.length === 0) return null;
+
+  return (
+    <div className="mt-2 space-y-2">
+      <div className="flex flex-wrap gap-1.5">
+        {toolCalls.map((tc, i) => {
+          const r = tc.result;
+          const isExpanded = expandedIndex === i;
+          const baseClass = `px-2 py-1 rounded text-[11px] border transition-all duration-150 cursor-pointer ${
+            isExpanded
+              ? 'bg-white/[0.06] border-white/[0.10] text-slate-300'
+              : 'bg-white/[0.03] border-white/[0.06] text-slate-400 hover:bg-white/[0.05] hover:text-slate-300'
+          }`;
+
+          let label: string | null = null;
+
+          if (r.type === 'reference_video') {
+            label = r.video_title.length > 30 ? r.video_title.slice(0, 30) + '...' : r.video_title;
+          } else if (r.type === 'quiz') {
+            const count = r.questions?.length || 0;
+            label = `${count} question${count !== 1 ? 's' : ''}`;
+          } else if (r.type === 'prerequisite_chain') {
+            label = `${r.chain.length} prerequisite${r.chain.length !== 1 ? 's' : ''}`;
+          } else if (r.type === 'chapter_context') {
+            label = r.chapter?.title || 'Chapter';
+          } else if (r.type === 'alternative_explanations') {
+            label = `${r.alternatives.length} alternative${r.alternatives.length !== 1 ? 's' : ''}`;
+          } else if (r.type === 'learning_path') {
+            const first = r.steps[0]?.display_name || '';
+            const last = r.steps[r.steps.length - 1]?.display_name || '';
+            label = `${first} \u203A ${last}`;
+          } else if (r.type === 'search_results') {
+            return null;
+          }
+
+          if (!label) return null;
+
+          return (
+            <button
+              key={i}
+              onClick={() => setExpandedIndex(isExpanded ? null : i)}
+              className={baseClass}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Expanded card */}
+      {expandedIndex !== null && toolCalls[expandedIndex] && (
+        <div className="animate-in slide-in-from-top-1 fade-in duration-200">
+          <ToolResultRenderer
+            toolCall={toolCalls[expandedIndex]}
+            onSeek={onSeek}
+            onOpenVideo={onOpenVideo}
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -573,8 +668,6 @@ export function ToolResultRenderer({
     case 'learning_path':
       return <LearningPathCard result={result} onOpenVideo={onOpenVideo} />;
     case 'search_results':
-      // Search results are internal — the model uses them to make reference_video calls.
-      // Show an empty state if no results were found.
       if (result.results.length === 0 || result.message) {
         return <p className="text-xs text-slate-500 italic my-1">No related content found</p>;
       }
@@ -628,7 +721,6 @@ export function parseStreamWithToolCalls(fullText: string): {
 
 /**
  * A segment of a parsed stream — either text or a tool call result.
- * Preserves the ordering so tool cards can be rendered at their natural position.
  */
 export type StreamSegment =
   | { type: 'text'; content: string }
@@ -636,8 +728,6 @@ export type StreamSegment =
 
 /**
  * Parses raw stream text into ordered segments of text and tool calls.
- * Unlike parseStreamWithToolCalls, this preserves positional information
- * so tool cards can be rendered inline with the surrounding text.
  */
 export function parseStreamToSegments(rawText: string): StreamSegment[] {
   const segments: StreamSegment[] = [];
@@ -658,7 +748,6 @@ export function parseStreamToSegments(rawText: string): StreamSegment[] {
 
     const endIdx = remaining.indexOf('\x1D', startIdx + 1);
     if (endIdx === -1) {
-      // Incomplete tool call delimiter — treat rest as text
       break;
     }
 

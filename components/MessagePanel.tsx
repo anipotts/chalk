@@ -7,22 +7,24 @@ import React, {
   useCallback,
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+// motion still used for TalkingTimer, explore pills entrance, error msgs, tooltip
+// AnimatePresence still used for tooltip
 import {
   ExchangeMessage,
   renderRichContent,
   type UnifiedExchange,
 } from "./ExchangeMessage";
-import { ToolResultRenderer, parseStreamToSegments, type ToolCallData } from "./ToolRenderers";
+import { ToolResultRenderer, isDrawerTool, parseStreamToSegments, type ToolCallData } from "./ToolRenderers";
+import dynamic from "next/dynamic";
+const KnowledgeDrawer = dynamic(
+  () => import("./KnowledgeDrawer").then((m) => m.KnowledgeDrawer),
+  { ssr: false }
+);
 import { ExplorePills } from "./ExplorePills";
 import { LearnModeQuiz } from "./LearnModeQuiz";
 import type { VoiceState } from "@/hooks/useVoiceMode";
 import type { TranscriptSegment } from "@/lib/video-utils";
 import { getStoryboardFrame, type StoryboardLevel } from "@/lib/storyboard";
-import {
-  CaretDown,
-  CaretUp,
-  X,
-} from "@phosphor-icons/react";
 import { createPortal } from "react-dom";
 import type { LearnState, LearnHandlers } from "./overlay-types";
 
@@ -272,6 +274,12 @@ export interface MessagePanelProps {
   // Tooltip segments
   tooltipSegments: TranscriptSegment[];
   storyboardLevels?: StoryboardLevel[];
+
+  // Side panel state (disables Knowledge Drawer when true)
+  sideOpen?: boolean;
+
+  // Video paused state (for caret color)
+  isPaused?: boolean;
 }
 
 export function MessagePanel({
@@ -309,9 +317,10 @@ export function MessagePanel({
   videoTitle,
   tooltipSegments,
   storyboardLevels,
+  sideOpen,
 }: MessagePanelProps) {
-  const [canScrollUp, setCanScrollUp] = useState(false);
   const [canScrollDown, setCanScrollDown] = useState(false);
+  const [drawerDismissed, setDrawerDismissed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Timestamp tooltip state with debounced close
@@ -331,6 +340,33 @@ export function MessagePanel({
 
   const isLearnModeActive = learnState.phase !== "idle";
 
+  // Reset drawer dismissed state when new streaming starts
+  useEffect(() => {
+    if (isTextStreaming) {
+      setDrawerDismissed(false);
+    }
+  }, [isTextStreaming]);
+
+  // === Knowledge Drawer state derivation ===
+  // Filter non-cite tools from streaming state
+  const streamingDrawerCalls = (currentToolCalls ?? []).filter(tc => isDrawerTool(tc));
+
+  // Check if the most recent completed exchange has drawer-worthy tools
+  const lastExchange = exchanges[exchanges.length - 1];
+  const lastExchangeDrawerCalls = !isTextStreaming && lastExchange?.toolCalls
+    ? lastExchange.toolCalls.filter(tc => isDrawerTool(tc))
+    : [];
+
+  // Drawer is open when:
+  // 1. Current stream has drawer-worthy tools, OR
+  // 2. Most recent completed exchange has drawer-worthy tools AND no new stream started
+  // Disabled: on mobile (handled by CSS), when side panel is open, or when user typed a new message
+  const drawerCalls = streamingDrawerCalls.length > 0
+    ? streamingDrawerCalls
+    : lastExchangeDrawerCalls;
+
+  const isDrawerOpen = drawerCalls.length > 0 && !currentUserText && !sideOpen && !drawerDismissed;
+
   // Auto-scroll
   const scrollToBottom = useCallback((smooth = false) => {
     if (scrollRef.current) {
@@ -338,12 +374,6 @@ export function MessagePanel({
         top: scrollRef.current.scrollHeight,
         behavior: smooth ? "smooth" : "instant",
       });
-    }
-  }, []);
-
-  const scrollToTop = useCallback(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, []);
 
@@ -367,7 +397,6 @@ export function MessagePanel({
   const handleScroll = useCallback(() => {
     if (!scrollRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    setCanScrollUp(scrollTop > 60);
     setCanScrollDown(scrollHeight - scrollTop - clientHeight > 60);
   }, []);
 
@@ -419,304 +448,278 @@ export function MessagePanel({
 
   return (
     <>
-      <motion.div
-        key="text-mode"
-        drag="y"
-        dragConstraints={{ top: 0, bottom: 0 }}
-        dragElastic={{ top: 0, bottom: 0.5 }}
-        onDragEnd={(_, info) => {
-          if (info.offset.y > 100 || info.velocity.y > 500) onClose();
-        }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.4, ease: "easeInOut" }}
-        className={`relative z-[1] flex flex-col w-full flex-1 min-h-0 pointer-events-none ${
+      <div
+        className={`relative z-[1] flex flex-col w-full flex-1 min-h-0 pointer-events-none transition-opacity duration-150 ${
           hasContent ? "items-center" : "justify-end items-center"
         }`}
       >
         {/* Mobile grip indicator for swipe-to-close */}
         <div className="flex-shrink-0 mx-auto mb-3 w-8 h-1 rounded-full pointer-events-auto md:hidden bg-white/20" />
 
-        {/* Messages - unified container for all messages */}
+        {/* Messages + Knowledge Drawer — flex-row layout */}
         {hasContent && (
-          <div
-            ref={scrollRef}
-            data-message-panel
-            onScroll={handleScroll}
-            onMouseOver={handleMouseOver}
-            onMouseOut={handleMouseOut}
-            className="flex-1 w-full overflow-y-auto scroll-smooth flex flex-col gap-3 md:gap-4 px-3 md:px-4 py-3 md:py-4 pointer-events-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
-          >
-            {/* Unified conversation history -- all exchanges in chronological order */}
-            {exchanges.map((exchange, i) => {
-              const justCommitted = i === exchanges.length - 1 && Date.now() - Number(exchange.id) < 500;
-              const prev = i > 0 ? exchanges[i - 1] : null;
+          <div className="flex-1 w-full min-h-0 flex flex-row pointer-events-auto">
+            {/* Chat column */}
+            <div
+              ref={scrollRef}
+              data-message-panel
+              onScroll={handleScroll}
+              onMouseOver={handleMouseOver}
+              onMouseOut={handleMouseOut}
+              className={`flex-1 min-w-0 overflow-y-auto scroll-smooth flex flex-col gap-3 md:gap-4 px-3 py-3 md:py-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] transition-[max-width,padding] duration-300 ease-out ${
+                isDrawerOpen
+                  ? 'md:pl-6 md:pr-4'
+                  : 'md:max-w-3xl md:mx-auto md:px-4'
+              }`}
+            >
+              {/* Unified conversation history -- all exchanges in chronological order */}
+              {exchanges.map((exchange, i) => {
+                const justCommitted = i === exchanges.length - 1 && Date.now() - Number(exchange.id) < 500;
+                const prev = i > 0 ? exchanges[i - 1] : null;
 
-              // Separator: time gap > 5 min or mode change
-              let separator: React.ReactNode = null;
-              if (prev) {
-                const timeGap = exchange.timestamp - prev.timestamp;
-                const modeChange = exchange.mode !== prev.mode;
-                if (timeGap > 300 || modeChange) {
-                  const formatTs = (s: number) => {
-                    const m = Math.floor(s / 60);
-                    const sec = Math.floor(s % 60);
-                    return `${m}:${sec.toString().padStart(2, "0")}`;
-                  };
-                  const label = modeChange
-                    ? exchange.mode === "explore" ? "explore mode" : "chat mode"
-                    : formatTs(exchange.timestamp);
-                  separator = (
-                    <div key={`sep-${exchange.id}`} className="flex items-center gap-3 py-1">
-                      <div className="flex-1 h-px bg-chalk-border/20" />
-                      <span className="text-[10px] text-slate-600 font-mono">{label}</span>
-                      <div className="flex-1 h-px bg-chalk-border/20" />
-                    </div>
-                  );
+                // Separator: time gap > 5 min or mode change
+                let separator: React.ReactNode = null;
+                if (prev) {
+                  const timeGap = exchange.timestamp - prev.timestamp;
+                  const modeChange = exchange.mode !== prev.mode;
+                  if (timeGap > 300 || modeChange) {
+                    const formatTs = (s: number) => {
+                      const m = Math.floor(s / 60);
+                      const sec = Math.floor(s % 60);
+                      return `${m}:${sec.toString().padStart(2, "0")}`;
+                    };
+                    const label = modeChange
+                      ? exchange.mode === "explore" ? "explore mode" : "chat mode"
+                      : formatTs(exchange.timestamp);
+                    separator = (
+                      <div key={`sep-${exchange.id}`} className="flex items-center gap-3 py-1">
+                        <div className="flex-1 h-px bg-chalk-border/20" />
+                        <span className="text-[10px] text-slate-600 font-mono">{label}</span>
+                        <div className="flex-1 h-px bg-chalk-border/20" />
+                      </div>
+                    );
+                  }
                 }
-              }
 
-              return (
-                <React.Fragment key={exchange.id}>
-                  {separator}
-                  <ExchangeMessage
-                    exchange={exchange}
-                    skipEntrance={justCommitted}
-                    onSeek={handleTimestampSeek}
-                    videoId={videoId}
-                    onPlayMessage={onPlayMessage}
-                    isPlaying={playingMessageId === exchange.id}
-                    isReadAloudLoading={
-                      isReadAloudLoading &&
-                      playingMessageId === exchange.id
-                    }
-                    onOpenVideo={onOpenVideo}
-                  />
-                </React.Fragment>
-              );
-            })}
+                // Suppress drawer tools for the active drawer exchange (last completed exchange with drawer tools)
+                const isActiveDrawerExchange =
+                  isDrawerOpen &&
+                  !isTextStreaming &&
+                  i === exchanges.length - 1 &&
+                  lastExchangeDrawerCalls.length > 0;
 
-            {/* Current streaming exchange */}
-            {(currentUserText ||
-              currentAiText ||
-              (!showExploreUI &&
-                (voiceTranscript || voiceResponseText))) && (
-              <div className="space-y-3">
-                {(currentUserText ||
-                  (!showExploreUI && voiceTranscript)) && (
-                  <div className="flex justify-end w-full">
-                    <div className="max-w-[85%] px-3.5 py-2 rounded-2xl bg-chalk-accent/90 text-white text-sm leading-relaxed break-words">
-                      {currentUserText || voiceTranscript}
-                    </div>
-                  </div>
-                )}
-                {/* Thinking timer — between user msg and AI response */}
-                {showExploreUI && isTextStreaming && (isThinking || thinkingDuration !== null) && (
-                  <TalkingTimer isThinking={isThinking} thinkingDuration={thinkingDuration} />
-                )}
-                {(currentAiText ||
-                  (!showExploreUI && voiceResponseText)) && (
-                  <div className="flex justify-start w-full">
-                    <div className="w-full">
-                      <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-                        {!showExploreUI && currentRawAiText && currentToolCalls && currentToolCalls.length > 0 ? (
-                          // Segment-based rendering: tool cards at their natural position
-                          <>
-                            {parseStreamToSegments(currentRawAiText).map((seg, i) => {
-                              if (seg.type === 'text') {
-                                if (!seg.content.trim()) return null;
-                                return <span key={`stream-seg-${i}`}>{renderRichContent(seg.content, handleTimestampSeek, videoId)}</span>;
-                              }
-                              if (seg.toolCall.result.type === 'cite_moment') {
-                                return (
-                                  <ToolResultRenderer
-                                    key={`stream-tool-${i}`}
-                                    toolCall={seg.toolCall}
-                                    onSeek={handleTimestampSeek}
-                                    onOpenVideo={onOpenVideo}
-                                  />
-                                );
-                              }
-                              return (
-                                <div key={`stream-tool-${i}`} className="my-2">
-                                  <ToolResultRenderer
-                                    toolCall={seg.toolCall}
-                                    onSeek={handleTimestampSeek}
-                                    onOpenVideo={onOpenVideo}
-                                  />
-                                </div>
-                              );
-                            })}
-                          </>
-                        ) : (
-                          // Plain text rendering (no tool calls or voice mode)
-                          renderRichContent(
-                            currentAiText || voiceResponseText,
-                            handleTimestampSeek,
-                            videoId,
-                          )
-                        )}
-                        {(isTextStreaming ||
-                          voiceState === "thinking") && (
-                          <span className="inline-block w-0.5 h-4 bg-chalk-accent animate-pulse ml-0.5 align-middle" />
-                        )}
+                return (
+                  <React.Fragment key={exchange.id}>
+                    {separator}
+                    <ExchangeMessage
+                      exchange={exchange}
+                      skipEntrance={justCommitted}
+                      onSeek={handleTimestampSeek}
+                      videoId={videoId}
+                      onPlayMessage={onPlayMessage}
+                      isPlaying={playingMessageId === exchange.id}
+                      isReadAloudLoading={
+                        isReadAloudLoading &&
+                        playingMessageId === exchange.id
+                      }
+                      onOpenVideo={onOpenVideo}
+                      suppressDrawerTools={isActiveDrawerExchange}
+                    />
+                  </React.Fragment>
+                );
+              })}
+
+              {/* Current streaming exchange */}
+              {(currentUserText ||
+                currentAiText ||
+                (!showExploreUI &&
+                  (voiceTranscript || voiceResponseText))) && (
+                <div className="space-y-3">
+                  {(currentUserText ||
+                    (!showExploreUI && voiceTranscript)) && (
+                    <div className="flex justify-end w-full">
+                      <div className="max-w-[85%] px-3.5 py-2 rounded-lg bg-white/[0.06] border border-white/[0.08] text-white text-sm leading-relaxed break-words">
+                        {currentUserText || voiceTranscript}
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Explore mode: initial options -- shown at bottom after all exchanges */}
-            {showExploreUI &&
-              !exchanges.some((e) => e.mode === "explore") &&
-              !isTextStreaming &&
-              !isLearnModeActive && (
-                <div className="flex flex-col justify-end w-full mt-auto">
-                  <motion.p
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
-                    className="mb-3 text-sm text-slate-400"
-                  >
-                    Pick a starting point, or just ask.
-                  </motion.p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      "Summarize with timestamps",
-                      "Quiz me on this",
-                      "Key takeaways so far",
-                    ].map((label, i) => (
-                      <motion.button
-                        key={label}
-                        initial={{ opacity: 0, scale: 0.8, y: 12, filter: 'blur(4px)' }}
-                        animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
-                        transition={{
-                          delay: 0.1 + i * 0.07,
-                          type: 'spring',
-                          stiffness: 500,
-                          damping: 30,
-                          mass: 0.8,
-                        }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => submitExploreMessage(label)}
-                        className="px-3 py-1.5 rounded-lg text-xs text-slate-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white transition-colors"
-                      >
-                        {label}
-                      </motion.button>
-                    ))}
-                  </div>
+                  )}
+                  {/* Thinking timer — between user msg and AI response */}
+                  {showExploreUI && isTextStreaming && (isThinking || thinkingDuration !== null) && (
+                    <TalkingTimer isThinking={isThinking} thinkingDuration={thinkingDuration} />
+                  )}
+                  {(currentAiText ||
+                    (!showExploreUI && voiceResponseText)) && (
+                    <div className="flex justify-start w-full">
+                      <div className="w-full">
+                        <div className="text-[15px] text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
+                          {!showExploreUI && currentRawAiText && currentToolCalls && currentToolCalls.length > 0 ? (
+                            // Segment-based rendering: route drawer tools to KnowledgeDrawer
+                            <>
+                              {parseStreamToSegments(currentRawAiText).map((seg, i) => {
+                                if (seg.type === 'text') {
+                                  if (!seg.content.trim()) return null;
+                                  return <span key={`stream-seg-${i}`}>{renderRichContent(seg.content, handleTimestampSeek, videoId)}</span>;
+                                }
+                                if (seg.toolCall.result.type === 'cite_moment') {
+                                  return (
+                                    <ToolResultRenderer
+                                      key={`stream-tool-${i}`}
+                                      toolCall={seg.toolCall}
+                                      onSeek={handleTimestampSeek}
+                                      onOpenVideo={onOpenVideo}
+                                    />
+                                  );
+                                }
+                                // Drawer tools: skip inline when drawer is open (they render in the drawer)
+                                if (isDrawerOpen && isDrawerTool(seg.toolCall)) return null;
+                                return (
+                                  <div key={`stream-tool-${i}`} className="my-2">
+                                    <ToolResultRenderer
+                                      toolCall={seg.toolCall}
+                                      onSeek={handleTimestampSeek}
+                                      onOpenVideo={onOpenVideo}
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </>
+                          ) : (
+                            // Plain text rendering (no tool calls or voice mode)
+                            renderRichContent(
+                              currentAiText || voiceResponseText,
+                              handleTimestampSeek,
+                              videoId,
+                            )
+                          )}
+                          {(isTextStreaming ||
+                            voiceState === "thinking") && (
+                            <span className="inline-block w-0.5 h-4 bg-chalk-accent animate-pulse ml-0.5 align-middle" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
-            {/* Explore pills — always at bottom, pulled from last explore exchange */}
-            {exploreMode && !isTextStreaming && (() => {
-              const lastExplore = [...exchanges].reverse().find((e) => e.mode === "explore");
-              if (lastExplore?.explorePills && lastExplore.explorePills.length > 0) {
-                return (
-                  <ExplorePills
-                    options={lastExplore.explorePills}
-                    onSelect={handlePillSelect}
-                    onFocusInput={focusInput}
+              {/* Explore mode: initial options -- shown at bottom after all exchanges */}
+              {showExploreUI &&
+                !exchanges.some((e) => e.mode === "explore") &&
+                !isTextStreaming &&
+                !isLearnModeActive && (
+                  <div className="flex flex-col justify-end w-full mt-auto">
+                    <motion.p
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
+                      className="mb-3 text-sm text-slate-400"
+                    >
+                      Pick a starting point, or just ask.
+                    </motion.p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        "Summarize with timestamps",
+                        "Quiz me on this",
+                        "Key takeaways so far",
+                      ].map((label, i) => (
+                        <motion.button
+                          key={label}
+                          initial={{ opacity: 0, scale: 0.8, y: 12, filter: 'blur(4px)' }}
+                          animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+                          transition={{
+                            delay: 0.1 + i * 0.07,
+                            type: 'spring',
+                            stiffness: 500,
+                            damping: 30,
+                            mass: 0.8,
+                          }}
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => submitExploreMessage(label)}
+                          className="px-3 py-1.5 rounded-lg text-xs text-slate-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white transition-colors"
+                        >
+                          {label}
+                        </motion.button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* Explore pills — always at bottom, pulled from last explore exchange */}
+              {exploreMode && !isTextStreaming && (() => {
+                const lastExplore = [...exchanges].reverse().find((e) => e.mode === "explore");
+                if (lastExplore?.explorePills && lastExplore.explorePills.length > 0) {
+                  return (
+                    <ExplorePills
+                      options={lastExplore.explorePills}
+                      onSelect={handlePillSelect}
+                      onFocusInput={focusInput}
+                    />
+                  );
+                }
+                return null;
+              })()}
+
+              {/* Error message */}
+              {(textError || voiceError || exploreError) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="px-3 py-2 text-xs text-rose-400 rounded-lg border bg-rose-500/10 border-rose-500/20"
+                >
+                  {textError || voiceError || exploreError}
+                </motion.div>
+              )}
+
+              {/* Learn mode content */}
+              {isLearnModeActive && (
+                <LearnErrorBoundary onReset={learnHandlers.onStop}>
+                  <LearnModeQuiz
+                    phase={learnState.phase}
+                    quiz={learnState.quiz}
+                    explanation={learnState.explanation}
+                    introText={learnState.introText}
+                    responseContent={learnState.responseContent}
+                    exportableContent={learnState.exportableContent}
+                    answers={learnState.answers}
+                    score={learnState.score}
+                    selectedAction={learnState.selectedAction}
+                    thinking={learnState.thinking}
+                    thinkingDuration={learnState.thinkingDuration}
+                    isLoading={learnState.isLoading}
+                    error={learnState.error}
+                    learnOptions={learnState.options}
+                    learnOptionsLoading={learnState.optionsLoading}
+                    videoTitle={videoTitle}
+                    videoId={videoId}
+                    onSelectAnswer={learnHandlers.onSelectAnswer}
+                    onSelectAction={learnHandlers.onSelectAction}
+                    onFocusInput={learnHandlers.onFocusInput}
+                    onNextBatch={learnHandlers.onNextBatch}
+                    onStop={learnHandlers.onStop}
+                    onSeek={handleTimestampSeek}
                   />
-                );
-              }
-              return null;
-            })()}
+                </LearnErrorBoundary>
+              )}
+            </div>
 
-            {/* Error message */}
-            {(textError || voiceError || exploreError) && (
-              <motion.div
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="px-3 py-2 text-xs text-rose-400 rounded-lg border bg-rose-500/10 border-rose-500/20"
-              >
-                {textError || voiceError || exploreError}
-              </motion.div>
-            )}
-
-            {/* Learn mode content */}
-            {isLearnModeActive && (
-              <LearnErrorBoundary onReset={learnHandlers.onStop}>
-                <LearnModeQuiz
-                  phase={learnState.phase}
-                  quiz={learnState.quiz}
-                  explanation={learnState.explanation}
-                  introText={learnState.introText}
-                  responseContent={learnState.responseContent}
-                  exportableContent={learnState.exportableContent}
-                  answers={learnState.answers}
-                  score={learnState.score}
-                  selectedAction={learnState.selectedAction}
-                  thinking={learnState.thinking}
-                  thinkingDuration={learnState.thinkingDuration}
-                  isLoading={learnState.isLoading}
-                  error={learnState.error}
-                  learnOptions={learnState.options}
-                  learnOptionsLoading={learnState.optionsLoading}
-                  videoTitle={videoTitle}
-                  videoId={videoId}
-                  onSelectAnswer={learnHandlers.onSelectAnswer}
-                  onSelectAction={learnHandlers.onSelectAction}
-                  onFocusInput={learnHandlers.onFocusInput}
-                  onNextBatch={learnHandlers.onNextBatch}
-                  onStop={learnHandlers.onStop}
+            {/* Knowledge Drawer — desktop only, disabled when side panel is open */}
+            <div className={`hidden md:flex flex-none overflow-hidden transition-[width,opacity] duration-300 ease-out ${
+              isDrawerOpen ? 'w-[320px] lg:w-[360px] opacity-100' : 'w-0 opacity-0'
+            }`}>
+              {drawerCalls.length > 0 && (
+                <KnowledgeDrawer
+                  toolCalls={drawerCalls}
+                  isStreaming={isTextStreaming && streamingDrawerCalls.length > 0}
                   onSeek={handleTimestampSeek}
+                  onOpenVideo={onOpenVideo}
+                  onClose={() => setDrawerDismissed(true)}
                 />
-              </LearnErrorBoundary>
-            )}
+              )}
+            </div>
           </div>
         )}
 
-        {/* Left badge -- desktop only, dynamic scroll direction indicator */}
-        <AnimatePresence mode="wait">
-          {exchanges.length > 0 && (canScrollUp || canScrollDown) && (
-            <motion.button
-              key={canScrollUp ? "scroll-up" : "scroll-down"}
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{
-                duration: 0.15,
-                ease: [0.23, 1, 0.32, 1],
-              }}
-              onClick={canScrollUp ? scrollToTop : () => scrollToBottom(true)}
-              data-scroll-badge
-              className="hidden md:flex absolute top-0 left-0 z-[40] items-center justify-center w-7 h-7 rounded-none rounded-br-lg text-white pointer-events-auto"
-              aria-label={canScrollUp ? "Scroll to top" : "Scroll to latest"}
-            >
-              {canScrollUp ? (
-                <CaretUp size={12} weight="bold" />
-              ) : (
-                <CaretDown size={12} weight="bold" />
-              )}
-            </motion.button>
-          )}
-        </AnimatePresence>
-
-        {/* Close badge -- desktop only, always visible when content exists */}
-        <AnimatePresence>
-          {exchanges.length > 0 && (
-            <motion.button
-              key="close-badge"
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{
-                duration: 0.15,
-                ease: [0.23, 1, 0.32, 1],
-              }}
-              onClick={onClose}
-              data-scroll-badge
-              className="hidden md:flex absolute top-0 right-0 z-[40] items-center justify-center w-7 h-7 rounded-none rounded-bl-lg text-white pointer-events-auto"
-              aria-label="Close chat"
-            >
-              <X size={12} weight="bold" />
-            </motion.button>
-          )}
-        </AnimatePresence>
-      </motion.div>
+      </div>
 
       {/* Timestamp tooltip */}
       <AnimatePresence>

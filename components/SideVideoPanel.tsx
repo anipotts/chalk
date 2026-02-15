@@ -30,7 +30,7 @@ export function SideVideoPanel({ stack, onPop, onClose, onOpenVideo }: SideVideo
   if (!entry) return null;
 
   return (
-    <div className="flex flex-col h-full bg-chalk-bg">
+    <div className="flex flex-col h-full bg-chalk-bg border-l-2 border-chalk-accent/30">
       {/* Header */}
       <SidePanelHeader
         stack={stack}
@@ -57,7 +57,7 @@ function SidePanelHeader({
   entry: SideVideoEntry;
 }) {
   return (
-    <div className="flex-none flex items-center gap-2 px-4 py-2.5 border-b border-chalk-border/30 bg-chalk-bg/95 backdrop-blur-sm">
+    <div className="flex-none flex items-center gap-2 px-4 py-2.5 border-b border-chalk-border/30 bg-chalk-surface/80">
       {/* Back button (only if stack depth > 1) */}
       {stack.length > 1 && (
         <button
@@ -101,10 +101,10 @@ function SidePanelHeader({
       {/* Close */}
       <button
         onClick={onClose}
-        className="p-1.5 rounded-md text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-colors"
+        className="p-2 rounded-md text-slate-400 hover:text-slate-200 hover:bg-white/[0.08] transition-colors"
         title="Close side panel"
       >
-        <X size={14} weight="bold" />
+        <X size={16} />
       </button>
     </div>
   );
