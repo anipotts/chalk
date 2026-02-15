@@ -14,11 +14,23 @@ Chalk is a Next.js 16 app with two features: a **YouTube Video Learning Assistan
 ### Video Assistant Data Flow
 
 1. **Landing page** (`app/page.tsx`) — user pastes YouTube URL → extracts video ID → navigates to `/watch?v={id}`
-2. **Watch page** (`app/watch/page.tsx`) — loads react-player + fetches transcript via `/api/transcript`
-3. **Pause → Chat** — `ChatOverlay` fades in (framer-motion). User types question → sends to `/api/video-chat` with message + transcript segments + current timestamp
+2. **Watch page** (`app/watch/page.tsx`) — loads Vidstack player + fetches transcript via `/api/transcript`
+3. **Type → Chat** — User types any key → state transitions from `watching` to `chatting`, video auto-pauses, chalky noise backdrop appears over paused frame. `InteractionOverlay` shows chat messages + input strip.
 4. **API route** (`app/api/video-chat/route.ts`) — builds sliding-window transcript context (2 min before, 1 min after current position) → streams response. Opus gets reasoning + `\x1E` separator protocol (same as math route).
 5. **Timestamp citations** — AI responds with `[M:SS]` references. `parseTimestampLinks()` converts these to clickable `TimestampLink` pills that seek the video.
-6. **Resume** — user presses play → chat overlay fades out
+6. **Dismiss** — Escape or click backdrop → transitions to `watching`, video auto-resumes if it was playing before. Chat history preserved for re-entry.
+
+### Overlay State Machine
+
+Two states: `watching` ←→ `chatting` (defined in `hooks/useOverlayPhase.ts`).
+
+- **`watching`**: Video plays normally. Input strip visible at 60% opacity on desktop.
+- **`chatting`**: Video paused, noise backdrop visible, full chat UI. Auto-pause on entry, auto-resume on exit.
+- **Triggers**: Type any key / click input / `@ time` chip → `chatting`. Escape / click backdrop / clear chat → `watching`.
+
+### Overlay Backdrop
+
+`components/OverlayBackdrop.tsx` — 3-layer compositing: `bg-black/50` + inline SVG noise texture (`mix-blend-mode: overlay`) = chalky grain effect. Noise SVG rasterized once as data URI, GPU-composited. No per-frame computation.
 
 ### Math Visualizer Data Flow
 
@@ -32,7 +44,7 @@ Chalk is a Next.js 16 app with two features: a **YouTube Video Learning Assistan
 This is the most important architectural constraint:
 
 - **`lib/video-utils.ts`** — client-safe utilities (extractVideoId, parseTimestampLinks, formatTimestamp, buildVideoContext). Safe to import from any component.
-- **`lib/transcript.ts`** — server-only transcript fetching. Imports `youtube-transcript` and `youtube-dl-exec` (uses `child_process`). **NEVER import from client components** — will break the build.
+- **`lib/transcript.ts`** — server-only transcript fetching (web scrape + WhisperX/Groq/Deepgram STT cascade). **NEVER import from client components** — will break the build.
 
 The same pattern applies to all Node.js-dependent code: keep it in API routes or server-only lib files.
 

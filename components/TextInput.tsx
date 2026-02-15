@@ -16,6 +16,8 @@ interface TextInputProps {
   onToggleExplore?: () => void;
   onFocus?: () => void;
   onBlur?: () => void;
+  actions?: React.ReactNode;
+  topBar?: React.ReactNode;
 }
 
 const TIMESTAMP_RE = /\[(\d{1,2}:\d{2}(?::\d{2})?)\]/g;
@@ -133,6 +135,8 @@ export function TextInput({
   onToggleExplore,
   onFocus,
   onBlur,
+  actions,
+  topBar,
 }: TextInputProps) {
   const internalRef = useRef<HTMLDivElement>(null);
   const lastSyncedRef = useRef(value);
@@ -240,10 +244,11 @@ export function TextInput({
   const isEmpty = !value;
 
   return (
-    <div className="flex-1 flex items-center gap-1.5 rounded-xl bg-white/[0.06] focus-within:bg-white/[0.10] transition-colors duration-200">
+    <div className="flex-1 flex flex-col min-h-[44px] md:min-h-[88px] rounded-xl bg-white/[0.06] focus-within:bg-white/[0.10] transition-colors duration-200">
+      {topBar}
       <div className="flex-1 relative">
         {isEmpty && (
-          <div className="absolute inset-0 px-3 py-2.5 text-sm text-slate-600 pointer-events-none select-none">
+          <div className="absolute inset-0 px-3 pt-2.5 pb-1 text-sm text-slate-600 pointer-events-none select-none">
             {resolvedPlaceholder}
           </div>
         )}
@@ -260,25 +265,32 @@ export function TextInput({
           onCompositionEnd={handleCompositionEnd}
           role="textbox"
           aria-label={resolvedPlaceholder}
-          className="w-full min-h-[20px] px-3 py-2.5 text-sm text-chalk-text focus:outline-none whitespace-pre-wrap break-words [&_.ts-badge]:inline-flex [&_.ts-badge]:items-center [&_.ts-badge]:text-blue-400 [&_.ts-badge]:bg-blue-500/20 [&_.ts-badge]:rounded [&_.ts-badge]:px-1.5 [&_.ts-badge]:py-0.5 [&_.ts-badge]:text-xs [&_.ts-badge]:font-mono [&_.ts-badge]:mx-0.5 [&_.ts-badge]:align-baseline [&_.ts-badge]:leading-none"
+          className="w-full min-h-[20px] px-3 pt-2.5 pb-1 text-sm text-chalk-text focus:outline-none whitespace-pre-wrap break-words [&_.ts-badge]:inline-flex [&_.ts-badge]:items-center [&_.ts-badge]:text-blue-400 [&_.ts-badge]:bg-blue-500/20 [&_.ts-badge]:rounded [&_.ts-badge]:px-1.5 [&_.ts-badge]:py-0.5 [&_.ts-badge]:text-xs [&_.ts-badge]:font-mono [&_.ts-badge]:mx-0.5 [&_.ts-badge]:align-baseline [&_.ts-badge]:leading-none"
         />
       </div>
-      {onToggleExplore && (
-        <button
-          type="button"
-          onClick={onToggleExplore}
-          className={`h-7 px-2.5 mr-1.5 rounded-md text-[11px] font-medium transition-all ${
-            exploreMode
-              ? 'bg-chalk-accent/15 text-chalk-accent hover:bg-chalk-accent/25'
-              : 'bg-white/[0.06] hover:bg-white/[0.12] text-white/50 hover:text-white/80'
-          }`}
-          title="Toggle Explore Mode (Shift+Tab)"
-          aria-label={exploreMode ? 'Exit Explore Mode' : 'Start Explore Mode'}
-          aria-pressed={exploreMode}
-        >
-          Explore
-        </button>
-      )}
+      <div className="flex items-center justify-between px-1.5 pb-1.5">
+        <div>
+          {onToggleExplore && (
+            <button
+              type="button"
+              onClick={onToggleExplore}
+              className={`h-8 px-2.5 rounded-lg text-[11px] font-medium transition-all ${
+                exploreMode
+                  ? 'bg-chalk-accent/15 text-chalk-accent hover:bg-chalk-accent/25'
+                  : 'bg-white/[0.06] hover:bg-white/[0.12] text-white/50 hover:text-white/80'
+              }`}
+              title="Toggle Explore Mode (Shift+Tab)"
+              aria-label={exploreMode ? 'Exit Explore Mode' : 'Start Explore Mode'}
+              aria-pressed={exploreMode}
+            >
+              Explore
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          {actions}
+        </div>
+      </div>
     </div>
   );
 }

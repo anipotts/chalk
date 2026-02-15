@@ -1,3 +1,4 @@
+/* Match YouTube's native action button style (Share, Save, etc.) */
 .chalk-yt-btn {
   display: inline-flex;
   align-items: center;
@@ -5,7 +6,7 @@
   padding: 0 16px;
   height: 36px;
   border-radius: 18px;
-  background: #3b82f6;
+  background: rgba(255, 255, 255, 0.1);
   color: #f1f5f9;
   font-family: "Roboto", "Arial", sans-serif;
   font-size: 14px;
@@ -18,8 +19,8 @@
 }
 
 .chalk-yt-btn:hover {
-  background: #2563eb;
-  color: #f1f5f9;
+  background: #3b82f6;
+  color: #ffffff;
   text-decoration: none;
 }
 

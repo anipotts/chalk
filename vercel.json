@@ -22,6 +22,9 @@
     },
     "app/api/learn-options/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/extract/route.ts": {
+      "maxDuration": 300
     }
   }
 }

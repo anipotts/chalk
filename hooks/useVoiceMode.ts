@@ -48,6 +48,7 @@ export function useVoiceMode({
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -225,6 +226,7 @@ export function useVoiceMode({
       const audioBuffer = await ttsResp.arrayBuffer();
       const audioBlob2 = new Blob([audioBuffer], { type: 'audio/mpeg' });
       const audioUrl = URL.createObjectURL(audioBlob2);
+      audioUrlRef.current = audioUrl;
       const audio = new Audio(audioUrl);
       audioRef.current = audio;
 
@@ -232,12 +234,14 @@ export function useVoiceMode({
         setVoiceState('idle');
         URL.revokeObjectURL(audioUrl);
         audioRef.current = null;
+        audioUrlRef.current = null;
       };
 
       audio.onerror = () => {
         setVoiceState('idle');
         URL.revokeObjectURL(audioUrl);
         audioRef.current = null;
+        audioUrlRef.current = null;
       };
 
       await audio.play();
@@ -284,7 +288,12 @@ export function useVoiceMode({
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.onended = null;
+      audioRef.current.onerror = null;
       audioRef.current = null;
+    }
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
     }
     setVoiceState('idle');
   }, []);

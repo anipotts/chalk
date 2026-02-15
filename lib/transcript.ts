@@ -4,23 +4,17 @@
  * For client-safe utils, import from '@/lib/video-utils' instead.
  *
  * Architecture:
- *   Phase 1 — Caption race (Promise.any): CF Worker (Vercel only) + web scrape + caption-extractor + Innertube + yt-dlp
- *   Phase 2 — STT cascade (sequential): Innertube audio → web scrape audio (Groq/Deepgram) → yt-dlp + Whisper
+ *   Phase 1 — Caption fetch: web scrape (extract captions from YouTube watch page)
+ *   Phase 2 — STT cascade (sequential): WhisperX → Groq Whisper → Deepgram
  */
 
-import { execFile } from 'child_process';
-import { tmpdir } from 'os';
-import { join } from 'path';
-import { randomBytes } from 'crypto';
-import { readFile, unlink } from 'fs/promises';
-import { withRetry, withTimeout } from './retry';
+import { withTimeout } from './retry';
 import { isGroqAvailable, transcribeWithGroq } from './stt/groq-whisper';
 import { isDeepgramAvailable, transcribeWithDeepgram } from './stt/deepgram';
 
 // Re-export client-safe types and functions so API routes can use them
 export type { TranscriptSegment, TranscriptSource, TranscriptResult } from './video-utils';
 export { formatTimestamp, parseTimestampLinks, extractVideoId } from './video-utils';
-// buildVideoContext was removed — video-chat now sends full transcript with priority markers
 
 import type { TranscriptSegment, TranscriptResult } from './video-utils';
 
@@ -38,12 +32,11 @@ function extractMetadata(data: InnertubePlayerResponse): VideoMetadata | undefin
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
-const IS_VERCEL = !!process.env.VERCEL;
-const INNERTUBE_KEY = process.env.YOUTUBE_INNERTUBE_KEY || 'AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w';
-const INNERTUBE_CLIENT_VERSION = process.env.YOUTUBE_CLIENT_VERSION || '19.44.38';
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024; // 25MB — Groq's Whisper limit
-const ALLOWED_CAPTION_HOSTS = ['www.youtube.com', 'youtube.com', 'www.google.com'];
 const ALLOWED_AUDIO_HOSTS = ['rr', 'redirector.googlevideo.com']; // googlevideo CDN uses rr*.googlevideo.com
+
+const WEBSCRAPE_TIMEOUT = 20_000;  // 20s — page fetch + caption fetch
+const PIPELINE_TIMEOUT = 240_000;  // 240s overall pipeline (leave 60s buffer for Vercel 300s)
 
 // ─── Innertube types ───────────────────────────────────────────────────────────
 
@@ -152,23 +145,26 @@ function parseTimedTextXml(xml: string): TranscriptSegment[] {
 // ─── Shared: Innertube player request ─────────────────────────────────────────
 
 async function fetchInnertubePlayer(videoId: string): Promise<InnertubePlayerResponse> {
+  const key = process.env.YOUTUBE_INNERTUBE_KEY || 'AIzaSyA8eiZmM1FaDVjRy-df2KTyQ_vz_yYM39w';
+  const clientVersion = process.env.YOUTUBE_CLIENT_VERSION || '19.44.38';
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 15000);
   try {
-    const resp = await fetch(`https://www.youtube.com/youtubei/v1/player?key=${INNERTUBE_KEY}&prettyPrint=false`, {
+    const resp = await fetch(`https://www.youtube.com/youtubei/v1/player?key=${key}&prettyPrint=false`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': `com.google.android.youtube/${INNERTUBE_CLIENT_VERSION} (Linux; U; Android 14)`,
+        'User-Agent': `com.google.android.youtube/${clientVersion} (Linux; U; Android 14)`,
         'X-YouTube-Client-Name': '3',
-        'X-YouTube-Client-Version': INNERTUBE_CLIENT_VERSION,
+        'X-YouTube-Client-Version': clientVersion,
       },
       body: JSON.stringify({
         videoId,
         context: {
           client: {
             clientName: 'ANDROID',
-            clientVersion: INNERTUBE_CLIENT_VERSION,
+            clientVersion,
             androidSdkVersion: 34,
             hl: 'en',
             gl: 'US',
@@ -205,72 +201,10 @@ export async function fetchStoryboardSpec(videoId: string): Promise<string | und
   return data.storyboards?.playerStoryboardSpecRenderer?.spec;
 }
 
-// ─── Tier 1: Innertube API (ANDROID client) ─────────────────────────────────────
-//
-// YouTube's WEB client no longer returns caption tracks as of early 2025.
-// The ANDROID client still returns them, but caption URLs serve XML timedtext
-// instead of JSON3 (the fmt param is ignored). We parse the XML directly.
-
-async function fetchTranscriptInnertube(videoId: string): Promise<{ segments: TranscriptSegment[]; metadata?: VideoMetadata; storyboardSpec?: string }> {
-  const data = await fetchInnertubePlayer(videoId);
-  const metadata = extractMetadata(data);
-  const storyboardSpec = data.storyboards?.playerStoryboardSpecRenderer?.spec;
-  const tracks = data.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-  if (!tracks || tracks.length === 0) throw new Error('No caption tracks found');
-
-  // Prefer English manual captions over ASR
-  const enTracks = tracks.filter((t) => t.languageCode.startsWith('en'));
-  const manual = enTracks.find((t) => t.kind !== 'asr');
-  const track = manual || enTracks[0] || tracks[0];
-
-  // SSRF check: ensure caption URL points to YouTube/Google
-  if (!isAllowedYouTubeUrl(track.baseUrl, ALLOWED_CAPTION_HOSTS)) {
-    throw new Error('Caption URL points to unexpected host');
-  }
-
-  // Fetch captions (ANDROID client returns XML timedtext regardless of fmt param)
-  const captionController = new AbortController();
-  const captionTimeout = setTimeout(() => captionController.abort(), 10000);
-  let captionResp;
-  try {
-    captionResp = await fetch(track.baseUrl, { signal: captionController.signal });
-  } finally {
-    clearTimeout(captionTimeout);
-  }
-  if (!captionResp.ok) throw new Error(`Caption fetch failed: ${captionResp.status}`);
-
-  const body = await captionResp.text();
-
-  // Try JSON3 first (in case YouTube changes behavior), fall back to XML
-  let segments: TranscriptSegment[];
-  try {
-    const json3 = JSON.parse(body) as Json3Response;
-    if (json3.events) {
-      segments = json3.events
-        .filter((e) => e.segs && e.segs.length > 0)
-        .map((e) => ({
-          text: e.segs!.map((s) => s.utf8).join(''),
-          offset: e.tStartMs / 1000,
-          duration: (e.dDurationMs || 0) / 1000,
-          words: extractWords(e.segs!, e.tStartMs),
-        }));
-    } else {
-      segments = [];
-    }
-  } catch {
-    // Not JSON — parse as XML timedtext
-    segments = parseTimedTextXml(body);
-  }
-
-  if (segments.length === 0) throw new Error('Innertube: returned 0 segments');
-  return { segments, metadata, storyboardSpec };
-}
-
-// ─── Tier 1b: Web page scrape (extract ytInitialPlayerResponse from HTML) ────
+// ─── Web page scrape (extract ytInitialPlayerResponse from HTML) ──────────────
 //
 // Fetches the YouTube watch page with browser-like headers and extracts
-// the embedded player response. More reliable from datacenter IPs than
-// the Innertube API POST because it looks like a normal page visit.
+// the embedded player response. Most reliable caption source from datacenter IPs.
 
 async function fetchTranscriptWebScrape(videoId: string): Promise<{ segments: TranscriptSegment[]; metadata?: VideoMetadata; storyboardSpec?: string }> {
   const controller = new AbortController();
@@ -359,113 +293,7 @@ async function fetchTranscriptWebScrape(videoId: string): Promise<{ segments: Tr
   return { segments, metadata, storyboardSpec };
 }
 
-// ─── Tier 2: yt-dlp CLI (write subs to file) ───────────────────────────────────
-
-async function fetchTranscriptYtDlp(videoId: string): Promise<TranscriptSegment[]> {
-  const tempBase = join(tmpdir(), `chalk-subs-${randomBytes(6).toString('hex')}`);
-  const expectedSubFile = `${tempBase}.en.json3`;
-
-  try {
-    // Use execFile directly so yt-dlp goes through full client negotiation
-    // (JS challenge solving, multiple client fallbacks) instead of dumpJson
-    // which uses a lightweight metadata path that YouTube now blocks.
-    await execFilePromise('yt-dlp', [
-      `https://www.youtube.com/watch?v=${videoId}`,
-      '--write-auto-sub',
-      '--sub-lang', 'en',
-      '--sub-format', 'json3',
-      '--skip-download',
-      '-o', tempBase,
-    ], 30_000); // 30s for subtitle extraction
-
-    // yt-dlp writes the sub file as <output>.en.json3
-    const raw = await readFile(expectedSubFile, 'utf-8');
-    const data = JSON.parse(raw) as Json3Response;
-
-    if (!data.events) throw new Error('No events in json3 subtitle file');
-
-    const segments = data.events
-      .filter((e) => e.segs && e.segs.length > 0)
-      .map((e) => ({
-        text: e.segs!.map((s) => s.utf8).join(''),
-        offset: e.tStartMs / 1000,
-        duration: (e.dDurationMs || 0) / 1000,
-        words: extractWords(e.segs!, e.tStartMs),
-      }));
-
-    if (segments.length === 0) throw new Error('yt-dlp: json3 had 0 segments');
-    return segments;
-  } finally {
-    await unlink(expectedSubFile).catch(() => {});
-  }
-}
-
-// ─── STT: Local Whisper CLI ───────────────────────────────────────────────────
-
-interface WhisperSegment {
-  start: number;
-  end: number;
-  text: string;
-}
-
-interface WhisperOutput {
-  segments: WhisperSegment[];
-}
-
-function execFilePromise(cmd: string, args: string[], timeoutMs = 60_000): Promise<{ stdout: string; stderr: string }> {
-  return new Promise((resolve, reject) => {
-    execFile(cmd, args, { timeout: timeoutMs }, (err, stdout, stderr) => {
-      if (err) reject(err);
-      else resolve({ stdout, stderr });
-    });
-  });
-}
-
-/**
- * Returns the path to the local Whisper CLI, or null if not configured/available.
- */
-function getWhisperCliPath(): string | null {
-  // Explicit env var takes priority
-  if (process.env.WHISPER_CLI_PATH) return process.env.WHISPER_CLI_PATH;
-  // Dev-only default
-  if (process.env.NODE_ENV === 'development') return '/opt/homebrew/bin/whisper';
-  return null;
-}
-
-async function fetchTranscriptLocalWhisper(audioPath: string): Promise<TranscriptSegment[]> {
-  const whisperPath = getWhisperCliPath();
-  if (!whisperPath) throw new Error('Local Whisper not available (WHISPER_CLI_PATH not set)');
-
-  const jsonPath = audioPath.replace(/\.wav$/, '.json');
-
-  try {
-    console.log(`[transcript] running local Whisper on ${audioPath}...`);
-    await execFilePromise(whisperPath, [
-      audioPath,
-      '--model', 'base',
-      '--output_format', 'json',
-      '--language', 'en',
-      '--output_dir', tmpdir(),
-    ], 180_000); // 3 min for Whisper transcription
-
-    const raw = await readFile(jsonPath, 'utf-8');
-    const data = JSON.parse(raw) as WhisperOutput;
-
-    if (!data.segments || data.segments.length === 0) {
-      throw new Error('Whisper produced no segments');
-    }
-
-    return data.segments.map((s) => ({
-      text: s.text.trim(),
-      offset: s.start,
-      duration: s.end - s.start,
-    }));
-  } finally {
-    await unlink(jsonPath).catch(() => {});
-  }
-}
-
-// ─── Audio download helper for STT tiers ───────────────────────────────────────
+// ─── Audio download helpers for STT tiers ───────────────────────────────────────
 
 /**
  * Download audio from pre-fetched adaptive formats.
@@ -535,7 +363,7 @@ async function downloadAudioFromFormats(
 }
 
 /**
- * Download audio from YouTube via Innertube streaming URLs (HTTP-only, no yt-dlp needed).
+ * Download audio from YouTube via Innertube streaming URLs (HTTP-only).
  * Fetches the player response to get adaptive audio stream URLs, then downloads directly.
  */
 export async function downloadAudioHTTP(videoId: string): Promise<Buffer> {
@@ -583,290 +411,127 @@ export async function downloadAudioWebScrape(videoId: string): Promise<Buffer> {
   return downloadAudioFromFormats(formats, videoId);
 }
 
+// ─── WhisperX service client ────────────────────────────────────────────────────
+
 /**
- * Download audio from a YouTube video as WAV (16kHz mono) to a temp file.
- * Uses yt-dlp CLI (not available on Vercel). Use downloadAudioHTTP for serverless.
+ * Discover WhisperX service URL from env var or Supabase service_registry.
+ * Returns null if service is unavailable or stale (>2h since last heartbeat).
  */
-export async function downloadAudio(videoId: string): Promise<string> {
-  const { default: youtubedl } = await import('youtube-dl-exec');
-  const tempPath = join(tmpdir(), `chalk-audio-${randomBytes(6).toString('hex')}.wav`);
+async function getWhisperXUrl(): Promise<string | null> {
+  if (process.env.WHISPERX_SERVICE_URL) return process.env.WHISPERX_SERVICE_URL;
 
-  await youtubedl(`https://www.youtube.com/watch?v=${videoId}`, {
-    extractAudio: true,
-    audioFormat: 'wav',
-    output: tempPath,
-    postprocessorArgs: 'ffmpeg:-ar 16000 -ac 1',
-  } as Parameters<typeof youtubedl>[1]);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) return null;
 
-  return tempPath;
-}
-
-// ─── Cloudflare Worker proxy ────────────────────────────────────────────────────
-
-const CF_WORKER_PER_CALL_TIMEOUT = 15_000; // 15s per individual Worker call
-const CF_WORKER_TOTAL_TIMEOUT = 40_000;    // 40s total for all retries
-
-async function fetchTranscriptCfWorker(videoId: string): Promise<TranscriptSegment[]> {
-  const url = process.env.CF_TRANSCRIPT_WORKER_URL?.trim();
-  if (!url) throw new Error('CF_TRANSCRIPT_WORKER_URL not set');
-  const fetchUrl = `${url}?v=${videoId}`;
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), CF_WORKER_PER_CALL_TIMEOUT);
   try {
-    const resp = await fetch(fetchUrl, { signal: controller.signal });
-    if (!resp.ok) {
-      const body = await resp.text().catch(() => '');
-      throw new Error(`CF Worker: ${resp.status} - ${body.slice(0, 200)}`);
-    }
-    const data = (await resp.json()) as { segments?: TranscriptSegment[]; error?: string };
-    if (data.error) throw new Error(`CF Worker: ${data.error}`);
-    if (!data.segments?.length) throw new Error('CF Worker: no segments');
-    return data.segments;
-  } finally {
-    clearTimeout(timeout);
+    const resp = await fetch(
+      `${supabaseUrl}/rest/v1/service_registry?service_name=eq.whisperx&select=url,updated_at`,
+      {
+        headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+        next: { revalidate: 60 },
+      },
+    );
+    if (!resp.ok) return null;
+    const rows = await resp.json();
+    if (!rows.length) return null;
+
+    // Stale after 2 hours — service sends heartbeats every ~30 min
+    const age = Date.now() - new Date(rows[0].updated_at).getTime();
+    if (age > 2 * 60 * 60 * 1000) return null;
+
+    return rows[0].url;
+  } catch {
+    return null;
   }
 }
 
-// ─── Phase 1: Caption race ─────────────────────────────────────────────────────
+/**
+ * Transcribe a YouTube video via the WhisperX GPU service (Courant cuda5).
+ * The service handles audio download + WhisperX transcription internally.
+ */
+async function fetchTranscriptWhisperX(videoId: string): Promise<TranscriptResult> {
+  const url = await getWhisperXUrl();
+  if (!url) throw new Error('WhisperX service not available');
+
+  const resp = await fetch(`${url}/transcribe`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ video_id: videoId }),
+    signal: AbortSignal.timeout(180_000), // 3 min for long videos
+  });
+
+  if (!resp.ok) throw new Error(`WhisperX ${resp.status}: ${await resp.text()}`);
+
+  const data = await resp.json();
+  if (!data.segments?.length) throw new Error('WhisperX returned no segments');
+
+  return { segments: data.segments, source: 'whisperx' as const };
+}
+
+// ─── Phase 1: Caption fetch ─────────────────────────────────────────────────────
 
 interface CaptionRaceResult {
   segments: TranscriptSegment[];
-  source: 'innertube' | 'web-scrape' | 'yt-dlp' | 'caption-extractor' | 'cf-worker';
+  source: 'web-scrape';
   metadata?: VideoMetadata;
   storyboardSpec?: string;
 }
 
-const INNERTUBE_TIMEOUT = 15_000;         // 15s — Innertube is fast when it works
-const WEBSCRAPE_TIMEOUT = 20_000;         // 20s — page fetch + caption fetch
-const CAPTION_EXTRACTOR_TIMEOUT = 20_000; // 20s — third-party caption extraction
-const YTDLP_TIMEOUT = 30_000;            // 30s — yt-dlp needs time for JS challenge solving
-const RACE_TIMEOUT = 50_000;             // 50s overall caption race (CF Worker gets 3 retries)
-const STT_STRATEGY_TIMEOUT = 60_000;     // 60s per STT strategy (audio download + transcription)
-const PIPELINE_TIMEOUT = 240_000;        // 240s overall pipeline (leave 60s buffer for Vercel 300s)
-
-async function fetchTranscriptCaptionExtractor(videoId: string): Promise<TranscriptSegment[]> {
-  const { getSubtitles } = await import('youtube-caption-extractor');
-  const subtitles = await getSubtitles({ videoID: videoId, lang: 'en' });
-  if (!subtitles || subtitles.length === 0) throw new Error('caption-extractor: no subtitles found');
-  const segments = subtitles.map((s: { start: string; dur: string; text: string }) => ({
-    text: s.text,
-    offset: parseFloat(s.start) || 0,
-    duration: parseFloat(s.dur) || 0,
-  }));
-  if (segments.length === 0) throw new Error('caption-extractor: returned 0 segments');
-  console.log(`[transcript] caption-extractor: got ${segments.length} segments`);
-  return segments;
-}
-
 export async function captionRace(videoId: string): Promise<CaptionRaceResult> {
-  const raceStart = Date.now();
-
-  // Caption tiers run concurrently — first non-empty result wins.
-  // On Vercel, CF Worker is prepended as primary tier (YouTube blocks AWS/Vercel IPs).
-  // Some tiers return { segments, metadata }, others return plain segments.
-  type TierResult = TranscriptSegment[] | { segments: TranscriptSegment[]; metadata?: VideoMetadata };
-  const cfWorkerUrl = process.env.CF_TRANSCRIPT_WORKER_URL?.trim();
-  const tiers: Array<{ fn: () => Promise<TierResult>; source: CaptionRaceResult['source']; timeout: number }> = [
-    ...(IS_VERCEL && cfWorkerUrl
-      ? [{ fn: () => fetchTranscriptCfWorker(videoId) as Promise<TierResult>, source: 'cf-worker' as const, timeout: CF_WORKER_TOTAL_TIMEOUT }]
-      : []),
-    { fn: () => fetchTranscriptWebScrape(videoId), source: 'web-scrape' as const, timeout: WEBSCRAPE_TIMEOUT },
-    { fn: () => fetchTranscriptCaptionExtractor(videoId) as Promise<TierResult>, source: 'caption-extractor' as const, timeout: CAPTION_EXTRACTOR_TIMEOUT },
-    { fn: () => fetchTranscriptInnertube(videoId), source: 'innertube' as const, timeout: INNERTUBE_TIMEOUT },
-  ];
-
-  // Only add yt-dlp tier when NOT on Vercel (binary doesn't exist there)
-  if (!IS_VERCEL) {
-    tiers.push({ fn: () => fetchTranscriptYtDlp(videoId) as Promise<TierResult>, source: 'yt-dlp', timeout: YTDLP_TIMEOUT });
-  }
-
-  const raceEntries = tiers.map(({ fn, source, timeout }) =>
-    withTimeout(
-      withRetry(fn, { retries: source === 'cf-worker' ? 3 : 1, delayMs: 1000 }),
-      timeout,
-      source,
-    ).then((result) => {
-      const segments = Array.isArray(result) ? result : result.segments;
-      const metadata = Array.isArray(result) ? undefined : result.metadata;
-      const storyboardSpec = Array.isArray(result) ? undefined : (result as { storyboardSpec?: string }).storyboardSpec;
-      console.log(`[transcript] ${videoId}: ${source} succeeded in ${Date.now() - raceStart}ms (${segments.length} segments)`);
-      return { segments, source, metadata, storyboardSpec };
-    }).catch((err) => {
-      console.warn(`[transcript] ${videoId}: ${source} failed in ${Date.now() - raceStart}ms:`, err instanceof Error ? err.message : err);
-      throw err;
-    })
+  const result = await withTimeout(
+    fetchTranscriptWebScrape(videoId),
+    WEBSCRAPE_TIMEOUT,
+    'Web scrape',
   );
-
-  return withTimeout(
-    Promise.any(raceEntries),
-    RACE_TIMEOUT,
-    'Caption race',
-  );
-}
-
-// ─── CF Worker audio proxy ──────────────────────────────────────────────────────
-
-async function downloadAudioCfWorker(videoId: string): Promise<Buffer> {
-  const url = process.env.CF_TRANSCRIPT_WORKER_URL?.trim();
-  if (!url) throw new Error('CF_TRANSCRIPT_WORKER_URL not set');
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 120000);
-  try {
-    const resp = await fetch(`${url}?v=${videoId}&mode=audio`, { signal: controller.signal });
-    if (!resp.ok) {
-      const errText = await resp.text().catch(() => '');
-      throw new Error(`CF Worker audio: ${resp.status} - ${errText.slice(0, 200)}`);
-    }
-    const isPartial = resp.headers.get('x-audio-partial') === 'true';
-    const client = resp.headers.get('x-audio-client') || 'unknown';
-    const buf = Buffer.from(await resp.arrayBuffer());
-    if (buf.length < 1000) throw new Error('CF Worker audio: response too small (likely error)');
-    if (buf.length > MAX_AUDIO_BYTES) throw new Error(`CF Worker audio: too large (${Math.round(buf.length / 1024 / 1024)}MB)`);
-    console.log(`[transcript] CF Worker audio: ${buf.length} bytes, client=${client}, partial=${isPartial}`);
-    return buf;
-  } finally {
-    clearTimeout(timeout);
-  }
+  return {
+    segments: result.segments,
+    source: 'web-scrape' as const,
+    metadata: result.metadata,
+    storyboardSpec: result.storyboardSpec,
+  };
 }
 
 // ─── Phase 2: STT cascade ──────────────────────────────────────────────────────
 
 export async function sttCascade(videoId: string): Promise<TranscriptResult> {
   const cascadeStart = Date.now();
-  console.log(`[transcript] ${videoId}: all captions failed, starting STT cascade`);
+  console.log(`[transcript] ${videoId}: captions failed, starting STT cascade`);
 
-  // Helper: run an STT strategy with a timeout
-  async function tryStrategy<T>(
-    name: string,
-    fn: () => Promise<T>,
-  ): Promise<T> {
-    return withTimeout(fn(), STT_STRATEGY_TIMEOUT, `STT:${name}`);
-  }
-
-  // Strategy 1: CF Worker audio proxy → Groq Whisper (primary on Vercel — CF IPs not blocked)
-  const cfWorkerUrl = process.env.CF_TRANSCRIPT_WORKER_URL?.trim();
-  if (IS_VERCEL && cfWorkerUrl && isGroqAvailable()) {
-    try {
-      console.log(`[transcript] ${videoId}: trying CF Worker audio + Groq Whisper...`);
-      const result = await tryStrategy('cfworker+groq', async () => {
-        const audioBuffer = await downloadAudioCfWorker(videoId);
-        return transcribeWithGroq(audioBuffer, `${videoId}.webm`);
-      });
-      if (result.length > 0) {
-        console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (CF Worker audio, ${result.length} segments, ${Date.now() - cascadeStart}ms)`);
-        return { segments: result, source: 'groq-whisper' };
-      }
-    } catch (e) {
-      console.warn(`[transcript] ${videoId}: CF Worker audio + Groq failed (${Date.now() - cascadeStart}ms):`, e instanceof Error ? e.message : e);
-    }
-  }
-
-  // Strategy 1b: CF Worker audio proxy → Deepgram (fallback STT for CF audio)
-  if (IS_VERCEL && cfWorkerUrl && isDeepgramAvailable()) {
-    try {
-      console.log(`[transcript] ${videoId}: trying CF Worker audio + Deepgram...`);
-      const result = await tryStrategy('cfworker+deepgram', async () => {
-        const audioBuffer = await downloadAudioCfWorker(videoId);
-        return transcribeWithDeepgram(audioBuffer, `${videoId}.webm`);
-      });
-      if (result.length > 0) {
-        console.log(`[transcript] ${videoId}: transcribed via Deepgram (CF Worker audio, ${result.length} segments, ${Date.now() - cascadeStart}ms)`);
-        return { segments: result, source: 'deepgram' };
-      }
-    } catch (e) {
-      console.warn(`[transcript] ${videoId}: CF Worker audio + Deepgram failed (${Date.now() - cascadeStart}ms):`, e instanceof Error ? e.message : e);
-    }
+  // Strategy 1: WhisperX (free, best quality, word-level timestamps)
+  try {
+    const result = await withTimeout(fetchTranscriptWhisperX(videoId), 180_000, 'WhisperX');
+    console.log(`[transcript] ${videoId}: transcribed via WhisperX (${result.segments.length} segments, ${Date.now() - cascadeStart}ms)`);
+    return result;
+  } catch (e) {
+    console.warn(`[transcript] WhisperX failed:`, e instanceof Error ? e.message : e);
   }
 
   // Strategy 2: Web scrape audio → Groq Whisper
   if (isGroqAvailable()) {
     try {
-      console.log(`[transcript] ${videoId}: trying web scrape audio + Groq Whisper...`);
-      const result = await tryStrategy('webscrape+groq', async () => {
-        const audioBuffer = await downloadAudioWebScrape(videoId);
-        return transcribeWithGroq(audioBuffer, `${videoId}.webm`);
-      });
-      if (result.length > 0) {
-        console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (web scrape, ${result.length} segments, ${Date.now() - cascadeStart}ms)`);
-        return { segments: result, source: 'groq-whisper' };
+      const audio = await downloadAudioWebScrape(videoId);
+      const segments = await transcribeWithGroq(audio, `${videoId}.webm`);
+      if (segments.length > 0) {
+        console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (${segments.length} segments, ${Date.now() - cascadeStart}ms)`);
+        return { segments, source: 'groq-whisper' };
       }
     } catch (e) {
-      console.warn(`[transcript] ${videoId}: web scrape + Groq failed (${Date.now() - cascadeStart}ms):`, e instanceof Error ? e.message : e);
+      console.warn(`[transcript] Groq failed:`, e instanceof Error ? e.message : e);
     }
   }
 
-  // Strategy 2b: Web scrape audio → Deepgram Nova-2 (fallback STT)
+  // Strategy 3: Web scrape audio → Deepgram
   if (isDeepgramAvailable()) {
     try {
-      console.log(`[transcript] ${videoId}: trying web scrape audio + Deepgram...`);
-      const result = await tryStrategy('webscrape+deepgram', async () => {
-        const audioBuffer = await downloadAudioWebScrape(videoId);
-        return transcribeWithDeepgram(audioBuffer, `${videoId}.webm`);
-      });
-      if (result.length > 0) {
-        console.log(`[transcript] ${videoId}: transcribed via Deepgram (web scrape, ${result.length} segments, ${Date.now() - cascadeStart}ms)`);
-        return { segments: result, source: 'deepgram' };
+      const audio = await downloadAudioWebScrape(videoId);
+      const segments = await transcribeWithDeepgram(audio, `${videoId}.webm`);
+      if (segments.length > 0) {
+        console.log(`[transcript] ${videoId}: transcribed via Deepgram (${segments.length} segments, ${Date.now() - cascadeStart}ms)`);
+        return { segments, source: 'deepgram' };
       }
     } catch (e) {
-      console.warn(`[transcript] ${videoId}: web scrape + Deepgram failed (${Date.now() - cascadeStart}ms):`, e instanceof Error ? e.message : e);
-    }
-  }
-
-  // Strategy 3: Innertube audio → Groq Whisper (may fail from datacenter IPs)
-  if (isGroqAvailable()) {
-    try {
-      console.log(`[transcript] ${videoId}: trying Innertube audio + Groq Whisper...`);
-      const result = await tryStrategy('innertube+groq', async () => {
-        const audioBuffer = await downloadAudioHTTP(videoId);
-        return transcribeWithGroq(audioBuffer, `${videoId}.webm`);
-      });
-      if (result.length > 0) {
-        console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (Innertube, ${result.length} segments, ${Date.now() - cascadeStart}ms)`);
-        return { segments: result, source: 'groq-whisper' };
-      }
-    } catch (e) {
-      console.warn(`[transcript] ${videoId}: Innertube + Groq failed (${Date.now() - cascadeStart}ms):`, e instanceof Error ? e.message : e);
-    }
-  }
-
-  // Strategy 4: yt-dlp audio download → Groq or local Whisper (works locally, NOT on Vercel)
-  if (IS_VERCEL) {
-    throw new Error('All STT tiers failed (yt-dlp not available on Vercel)');
-  }
-
-  let audioPath: string | null = null;
-  try {
-    audioPath = await downloadAudio(videoId);
-  } catch (e) {
-    console.warn(`[transcript] ${videoId}: yt-dlp audio download failed:`, e instanceof Error ? e.message : e);
-  }
-
-  if (audioPath) {
-    try {
-      if (isGroqAvailable()) {
-        try {
-          console.log(`[transcript] ${videoId}: trying Groq Whisper (yt-dlp audio)...`);
-          const audioBuffer = await readFile(audioPath);
-          const segments = await transcribeWithGroq(audioBuffer, `${videoId}.wav`);
-          if (segments.length > 0) {
-            console.log(`[transcript] ${videoId}: transcribed via Groq Whisper (${segments.length} segments)`);
-            return { segments, source: 'groq-whisper' };
-          }
-        } catch (e) {
-          console.warn(`[transcript] ${videoId}: Groq Whisper failed:`, e instanceof Error ? e.message : e);
-        }
-      }
-
-      try {
-        console.log(`[transcript] ${videoId}: trying local Whisper...`);
-        const segments = await fetchTranscriptLocalWhisper(audioPath);
-        console.log(`[transcript] ${videoId}: transcribed via local Whisper (${segments.length} segments)`);
-        return { segments, source: 'local-whisper' };
-      } catch (e) {
-        console.warn(`[transcript] ${videoId}: local Whisper failed:`, e instanceof Error ? e.message : e);
-      }
-    } finally {
-      await unlink(audioPath).catch(() => {});
+      console.warn(`[transcript] Deepgram failed:`, e instanceof Error ? e.message : e);
     }
   }
 
@@ -878,8 +543,8 @@ export async function sttCascade(videoId: string): Promise<TranscriptResult> {
 /**
  * Fetch transcript for a YouTube video.
  *
- * Phase 1: Caption race (web scrape + caption-extractor + Innertube + yt-dlp in parallel)
- * Phase 2: STT cascade (web scrape audio → Groq/Deepgram → Innertube audio → yt-dlp + Whisper)
+ * Phase 1: Web scrape captions
+ * Phase 2: STT cascade (WhisperX → Groq → Deepgram)
  *
  * Wrapped in an overall pipeline timeout to stay within Vercel's maxDuration.
  */
@@ -887,13 +552,13 @@ export async function fetchTranscript(videoId: string): Promise<TranscriptResult
   const pipelineStart = Date.now();
 
   const run = async (): Promise<TranscriptResult> => {
-    // Phase 1: Caption race
+    // Phase 1: Web scrape captions
     try {
       const result = await captionRace(videoId);
       console.log(`[transcript] ${videoId}: fetched via ${result.source} (${result.segments.length} segments, total ${Date.now() - pipelineStart}ms)`);
       return result;
     } catch (e) {
-      console.warn(`[transcript] ${videoId}: caption race failed (${Date.now() - pipelineStart}ms):`, e instanceof Error ? e.message : e);
+      console.warn(`[transcript] ${videoId}: caption fetch failed (${Date.now() - pipelineStart}ms):`, e instanceof Error ? e.message : e);
     }
 
     // Phase 2: STT cascade

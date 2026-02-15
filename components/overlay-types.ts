@@ -12,8 +12,6 @@ import type { LearnOption } from "@/hooks/useLearnOptions";
 import type { UnifiedExchange } from "./ExchangeMessage";
 import type { ToolCallData } from "./ToolRenderers";
 
-export type ViewSize = "compact" | "default" | "expanded";
-
 export interface LearnState {
   phase: LearnModePhase;
   selectedAction: LearnAction | null;
@@ -45,14 +43,13 @@ export interface VoiceControls {
   onStart: () => void;
   onStop: () => void;
   onCancel: () => void;
+  onStopPlayback: () => void;
   duration: number;
   error: string | null;
 }
 
 export interface InteractionOverlayProps {
-  expanded: boolean;
-  phase?: import('@/hooks/useOverlayPhase').OverlayPhase;
-  lingerProgress?: number;
+  phase: import('@/hooks/useOverlayPhase').OverlayPhase;
   segments: TranscriptSegment[];
   currentTime: number;
   videoId: string;
@@ -70,6 +67,7 @@ export interface InteractionOverlayProps {
   onStartRecording: () => void;
   onStopRecording: () => void;
   onCancelRecording: () => void;
+  onStopPlayback: () => void;
 
   // Text state
   isTextStreaming: boolean;
@@ -100,13 +98,9 @@ export interface InteractionOverlayProps {
   exchanges: UnifiedExchange[];
   onClearHistory: () => void;
 
-  videoDimLevel: number;
   onSeek: (seconds: number) => void;
   onClose: () => void;
-  onExpandOverlay?: () => void;
-  onInteract?: () => void;
   inputRef?: RefObject<HTMLElement | null>;
-  inputVisible?: boolean;
   onInputFocus?: () => void;
   onInputBlur?: () => void;
 
@@ -147,13 +141,16 @@ export interface InteractionOverlayProps {
   isThinking: boolean;
   thinkingDuration: number | null;
 
-  // View size for scaling input strip + captions
-  viewSize?: ViewSize;
-
   // Storyboard data for timestamp hover cards
   storyboardLevels?: StoryboardLevel[];
 
   // Interval selection
   interval?: IntervalSelection | null;
   onClearInterval?: () => void;
+
+  // Side panel open state (disables Knowledge Drawer when true)
+  sideOpen?: boolean;
+
+  // Video paused state (for caret color)
+  isPaused?: boolean;
 }

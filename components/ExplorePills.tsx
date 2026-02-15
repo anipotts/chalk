@@ -118,7 +118,7 @@ export function ExplorePills({ options, onSelect, onFocusInput, disabled = false
             onClick={() => handleSelect(option, index)}
             disabled={disabled}
             className={`
-              rounded-lg text-sm px-3 py-1.5 transition-colors
+              inline-flex items-center rounded-lg text-sm px-3 py-1.5 transition-colors
               ${isSomethingElse
                 ? 'bg-white/[0.03] border border-dashed border-white/[0.15] text-slate-500 hover:text-slate-300 hover:bg-white/[0.06]'
                 : 'bg-white/[0.06] border border-white/[0.08] text-slate-300 hover:bg-white/[0.1] hover:text-white'

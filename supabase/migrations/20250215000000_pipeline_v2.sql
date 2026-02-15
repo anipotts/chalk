@@ -32,6 +32,9 @@
 -- especially at low row counts where IVFFlat centroids are poorly trained.
 -- Parameters: m=16 (connections per node), ef_construction=64 (build quality).
 
+-- Ensure pgvector operator classes are visible (extension lives in 'extensions' schema on Supabase)
+SET search_path = public, extensions;
+
 DROP INDEX IF EXISTS idx_concepts_embedding;
 DROP INDEX IF EXISTS idx_ke_embedding;
 

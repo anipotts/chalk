@@ -110,7 +110,7 @@ export function TranscriptPanel({
             <span className="text-xs font-medium text-chalk-text">Transcript</span>
             {source && (
               <span className={`text-[9px] px-1.5 py-0.5 rounded-full border uppercase tracking-wider ${
-                source === 'groq-whisper' || source === 'local-whisper'
+                source === 'groq-whisper' || source === 'whisperx' || source === 'deepgram'
                   ? 'bg-amber-500/10 border-amber-500/30 text-amber-400'
                   : 'bg-chalk-surface/60 border-chalk-border/30 text-slate-500'
               }`}>
@@ -166,7 +166,7 @@ export function TranscriptPanel({
       )}
 
       {/* STT quality warning — hidden on mobile */}
-      {!isMobile && (source === 'groq-whisper' || source === 'local-whisper') && status === 'complete' && (
+      {!isMobile && (source === 'groq-whisper' || source === 'whisperx' || source === 'deepgram') && status === 'complete' && (
         <div className="flex-none px-4 py-2 bg-amber-500/[0.06] border-b border-amber-500/20">
           <p className="text-[10px] text-amber-400/80">
             Auto-transcribed — timestamps may be approximate

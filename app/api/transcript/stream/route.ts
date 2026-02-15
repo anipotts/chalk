@@ -13,6 +13,7 @@
  *   error    → { message }
  */
 
+import { after } from 'next/server';
 import { captionRace, sttCascade, deduplicateSegments, cleanSegments, mergeIntoSentences, fetchStoryboardSpec, type TranscriptSegment, type TranscriptSource, type VideoMetadata } from '@/lib/transcript';
 import { getCachedTranscript, setCachedTranscript } from '@/lib/transcript-cache';
 
@@ -102,7 +103,7 @@ export async function GET(req: Request) {
 
         // ── Phase 2: STT cascade (only if captions failed) ───────────────
         if (!segments || segments.length === 0) {
-          send('status', { phase: 'downloading', message: 'Downloading audio for transcription...' });
+          send('status', { phase: 'transcribing', message: 'Transcribing audio...' });
 
           try {
             const result = await sttCascade(videoId);
@@ -146,6 +147,26 @@ export async function GET(req: Request) {
 
         // ── Cache result (fire-and-forget) ───────────────────────────────
         setCachedTranscript(videoId, segments, source);
+
+        // ── Trigger knowledge extraction via after() ────────────────────
+        // after() runs after the response stream completes, keeping the
+        // function alive long enough to fire the extraction HTTP call.
+        if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+          after(async () => {
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+            try {
+              // Fire extraction to separate Vercel function (maxDuration=300s)
+              await fetch(`${baseUrl}/api/extract`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ videoId }),
+                signal: AbortSignal.timeout(10_000),
+              });
+            } catch (e) {
+              console.error(`[extract] trigger failed for ${videoId}:`, e instanceof Error ? e.message : e);
+            }
+          });
+        }
 
         clearInterval(heartbeat);
         controller.close();

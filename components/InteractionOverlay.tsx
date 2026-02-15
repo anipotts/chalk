@@ -5,7 +5,6 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
-import { AnimatePresence } from "framer-motion";
 import type { UnifiedExchange } from "./ExchangeMessage";
 import type { LearnAction } from "@/hooks/useLearnMode";
 import { storageKey } from "@/lib/brand";
@@ -23,9 +22,7 @@ import { VideoTimeProvider } from "./VideoTimeContext";
 /* --- Main component: InteractionOverlay (thin shell) --- */
 
 export function InteractionOverlay({
-  expanded,
   phase,
-  lingerProgress,
   segments,
   currentTime,
   videoId,
@@ -43,6 +40,7 @@ export function InteractionOverlay({
   onStartRecording,
   onStopRecording,
   onCancelRecording,
+  onStopPlayback,
 
   // Text
   isTextStreaming,
@@ -66,13 +64,9 @@ export function InteractionOverlay({
   exchanges,
   onClearHistory,
 
-  videoDimLevel,
   onSeek,
   onClose,
-  onExpandOverlay,
-  onInteract,
   inputRef,
-  inputVisible,
   onInputFocus,
   onInputBlur,
 
@@ -111,13 +105,16 @@ export function InteractionOverlay({
   isThinking,
   thinkingDuration,
 
+  sideOpen,
   storyboardLevels,
   interval,
   onClearInterval,
+  isPaused,
 }: InteractionOverlayProps) {
   const [input, setInput] = useState("");
   const [inputStripHeight, setInputStripHeight] = useState(72);
 
+  const visible = phase === 'chatting';
   const isTextMode = voiceState === "idle";
 
   // One-time cleanup of old localStorage keys
@@ -141,23 +138,11 @@ export function InteractionOverlay({
     isLearnModeActive ||
     exploreMode;
 
-  // Show idle hint when: text mode + no exchanges + no input + no current text exchange + not in learn mode
-  const showIdleHint =
-    isTextMode &&
-    exchanges.length === 0 &&
-    !input &&
-    !currentUserText &&
-    !currentAiText &&
-    !isTextStreaming &&
-    !isLearnModeActive &&
-    !exploreMode;
-
   const handleSubmit = useCallback(async () => {
     if (!input.trim()) return;
     const text = input.trim();
     setInput("");
 
-    // If learn mode was active, exit it first (typing freely enters explore chat)
     if (isLearnModeActive) {
       onStopLearnMode();
     }
@@ -169,7 +154,6 @@ export function InteractionOverlay({
     }
   }, [input, exploreMode, isLearnModeActive, onStopLearnMode, onTextSubmit, onExploreSubmit]);
 
-  // Handle pill selection (explore chat follow-up pills)
   const handlePillSelect = useCallback(
     (option: string) => {
       onExploreSubmit(option);
@@ -177,25 +161,20 @@ export function InteractionOverlay({
     [onExploreSubmit],
   );
 
-  // Handle unified option card click (triggers learn mode flow)
   const handleOptionCardClick = useCallback(
     (action: LearnAction) => {
       onOpenLearnMode();
-      // Execute action after state reset
       setTimeout(() => onSelectAction(action), 0);
     },
     [onOpenLearnMode, onSelectAction],
   );
 
-  // Focus text input (for "Something else..." pill)
   const focusInput = useCallback(() => {
     inputRef?.current?.focus();
   }, [inputRef]);
 
-  // Streaming state is now unified -- no mode switching needed
   const showExploreUI = exploreMode;
 
-  // Construct grouped objects for sub-components
   const learnState: LearnState = {
     phase: learnPhase,
     selectedAction: learnSelectedAction,
@@ -227,31 +206,23 @@ export function InteractionOverlay({
     onStart: onStartRecording,
     onStop: onStopRecording,
     onCancel: onCancelRecording,
+    onStopPlayback,
     duration: recordingDuration,
     error: voiceError,
   };
 
   return (
     <>
-      {/* Expandable message overlay -- visible when expanded OR when typing with history */}
-      <AnimatePresence>
-        {(expanded || (inputVisible && exchanges.length > 0)) && (
-          <div
-            className={`absolute inset-0 md:inset-auto md:top-0 md:left-0 md:right-0 md:aspect-video z-10 flex flex-col md:rounded-xl md:overflow-hidden ${
-              hasContent ? 'md:shadow-[0_20px_40px_-12px_rgba(0,0,0,0.5)]' : ''
-            }`}
-            style={phase === 'lingering' && lingerProgress !== undefined
-              ? { opacity: Math.max(0, 1 - lingerProgress * 1.2) }
-              : undefined
-            }
-            onPointerDown={phase === 'lingering' ? onInteract : undefined}
-            onScroll={phase === 'lingering' ? onInteract : undefined}
-          >
-            <OverlayBackdrop videoDimLevel={videoDimLevel} onClose={onClose} />
-            <VideoTimeProvider currentTime={currentTime} isPaused={phase === 'dormant'}>
+      {/* Message overlay — visible when chatting */}
+      {visible && (
+        <div
+          className="absolute inset-0 md:inset-auto md:top-0 md:left-0 md:right-0 md:aspect-video z-10 flex flex-col md:rounded-xl md:overflow-hidden transition-opacity duration-150"
+        >
+          <OverlayBackdrop visible={visible} onClick={onClose} />
+          <VideoTimeProvider currentTime={currentTime} isPaused={false}>
             <MessagePanel
               hasContent={hasContent}
-              expanded={expanded}
+              expanded={visible}
               exchanges={exchanges}
               segments={segments}
               videoId={videoId}
@@ -284,17 +255,18 @@ export function InteractionOverlay({
               videoTitle={videoTitle}
               tooltipSegments={segments}
               storyboardLevels={storyboardLevels}
+              sideOpen={sideOpen}
+              isPaused={isPaused}
             />
-            </VideoTimeProvider>
-            {/* Dynamic spacer for input strip on mobile -- matches measured height */}
-            <div className="md:hidden flex-none" style={{ height: inputStripHeight }} />
-          </div>
-        )}
-      </AnimatePresence>
+          </VideoTimeProvider>
+          {/* Dynamic spacer for input strip on mobile */}
+          <div className="md:hidden flex-none" style={{ height: inputStripHeight }} />
+        </div>
+      )}
 
       {/* Input strip -- below video on desktop, bottom-pinned on mobile */}
       <InputStripContent
-        expanded={expanded}
+        phase={phase}
         input={input}
         setInput={setInput}
         handleSubmit={handleSubmit}
@@ -309,13 +281,13 @@ export function InteractionOverlay({
           }
         }}
         inputRef={inputRef}
-        inputVisible={inputVisible}
         onInputFocus={onInputFocus}
         onInputBlur={onInputBlur}
         voiceControls={voiceControls}
         recordingDuration={recordingDuration}
         exchanges={exchanges}
         onClearHistory={onClearHistory}
+        onClose={onClose}
         curriculumContext={curriculumContext}
         curriculumVideoCount={curriculumVideoCount}
         onHeightChange={setInputStripHeight}

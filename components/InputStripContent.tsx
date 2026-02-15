@@ -11,51 +11,12 @@ import type { UnifiedExchange } from "./ExchangeMessage";
 import {
   Microphone,
   StopCircle,
-  PaperPlaneTilt,
+  ArrowUp,
   X,
 } from "@phosphor-icons/react";
 import type { VoiceControls } from "./overlay-types";
+import type { OverlayPhase } from "@/hooks/useOverlayPhase";
 import { formatInterval, type IntervalSelection } from "@/lib/video-utils";
-
-/* --- Voice mode visual elements --- */
-
-function SoundWaveBars() {
-  const bars = [0.4, 0.7, 1, 0.6, 0.9, 0.5, 0.8];
-  return (
-    <div className="flex items-end gap-[3px] h-8">
-      {bars.map((maxScale, i) => (
-        <motion.div
-          key={i}
-          className="w-[3px] rounded-full bg-emerald-400"
-          animate={{
-            height: ["8px", `${maxScale * 32}px`, "8px"],
-          }}
-          transition={{
-            duration: 0.6 + i * 0.1,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: i * 0.08,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function ThinkingDots() {
-  return (
-    <div className="flex items-center gap-1.5">
-      {[0, 1, 2].map((i) => (
-        <motion.div
-          key={i}
-          className="w-2 h-2 rounded-full bg-chalk-accent"
-          animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.1, 0.8] }}
-          transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
-        />
-      ))}
-    </div>
-  );
-}
 
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
@@ -66,7 +27,7 @@ function formatDuration(seconds: number): string {
 /* --- InputStripContent --- */
 
 export interface InputStripContentProps {
-  expanded: boolean;
+  phase: OverlayPhase;
   input: string;
   setInput: (value: string) => void;
   handleSubmit: () => void;
@@ -75,7 +36,6 @@ export interface InputStripContentProps {
   toggleExploreMode: () => void;
   onStopStream: () => void;
   inputRef?: RefObject<HTMLElement | null>;
-  inputVisible?: boolean;
   onInputFocus?: () => void;
   onInputBlur?: () => void;
 
@@ -86,6 +46,7 @@ export interface InputStripContentProps {
   // Exchanges for clear button
   exchanges: UnifiedExchange[];
   onClearHistory: () => void;
+  onClose?: () => void;
 
   // Curriculum
   curriculumContext?: string | null;
@@ -100,7 +61,7 @@ export interface InputStripContentProps {
 }
 
 export function InputStripContent({
-  expanded,
+  phase,
   input,
   setInput,
   handleSubmit,
@@ -109,13 +70,13 @@ export function InputStripContent({
   toggleExploreMode,
   onStopStream,
   inputRef,
-  inputVisible,
   onInputFocus,
   onInputBlur,
   voiceControls,
   recordingDuration,
   exchanges,
   onClearHistory,
+  onClose,
   curriculumContext,
   curriculumVideoCount,
   onHeightChange,
@@ -123,6 +84,7 @@ export function InputStripContent({
   onClearInterval,
 }: InputStripContentProps) {
   const stripRef = useRef<HTMLDivElement>(null);
+  const expanded = phase === 'chatting';
 
   // Report height changes via ResizeObserver for dynamic spacer
   useEffect(() => {
@@ -138,31 +100,12 @@ export function InputStripContent({
   }, [onHeightChange]);
 
   return (
-    <div ref={stripRef} data-input-strip className={`absolute bottom-0 left-0 right-0 z-[32] pointer-events-none md:relative md:inset-auto md:w-full md:z-auto transition-opacity duration-200 ease-out ${
-      inputVisible === false ? 'md:opacity-0 md:pointer-events-none' : 'md:opacity-100'
+    <div ref={stripRef} data-input-strip className={`absolute bottom-0 left-0 right-0 z-[32] pointer-events-none md:relative md:inset-auto md:w-full md:z-auto transition-opacity duration-150 ${
+      phase === 'watching' ? 'md:opacity-60' : 'md:opacity-100'
     }`}>
       <div className={`pointer-events-auto px-3 pb-3 md:px-0 md:pb-0 md:pt-3 ${expanded ? 'bg-chalk-surface/95 backdrop-blur-md md:bg-transparent md:backdrop-blur-none' : 'pt-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent md:from-transparent md:via-transparent md:pt-3 md:bg-none'}`}>
-        {/* Interval selection pill */}
-        {interval && (
-          <div className="flex items-center gap-1.5 mb-1.5">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-300 bg-amber-500/15 border border-amber-400/30 rounded-full px-2.5 py-1 font-mono" title="Selected interval — double-click timeline or click X to clear">
-              {formatInterval(interval.startTime, interval.endTime)}
-              {onClearInterval && (
-                <button
-                  type="button"
-                  onClick={onClearInterval}
-                  className="ml-0.5 text-amber-400/60 hover:text-amber-300 transition-colors"
-                  aria-label="Clear interval selection"
-                >
-                  <X size={10} weight="bold" />
-                </button>
-              )}
-            </span>
-          </div>
-        )}
-
-        {/* Unified input row */}
-        <div className="flex gap-2 items-center">
+        {/* Unified input row — constrained width on desktop, centered */}
+        <div className="flex gap-2 items-end md:max-w-3xl md:mx-auto">
           {/* Curriculum context badge */}
           {curriculumContext &&
             curriculumVideoCount &&
@@ -187,112 +130,124 @@ export function InputStripContent({
             onToggleExplore={toggleExploreMode}
             onFocus={onInputFocus}
             onBlur={onInputBlur}
-          />
-
-          {/* Mic button */}
-          <motion.button
-            className={`flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-all ${
-              voiceControls.state === "recording"
-                ? "bg-rose-500 shadow-lg shadow-rose-500/30"
-                : voiceControls.state === "speaking"
-                  ? "bg-emerald-500/20"
-                  : voiceControls.state === "transcribing" ||
-                      voiceControls.state === "thinking"
-                    ? "bg-chalk-accent/20"
-                    : "bg-white/[0.06] hover:bg-white/[0.10]"
-            }`}
-            onPointerDown={(e) => {
-              e.preventDefault();
-              if (voiceControls.state === "idle") voiceControls.onStart();
-            }}
-            onPointerUp={(e) => {
-              e.preventDefault();
-              if (voiceControls.state === "recording") voiceControls.onStop();
-            }}
-            onPointerLeave={(e) => {
-              e.preventDefault();
-              if (voiceControls.state === "recording") voiceControls.onStop();
-            }}
-            whileTap={{ scale: 0.95 }}
-            title="Hold to record voice"
-            aria-label={
-              voiceControls.state === "recording"
-                ? "Recording -- release to stop"
-                : voiceControls.state === "speaking"
-                  ? "Speaker is responding"
-                  : "Hold to record voice"
-            }
-          >
-            {voiceControls.state === "speaking" ? (
-              <div className="scale-75">
-                <SoundWaveBars />
+            topBar={interval ? (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 border-b border-white/[0.06]">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-300 bg-amber-500/15 border border-amber-400/30 rounded-full px-2.5 py-1 font-mono" title="Selected interval — double-click timeline or click X to clear">
+                  {formatInterval(interval.startTime, interval.endTime)}
+                  {onClearInterval && (
+                    <button
+                      type="button"
+                      onClick={onClearInterval}
+                      className="ml-0.5 text-amber-400/60 hover:text-amber-300 transition-colors"
+                      aria-label="Clear interval selection"
+                    >
+                      <X size={10} weight="bold" />
+                    </button>
+                  )}
+                </span>
               </div>
-            ) : voiceControls.state === "transcribing" ||
-              voiceControls.state === "thinking" ? (
-              <ThinkingDots />
-            ) : (
-              <Microphone
-                size={20}
-                weight="fill"
-                className={
-                  voiceControls.state === "recording"
-                    ? "text-white"
-                    : "text-white/70"
-                }
-              />
-            )}
-          </motion.button>
-
-          {/* Send/Stop button */}
-          {isTextStreaming ? (
-            <button
-              type="button"
-              onClick={onStopStream}
-              className="flex flex-shrink-0 justify-center items-center w-11 h-11 text-red-400 rounded-xl transition-colors bg-red-500/15 hover:bg-red-500/25"
-              title="Stop"
-              aria-label="Stop response"
-            >
-              <StopCircle size={16} weight="fill" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={!input.trim()}
-              className="flex flex-shrink-0 justify-center items-center w-11 h-11 rounded-xl transition-colors bg-chalk-accent/15 text-chalk-accent hover:bg-chalk-accent/25 disabled:opacity-30 disabled:hover:bg-chalk-accent/15"
-              title="Send"
-              aria-label="Send message"
-            >
-              <PaperPlaneTilt size={16} weight="fill" />
-            </button>
-          )}
+            ) : undefined}
+            actions={<>
+              {/* Close affordance — subtle esc hint, only when conversation exists */}
+              {onClose && exchanges.length > 0 && (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="hidden md:flex items-center h-8 px-2 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-400 transition-colors"
+                  title="Close overlay (Esc)"
+                  aria-label="Close overlay"
+                >
+                  esc
+                </button>
+              )}
+              {isTextStreaming ? (
+                <button
+                  type="button"
+                  onClick={onStopStream}
+                  className="flex flex-shrink-0 justify-center items-center w-8 h-8 text-red-400 rounded-lg transition-colors bg-red-500/15 hover:bg-red-500/25"
+                  title="Stop"
+                  aria-label="Stop response"
+                >
+                  <StopCircle size={14} weight="fill" />
+                </button>
+              ) : voiceControls.state !== "idle" ? (
+                <motion.button
+                  className={`flex-shrink-0 h-8 rounded-lg flex items-center justify-center transition-all px-2.5 ${
+                    voiceControls.state === "recording"
+                      ? "bg-rose-500 shadow-lg shadow-rose-500/30"
+                      : voiceControls.state === "speaking"
+                        ? "bg-emerald-500/20 hover:bg-emerald-500/30 cursor-pointer"
+                        : "bg-chalk-accent/20"
+                  }`}
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                  }}
+                  onPointerUp={(e) => {
+                    e.preventDefault();
+                    if (voiceControls.state === "recording") voiceControls.onStop();
+                    else if (voiceControls.state === "speaking") voiceControls.onStopPlayback();
+                  }}
+                  onPointerLeave={(e) => {
+                    e.preventDefault();
+                    if (voiceControls.state === "recording") voiceControls.onStop();
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  aria-label={
+                    voiceControls.state === "recording"
+                      ? "Recording -- release to stop"
+                      : voiceControls.state === "speaking"
+                        ? "Stop speaking"
+                        : "Processing voice"
+                  }
+                >
+                  <span className={`text-[11px] font-medium whitespace-nowrap flex items-center gap-1 ${
+                    voiceControls.state === "recording"
+                      ? "text-white"
+                      : voiceControls.state === "speaking"
+                        ? "text-emerald-400"
+                        : "text-chalk-accent"
+                  }`}>
+                    {voiceControls.state === "recording" && `Listening ${formatDuration(recordingDuration)}`}
+                    {voiceControls.state === "transcribing" && "Transcribing..."}
+                    {voiceControls.state === "thinking" && "Thinking..."}
+                    {voiceControls.state === "speaking" && <><StopCircle size={10} weight="fill" /> Stop</>}
+                  </span>
+                </motion.button>
+              ) : input.trim() ? (
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  className="flex flex-shrink-0 justify-center items-center w-8 h-8 rounded-lg transition-colors bg-chalk-accent/15 text-chalk-accent hover:bg-chalk-accent/25"
+                  title="Send"
+                  aria-label="Send message"
+                >
+                  <ArrowUp size={14} weight="bold" />
+                </button>
+              ) : (
+                <motion.button
+                  className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center bg-white/[0.06] hover:bg-white/[0.10] transition-all"
+                  onPointerDown={(e) => {
+                    e.preventDefault();
+                    if (voiceControls.state === "idle") voiceControls.onStart();
+                  }}
+                  onPointerUp={(e) => {
+                    e.preventDefault();
+                    if (voiceControls.state === "recording") voiceControls.onStop();
+                  }}
+                  onPointerLeave={(e) => {
+                    e.preventDefault();
+                    if (voiceControls.state === "recording") voiceControls.onStop();
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  title="Hold to record voice"
+                  aria-label="Hold to record voice"
+                >
+                  <Microphone size={16} weight="fill" className="text-white/70" />
+                </motion.button>
+              )}
+            </>}
+          />
         </div>
-
-        {/* Voice state indicator when recording/processing */}
-        {voiceControls.state !== "idle" && (
-          <motion.div
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -5 }}
-            className="mt-3 text-center"
-          >
-            <p
-              className={`text-sm font-medium ${
-                voiceControls.state === "recording"
-                  ? "text-rose-400"
-                  : voiceControls.state === "speaking"
-                    ? "text-emerald-400"
-                    : "text-chalk-accent"
-              }`}
-            >
-              {voiceControls.state === "recording" &&
-                `Recording... ${formatDuration(recordingDuration)}`}
-              {voiceControls.state === "transcribing" && "Transcribing..."}
-              {voiceControls.state === "thinking" && "Thinking..."}
-              {voiceControls.state === "speaking" && "Speaking..."}
-            </p>
-          </motion.div>
-        )}
 
         {/* Voice error */}
         {voiceControls.error && (

@@ -43,6 +43,7 @@ interface UseUnifiedModeReturn {
   startRecording: () => void;
   stopRecording: () => void;
   cancelRecording: () => void;
+  stopPlayback: () => void;
   recordingDuration: number;
   voiceTranscript: string;
   voiceResponseText: string;
@@ -516,6 +517,7 @@ export function useUnifiedMode({
     startRecording: voice.startRecording,
     stopRecording: voice.stopRecording,
     cancelRecording: voice.cancelRecording,
+    stopPlayback: voice.stopPlayback,
     recordingDuration: voice.recordingDuration,
     voiceTranscript: voice.transcript,
     voiceResponseText: voice.responseText,
