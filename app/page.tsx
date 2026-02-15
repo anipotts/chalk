@@ -10,6 +10,7 @@ import { storageKey } from '@/lib/brand';
 import { AnimatePresence } from 'framer-motion';
 
 import SearchDropdown from '@/components/SearchDropdown';
+import { HeroBanner3D } from '@/components/HeroBanner3D';
 
 const RECENT_VIDEOS_KEY = storageKey('recent-videos');
 
@@ -335,7 +336,7 @@ function HomePage() {
   // The search input element (shared between orbit center and raised state)
   const searchInput = (
     <div className="w-full max-w-lg mx-auto relative">
-      <div className="flex items-center gap-0 px-1 py-1 rounded-xl bg-chalk-surface/40 border border-chalk-border/30 focus-within:ring-2 focus-within:ring-chalk-accent/40 focus-within:border-chalk-accent/30 transition-colors backdrop-blur-sm">
+      <div className="flex items-center gap-0 px-1 py-1 rounded-xl bg-white/[0.06] border border-white/[0.08] focus-within:ring-1 focus-within:ring-chalk-accent/30 focus-within:border-white/[0.15] transition-all duration-300 backdrop-blur-2xl shadow-[0_0_80px_30px_rgba(0,0,0,0.6),0_1px_3px_rgba(0,0,0,0.4)]" style={{ backdropFilter: 'blur(40px) saturate(130%)', WebkitBackdropFilter: 'blur(40px) saturate(130%)' }}>
         <input
           ref={inputRef}
           type="text"
@@ -390,26 +391,33 @@ function HomePage() {
   const showFilterPills = activeTab === 'search' && inputValue.length >= 2;
 
   return (
-    <div className="h-screen bg-chalk-bg flex flex-col overflow-hidden">
-      {/* Header area — smooth paddingTop transition between centered and raised */}
-      <div
-        className="flex flex-col items-center px-4 shrink-0 transition-[padding] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
-        style={{ paddingTop: isVisuallyRaised ? '3rem' : 'calc(50vh - 80px)', paddingBottom: isVisuallyRaised ? '0.5rem' : '0' }}
-      >
-        <div className="w-full max-w-2xl">
-          {/* Logo and tagline — single element with smooth scale/opacity */}
-          <div className={`text-center mb-2 transition-all duration-500 origin-center ${isVisuallyRaised ? 'scale-75' : 'scale-100'}`}>
-            <h1 className="text-2xl font-bold text-chalk-text mb-1.5 flex items-center justify-center gap-2">
-              <ChalkboardSimple size={28} />
-              chalk
-            </h1>
-            <div className={`transition-all duration-500 overflow-hidden ${isVisuallyRaised ? 'opacity-0 max-h-0' : 'opacity-100 max-h-8'}`}>
-              <p className="text-sm text-slate-500 mb-2">
-                Learn from any YouTube video with AI
-              </p>
-            </div>
-          </div>
+    <div className="h-screen bg-chalk-bg flex flex-col overflow-hidden relative">
+      {/* 3D Hero Banner — background layer */}
+      <div className="fixed inset-0 z-0" style={{ pointerEvents: 'none' }}>
+        <div style={{ pointerEvents: 'auto' }}>
+          <HeroBanner3D />
+        </div>
+      </div>
 
+      {/* Logo and tagline — fixed at top */}
+      <div className="relative z-30 pt-8 pb-2 text-center pointer-events-none">
+        <div className="pointer-events-auto inline-block">
+          <h1 className="text-2xl font-semibold text-white/90 mb-1.5 flex items-center justify-center gap-2 tracking-tight">
+            <ChalkboardSimple size={26} weight="light" />
+            chalk
+          </h1>
+          <p className="text-[13px] text-white/30 tracking-wide">
+            Learn from any YouTube video with AI
+          </p>
+        </div>
+      </div>
+
+      {/* Search area — centered in remaining space */}
+      <div
+        className="flex-1 flex flex-col items-center px-4 relative z-20 pointer-events-none transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]"
+        style={{ justifyContent: isVisuallyRaised ? 'flex-start' : 'center', paddingTop: isVisuallyRaised ? '1rem' : '0' }}
+      >
+        <div className="w-full max-w-2xl pointer-events-auto">
           {/* Search input */}
           {searchInput}
 
@@ -444,21 +452,19 @@ function HomePage() {
               </select>
             )}
           </div>
-        </div>
-      </div>
 
-      {/* Below-input content area — search results */}
-      <div className="flex-1 px-4 pb-8 overflow-y-auto">
-        <div className="max-w-2xl mx-auto">
+          {/* Search results — inline below input */}
           {activeTab === 'search' && hasSearchContent && (
-            <SearchResults
-              results={searchResults}
-              isLoading={isSearching}
-              error={searchError}
-              onRetry={handleSearchRetry}
-              loadingMore={isLoadingMore}
-              onLoadMore={continuationToken ? handleLoadMore : undefined}
-            />
+            <div className="mt-4 max-h-[50vh] overflow-y-auto">
+              <SearchResults
+                results={searchResults}
+                isLoading={isSearching}
+                error={searchError}
+                onRetry={handleSearchRetry}
+                loadingMore={isLoadingMore}
+                onLoadMore={continuationToken ? handleLoadMore : undefined}
+              />
+            </div>
           )}
         </div>
       </div>
