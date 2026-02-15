@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Chalk – AI Video Learning",
+  "version": "1.0.0",
+  "description": "Study YouTube videos with AI. Pause and ask questions about what you're watching.",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "128": "icons/icon-128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://www.youtube.com/watch*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

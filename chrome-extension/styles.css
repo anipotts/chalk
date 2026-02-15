@@ -1,0 +1,28 @@
+.chalk-yt-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 36px;
+  border-radius: 18px;
+  background: #3b82f6;
+  color: #f1f5f9;
+  font-family: "Roboto", "Arial", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+
+.chalk-yt-btn:hover {
+  background: #2563eb;
+  color: #f1f5f9;
+  text-decoration: none;
+}
+
+.chalk-yt-icon {
+  flex-shrink: 0;
+}
