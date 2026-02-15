@@ -30,13 +30,15 @@ function formatTs(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-/** Minimum drag distance (as fraction of bar width) to register as interval vs click */
+/** Minimum drag distance (as fraction of duration) to register as interval vs click */
 const MIN_DRAG_FRACTION = 0.01;
+/** Absolute cap — never require more than 2s of drag to register */
+const MIN_DRAG_SECONDS = 2;
 
 /**
  * Thin chapter/progress bar that replaces the bottom border of the top header.
  * Hover shows live timestamp / total duration, click seeks.
- * Shift+drag to select an interval range.
+ * Shift+drag (mouse) or drag (touch/pen) to select an interval range.
  */
 export function ChapterTimeline({
   segments,
@@ -52,7 +54,14 @@ export function ChapterTimeline({
     () => generateChapters(segments, duration),
     [segments, duration],
   );
+
+  // Sort key moments chronologically — DB stores them in extraction order (by importance)
+  const sortedMoments = useMemo(
+    () => keyMoments?.slice().sort((a, b) => a.timestamp_seconds - b.timestamp_seconds),
+    [keyMoments],
+  );
   const [hoverInfo, setHoverInfo] = useState<{ time: number; xPercent: number } | null>(null);
+  const [shiftHeld, setShiftHeld] = useState(false);
   const barRef = useRef<HTMLDivElement>(null);
 
   // Drag state for interval selection
@@ -60,48 +69,60 @@ export function ChapterTimeline({
   const [dragStart, setDragStart] = useState<number | null>(null);
   const [dragEnd, setDragEnd] = useState<number | null>(null);
   const dragStartRef = useRef<number | null>(null);
+  const pointerIdRef = useRef<number | null>(null);
+  const cachedRectRef = useRef<DOMRect | null>(null);
 
   const fractionToTime = useCallback(
-    (clientX: number): number => {
-      if (!barRef.current || duration <= 0) return 0;
-      const rect = barRef.current.getBoundingClientRect();
-      const fraction = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    (clientX: number, rect?: DOMRect): number => {
+      const r = rect ?? barRef.current?.getBoundingClientRect();
+      if (!r || duration <= 0) return 0;
+      const fraction = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
       return fraction * duration;
     },
     [duration],
   );
 
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      // Shift+click starts interval drag
-      if (!e.shiftKey || !onIntervalSelect) return;
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      if (!onIntervalSelect) return;
+      // Mouse requires shift; touch/pen starts selection directly (no shift key on mobile)
+      if (e.pointerType === 'mouse' && !e.shiftKey) return;
+
       e.preventDefault();
-      const time = fractionToTime(e.clientX);
+      // Cache rect for the duration of this drag
+      if (barRef.current) {
+        cachedRectRef.current = barRef.current.getBoundingClientRect();
+      }
+      const time = fractionToTime(e.clientX, cachedRectRef.current ?? undefined);
       setIsDragging(true);
       setDragStart(time);
       setDragEnd(time);
       dragStartRef.current = time;
+      pointerIdRef.current = e.pointerId;
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
     },
     [fractionToTime, onIntervalSelect],
   );
 
-  // Global mouse move/up for drag
+  // Global pointer move/up/cancel for drag
   useEffect(() => {
     if (!isDragging) return;
 
-    const handleMove = (e: MouseEvent) => {
-      const time = fractionToTime(e.clientX);
+    const handleMove = (e: PointerEvent) => {
+      if (e.pointerId !== pointerIdRef.current) return;
+      const time = fractionToTime(e.clientX, cachedRectRef.current ?? undefined);
       setDragEnd(time);
     };
 
-    const handleUp = (e: MouseEvent) => {
+    const handleUp = (e: PointerEvent) => {
+      if (e.pointerId !== pointerIdRef.current) return;
       setIsDragging(false);
-      const endTime = fractionToTime(e.clientX);
+      const endTime = fractionToTime(e.clientX, cachedRectRef.current ?? undefined);
       const startTime = dragStartRef.current ?? 0;
 
-      // Check if drag distance is significant
-      const dragFraction = Math.abs(endTime - startTime) / duration;
-      if (dragFraction >= MIN_DRAG_FRACTION && onIntervalSelect) {
+      // Hybrid threshold: fraction-based capped at absolute seconds
+      const threshold = Math.min(MIN_DRAG_FRACTION * duration, MIN_DRAG_SECONDS);
+      if (Math.abs(endTime - startTime) >= threshold && onIntervalSelect) {
         const lo = Math.min(startTime, endTime);
         const hi = Math.max(startTime, endTime);
         const snapped = snapToSegmentBoundaries(lo, hi, segments);
@@ -111,13 +132,27 @@ export function ChapterTimeline({
       setDragStart(null);
       setDragEnd(null);
       dragStartRef.current = null;
+      pointerIdRef.current = null;
+      cachedRectRef.current = null;
     };
 
-    document.addEventListener('mousemove', handleMove);
-    document.addEventListener('mouseup', handleUp);
+    const handleCancel = (e: PointerEvent) => {
+      if (e.pointerId !== pointerIdRef.current) return;
+      setIsDragging(false);
+      setDragStart(null);
+      setDragEnd(null);
+      dragStartRef.current = null;
+      pointerIdRef.current = null;
+      cachedRectRef.current = null;
+    };
+
+    document.addEventListener('pointermove', handleMove);
+    document.addEventListener('pointerup', handleUp);
+    document.addEventListener('pointercancel', handleCancel);
     return () => {
-      document.removeEventListener('mousemove', handleMove);
-      document.removeEventListener('mouseup', handleUp);
+      document.removeEventListener('pointermove', handleMove);
+      document.removeEventListener('pointerup', handleUp);
+      document.removeEventListener('pointercancel', handleCancel);
     };
   }, [isDragging, duration, fractionToTime, onIntervalSelect, segments]);
 
@@ -139,12 +174,14 @@ export function ChapterTimeline({
       const rect = barRef.current.getBoundingClientRect();
       const fraction = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
       setHoverInfo({ time: fraction * duration, xPercent: fraction * 100 });
+      setShiftHeld(e.shiftKey);
     },
     [duration],
   );
 
   const handleMouseLeave = useCallback(() => {
     setHoverInfo(null);
+    setShiftHeld(false);
   }, []);
 
   // Double-click clears interval
@@ -171,18 +208,22 @@ export function ChapterTimeline({
     ? (Math.min(1, Math.max(0, displayInterval.endTime / duration)) - Math.min(1, Math.max(0, displayInterval.startTime / duration))) * 100
     : 0;
 
+  // Cursor: crosshair when shift held (discoverability hint), default pointer otherwise
+  const cursorClass = shiftHeld && !isDragging ? 'cursor-crosshair' : 'cursor-pointer';
+
   return (
     <div className="relative w-full group/timeline">
       <div
         ref={barRef}
         onClick={handleClick}
-        onMouseDown={handleMouseDown}
+        onPointerDown={handlePointerDown}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onDoubleClick={handleDoubleClick}
-        className={`relative w-full h-[3px] bg-white/[0.06] cursor-pointer transition-[height] duration-150 group-hover/timeline:h-[5px] ${
+        className={`relative w-full h-[3px] bg-white/[0.06] ${cursorClass} transition-[height] duration-150 group-hover/timeline:h-[5px] ${
           isDragging ? 'h-[5px]' : ''
         }`}
+        style={isDragging ? { touchAction: 'none' } : undefined}
         role="slider"
         aria-valuemin={0}
         aria-valuemax={duration}
@@ -231,7 +272,7 @@ export function ChapterTimeline({
         />
 
         {/* Key moment markers from knowledge graph */}
-        {keyMoments && keyMoments.length > 0 && keyMoments.map((m, i) => {
+        {sortedMoments && sortedMoments.length > 0 && sortedMoments.map((m, i) => {
           const pct = Math.min(m.timestamp_seconds / duration, 1) * 100;
           const isWatched = currentTime >= m.timestamp_seconds;
           return (
@@ -272,30 +313,21 @@ export function ChapterTimeline({
             {formatTs(Math.floor(hoverInfo.time))}{' '}
             <span className="text-slate-500">/</span>{' '}
             <span className="text-slate-500">{formatTs(Math.floor(duration))}</span>
+            {shiftHeld && (
+              <span className="text-amber-400 ml-1.5">drag to select</span>
+            )}
           </span>
         </div>
       )}
 
-      {/* Interval tooltip — shows selected range */}
-      {displayInterval && intervalWidth > 0 && !isDragging && (
+      {/* Interval range tooltip — shown for committed interval or live drag */}
+      {displayInterval && intervalWidth > 0 && (
         <div
           className="absolute top-full mt-1 transform -translate-x-1/2 px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 shadow-lg pointer-events-none z-10"
           style={{ left: `${intervalLeft + intervalWidth / 2}%` }}
         >
           <span className="text-[10px] font-mono text-amber-300 whitespace-nowrap">
             {formatTs(Math.floor(displayInterval.startTime))} – {formatTs(Math.floor(displayInterval.endTime))}
-          </span>
-        </div>
-      )}
-
-      {/* Drag tooltip — live range during drag */}
-      {isDragging && dragStart !== null && dragEnd !== null && (
-        <div
-          className="absolute top-full mt-1 transform -translate-x-1/2 px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 shadow-lg pointer-events-none z-10"
-          style={{ left: `${intervalLeft + intervalWidth / 2}%` }}
-        >
-          <span className="text-[10px] font-mono text-amber-300 whitespace-nowrap">
-            {formatTs(Math.floor(Math.min(dragStart, dragEnd)))} – {formatTs(Math.floor(Math.max(dragStart, dragEnd)))}
           </span>
         </div>
       )}

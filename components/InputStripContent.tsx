@@ -145,7 +145,7 @@ export function InputStripContent({
         {/* Interval selection pill */}
         {interval && (
           <div className="flex items-center gap-1.5 mb-1.5">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-300 bg-amber-500/15 border border-amber-400/30 rounded-full px-2.5 py-1 font-mono">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-300 bg-amber-500/15 border border-amber-400/30 rounded-full px-2.5 py-1 font-mono" title="Selected interval — double-click timeline or click X to clear">
               {formatInterval(interval.startTime, interval.endTime)}
               {onClearInterval && (
                 <button

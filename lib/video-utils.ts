@@ -202,19 +202,6 @@ export function snapToSegmentBoundaries(
 }
 
 /**
- * Return transcript segments whose offset falls within [startTime, endTime).
- */
-export function getSegmentsInRange(
-  startTime: number,
-  endTime: number,
-  segments: TranscriptSegment[],
-): TranscriptSegment[] {
-  return segments.filter(
-    (s) => s.offset >= startTime && s.offset < endTime,
-  );
-}
-
-/**
  * Format an interval as "M:SS – M:SS".
  */
 export function formatInterval(startTime: number, endTime: number): string {

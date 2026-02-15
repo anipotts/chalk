@@ -4,7 +4,7 @@ import { buildVideoSystemPromptParts, buildExploreSystemPromptParts } from '@/li
 import { PERSONALITY_MODIFIERS } from '@/lib/prompts/shared';
 import { formatTimestamp, type TranscriptSegment } from '@/lib/video-utils';
 import { createVideoTools } from '@/lib/tools/video-tools';
-import { buildKnowledgeGraphPromptContext } from '@/hooks/useKnowledgeContext';
+import { buildKnowledgeGraphPromptContext } from '@/lib/knowledge-graph-context';
 import type { KnowledgeContext } from '@/app/api/knowledge-context/route';
 
 export const dynamic = 'force-dynamic';
@@ -58,7 +58,11 @@ export async function POST(req: Request) {
   const hasInterval = intervalSelection
     && typeof intervalSelection.startTime === 'number'
     && typeof intervalSelection.endTime === 'number'
-    && intervalSelection.endTime > intervalSelection.startTime;
+    && Number.isFinite(intervalSelection.startTime)
+    && Number.isFinite(intervalSelection.endTime)
+    && intervalSelection.startTime >= 0
+    && intervalSelection.endTime > intervalSelection.startTime
+    && intervalSelection.endTime - intervalSelection.startTime <= 7200;
 
   if (hasInterval) {
     const intervalSegments = typedSegments.filter(

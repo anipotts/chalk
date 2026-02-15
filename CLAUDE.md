@@ -14,7 +14,7 @@ Chalk is a Next.js 16 app with two features: a **YouTube Video Learning Assistan
 ### Video Assistant Data Flow
 
 1. **Landing page** (`app/page.tsx`) — user pastes YouTube URL → extracts video ID → navigates to `/watch?v={id}`
-2. **Watch page** (`app/watch/page.tsx`) — loads Vidstack player + fetches transcript via `/api/transcript`
+2. **Watch page** (`app/watch/page.tsx`) — loads react-player + fetches transcript via `/api/transcript`
 3. **Pause → Chat** — `ChatOverlay` fades in (framer-motion). User types question → sends to `/api/video-chat` with message + transcript segments + current timestamp
 4. **API route** (`app/api/video-chat/route.ts`) — builds sliding-window transcript context (2 min before, 1 min after current position) → streams response. Opus gets reasoning + `\x1E` separator protocol (same as math route).
 5. **Timestamp citations** — AI responds with `[M:SS]` references. `parseTimestampLinks()` converts these to clickable `TimestampLink` pills that seek the video.
@@ -65,7 +65,7 @@ User can pick Auto/Opus/Sonnet/Haiku via `ModelSelector.tsx`. Auto uses `lib/rou
 
 ### Video Player
 
-`VideoPlayer.tsx` uses `@vidstack/react` v1.12.13 with YouTube provider. Must be dynamically imported with `ssr: false`. Keyboard shortcuts: Space/K (play/pause), J/L (±10s), arrows (±5s), F (fullscreen), C (toggle chat).
+`VideoPlayer.tsx` uses `react-player` v3 (maintained by Mux) with the YouTube auto-detection. The ref is a standard `HTMLVideoElement` — no custom proxy wrappers needed. Must be dynamically imported with `ssr: false`. Keyboard shortcuts: Space/K (play/pause), J/L (±10s), arrows (±5s), F (fullscreen), </> (speed ±0.25x).
 
 ### Persistence
 
@@ -81,7 +81,7 @@ User can pick Auto/Opus/Sonnet/Haiku via `ModelSelector.tsx`. Auto uses `lib/rou
 
 ## Key Conventions
 
-- `@vidstack/react@1.12.13` is required for React 19 peer dep compatibility
+- `react-player` v3 exposes a standard `HTMLVideoElement` ref — use `.currentTime`, `.paused`, `.play()`, `.pause()`, `.playbackRate` directly
 - React 19: `useRef` requires explicit initial value (`useRef<T>(null)` or `useRef<T>(undefined)`)
 - All viz components must be wrapped in `SafeVizWrapper` (ErrorBoundary + Suspense)
 - plot2d expressions use mathjs syntax with variable `x` (e.g., `"sin(x)"`, `"x^2"`)
