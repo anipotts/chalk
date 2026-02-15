@@ -8,7 +8,7 @@ import { InteractionOverlay } from "@/components/InteractionOverlay";
 import { useTranscriptStream } from "@/hooks/useTranscriptStream";
 import { useVideoTitle } from "@/hooks/useVideoTitle";
 import { useOverlayPhase } from "@/hooks/useOverlayPhase";
-import { formatTimestamp } from "@/lib/video-utils";
+import { formatTimestamp, type IntervalSelection } from "@/lib/video-utils";
 import { storageKey } from "@/lib/brand";
 import { ChalkboardSimple, Play, ArrowBendUpLeft, MagnifyingGlass } from "@phosphor-icons/react";
 import { KaraokeCaption } from "@/components/KaraokeCaption";
@@ -206,6 +206,7 @@ function WatchContent() {
 
   const [showTranscript, setShowTranscript] = useState(false);
   const [sideStack, setSideStack] = useState<SideVideoEntry[]>([]);
+  const [selectedInterval, setSelectedInterval] = useState<IntervalSelection | null>(null);
   const [continueFrom, setContinueFrom] = useState<number | null>(null);
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   const [transcriptCollapsed, setTranscriptCollapsed] = useState(false);
@@ -315,6 +316,7 @@ function WatchContent() {
     transcriptSource: source ?? undefined,
     knowledgeContext,
     curriculumContext: curriculum.curriculumContext,
+    interval: selectedInterval,
   });
 
   // Learn mode (Opus 4.6 adaptive learning)
@@ -457,6 +459,14 @@ function WatchContent() {
     overlayDispatch({ type: 'CONTENT_ARRIVED' });
     setTimeout(() => inputRef.current?.focus(), 100);
   }, [overlayDispatch]);
+
+  const handleIntervalSelect = useCallback((sel: IntervalSelection) => {
+    setSelectedInterval(sel);
+  }, []);
+
+  const handleIntervalClear = useCallback(() => {
+    setSelectedInterval(null);
+  }, []);
 
   // Side panel: open a reference video
   const handleOpenVideo = useCallback((vid: string, title: string, channelName: string, seekTo?: number) => {
@@ -763,6 +773,9 @@ function WatchContent() {
               duration={durationSeconds}
               onSeek={handleSeek}
               keyMoments={knowledgeContext?.video?.key_moments}
+              interval={selectedInterval}
+              onIntervalSelect={handleIntervalSelect}
+              onIntervalClear={handleIntervalClear}
             />
           ) : (
             <div className="h-px bg-chalk-border/30" />
@@ -959,6 +972,8 @@ function WatchContent() {
             isThinking={unified.isThinking}
             thinkingDuration={unified.thinkingDuration}
             storyboardLevels={storyboardLevels}
+            interval={selectedInterval}
+            onClearInterval={handleIntervalClear}
           />
 
               {/* Desktop captions — single line, fixed height prevents layout shift */}

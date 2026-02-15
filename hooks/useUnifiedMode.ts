@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useVoiceMode, type VoiceState } from './useVoiceMode';
 import { useReadAloud } from './useReadAloud';
-import type { TranscriptSegment, TranscriptSource } from '@/lib/video-utils';
+import type { TranscriptSegment, TranscriptSource, IntervalSelection } from '@/lib/video-utils';
 import { storageKey } from '@/lib/brand';
 import { parseStreamWithToolCalls, type ToolCallData } from '@/components/ToolRenderers';
 import type { KnowledgeContext } from '@/hooks/useKnowledgeContext';
@@ -34,6 +34,7 @@ interface UseUnifiedModeOptions {
   transcriptSource?: TranscriptSource;
   knowledgeContext?: KnowledgeContext | null;
   curriculumContext?: string | null;
+  interval?: IntervalSelection | null;
 }
 
 interface UseUnifiedModeReturn {
@@ -133,6 +134,7 @@ export function useUnifiedMode({
   transcriptSource,
   knowledgeContext,
   curriculumContext,
+  interval,
 }: UseUnifiedModeOptions): UseUnifiedModeReturn {
   // Unified exchanges (persisted) — single source of truth
   const [exchanges, setExchanges] = useState<UnifiedExchange[]>([]);
@@ -170,9 +172,11 @@ export function useUnifiedMode({
   const currentTimeRef = useRef(currentTime);
   const segmentsRef = useRef(segments);
   const exchangesRef = useRef(exchanges);
+  const intervalRef = useRef(interval);
   currentTimeRef.current = currentTime;
   segmentsRef.current = segments;
   exchangesRef.current = exchanges;
+  intervalRef.current = interval;
 
   // Build conversation history for voice mode (last 10 exchanges)
   const conversationHistory = useMemo(() => {
@@ -273,6 +277,7 @@ export function useUnifiedMode({
           voiceMode: false,
           videoId,
           knowledgeContext: knowledgeContextRef.current,
+          intervalSelection: intervalRef.current || undefined,
         }),
         signal: abortController.signal,
       });
@@ -395,6 +400,7 @@ export function useUnifiedMode({
           exploreGoal: exploreGoal || text,
           thinkingBudget: budget.budgetTokens,
           curriculumContext: curriculumContextRef.current || undefined,
+          intervalSelection: intervalRef.current || undefined,
         }),
         signal: controller.signal,
       });

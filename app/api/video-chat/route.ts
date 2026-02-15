@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const { message, currentTimestamp, segments, history, videoTitle, personality, transcriptSource, voiceMode, exploreMode, exploreGoal, modelChoice, thinkingBudget, curriculumContext, videoId, knowledgeContext } = body;
+  const { message, currentTimestamp, segments, history, videoTitle, personality, transcriptSource, voiceMode, exploreMode, exploreGoal, modelChoice, thinkingBudget, curriculumContext, videoId, knowledgeContext, intervalSelection } = body;
 
   if (!message || typeof message !== 'string') {
     return Response.json({ error: 'Missing message' }, { status: 400 });
@@ -54,11 +54,33 @@ export async function POST(req: Request) {
     transcriptContext += upcoming.map((s) => `[${formatTimestamp(s.offset)}] ${s.text}`).join('\n');
     transcriptContext += '\n</upcoming_content>';
   }
+  // Add focused interval context when user selected a specific range
+  const hasInterval = intervalSelection
+    && typeof intervalSelection.startTime === 'number'
+    && typeof intervalSelection.endTime === 'number'
+    && intervalSelection.endTime > intervalSelection.startTime;
+
+  if (hasInterval) {
+    const intervalSegments = typedSegments.filter(
+      (s) => s.offset >= intervalSelection.startTime && s.offset < intervalSelection.endTime,
+    );
+    if (intervalSegments.length > 0) {
+      transcriptContext += `\n\n<selected_interval priority="highest" start="${formatTimestamp(intervalSelection.startTime)}" end="${formatTimestamp(intervalSelection.endTime)}">\n`;
+      transcriptContext += intervalSegments.map((s) => `[${formatTimestamp(s.offset)}] ${s.text}`).join('\n');
+      transcriptContext += '\n</selected_interval>';
+    }
+  }
+
   if (!transcriptContext) {
     transcriptContext = '(No transcript available)';
   }
 
   const safeVideoTitle = typeof videoTitle === 'string' ? videoTitle.slice(0, 200) : undefined;
+
+  // Build interval description for system prompt position context
+  const intervalDesc = hasInterval
+    ? ` The user has selected the interval ${formatTimestamp(intervalSelection.startTime)} – ${formatTimestamp(intervalSelection.endTime)}. Focus your answer on this specific section of the video. The <selected_interval> section contains the transcript for this range.`
+    : '';
 
   // Explore Mode: use Opus with adaptive thinking budget
   if (exploreMode) {
@@ -75,6 +97,7 @@ export async function POST(req: Request) {
       videoTitle: safeVideoTitle,
       exploreGoal: typeof exploreGoal === 'string' ? exploreGoal : undefined,
       transcriptSource: typeof transcriptSource === 'string' ? transcriptSource : undefined,
+      intervalDesc,
     });
 
     // Inject curriculum context if provided (cross-video playlist context)
@@ -177,6 +200,7 @@ export async function POST(req: Request) {
     videoTitle: safeVideoTitle,
     transcriptSource: typeof transcriptSource === 'string' ? transcriptSource : undefined,
     voiceMode: !!voiceMode,
+    intervalDesc,
   });
 
   // Inject knowledge graph context if provided (from useKnowledgeContext)
