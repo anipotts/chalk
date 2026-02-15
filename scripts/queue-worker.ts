@@ -234,7 +234,7 @@ async function enqueueBatchWork(client: SupabaseClient): Promise<boolean> {
     const { execSync } = await import('child_process');
     const maxVideos = channel.maxVideos || 10;
     const output = execSync(
-      `yt-dlp --flat-playlist --print id "https://www.youtube.com/@${channel.handle || channel.name}/videos" --playlist-end ${Math.min(maxVideos, 20)} 2>/dev/null`,
+      `yt-dlp --flat-playlist --print id "https://www.youtube.com/${(channel.handle || channel.name).replace(/^@*/, '@')}/videos" --playlist-end ${Math.min(maxVideos, 20)} 2>/dev/null`,
       { encoding: 'utf-8', timeout: 30_000 },
     ).trim();
 
