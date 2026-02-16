@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { HeroColumn } from "./HeroColumn";
-import { CardGrainFilter } from "./HeroVideoCard";
+
 
 // 40 curated educational videos — 5 columns × 8 videos
 // Max 2 per channel, no same channel in same column, topic diversity per column
@@ -613,9 +613,10 @@ export function HeroBanner3D() {
     <div className="overflow-hidden fixed inset-0 w-full h-full">
       {/* Black curtain — fades out to reveal all cards at once */}
       <div
-        className="absolute inset-0 z-[5] bg-black pointer-events-none"
+        className="absolute inset-0 z-[5] bg-black"
         style={{
           opacity: revealed ? 0 : 1,
+          pointerEvents: revealed ? "none" : "auto",
           transition: "opacity 1.6s cubic-bezier(0.16, 1, 0.3, 1) 0.1s",
         }}
       />
@@ -623,8 +624,7 @@ export function HeroBanner3D() {
       {/* Overall dim layer — very subtle */}
       <div className="absolute inset-0 bg-black/15 z-[1] pointer-events-none" />
 
-      {/* Shared SVG grain filter for card hover effects (single definition for all cards) */}
-      <CardGrainFilter />
+      {/* Grain filter removed — caused GPU compositing glitches during continuous animation */}
 
       {/* 3D Perspective Container */}
       <div
@@ -646,7 +646,7 @@ export function HeroBanner3D() {
           {/* Desktop: show all 5 columns, Mobile: show first 3 */}
           {/* Staggered speeds + delays per column for visual layering */}
           {CURATED_VIDEOS.map((columnCards, colIdx) => {
-            const speeds = [20, 25, 22, 24, 18];
+            const speeds = [40, 50, 44, 48, 36];
             const delays = [0, 0.4, 0.8, 1.2, 1.6];
             return (
               <div

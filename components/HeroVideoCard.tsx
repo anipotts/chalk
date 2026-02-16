@@ -2,48 +2,6 @@
 
 import { useState } from "react";
 
-// Shared SVG grain filter for card hover effect (rendered once, referenced by all cards)
-const CARD_GRAIN_FILTER_ID = "card-grain";
-
-export function CardGrainFilter() {
-  return (
-    <svg width="0" height="0" className="absolute" aria-hidden="true">
-      <defs>
-        <filter
-          id={CARD_GRAIN_FILTER_ID}
-          x="-5%"
-          y="-5%"
-          width="110%"
-          height="110%"
-          colorInterpolationFilters="sRGB"
-        >
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency="0.55"
-            numOctaves="3"
-            seed="7"
-            stitchTiles="stitch"
-            result="noise"
-          />
-          <feDisplacementMap
-            in="SourceGraphic"
-            in2="noise"
-            scale="7"
-            xChannelSelector="R"
-            yChannelSelector="G"
-            result="displaced"
-          />
-          <feComponentTransfer in="displaced">
-            <feFuncR type="linear" slope="0.35" />
-            <feFuncG type="linear" slope="0.35" />
-            <feFuncB type="linear" slope="0.35" />
-          </feComponentTransfer>
-        </filter>
-      </defs>
-    </svg>
-  );
-}
-
 // Channel avatar URLs — 176px from YouTube CDN, CORS-enabled
 const CHANNEL_AVATARS: Record<string, string> = {
   "3Blue1Brown":
@@ -137,10 +95,10 @@ export function HeroVideoCard({
         e.stopPropagation();
         window.location.href = `/watch?v=${videoId}`;
       }}
-      className="hero-card block relative rounded-lg overflow-hidden cursor-pointer border border-white/[0.06] hover:border-white/[0.18] hover:scale-[1.06] transition-all duration-400 group h-full"
+      className="hero-card flex flex-col relative rounded-lg overflow-hidden cursor-pointer border border-white/[0.04] hover:border-white/[0.12] transition-colors duration-400 group h-full"
       style={{
         pointerEvents: "auto",
-        background: "rgba(255,255,255,0.03)",
+        background: "rgba(255,255,255,0.02)",
         boxShadow:
           "0 2px 16px rgba(0,0,0,0.3), inset 0 0.5px 0 rgba(255,255,255,0.04)",
         transformOrigin: "center center",
@@ -152,40 +110,31 @@ export function HeroVideoCard({
           <img
             src={CHANNEL_AVATARS[channelName]}
             alt=""
-            className="w-6 h-6 rounded-full flex-shrink-0 opacity-60 group-hover:opacity-90 transition-opacity duration-400"
+            className="w-5 h-5 rounded-full flex-shrink-0 opacity-60 group-hover:opacity-90 transition-opacity duration-400"
             onError={() => setAvatarError(true)}
           />
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] text-white/35 line-clamp-1 leading-tight group-hover:text-white/55 transition-colors duration-400">
+          <p className="text-[9px] text-white/25 line-clamp-1 leading-tight group-hover:text-white/40 transition-colors duration-400">
             {title}
           </p>
-          <p className="text-[9px] text-white/20 mt-0.5 group-hover:text-white/35 transition-colors duration-400">
+          <p className="text-[8px] text-white/15 mt-0.5 group-hover:text-white/25 transition-colors duration-400">
             {channelName}
           </p>
         </div>
       </div>
 
-      {/* Thumbnail */}
-      <div className="overflow-hidden relative flex-1">
+      {/* Thumbnail — fills remaining card height */}
+      <div className="overflow-hidden relative flex-1 min-h-0">
         <img
           src={thumbnailUrl}
           alt={title}
           loading="eager"
           decoding="async"
-          className="w-full h-full object-cover opacity-[0.55] transition-opacity duration-400"
+          className="w-full h-full object-cover opacity-[0.45] transition-opacity duration-400"
           onError={() => setImgError(true)}
         />
         <div className="absolute inset-0 bg-gradient-to-t via-transparent to-transparent from-black/60" />
-
-        {/* Grain overlay — fades in on hover for text readability */}
-        <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out z-[1]"
-          style={{
-            backdropFilter: `url(#${CARD_GRAIN_FILTER_ID})`,
-            WebkitBackdropFilter: `url(#${CARD_GRAIN_FILTER_ID})`,
-          }}
-        />
 
         {/* Duration badge — top right */}
         {duration && (
@@ -204,26 +153,26 @@ export function HeroVideoCard({
             }}
           >
             {/* Dark gradient — always visible for readability, intensifies on hover */}
-            <div className="absolute inset-0 bg-gradient-to-t to-transparent transition-all duration-500 from-black/80 via-black/40 group-hover:from-black/95 group-hover:via-black/60" />
+            <div className="absolute inset-0 bg-gradient-to-t to-transparent transition-all duration-500 from-black/60 via-black/20 group-hover:from-black/85 group-hover:via-black/50" />
 
             <div className="relative px-2.5 pb-2">
-              {/* Question — chat-bubble style, always readable */}
-              <div className="inline-block max-w-full bg-white/[0.08] group-hover:bg-white/[0.12] border border-white/[0.08] group-hover:border-white/[0.15] rounded-lg px-2 py-1 transition-all duration-500">
-                <p className="text-[11px] leading-snug text-white/40 group-hover:text-white font-medium line-clamp-2">
+              {/* Question — stretched across card width, single line, centered */}
+              <div className="w-full bg-white/[0.05] group-hover:bg-white/[0.08] border border-white/[0.08] group-hover:border-white/[0.15] rounded-lg px-2 py-1.5 transition-all duration-500">
+                <p className="text-[9px] leading-snug text-white/25 group-hover:text-white/80 font-medium truncate text-center">
                   &ldquo;{conversation.question}&rdquo;
                 </p>
               </div>
-              {/* AI response — appears on hover */}
+              {/* AI response — appears on hover, left-aligned */}
               <div className="mt-1.5 max-h-0 group-hover:max-h-28 opacity-0 group-hover:opacity-100 transition-all duration-500 overflow-hidden">
                 <div className="flex gap-1 justify-start items-center mb-1">
-                  <p className="text-[9px] text-chalk-accent/80 font-medium tracking-wide uppercase">
+                  <p className="text-[8px] text-chalk-accent/80 font-medium tracking-wide uppercase">
                     {channelName}
                   </p>
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-md font-mono text-[10px] bg-blue-500/20 text-blue-400">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-md font-mono text-[8px] bg-blue-500/20 text-blue-400">
                     {conversation.timestamp}
                   </span>
                 </div>
-                <p className="text-[11px] leading-snug text-slate-300/80 line-clamp-3">
+                <p className="text-[9px] leading-snug text-slate-300/80 line-clamp-3">
                   {conversation.answer}{" "}
                 </p>
               </div>

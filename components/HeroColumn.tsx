@@ -23,8 +23,8 @@ interface HeroColumnProps {
   speed?: number;
 }
 
-const CARD_HEIGHT = 200;
-const GAP = 20;
+const CARD_HEIGHT = 220;
+const GAP = 22;
 
 export function HeroColumn({ cards, direction, delay = 0, speed = 22 }: HeroColumnProps) {
   // Duplicate for seamless infinite loop
@@ -54,7 +54,7 @@ export function HeroColumn({ cards, direction, delay = 0, speed = 22 }: HeroColu
         {doubledCards.map((card, idx) => (
           <div
             key={idx}
-            className="flex-shrink-0 w-52 md:w-72"
+            className="flex-shrink-0 w-60 md:w-[310px]"
             style={{ height: `${CARD_HEIGHT}px`, pointerEvents: 'auto' }}
           >
             <HeroVideoCard {...card} />

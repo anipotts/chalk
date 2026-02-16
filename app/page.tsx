@@ -388,12 +388,10 @@ function HomePage() {
   const showFilterPills = activeTab === 'search' && inputValue.length >= 2;
 
   return (
-    <div className="h-screen bg-chalk-bg flex flex-col overflow-hidden relative">
+    <div className="h-screen bg-chalk-bg flex flex-col overflow-hidden relative pointer-events-none">
       {/* 3D Hero Banner — background layer */}
-      <div className="fixed inset-0 z-0" style={{ pointerEvents: 'none' }}>
-        <div style={{ pointerEvents: 'auto' }}>
-          <HeroBanner3D />
-        </div>
+      <div className="fixed inset-0 z-0">
+        <HeroBanner3D />
       </div>
 
       {/* Unified logo + search group — positioned at 1/3 from top */}

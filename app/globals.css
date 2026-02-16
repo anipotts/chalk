@@ -255,14 +255,9 @@ body {
   animation-play-state: paused;
 }
 
-/* Pure CSS hover scale for hero cards (replaces framer-motion) */
+/* Hero card hover — no scale (prevents flicker in 3D perspective) */
 .hero-card {
-  transform: scale(1);
-  transition: transform 0.4s cubic-bezier(0.33, 1, 0.68, 1), border-color 0.4s ease-out;
-}
-
-.hero-card:hover {
-  transform: scale(1.03);
+  transition: border-color 0.4s ease-out;
 }
 
 /* Indeterminate progress bar animation */
