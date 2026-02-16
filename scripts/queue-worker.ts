@@ -156,7 +156,10 @@ async function processJob(
 
     if (!response.ok) {
       const errText = await response.text().catch(() => 'unknown');
-      throw new Error(`WhisperX HTTP ${response.status}: ${errText.slice(0, 300)}`);
+      // Tag 503 errors so the main loop can add backoff instead of burning retries
+      const err = new Error(`WhisperX HTTP ${response.status}: ${errText.slice(0, 300)}`);
+      (err as any).statusCode = response.status;
+      throw err;
     }
 
     const result = await response.json() as TranscribeResult;
@@ -201,6 +204,9 @@ async function processJob(
       p_worker_id: WORKER_ID,
       p_error: msg.slice(0, 500),
     });
+
+    // Rethrow so main loop can apply backoff
+    throw err;
   } finally {
     clearTimeout(timeout);
     clearInterval(heartbeatTimer);
@@ -310,9 +316,17 @@ async function main() {
 
   let jobsProcessed = 0;
   let idleTime = 0;
+  let consecutiveFailures = 0;
 
   while (true) {
     try {
+      // Exponential backoff after consecutive failures (GPU busy, etc.)
+      if (consecutiveFailures > 0) {
+        const backoffMs = Math.min(POLL_INTERVAL * Math.pow(2, consecutiveFailures), 60_000);
+        log('WORKER', 'BACKOFF', `waiting ${Math.round(backoffMs / 1000)}s after ${consecutiveFailures} consecutive failure(s)`);
+        await sleep(backoffMs);
+      }
+
       const job = await claimJob(client);
 
       if (job) {
@@ -332,12 +346,23 @@ async function main() {
           }
         }
 
-        await processJob(client, job, config.whisperxUrl);
-        jobsProcessed++;
+        try {
+          await processJob(client, job, config.whisperxUrl);
+          jobsProcessed++;
+          consecutiveFailures = 0; // Reset on success
+        } catch (jobErr) {
+          // processJob already called fail_job — just handle backoff here
+          consecutiveFailures++;
+          const statusCode = (jobErr as any)?.statusCode;
+          if (statusCode === 503) {
+            log('WORKER', 'GPU_BUSY', 'WhisperX GPU busy, will backoff before next claim');
+          }
+        }
 
         if (config.once) break;
       } else {
         // No jobs available
+        consecutiveFailures = 0; // Reset — no jobs isn't a failure
         idleTime += POLL_INTERVAL;
 
         if (config.once) {
@@ -355,6 +380,7 @@ async function main() {
       }
     } catch (err) {
       log('WORKER', 'ERROR', `loop error: ${err instanceof Error ? err.message : err}`);
+      consecutiveFailures++;
       await sleep(POLL_INTERVAL * 2);
     }
   }
