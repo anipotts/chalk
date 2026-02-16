@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type RealtimeChannel, type SupabaseClient } from '@supabase/supabase-js';
 import type { TranscriptSegment, TranscriptSource } from '@/lib/video-utils';
 
 export type TranscriptStatus =
@@ -100,7 +100,8 @@ export function useTranscriptStream(videoId: string | null, forceStt = false): T
   const [metadata, setMetadata] = useState<TranscriptMetadata | null>(null);
   const [storyboardSpec, setStoryboardSpec] = useState<string | null>(null);
   const [queueProgress, setQueueProgress] = useState<QueueProgress | null>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const readerRef = useRef<ReadableStreamDefaultReader<Uint8Array> | null>(null);
 
   useEffect(() => {
@@ -119,10 +120,15 @@ export function useTranscriptStream(videoId: string | null, forceStt = false): T
     setStoryboardSpec(null);
     setQueueProgress(null);
 
-    // Clear any existing poll
-    if (pollRef.current) {
-      clearInterval(pollRef.current);
-      pollRef.current = null;
+    // Clear any existing realtime subscription
+    if (channelRef.current) {
+      const supabase = getAnonClient();
+      if (supabase) supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
 
     (async () => {
@@ -195,7 +201,7 @@ export function useTranscriptStream(videoId: string | null, forceStt = false): T
               if (cancelled) break;
               setStatus('queued');
               setStatusMessage('Queued for GPU transcription...');
-              startQueuePolling(payload.videoId);
+              startRealtimeSubscription(payload.videoId);
               break;
             }
           }
@@ -208,46 +214,54 @@ export function useTranscriptStream(videoId: string | null, forceStt = false): T
       }
     })();
 
-    function startQueuePolling(vid: string) {
+    function startRealtimeSubscription(vid: string) {
       const supabase = getAnonClient();
       if (!supabase) {
         setStatus('error');
-        setError('Supabase not configured for queue polling');
+        setError('Supabase not configured');
         return;
       }
 
+      // 3-minute safety timeout
+      const timeout = setTimeout(() => {
+        if (channelRef.current) {
+          supabase.removeChannel(channelRef.current);
+          channelRef.current = null;
+        }
+        setStatus('error');
+        setError('GPU transcription timed out. Try again later.');
+      }, 180_000);
+      timeoutRef.current = timeout;
+
       let lastSegmentCount = 0;
 
-      pollRef.current = setInterval(async () => {
-        if (cancelled) {
-          if (pollRef.current) clearInterval(pollRef.current);
-          return;
-        }
-
-        try {
-          // Check job status
-          const { data: job } = await supabase
-            .from('transcript_queue')
-            .select('status, segments_written, progress_pct, error_message, attempt_count, max_attempts')
-            .eq('video_id', vid)
-            .single();
-
-          if (!job || cancelled) return;
+      const channel = supabase
+        .channel(`queue:${vid}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'transcript_queue',
+          filter: `video_id=eq.${vid}`,
+        }, async (payload) => {
+          if (cancelled) return;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const row = (payload as any).new as Record<string, any> | undefined;
+          if (!row) return;
 
           // Update progress
-          if (job.status === 'transcribing' || job.status === 'downloading') {
+          if (row.status === 'downloading' || row.status === 'transcribing') {
             setStatus('transcribing');
             setStatusMessage(
-              job.status === 'downloading'
+              row.status === 'downloading'
                 ? 'Downloading audio...'
-                : `Transcribing... ${job.segments_written} segments (${job.progress_pct}%)`
+                : `Transcribing... ${row.segments_written} segments (${row.progress_pct}%)`
             );
-            setProgress(Math.max(5, job.progress_pct));
-            setQueueProgress({ segmentsWritten: job.segments_written, progressPct: job.progress_pct });
+            setProgress(Math.max(5, row.progress_pct));
+            setQueueProgress({ segmentsWritten: row.segments_written, progressPct: row.progress_pct });
           }
 
           // Fetch progressive segments if count increased
-          if (job.segments_written > lastSegmentCount && job.segments_written > 0) {
+          if (row.segments_written > lastSegmentCount && row.segments_written > 0) {
             const { data: cached } = await supabase
               .from('transcripts')
               .select('segments, source')
@@ -256,14 +270,16 @@ export function useTranscriptStream(videoId: string | null, forceStt = false): T
 
             if (cached?.segments && Array.isArray(cached.segments)) {
               setSegments(cached.segments as TranscriptSegment[]);
-              lastSegmentCount = job.segments_written;
+              lastSegmentCount = row.segments_written;
             }
           }
 
           // Job completed
-          if (job.status === 'completed') {
-            if (pollRef.current) clearInterval(pollRef.current);
-            pollRef.current = null;
+          if (row.status === 'completed') {
+            clearTimeout(timeout);
+            timeoutRef.current = null;
+            supabase.removeChannel(channel);
+            channelRef.current = null;
 
             // Final fetch of cleaned segments
             const { data: final } = await supabase
@@ -294,17 +310,99 @@ export function useTranscriptStream(videoId: string | null, forceStt = false): T
           }
 
           // Job failed permanently
-          if (job.status === 'failed' && job.attempt_count >= job.max_attempts) {
-            if (pollRef.current) clearInterval(pollRef.current);
-            pollRef.current = null;
+          if (row.status === 'failed' && row.attempt_count >= row.max_attempts) {
+            clearTimeout(timeout);
+            timeoutRef.current = null;
+            supabase.removeChannel(channel);
+            channelRef.current = null;
             setStatus('error');
-            setError(job.error_message || 'Transcription failed after multiple attempts');
+            setError(row.error_message || 'Transcription failed after multiple attempts');
             setQueueProgress(null);
           }
+        })
+        .subscribe();
+
+      channelRef.current = channel;
+
+      // Initial poll to catch state transitions that happened before subscription was established
+      (async () => {
+        try {
+          const { data: job } = await supabase
+            .from('transcript_queue')
+            .select('status, segments_written, progress_pct, error_message, attempt_count, max_attempts')
+            .eq('video_id', vid)
+            .single();
+
+          if (!job || cancelled) return;
+
+          // Job already completed before we subscribed
+          if (job.status === 'completed') {
+            clearTimeout(timeout);
+            timeoutRef.current = null;
+            supabase.removeChannel(channel);
+            channelRef.current = null;
+
+            const { data: final } = await supabase
+              .from('transcripts')
+              .select('segments, source, duration_seconds')
+              .eq('video_id', vid)
+              .single();
+
+            if (final?.segments && Array.isArray(final.segments)) {
+              setSegments(final.segments as TranscriptSegment[]);
+              setSource((final.source || 'whisperx') as TranscriptSource);
+              if (final.duration_seconds) setDurationSeconds(final.duration_seconds);
+            }
+
+            setStatus('complete');
+            setStatusMessage(`${final?.segments?.length || 0} segments loaded`);
+            setProgress(100);
+            setQueueProgress(null);
+
+            fetch('/api/extract', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ videoId: vid }),
+            }).catch(() => {});
+            return;
+          }
+
+          // Job already failed
+          if (job.status === 'failed' && job.attempt_count >= job.max_attempts) {
+            clearTimeout(timeout);
+            timeoutRef.current = null;
+            supabase.removeChannel(channel);
+            channelRef.current = null;
+            setStatus('error');
+            setError(job.error_message || 'Transcription failed after multiple attempts');
+            return;
+          }
+
+          // Job in progress — update UI with current state
+          if (job.status === 'downloading' || job.status === 'transcribing') {
+            setStatus('transcribing');
+            setStatusMessage(
+              job.status === 'downloading'
+                ? 'Downloading audio...'
+                : `Transcribing... ${job.segments_written} segments (${job.progress_pct}%)`
+            );
+            setProgress(Math.max(5, job.progress_pct));
+            setQueueProgress({ segmentsWritten: job.segments_written, progressPct: job.progress_pct });
+          }
+
+          // No job found — it wasn't enqueued
+          if (!job.status) {
+            clearTimeout(timeout);
+            timeoutRef.current = null;
+            supabase.removeChannel(channel);
+            channelRef.current = null;
+            setStatus('error');
+            setError('Transcription job not found. Please try again.');
+          }
         } catch {
-          // Polling errors are non-fatal, will retry next interval
+          // Non-fatal — Realtime will handle updates
         }
-      }, 3000);
+      })();
     }
 
     return () => {
@@ -313,9 +411,14 @@ export function useTranscriptStream(videoId: string | null, forceStt = false): T
         readerRef.current.cancel().catch(() => {});
         readerRef.current = null;
       }
-      if (pollRef.current) {
-        clearInterval(pollRef.current);
-        pollRef.current = null;
+      if (channelRef.current) {
+        const supabase = getAnonClient();
+        if (supabase) supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
       }
     };
   }, [videoId, forceStt]);

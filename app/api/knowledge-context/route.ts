@@ -1,4 +1,5 @@
 import { getAdminClient } from '@/lib/supabase-admin';
+import { cacheGet, cacheSet } from '@/lib/redis';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,6 +43,15 @@ export async function GET(req: Request) {
 
   if (!videoId || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
     return Response.json({ error: 'Invalid video ID' }, { status: 400 });
+  }
+
+  // Check Redis cache first
+  const cacheKey = `knowledge:${videoId}`;
+  const cached = await cacheGet<KnowledgeContext>(cacheKey);
+  if (cached) {
+    return Response.json(cached, {
+      headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
+    });
   }
 
   const client = getAdminClient();
@@ -194,6 +204,9 @@ export async function GET(req: Request) {
     related_videos,
     concept_connections,
   };
+
+  // Cache in Redis for 15 min (fire-and-forget)
+  cacheSet(cacheKey, response, 900);
 
   return Response.json(response, {
     headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },

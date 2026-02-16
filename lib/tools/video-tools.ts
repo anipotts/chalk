@@ -215,6 +215,14 @@ export function createVideoTools(currentVideoId: string, segments: TranscriptSeg
           relevance?: string;
         }> = [];
 
+        // Launch vector search in parallel with SQL queries below
+        const vectorPromise = isVectorSearchAvailable()
+          ? searchSimilarContent(query, {
+              topK: 5,
+              excludeVideoId: excludeCurrent ? currentVideoId : undefined,
+            }).catch(() => [])
+          : Promise.resolve([]);
+
         if (searchType === 'concept' || searchType === 'all') {
           const { data: rawConceptHits } = await client
             .from('concepts')
@@ -326,31 +334,21 @@ export function createVideoTools(currentVideoId: string, segments: TranscriptSeg
           }
         }
 
-        // Augment with semantic search if available
-        if (isVectorSearchAvailable() && results.length < 5) {
-          try {
-            const vectorResults = await searchSimilarContent(query, {
-              topK: 5,
-              excludeVideoId: excludeCurrent ? currentVideoId : undefined,
+        // Await vector results (launched in parallel with SQL above)
+        const vectorResults = await vectorPromise;
+        const existingIds = new Set(results.map(r => r.video_id));
+        for (const vr of vectorResults) {
+          if (!existingIds.has(vr.video_id)) {
+            results.push({
+              kind: 'video',
+              video_id: vr.video_id,
+              title: vr.title,
+              channel_name: vr.channel_name,
+              timestamp_seconds: vr.timestamp_seconds ?? null,
+              difficulty: vr.difficulty ?? null,
+              relevance: vr.chunk_text ? `"${vr.chunk_text.slice(0, 100)}..."` : `Semantic match (${(vr.score * 100).toFixed(0)}%)`,
             });
-
-            const existingIds = new Set(results.map(r => r.video_id));
-            for (const vr of vectorResults) {
-              if (!existingIds.has(vr.video_id)) {
-                results.push({
-                  kind: 'video',
-                  video_id: vr.video_id,
-                  title: vr.title,
-                  channel_name: vr.channel_name,
-                  timestamp_seconds: vr.timestamp_seconds ?? null,
-                  difficulty: vr.difficulty ?? null,
-                  relevance: vr.chunk_text ? `"${vr.chunk_text.slice(0, 100)}..."` : `Semantic match (${(vr.score * 100).toFixed(0)}%)`,
-                });
-                existingIds.add(vr.video_id);
-              }
-            }
-          } catch {
-            // Vector search failed, continue with existing results
+            existingIds.add(vr.video_id);
           }
         }
 

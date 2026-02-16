@@ -138,13 +138,20 @@ export async function GET(req: Request) {
           send('status', { phase: 'queued', message: 'Queued for GPU transcription...' });
 
           const serviceClient = createClient(supabaseUrl, serviceKey);
-          const { data: queueResult } = await serviceClient.rpc('enqueue_transcript', {
+          const { data: queueResult, error: enqueueError } = await serviceClient.rpc('enqueue_transcript', {
             p_video_id: videoId,
             p_priority: 0,
             p_requested_by: 'user',
           });
 
-          console.log(`[transcript] ${videoId}: enqueue result: ${queueResult}`);
+          console.log(`[transcript] ${videoId}: enqueue result: ${queueResult}`, enqueueError ? `error: ${enqueueError.message}` : '');
+
+          if (!queueResult && enqueueError) {
+            send('error', { message: `Could not queue transcript: ${enqueueError.message}` });
+            clearInterval(heartbeat);
+            controller.close();
+            return;
+          }
 
           // If transcript was cached between our check and enqueue, serve it
           if (queueResult === 'cached') {
