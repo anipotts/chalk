@@ -498,14 +498,11 @@ export async function sttCascade(videoId: string): Promise<TranscriptResult> {
   const cascadeStart = Date.now();
   console.log(`[transcript] ${videoId}: captions failed, starting STT cascade`);
 
-  // Strategy 1: WhisperX (free, best quality, word-level timestamps)
-  try {
-    const result = await withTimeout(fetchTranscriptWhisperX(videoId), 180_000, 'WhisperX');
-    console.log(`[transcript] ${videoId}: transcribed via WhisperX (${result.segments.length} segments, ${Date.now() - cascadeStart}ms)`);
-    return result;
-  } catch (e) {
-    console.warn(`[transcript] WhisperX failed:`, e instanceof Error ? e.message : e);
-  }
+  // Strategy 1: WhisperX — SKIP in STT cascade.
+  // WhisperX is handled exclusively by the GPU queue worker to prevent
+  // Vercel's direct calls from hogging the GPU and blocking queued jobs.
+  // The cascade falls through to Groq/Deepgram, and if those fail,
+  // the stream route enqueues a GPU job automatically.
 
   // Strategy 2: Web scrape audio → Groq Whisper
   if (isGroqAvailable()) {
