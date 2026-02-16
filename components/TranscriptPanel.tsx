@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { formatTimestamp, type TranscriptSegment, type TranscriptSource } from '@/lib/video-utils';
-import type { TranscriptStatus } from '@/hooks/useTranscriptStream';
+import type { TranscriptStatus, QueueProgress } from '@/hooks/useTranscriptStream';
 import { XCircle, Chats } from '@phosphor-icons/react';
 import { generateChapters } from '@/lib/chapters';
 
@@ -21,6 +21,7 @@ interface TranscriptPanelProps {
   onAskAbout?: (timestamp: number, text: string) => void;
   videoId?: string;
   videoTitle?: string;
+  queueProgress?: QueueProgress | null;
 }
 
 export function TranscriptPanel({
@@ -35,6 +36,7 @@ export function TranscriptPanel({
   variant = 'sidebar',
   onClose,
   onAskAbout,
+  queueProgress,
 }: TranscriptPanelProps) {
   const [search, setSearch] = useState('');
   const [userScrolled, setUserScrolled] = useState(false);
@@ -139,9 +141,16 @@ export function TranscriptPanel({
             </div>
           ) : isLoading ? (
             <div className="relative w-full">
-              <div className="w-full px-3 py-1.5 rounded-lg bg-chalk-surface/40 border border-chalk-border/20 text-xs text-slate-500 flex items-center gap-2">
-                <div className="w-3 h-3 border border-chalk-accent/40 border-t-chalk-accent rounded-full animate-spin flex-shrink-0" />
-                <span className="truncate">{statusMessage || 'Loading transcript...'}</span>
+              <div className="w-full px-3 py-1.5 rounded-lg bg-chalk-surface/40 border border-chalk-border/20 text-xs text-slate-500 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 border border-chalk-accent/40 border-t-chalk-accent rounded-full animate-spin flex-shrink-0" />
+                  <span className="truncate">{statusMessage || 'Loading transcript...'}</span>
+                </div>
+                {queueProgress && queueProgress.progressPct > 0 && (
+                  <span className="ml-2 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/15 text-blue-400 tabular-nums flex-shrink-0">
+                    {queueProgress.progressPct}%
+                  </span>
+                )}
               </div>
               {/* Slim progress bar at bottom edge of input */}
               <div className="absolute bottom-0 left-3 right-3 h-[2px] rounded-full bg-white/[0.04] overflow-hidden">

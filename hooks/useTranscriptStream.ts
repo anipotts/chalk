@@ -222,7 +222,7 @@ export function useTranscriptStream(videoId: string | null, forceStt = false): T
         return;
       }
 
-      // 3-minute safety timeout
+      // 10-minute safety timeout (long videos can take 4-5 min to transcribe)
       const timeout = setTimeout(() => {
         if (channelRef.current) {
           supabase.removeChannel(channelRef.current);
@@ -230,7 +230,7 @@ export function useTranscriptStream(videoId: string | null, forceStt = false): T
         }
         setStatus('error');
         setError('GPU transcription timed out. Try again later.');
-      }, 180_000);
+      }, 600_000);
       timeoutRef.current = timeout;
 
       let lastSegmentCount = 0;
@@ -254,7 +254,7 @@ export function useTranscriptStream(videoId: string | null, forceStt = false): T
             setStatusMessage(
               row.status === 'downloading'
                 ? 'Downloading audio...'
-                : `Transcribing... ${row.segments_written} segments (${row.progress_pct}%)`
+                : 'Transcribing...'
             );
             setProgress(Math.max(5, row.progress_pct));
             setQueueProgress({ segmentsWritten: row.segments_written, progressPct: row.progress_pct });
@@ -384,7 +384,7 @@ export function useTranscriptStream(videoId: string | null, forceStt = false): T
             setStatusMessage(
               job.status === 'downloading'
                 ? 'Downloading audio...'
-                : `Transcribing... ${job.segments_written} segments (${job.progress_pct}%)`
+                : 'Transcribing...'
             );
             setProgress(Math.max(5, job.progress_pct));
             setQueueProgress({ segmentsWritten: job.segments_written, progressPct: job.progress_pct });

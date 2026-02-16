@@ -10,7 +10,7 @@ import { useVideoTitle } from "@/hooks/useVideoTitle";
 import { useOverlayPhase } from "@/hooks/useOverlayPhase";
 import { formatTimestamp, type IntervalSelection } from "@/lib/video-utils";
 import { storageKey } from "@/lib/brand";
-import { ChalkboardSimple, Play, ArrowBendUpLeft, MagnifyingGlass } from "@phosphor-icons/react";
+import { ChalkboardSimple, Play, ArrowBendUpLeft, MagnifyingGlass, SpinnerGap, CheckCircle, WarningCircle } from "@phosphor-icons/react";
 import { KaraokeCaption } from "@/components/KaraokeCaption";
 import type { MediaPlayerInstance } from "@vidstack/react";
 
@@ -188,7 +188,7 @@ function WatchContent() {
   const [navSearchValue, setNavSearchValue] = useState("");
   const [navSearchFocused, setNavSearchFocused] = useState(false);
 
-  const { segments, status, statusMessage, error, source, progress, durationSeconds, metadata, storyboardSpec } =
+  const { segments, status, statusMessage, error, source, progress, durationSeconds, metadata, storyboardSpec, queueProgress } =
     useTranscriptStream(videoId || null, forceStt);
 
   const storyboardLevels = useMemo(
@@ -828,13 +828,22 @@ function WatchContent() {
             </button>
             <button
               onClick={() => setShowTranscript((v) => !v)}
-              className={`hidden md:inline-flex px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
+              className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors ${
                 showTranscript
                   ? "bg-chalk-accent/15 text-chalk-accent border border-chalk-accent/30"
                   : "text-slate-500 hover:text-slate-300 bg-chalk-surface/50 border border-chalk-border/30"
               }`}
             >
               Transcript
+              {!showTranscript && (status === 'connecting' || status === 'extracting' || status === 'queued' || status === 'transcribing') && (
+                <SpinnerGap size={12} weight="bold" className="animate-spin text-blue-400" />
+              )}
+              {!showTranscript && status === 'complete' && (
+                <CheckCircle size={12} weight="fill" className="text-emerald-400" />
+              )}
+              {!showTranscript && status === 'error' && (
+                <WarningCircle size={12} weight="fill" className="text-red-400" />
+              )}
             </button>
           </div>
           </div>
@@ -926,8 +935,8 @@ function WatchContent() {
                     />
                   </div>
                 )}
-                {/* "@ time" chip — bottom-right of video */}
-                {currentTime > 0 && phase === 'watching' && (
+                {/* Time chip — top-right of video */}
+                {currentTime > 0 && (
                   <button
                     onClick={() => {
                       overlayDispatch({ type: 'ACTIVATE' });
@@ -939,9 +948,9 @@ function WatchContent() {
                         }
                       });
                     }}
-                    className="hidden md:inline-flex absolute right-3 bottom-3 group-focus-within:bottom-20 group-data-[paused]:bottom-20 z-10 items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-mono text-white/70 bg-black/50 backdrop-blur-sm border border-white/10 hover:bg-black/70 hover:text-white hover:border-white/20 transition-all duration-200 ease-out delay-[2000ms] group-focus-within:delay-0 group-data-[paused]:delay-0"
+                    className="hidden md:inline-flex absolute right-3 top-3 z-10 items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-mono text-white/70 bg-black/50 backdrop-blur-sm border border-white/10 hover:bg-black/70 hover:text-white hover:border-white/20 transition-all duration-200"
                   >
-                    @ {formatTimestamp(Math.floor(currentTime))}
+                    {formatTimestamp(Math.floor(currentTime))}
                   </button>
                 )}
               </div>
@@ -1092,6 +1101,7 @@ function WatchContent() {
                   onAskAbout={handleAskAbout}
                   videoId={videoId}
                   videoTitle={effectiveTitle ?? undefined}
+                  queueProgress={queueProgress}
                 />
               </div>
             </>
@@ -1141,6 +1151,7 @@ function WatchContent() {
             onAskAbout={handleAskAbout}
             videoId={videoId}
             videoTitle={effectiveTitle ?? undefined}
+            queueProgress={queueProgress}
           />
         </div>
       </div>
