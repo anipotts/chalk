@@ -82,6 +82,7 @@ export default function NavBar() {
               <SearchDropdown
                 isVisible={true}
                 onSelectTopic={handleTopicSelect}
+                compact
               />
             )}
           </AnimatePresence>

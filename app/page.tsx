@@ -85,6 +85,9 @@ function HomePage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Track whether user has manually interacted with input (prevents dropdown on autoFocus)
+  const hasUserInteracted = useRef(false);
+
   // (isVisuallyRaised removed — unified block stays at 1/3 position)
 
   // Abort controller for canceling in-flight requests
@@ -195,6 +198,7 @@ function HomePage() {
   }, [activeTab]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    hasUserInteracted.current = true;
     const val = e.target.value;
     setInputValue(val);
     setError('');
@@ -258,6 +262,14 @@ function HomePage() {
   const handleInputFocus = () => {
     if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
     setIsInputFocused(true);
+    // Only show dropdown if user has manually clicked/tapped the input (not autoFocus on load)
+    if (hasUserInteracted.current) {
+      setShowDropdown(inputValue.length === 0);
+    }
+  };
+
+  const handleInputClick = () => {
+    hasUserInteracted.current = true;
     setShowDropdown(inputValue.length === 0);
   };
 
@@ -329,6 +341,7 @@ function HomePage() {
           onKeyDown={handleKeyDown}
           onFocus={handleInputFocus}
           onBlur={handleInputBlur}
+          onClick={handleInputClick}
           placeholder={activeTab === 'search' ? 'Search for videos, channels, or playlists...' : 'Paste a YouTube URL...'}
           aria-label={activeTab === 'search' ? 'Search for videos, channels, or playlists' : 'Paste a YouTube URL'}
           autoFocus
