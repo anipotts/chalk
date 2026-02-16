@@ -9,18 +9,24 @@ interface HeroVideoCardProps {
   viewCount: number;
   publishedText: string;
   duration?: string;
+  conversation?: {
+    question: string;
+    answer: string;
+    timestamp: string;
+  };
 }
 
 interface HeroColumnProps {
   cards: HeroVideoCardProps[];
   direction: 'up' | 'down';
   delay?: number;
+  speed?: number;
 }
 
 const CARD_HEIGHT = 200;
 const GAP = 20;
 
-export function HeroColumn({ cards, direction, delay = 0 }: HeroColumnProps) {
+export function HeroColumn({ cards, direction, delay = 0, speed = 22 }: HeroColumnProps) {
   // Duplicate for seamless infinite loop
   const doubledCards = [...cards, ...cards];
   // Total height of one set of cards
@@ -28,8 +34,12 @@ export function HeroColumn({ cards, direction, delay = 0 }: HeroColumnProps) {
 
   return (
     <div
-      className="hero-column relative overflow-hidden"
-      style={{ height: `${setHeight}px`, pointerEvents: 'auto' }}
+      className="hero-column relative"
+      style={{
+        height: `${setHeight}px`,
+        pointerEvents: 'auto',
+        clipPath: 'inset(0 -16px)',
+      }}
     >
       <div
         className={`flex flex-col gap-5 ${
@@ -37,14 +47,14 @@ export function HeroColumn({ cards, direction, delay = 0 }: HeroColumnProps) {
         }`}
         style={{
           animationDelay: `${delay}s`,
-          animationDuration: direction === 'up' ? '22s' : '25s',
+          animationDuration: `${speed}s`,
           pointerEvents: 'auto'
         }}
       >
         {doubledCards.map((card, idx) => (
           <div
             key={idx}
-            className="flex-shrink-0 w-56 md:w-72"
+            className="flex-shrink-0 w-52 md:w-72"
             style={{ height: `${CARD_HEIGHT}px`, pointerEvents: 'auto' }}
           >
             <HeroVideoCard {...card} />
